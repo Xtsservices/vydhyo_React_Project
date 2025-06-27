@@ -1,0 +1,265 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  background-color: #f9fafb;
+  overflow: hidden;
+}
+
+.illustration-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: #ffffff;
+  transition: opacity 0.3s ease;
+}
+
+.illustration-container.hidden {
+  display: none;
+}
+
+.illustration-content {
+  max-width: 28rem;
+  text-align: center;
+}
+
+.illustration-svg {
+  width: 100%;
+  height: auto;
+  transform: scale(1);
+  transition: transform 0.3s ease;
+}
+
+.illustration-svg:hover {
+  transform: scale(1.05);
+}
+
+.illustration-background,
+.illustration-medical,
+.illustration-doctor,
+.illustration-patient,
+.illustration-equipment,
+.illustration-bag,
+.illustration-decor {
+  transition: opacity 0.3s ease;
+}
+
+.illustration-heartbeat {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { stroke-width: 3; }
+  50% { stroke-width: 4; }
+}
+
+.illustration-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.illustration-text {
+  color: #4b5563;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.login-form-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: #ffffff;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 28rem;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.form-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.form-subtitle {
+  color: #4b5563;
+  font-size: 1rem;
+}
+
+.user-type {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  color: #1e40af;
+  font-size: 0.875rem;
+  text-align: center;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.user-type:hover {
+  background-color: #dbeafe;
+}
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.otp-info {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.otp-info p {
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  outline: none;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-field:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.otp-input {
+  text-align: center;
+  font-family: monospace;
+  letter-spacing: 0.5em;
+  font-size: 1.25rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.text-button {
+  color: #2563eb;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.text-button:hover {
+  color: #1d4ed8;
+}
+
+.text-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-button {
+  width: 100%;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  color: #ffffff;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.action-button:hover:not(:disabled) {
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  transform: translateY(-2px);
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-footer {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.link {
+  color: #2563eb;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: #1d4ed8;
+}
+
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  .login-form-container {
+    padding: 1rem;
+  }
+
+  .login-form {
+    max-width: 100%;
+  }
+
+  .form-content {
+    gap: 1rem;
+  }
+
+  .input-field {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .action-button {
+    padding: 0.5rem 0.75rem;
+  }
+}
