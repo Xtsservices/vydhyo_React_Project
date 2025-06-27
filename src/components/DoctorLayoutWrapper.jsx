@@ -46,8 +46,8 @@ const DoctorLayoutWrapper = () => {
     setSelectedKey(key); // Update selected key when a menu item is clicked
   };
 
-  const getProfileImage = (profilepic) => {
-    if (user.profilepic?.data && user.profilepic?.mimeType) {
+  const getProfileImage = (user) => {
+    if (user?.profilepic?.data && user?.profilepic?.mimeType) {
       return `data:${user.profilepic.mimeType};base64,${user.profilepic.data}`;
     } 
 
