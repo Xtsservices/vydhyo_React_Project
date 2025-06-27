@@ -1,324 +1,244 @@
 import React from 'react';
-import { Card, Row, Col, Statistic, Progress, Avatar, List } from 'antd';
-import { 
-  UserOutlined, 
-  TeamOutlined, 
-  CalendarOutlined,
-  VideoCameraOutlined,
-  HomeOutlined,
-  CarOutlined,
-  HeartOutlined,
-  MedicineBoxOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  CloseCircleOutlined
-} from '@ant-design/icons';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Card, Row, Col } from 'antd';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 
-const Dashboard = () => {
-  // Sample data for charts
-  const revenueData = [
-    { name: 'Jan', value: 17 },
-    { name: 'Feb', value: 25 },
-    { name: 'Mar', value: 40 },
-    { name: 'Apr', value: 55 },
-    { name: 'May', value: 64 },
-    { name: 'Jun', value: 78 },
-    { name: 'Jul', value: 95 },
-    { name: 'Aug', value: 100 }
-  ];
+// Mock data matching the image exactly
+const revenueSnapshotData = [
+  { title: 'Today', value: '₹12,000', bgColor: 'bg-white' },
+  { title: 'This Week', value: '₹84,500', bgColor: 'bg-white' },
+  { title: 'This Month', value: '₹3,20,000', bgColor: 'bg-white' },
+  { title: 'Total Revenue', value: '₹18,56,000', bgColor: 'bg-blue-600 text-white' },
+];
 
-  const appointmentData = [
-    { name: 'Category 1', value: 100, color: '#52c41a' },
-    { name: 'Category 2', value: 95, color: '#d9d9d9' },
-    { name: 'Category 3', value: 78, color: '#1890ff' },
-    { name: 'Category 4', value: 64, color: '#722ed1' },
-    { name: 'Category 5', value: 55, color: '#13c2c2' },
-    { name: 'Category 6', value: 40, color: '#eb2f96' },
-    { name: 'Category 7', value: 25, color: '#f5222d' },
-    { name: 'Category 8', value: 17, color: '#fa541c' }
-  ];
+const revenueContributionData = [
+  { title: 'Appointments', value: '₹2,000', icon: '👤' },
+  { title: 'Pharmacy', value: '₹2,000', icon: '💊' },
+  { title: 'Labs', value: '₹2,000', icon: '🧪' },
+  { title: 'Ambulance', value: '₹2,000', icon: '🚑' },
+];
 
-  const topDoctorsAppointments = [
-    { name: 'Dr. Kavita Rao', appointments: 56, avatar: '/api/placeholder/32/32' },
-    { name: 'Dr. Arvind Sharma', appointments: 49, avatar: '/api/placeholder/32/32' },
-    { name: 'Dr. Meena Joshi', appointments: 47, avatar: '/api/placeholder/32/32' },
-    { name: 'Dr. Sandeep Yadav', appointments: 43, avatar: '/api/placeholder/32/32' },
-    { name: 'Dr. Neha Verma', appointments: 40, avatar: '/api/placeholder/32/32' }
-  ];
+const approvalRequestsData = [
+  { title: 'Pending Approval', value: 23, color: 'text-orange-500', bgColor: 'bg-orange-50' },
+  { title: 'Approved', value: 76, color: 'text-green-500', bgColor: 'bg-green-50' },
+  { title: 'Rejected', value: 12, color: 'text-red-500', bgColor: 'bg-red-50' },
+];
 
-  const topDoctorsRevenue = [
-    { name: 'Dr. Meena Joshi', revenue: '₹1,20,000', avatar: '/api/placeholder/32/32' },
-    { name: 'Dr. Arvind Sharma', revenue: '₹98,000', avatar: '/api/placeholder/32/32' },
-    { name: 'Dr. Neha Verma', revenue: '₹90,500', avatar: '/api/placeholder/32/32' },
-    { name: 'Dr. Ravi Menon', revenue: '₹87,000', avatar: '/api/placeholder/32/32' },
-    { name: 'Dr. Kavita Rao', revenue: '₹84,300', avatar: '/api/placeholder/32/32' }
-  ];
+const userMetricsData = [
+  { title: 'Active Patients', value: '1,234', color: 'text-blue-500' },
+  { title: 'Active Doctors', value: 76, color: 'text-purple-500' },
+  { title: 'Total Patients', value: '5,690', color: 'text-blue-500' },
+];
 
+const consultationStatsData = [
+  { title: 'Walk-ins', value: 214, icon: '🚶' },
+  { title: 'Appointments', value: 156, icon: '📅' },
+  { title: 'Video Consults', value: 92, icon: '📹' },
+  { title: 'Home Visits', value: 47, icon: '🏠' },
+];
+
+const topDoctorsAppointments = [
+  { name: 'Dr. Kavita Rao', appointments: 58 },
+  { name: 'Dr. Arvind Sharma', appointments: 49 },
+  { name: 'Dr. Meena Joshi', appointments: 47 },
+  { name: 'Dr. Sandeep Yadav', appointments: 43 },
+  { name: 'Dr. Neha Verma', appointments: 40 },
+];
+
+const topDoctorsRevenue = [
+  { name: 'Dr. Meena Joshi', revenue: '₹1,20,000' },
+  { name: 'Dr. Arvind Sharma', revenue: '₹98,000' },
+  { name: 'Dr. Neha Verma', revenue: '₹90,500' },
+  { name: 'Dr. Ravi Menon', revenue: '₹87,000' },
+  { name: 'Dr. Kavita Rao', revenue: '₹84,300' },
+];
+
+const revenueTrendsData = [
+  { name: 'Jan', revenue: 17 },
+  { name: 'Feb', revenue: 25 },
+  { name: 'Mar', revenue: 40 },
+  { name: 'Apr', revenue: 64 },
+  { name: 'May', revenue: 78 },
+  { name: 'Jun', revenue: 95 },
+  { name: 'Jul', revenue: 103 },
+];
+
+const appointmentDistributionData = [
+  { name: 'Dr. Kavita Rao', value: 17, color: '#3b82f6' },
+  { name: 'Dr. Arvind Sharma', value: 25, color: '#10b981' },
+  { name: 'Dr. Meena Joshi', value: 40, color: '#f59e0b' },
+  { name: 'Dr. Sandeep Yadav', value: 55, color: '#8b5cf6' },
+  { name: 'Dr. Neha Verma', value: 64, color: '#ec4899' },
+  { name: 'Others', value: 78, color: '#6b7280' },
+];
+
+const SuperAdminDashboard = () => {
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f0f2f5', minHeight: '100vh' }}>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold mb-6">Super Admin Dashboard</h1>
+      
       {/* Revenue Snapshot */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Today"
-              value="₹12,000"
-              valueStyle={{ color: '#1890ff', fontSize: '24px', fontWeight: 'bold' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="This Week"
-              value="₹84,500"
-              valueStyle={{ color: '#1890ff', fontSize: '24px', fontWeight: 'bold' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="This Month"
-              value="₹3,20,000"
-              valueStyle={{ color: '#1890ff', fontSize: '24px', fontWeight: 'bold' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card style={{ backgroundColor: '#fadb14' }}>
-            <Statistic
-              title="Total Revenue"
-              value="₹18,56,000"
-              valueStyle={{ color: '#ffffff', fontSize: '24px', fontWeight: 'bold' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-4">Revenue Snapshot</h2>
+        <Row gutter={[16, 16]}>
+          {revenueSnapshotData.map((item, index) => (
+            <Col xs={24} sm={12} md={6} key={index}>
+              <Card className={`text-center ${item.bgColor}`} bodyStyle={{ padding: '20px' }}>
+                <div className="text-sm text-gray-600 mb-2">{item.title}</div>
+                <div className={`text-2xl font-bold ${item.bgColor.includes('blue') ? 'text-white' : 'text-gray-900'}`}>
+                  {item.value}
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </div>
 
       {/* Revenue Contribution */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col span={6}>
-          <Card>
-            <div style={{ textAlign: 'center' }}>
-              <MedicineBoxOutlined style={{ fontSize: '32px', color: '#1890ff', marginBottom: '8px' }} />
-              <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Appointments</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>₹2,000</div>
-            </div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <div style={{ textAlign: 'center' }}>
-              <HeartOutlined style={{ fontSize: '32px', color: '#52c41a', marginBottom: '8px' }} />
-              <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Pharmacy</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>₹2,000</div>
-            </div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <div style={{ textAlign: 'center' }}>
-              <UserOutlined style={{ fontSize: '32px', color: '#722ed1', marginBottom: '8px' }} />
-              <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Labs</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>₹2,000</div>
-            </div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <div style={{ textAlign: 'center' }}>
-              <CarOutlined style={{ fontSize: '32px', color: '#13c2c2', marginBottom: '8px' }} />
-              <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Ambulance</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>₹2,000</div>
-            </div>
-          </Card>
-        </Col>
-      </Row>
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-4">Revenue Contribution</h2>
+        <Row gutter={[16, 16]}>
+          {revenueContributionData.map((item, index) => (
+            <Col xs={12} sm={6} key={index}>
+              <Card className="text-center bg-white" bodyStyle={{ padding: '16px' }}>
+                <div className="text-2xl mb-2">{item.icon}</div>
+                <div className="text-lg font-bold text-gray-900">{item.value}</div>
+                <div className="text-sm text-gray-600">{item.title}</div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </div>
 
-      {/* Main Content Row */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      {/* Three Main Sections */}
+      <Row gutter={[16, 16]} className="mb-6">
         {/* Approval Requests */}
-        <Col span={8}>
-          <Card title="Approval Requests">
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span><ClockCircleOutlined style={{ color: '#faad14', marginRight: '8px' }} />Pending Approval</span>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#faad14' }}>23</span>
+        <Col xs={24} md={8}>
+          <Card title="Approval Requests" className="h-full">
+            {approvalRequestsData.map((item, index) => (
+              <div key={index} className={`flex items-center justify-between p-3 rounded-lg mb-2 ${item.bgColor}`}>
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full ${item.color.replace('text-', 'bg-')} mr-3`}></div>
+                  <span className="text-sm">{item.title}</span>
+                </div>
+                <span className={`font-bold text-xl ${item.color}`}>{item.value}</span>
               </div>
-            </div>
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span><CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />Approved</span>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#52c41a' }}>76</span>
-              </div>
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span><CloseCircleOutlined style={{ color: '#f5222d', marginRight: '8px' }} />Rejected</span>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#f5222d' }}>12</span>
-              </div>
-            </div>
+            ))}
           </Card>
         </Col>
 
         {/* User Metrics */}
-        <Col span={8}>
-          <Card title="User Metrics">
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span><TeamOutlined style={{ color: '#1890ff', marginRight: '8px' }} />Active Users</span>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#1890ff' }}>1,234</span>
+        <Col xs={24} md={8}>
+          <Card title="User Metrics" className="h-full">
+            {userMetricsData.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-3 mb-2">
+                <div className="flex items-center">
+                  <div className={`w-8 h-8 rounded-full ${item.color.replace('text-', 'bg-')} flex items-center justify-center mr-3`}>
+                    <span className="text-white text-sm">👤</span>
+                  </div>
+                  <span className="text-sm">{item.title}</span>
+                </div>
+                <span className={`font-bold text-xl ${item.color}`}>{item.value}</span>
               </div>
-            </div>
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span><UserOutlined style={{ color: '#722ed1', marginRight: '8px' }} />Active Doctors</span>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#722ed1' }}>76</span>
-              </div>
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span><TeamOutlined style={{ color: '#13c2c2', marginRight: '8px' }} />Total Patients</span>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#13c2c2' }}>5,690</span>
-              </div>
-            </div>
+            ))}
           </Card>
         </Col>
 
         {/* Consultation Stats */}
-        <Col span={8}>
-          <Card title="Consultation Stats">
-            <Row gutter={16}>
-              <Col span={12}>
-                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                  <HomeOutlined style={{ fontSize: '24px', color: '#1890ff', marginBottom: '8px' }} />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Walk-ins</div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold' }}>214</div>
+        <Col xs={24} md={8}>
+          <Card title="Consultation Stats" className="h-full">
+            {consultationStatsData.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-3 mb-2">
+                <div className="flex items-center">
+                  <div className="text-xl mr-3">{item.icon}</div>
+                  <span className="text-sm">{item.title}</span>
                 </div>
-              </Col>
-              <Col span={12}>
-                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                  <CalendarOutlined style={{ fontSize: '24px', color: '#faad14', marginBottom: '8px' }} />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Appointments</div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold' }}>156</div>
-                </div>
-              </Col>
-              <Col span={12}>
-                <div style={{ textAlign: 'center' }}>
-                  <VideoCameraOutlined style={{ fontSize: '24px', color: '#1890ff', marginBottom: '8px' }} />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Video Consults</div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold' }}>92</div>
-                </div>
-              </Col>
-              <Col span={12}>
-                <div style={{ textAlign: 'center' }}>
-                  <HomeOutlined style={{ fontSize: '24px', color: '#52c41a', marginBottom: '8px' }} />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Home Visits</div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold' }}>47</div>
-                </div>
-              </Col>
-            </Row>
+                <span className="font-bold text-xl text-gray-900">{item.value}</span>
+              </div>
+            ))}
           </Card>
         </Col>
       </Row>
 
-      {/* Doctor Rankings */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col span={12}>
-          <Card title="Top Doctors - Appointments">
-            <List
-              itemLayout="horizontal"
-              dataSource={topDoctorsAppointments}
-              renderItem={(item) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<Avatar src={item.avatar} icon={<UserOutlined />} />}
-                    title={item.name}
-                  />
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#faad14' }}>
-                    {item.appointments} appts
+      {/* Top Doctors */}
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} md={12}>
+          <Card title="Top Doctors - Appointments" className="h-full">
+            {topDoctorsAppointments.map((doctor, index) => (
+              <div key={index} className="flex items-center justify-between p-2 border-b border-gray-100 last:border-b-0">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+                    👨‍⚕️
                   </div>
-                </List.Item>
-              )}
-            />
+                  <span className="text-sm font-medium">{doctor.name}</span>
+                </div>
+                <span className="font-bold text-orange-500">{doctor.appointments}</span>
+              </div>
+            ))}
           </Card>
         </Col>
-        <Col span={12}>
-          <Card title="Top Doctors - Revenue">
-            <List
-              itemLayout="horizontal"
-              dataSource={topDoctorsRevenue}
-              renderItem={(item) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<Avatar src={item.avatar} icon={<UserOutlined />} />}
-                    title={item.name}
-                  />
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
-                    {item.revenue}
+        <Col xs={24} md={12}>
+          <Card title="Top Doctors - Revenue" className="h-full">
+            {topDoctorsRevenue.map((doctor, index) => (
+              <div key={index} className="flex items-center justify-between p-2 border-b border-gray-100 last:border-b-0">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+                    👨‍⚕️
                   </div>
-                </List.Item>
-              )}
-            />
+                  <span className="text-sm font-medium">{doctor.name}</span>
+                </div>
+                <span className="font-bold text-green-500">{doctor.revenue}</span>
+              </div>
+            ))}
           </Card>
         </Col>
       </Row>
 
       {/* Charts */}
       <Row gutter={[16, 16]}>
-        <Col span={12}>
-          <Card title="Revenue Trends">
+        <Col xs={24} md={16}>
+          <Card title="Revenue Trends" className="h-full">
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueData}>
+              <AreaChart data={revenueTrendsData}>
+                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#1890ff" 
-                  strokeWidth={3}
-                  dot={{ fill: '#1890ff', strokeWidth: 2, r: 6 }}
-                />
-              </LineChart>
+                <Tooltip />
+                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
+              </AreaChart>
             </ResponsiveContainer>
           </Card>
         </Col>
-        <Col span={12}>
-          <Card title="Appointment Distribution">
+        <Col xs={24} md={8}>
+          <Card title="Appointment Distribution" className="h-full">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={appointmentData}
+                  data={appointmentDistributionData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  paddingAngle={2}
+                  innerRadius={40}
+                  outerRadius={100}
                   dataKey="value"
+                  label={({ value }) => value}
                 >
-                  {appointmentData.map((entry, index) => (
+                  {appointmentDistributionData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-            <div style={{ textAlign: 'center', marginTop: '16px' }}>
-              {appointmentData.map((item, index) => (
-                <div key={index} style={{ display: 'inline-block', margin: '0 8px', fontSize: '12px' }}>
-                  <span style={{ 
-                    display: 'inline-block', 
-                    width: '12px', 
-                    height: '12px', 
-                    backgroundColor: item.color,
-                    marginRight: '4px',
-                    borderRadius: '2px'
-                  }} />
-                  {item.value}
-                </div>
-              ))}
-            </div>
           </Card>
         </Col>
       </Row>
@@ -326,4 +246,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default SuperAdminDashboard;
