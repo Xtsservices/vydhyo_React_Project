@@ -17,6 +17,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, Outlet } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useSelector } from "react-redux";
 
 const { Header, Sider, Content, Footer } = Layout;
 
@@ -24,7 +25,8 @@ const DoctorLayoutWrapper = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [selectedKey, setSelectedKey] = useState("dashboard"); // Track selected menu item
-
+  const user = useSelector((state) => state.currentUserData);
+  console.log("User Data:============", user);
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -43,6 +45,18 @@ const DoctorLayoutWrapper = () => {
   const handleMenuClick = ({ key }) => {
     setSelectedKey(key); // Update selected key when a menu item is clicked
   };
+
+  const getProfileImage = (profilepic) => {
+    if (user.profilepic?.data && user.profilepic?.mimeType) {
+      return `data:${user.profilepic.mimeType};base64,${user.profilepic.data}`;
+    } 
+
+    return null;
+  };
+
+
+
+  const profileImageSrc = getProfileImage(user);
 
   return (
     <Layout className="layout">
@@ -101,17 +115,20 @@ const DoctorLayoutWrapper = () => {
             >
               <Avatar
                 size={60}
-                icon={<FontAwesomeIcon icon={faUser} />}
+                src={profileImageSrc}
+                icon={!profileImageSrc && <FontAwesomeIcon icon={faUser} />}
                 style={{
                   backgroundColor: "rgba(255,255,255,0.2)",
                   marginBottom: 12,
                 }}
               />
+
               <div
                 style={{ fontSize: "16px", fontWeight: "600", marginBottom: 4 }}
               >
-                Dr Pushpa Sahitya
+                {user?.firstname || "Doctor"}
               </div>
+
               <div
                 style={{
                   background: "rgba(255,255,255,0.9)",
@@ -123,7 +140,7 @@ const DoctorLayoutWrapper = () => {
                   display: "inline-block",
                 }}
               >
-                Neurology
+                {user?.specialization?.name || "Department"}
               </div>
             </div>
 

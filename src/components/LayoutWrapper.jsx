@@ -41,13 +41,13 @@ const LayoutWrapper = () => {
 
   return (
     <Layout className="layout">
-      <Header className="header">
+      <Header className="header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 24px" }}>
         <div style={{ display: "flex", alignItems: "center" }}>
           <FontAwesomeIcon
             icon={faBars}
             className="toggle-button"
             onClick={toggleSidebar}
-            style={{ marginRight: 16, color: "#fff" }}
+            style={{ marginRight: 16, color: "#fff", cursor: "pointer", fontSize: 20 }}
           />
           <div className="logo" style={{ marginRight: 16 }}>
             <img
@@ -56,8 +56,32 @@ const LayoutWrapper = () => {
               style={{ height: 40, width: "auto" }}
             />
           </div>
-          <h1 style={{ color: "#fff", margin: 0 }}>My App</h1>
+          <h1 style={{ color: "#fff", margin: 0, fontSize: 24, fontWeight: 600 }}>My App</h1>
         </div>
+        <button
+        onClick={() => {
+          localStorage.removeItem("accessToken");
+          window.location.href = "/"; 
+        }}
+          style={{
+            background: "#40a9ff",
+            color: "#fff",
+            border: "none",
+            borderRadius: "50px",
+            padding: "0px 16px",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "background 0.2s, box-shadow 0.2s",
+            boxShadow: "0 1px 4px rgba(24,144,255,0.12)",
+            letterSpacing: 0.5,
+            outline: "none"
+          }}
+          onMouseOver={e => (e.currentTarget.style.background = "#40a9ff")}
+          onMouseOut={e => (e.currentTarget.style.background = "#1890ff")}
+        >
+          Logout
+        </button>
       </Header>
       <Layout>
         <Sider
@@ -71,10 +95,10 @@ const LayoutWrapper = () => {
           onBreakpoint={(broken) => setIsMobile(broken)}
           style={{
             overflow: "auto",
-            height: "calc(100vh - 64px)", // Adjusted for fixed Header
+            height: "calc(100vh - 64px)",
             position: "fixed",
             left: 0,
-            top: 64, // Start below fixed Header
+            top: 64,
             bottom: 0,
             zIndex: 1000,
             display: isMobile && collapsed ? "none" : "block",
@@ -159,9 +183,9 @@ const LayoutWrapper = () => {
         <Layout
           style={{
             marginLeft: isMobile ? 0 : collapsed ? 80 : 200,
-            marginTop: 64, // Offset for fixed Header
+            marginTop: 64,
             transition: "margin-left 0.2s",
-            minHeight: "calc(100vh - 64px - 48px)", // Header: 64px, Footer: 48px
+            minHeight: "calc(100vh - 64px - 48px)",
             display: "flex",
             flexDirection: "column",
           }}
