@@ -438,8 +438,8 @@ const DoctorDashboard = () => {
             color: "#fa8c16",
             icon: <TeamOutlined />,
           },
-        ].map((item) => (
-          <Col xs={24} sm={12} md={8} key={item.title}>
+        ].map((item,index) => (
+          <Col xs={24} sm={12} md={8} key={index}>
             <Card hoverable>
               <Statistic
                 title={item.title}
@@ -481,7 +481,7 @@ const DoctorDashboard = () => {
                   { day: "S", appointments: 20, patients: 15 },
                   { day: "S", appointments: 50, patients: 35 },
                 ].map((item, index) => (
-                  <div key={item.day} style={{ textAlign: "center", flex: 1 }}>
+                  <div key={index} style={{ textAlign: "center", flex: 1 }}>
                     <div
                       style={{
                         display: "flex",

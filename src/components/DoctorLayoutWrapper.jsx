@@ -49,14 +49,71 @@ const DoctorLayoutWrapper = () => {
   const getProfileImage = (user) => {
     if (user?.profilepic?.data && user?.profilepic?.mimeType) {
       return `data:${user.profilepic.mimeType};base64,${user.profilepic.data}`;
-    } 
+    }
 
     return null;
   };
 
-
-
   const profileImageSrc = getProfileImage(user);
+
+  const menuItems = [
+    {
+      key: "dashboard",
+      label: <Link to="/doctor/Dashboard">Dashboard</Link>,
+      icon: (
+        <FontAwesomeIcon icon={faTachometerAlt} style={{ color: "#1976D2" }} />
+      ),
+    },
+    {
+      key: "appointments",
+      label: <Link to="/doctor/doctorPages/Appointments">Appointments</Link>,
+      icon: (
+        <FontAwesomeIcon icon={faCalendarCheck} style={{ color: "#666" }} />
+      ),
+    },
+    {
+      key: "my-patients",
+      label: <Link to="/doctor/doctorPages/Patients">My Patients</Link>,
+      icon: <FontAwesomeIcon icon={faUsers} style={{ color: "#666" }} />,
+    },
+    {
+      key: "walkin-patients",
+      label: <Link to="/doctor/doctorPages/Walkin">Walkin Patients</Link>,
+      icon: <FontAwesomeIcon icon={faWalking} style={{ color: "#666" }} />,
+    },
+    {
+      key: "staff-management",
+      label: (
+        <Link to="/doctor/doctorPages/staffManagement">Staff Management</Link>
+      ),
+      icon: <FontAwesomeIcon icon={faCog} style={{ color: "#666" }} />,
+    },
+    {
+      key: "availability",
+      label: <Link to="/doctor/doctorPages/Availability">Availability</Link>,
+      icon: <FontAwesomeIcon icon={faCalendarAlt} style={{ color: "#666" }} />,
+    },
+    {
+      key: "accounts",
+      label: <Link to="/doctor/doctorPages/Accounts">Accounts</Link>,
+      icon: <FontAwesomeIcon icon={faFileInvoice} style={{ color: "#666" }} />,
+    },
+    {
+      key: "invoices",
+      label: <Link to="/doctor/doctorPages/Invoices">Invoices</Link>,
+      icon: <FontAwesomeIcon icon={faFileInvoice} style={{ color: "#666" }} />,
+    },
+    {
+      key: "messages",
+      label: <Link to="/doctor/doctorPages/Messages">Messages</Link>,
+      icon: <FontAwesomeIcon icon={faEnvelope} style={{ color: "#666" }} />,
+    },
+    {
+      key: "logout",
+      label: <Link to="/logout">Logout</Link>,
+      icon: <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#666" }} />,
+    },
+  ];
 
   return (
     <Layout className="layout">
@@ -154,206 +211,11 @@ const DoctorLayoutWrapper = () => {
                 background: "#F5F5F5",
               }}
             >
-              <Menu.Item
-                key="dashboard"
-                icon={
-                  <FontAwesomeIcon
-                    icon={faTachometerAlt}
-                    style={{ color: "#1976D2" }}
-                  />
-                }
-                style={{
-                  margin: "8px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "dashboard" ? "#E3F2FD" : "transparent",
-                  border: "none",
-                  color: selectedKey === "dashboard" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "dashboard" ? "500" : "normal",
-                }}
-              >
-                <Link to="/doctor/Dashboard">Dashboard</Link>
-              </Menu.Item>
-
-              <Menu.Item
-                key="appointments"
-                icon={
-                  <FontAwesomeIcon
-                    icon={faCalendarCheck}
-                    style={{ color: "#666" }}
-                  />
-                }
-                style={{
-                  margin: "4px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "appointments" ? "#E3F2FD" : "transparent",
-                  color: selectedKey === "appointments" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "appointments" ? "500" : "normal",
-                }}
-              >
-                <Link to="/doctor/doctorPages/Appointments">Appointments</Link>
-              </Menu.Item>
-
-              <Menu.Item
-                key="my-patients"
-                icon={
-                  <FontAwesomeIcon icon={faUsers} style={{ color: "#666" }} />
-                }
-                style={{
-                  margin: "4px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "my-patients" ? "#E3F2FD" : "transparent",
-                  color: selectedKey === "my-patients" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "my-patients" ? "500" : "normal",
-                }}
-              >
-                <Link to="/doctor/doctorPages/Patients">My Patients</Link>
-              </Menu.Item>
-
-              <Menu.Item
-                key="walkin-patients"
-                icon={
-                  <FontAwesomeIcon icon={faWalking} style={{ color: "#666" }} />
-                }
-                style={{
-                  margin: "4px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "walkin-patients"
-                      ? "#E3F2FD"
-                      : "transparent",
-                  color: selectedKey === "walkin-patients" ? "#1976D2" : "#666",
-                  fontWeight:
-                    selectedKey === "walkin-patients" ? "500" : "normal",
-                }}
-              >
-                <Link to="/doctor/doctorPages/Walkin">Walkin Patients</Link>
-              </Menu.Item>
-
-              <Menu.Item
-                key="staff-management"
-                icon={
-                  <FontAwesomeIcon icon={faCog} style={{ color: "#666" }} />
-                }
-                style={{
-                  margin: "4px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "staff-management"
-                      ? "#E3F2FD"
-                      : "transparent",
-                  color:
-                    selectedKey === "staff-management" ? "#1976D2" : "#666",
-                  fontWeight:
-                    selectedKey === "staff-management" ? "500" : "normal",
-                }}
-              >
-                <Link to="/doctor/doctorPages/staffManagement">
-                  Staff Management
-                </Link>
-              </Menu.Item>
-
-              <Menu.Item
-                key="availability"
-                icon={
-                  <FontAwesomeIcon
-                    icon={faCalendarAlt}
-                    style={{ color: "#666" }}
-                  />
-                }
-                style={{
-                  margin: "4px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "availability" ? "#E3F2FD" : "transparent",
-                  color: selectedKey === "availability" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "availability" ? "500" : "normal",
-                }}
-              >
-                <Link to="/doctor/doctorPages/Availability">Availability</Link>
-              </Menu.Item>
-
-              <Menu.Item
-                key="accounts"
-                icon={
-                  <FontAwesomeIcon
-                    icon={faFileInvoice}
-                    style={{ color: "#666" }}
-                  />
-                }
-                style={{
-                  margin: "4px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "accounts" ? "#E3F2FD" : "transparent",
-                  color: selectedKey === "accounts" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "accounts" ? "500" : "normal",
-                }}
-              >
-                <Link to="/doctor/doctorPages/Accounts">Accounts</Link>
-              </Menu.Item>
-
-              <Menu.Item
-                key="invoices"
-                icon={
-                  <FontAwesomeIcon
-                    icon={faFileInvoice}
-                    style={{ color: "#666" }}
-                  />
-                }
-                style={{
-                  margin: "4px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "invoices" ? "#E3F2FD" : "transparent",
-                  color: selectedKey === "invoices" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "invoices" ? "500" : "normal",
-                }}
-              >
-                <Link to="/doctor/doctorPages/Invoices">Invoices</Link>
-              </Menu.Item>
-
-              <Menu.Item
-                key="messages"
-                icon={
-                  <FontAwesomeIcon
-                    icon={faEnvelope}
-                    style={{ color: "#666" }}
-                  />
-                }
-                style={{
-                  margin: "4px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "messages" ? "#E3F2FD" : "transparent",
-                  color: selectedKey === "messages" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "messages" ? "500" : "normal",
-                }}
-              >
-                <Link to="/doctor/doctorPages/Messages">Messages</Link>
-              </Menu.Item>
-
-              <Menu.Item
-                key="logout"
-                icon={
-                  <FontAwesomeIcon
-                    icon={faSignOutAlt}
-                    style={{ color: "#666" }}
-                  />
-                }
-                style={{
-                  margin: "4px 16px",
-                  borderRadius: "8px",
-                  background:
-                    selectedKey === "logout" ? "#E3F2FD" : "transparent",
-                  color: selectedKey === "logout" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "logout" ? "500" : "normal",
-                }}
-              >
-                <Link to="/logout">Logout</Link>
-              </Menu.Item>
+              {menuItems.map((item) => (
+                <Menu.Item key={item.key} icon={item.icon}>
+                  {item.label}
+                </Menu.Item>
+              ))}
             </Menu>
           </motion.div>
         </Sider>
