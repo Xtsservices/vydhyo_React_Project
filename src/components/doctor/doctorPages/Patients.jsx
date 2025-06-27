@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Table, Input, Select, Tag, Row, Col, Typography ,Grid} from "antd";
+import { Table, Input, Select, Tag, Row, Col, Typography, Grid } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -85,7 +85,9 @@ const Patients = () => {
     if (value === "all") {
       setFilteredPatients(patients);
     } else {
-      setFilteredPatients(patients.filter((patient) => patient.status === value));
+      setFilteredPatients(
+        patients.filter((patient) => patient.status === value)
+      );
     }
   };
 

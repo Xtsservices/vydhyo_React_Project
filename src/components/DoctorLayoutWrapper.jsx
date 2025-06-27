@@ -13,7 +13,7 @@ import {
   faEnvelope,
   faSignOutAlt,
   faUser,
-  faWalking
+  faWalking,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, Outlet } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -91,32 +91,38 @@ const DoctorLayoutWrapper = () => {
             transition={{ duration: 0.3 }}
           >
             {/* Doctor Profile Section */}
-            <div style={{
-              background: "linear-gradient(135deg, #4FC3F7, #29B6F6)",
-              padding: "24px 16px",
-              textAlign: "center",
-              color: "white"
-            }}>
-              <Avatar 
-                size={60} 
+            <div
+              style={{
+                background: "linear-gradient(135deg, #4FC3F7, #29B6F6)",
+                padding: "24px 16px",
+                textAlign: "center",
+                color: "white",
+              }}
+            >
+              <Avatar
+                size={60}
                 icon={<FontAwesomeIcon icon={faUser} />}
-                style={{ 
+                style={{
                   backgroundColor: "rgba(255,255,255,0.2)",
-                  marginBottom: 12
+                  marginBottom: 12,
                 }}
               />
-              <div style={{ fontSize: "16px", fontWeight: "600", marginBottom: 4 }}>
+              <div
+                style={{ fontSize: "16px", fontWeight: "600", marginBottom: 4 }}
+              >
                 Dr Pushpa Sahitya
               </div>
-              <div style={{
-                background: "rgba(255,255,255,0.9)",
-                color: "#1976D2",
-                padding: "4px 12px",
-                borderRadius: "12px",
-                fontSize: "12px",
-                fontWeight: "500",
-                display: "inline-block"
-              }}>
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.9)",
+                  color: "#1976D2",
+                  padding: "4px 12px",
+                  borderRadius: "12px",
+                  fontSize: "12px",
+                  fontWeight: "500",
+                  display: "inline-block",
+                }}
+              >
                 Neurology
               </div>
             </div>
@@ -126,35 +132,47 @@ const DoctorLayoutWrapper = () => {
               mode="inline"
               selectedKeys={[selectedKey]} // Dynamically set selected key
               onClick={handleMenuClick} // Handle menu item click
-              style={{ 
+              style={{
                 border: "none",
-                background: "#F5F5F5"
+                background: "#F5F5F5",
               }}
             >
               <Menu.Item
                 key="dashboard"
-                icon={<FontAwesomeIcon icon={faTachometerAlt} style={{ color: "#1976D2" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon
+                    icon={faTachometerAlt}
+                    style={{ color: "#1976D2" }}
+                  />
+                }
+                style={{
                   margin: "8px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "dashboard" ? "#E3F2FD" : "transparent",
+                  background:
+                    selectedKey === "dashboard" ? "#E3F2FD" : "transparent",
                   border: "none",
                   color: selectedKey === "dashboard" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "dashboard" ? "500" : "normal"
+                  fontWeight: selectedKey === "dashboard" ? "500" : "normal",
                 }}
               >
                 <Link to="/doctor/Dashboard">Dashboard</Link>
               </Menu.Item>
-              
+
               <Menu.Item
                 key="appointments"
-                icon={<FontAwesomeIcon icon={faCalendarCheck} style={{ color: "#666" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon
+                    icon={faCalendarCheck}
+                    style={{ color: "#666" }}
+                  />
+                }
+                style={{
                   margin: "4px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "appointments" ? "#E3F2FD" : "transparent",
+                  background:
+                    selectedKey === "appointments" ? "#E3F2FD" : "transparent",
                   color: selectedKey === "appointments" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "appointments" ? "500" : "normal"
+                  fontWeight: selectedKey === "appointments" ? "500" : "normal",
                 }}
               >
                 <Link to="/doctor/doctorPages/Appointments">Appointments</Link>
@@ -162,13 +180,16 @@ const DoctorLayoutWrapper = () => {
 
               <Menu.Item
                 key="my-patients"
-                icon={<FontAwesomeIcon icon={faUsers} style={{ color: "#666" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon icon={faUsers} style={{ color: "#666" }} />
+                }
+                style={{
                   margin: "4px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "my-patients" ? "#E3F2FD" : "transparent",
+                  background:
+                    selectedKey === "my-patients" ? "#E3F2FD" : "transparent",
                   color: selectedKey === "my-patients" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "my-patients" ? "500" : "normal"
+                  fontWeight: selectedKey === "my-patients" ? "500" : "normal",
                 }}
               >
                 <Link to="/doctor/doctorPages/Patients">My Patients</Link>
@@ -176,13 +197,19 @@ const DoctorLayoutWrapper = () => {
 
               <Menu.Item
                 key="walkin-patients"
-                icon={<FontAwesomeIcon icon={faWalking} style={{ color: "#666" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon icon={faWalking} style={{ color: "#666" }} />
+                }
+                style={{
                   margin: "4px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "walkin-patients" ? "#E3F2FD" : "transparent",
+                  background:
+                    selectedKey === "walkin-patients"
+                      ? "#E3F2FD"
+                      : "transparent",
                   color: selectedKey === "walkin-patients" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "walkin-patients" ? "500" : "normal"
+                  fontWeight:
+                    selectedKey === "walkin-patients" ? "500" : "normal",
                 }}
               >
                 <Link to="/doctor/doctorPages/Walkin">Walkin Patients</Link>
@@ -190,27 +217,42 @@ const DoctorLayoutWrapper = () => {
 
               <Menu.Item
                 key="staff-management"
-                icon={<FontAwesomeIcon icon={faCog} style={{ color: "#666" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon icon={faCog} style={{ color: "#666" }} />
+                }
+                style={{
                   margin: "4px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "staff-management" ? "#E3F2FD" : "transparent",
-                  color: selectedKey === "staff-management" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "staff-management" ? "500" : "normal"
+                  background:
+                    selectedKey === "staff-management"
+                      ? "#E3F2FD"
+                      : "transparent",
+                  color:
+                    selectedKey === "staff-management" ? "#1976D2" : "#666",
+                  fontWeight:
+                    selectedKey === "staff-management" ? "500" : "normal",
                 }}
               >
-                <Link to="/doctor/doctorPages/staffManagement">Staff Management</Link>
+                <Link to="/doctor/doctorPages/staffManagement">
+                  Staff Management
+                </Link>
               </Menu.Item>
 
               <Menu.Item
                 key="availability"
-                icon={<FontAwesomeIcon icon={faCalendarAlt} style={{ color: "#666" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon
+                    icon={faCalendarAlt}
+                    style={{ color: "#666" }}
+                  />
+                }
+                style={{
                   margin: "4px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "availability" ? "#E3F2FD" : "transparent",
+                  background:
+                    selectedKey === "availability" ? "#E3F2FD" : "transparent",
                   color: selectedKey === "availability" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "availability" ? "500" : "normal"
+                  fontWeight: selectedKey === "availability" ? "500" : "normal",
                 }}
               >
                 <Link to="/doctor/doctorPages/Availability">Availability</Link>
@@ -218,13 +260,19 @@ const DoctorLayoutWrapper = () => {
 
               <Menu.Item
                 key="accounts"
-                icon={<FontAwesomeIcon icon={faFileInvoice} style={{ color: "#666" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon
+                    icon={faFileInvoice}
+                    style={{ color: "#666" }}
+                  />
+                }
+                style={{
                   margin: "4px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "accounts" ? "#E3F2FD" : "transparent",
+                  background:
+                    selectedKey === "accounts" ? "#E3F2FD" : "transparent",
                   color: selectedKey === "accounts" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "accounts" ? "500" : "normal"
+                  fontWeight: selectedKey === "accounts" ? "500" : "normal",
                 }}
               >
                 <Link to="/doctor/doctorPages/Accounts">Accounts</Link>
@@ -232,13 +280,19 @@ const DoctorLayoutWrapper = () => {
 
               <Menu.Item
                 key="invoices"
-                icon={<FontAwesomeIcon icon={faFileInvoice} style={{ color: "#666" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon
+                    icon={faFileInvoice}
+                    style={{ color: "#666" }}
+                  />
+                }
+                style={{
                   margin: "4px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "invoices" ? "#E3F2FD" : "transparent",
+                  background:
+                    selectedKey === "invoices" ? "#E3F2FD" : "transparent",
                   color: selectedKey === "invoices" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "invoices" ? "500" : "normal"
+                  fontWeight: selectedKey === "invoices" ? "500" : "normal",
                 }}
               >
                 <Link to="/doctor/doctorPages/Invoices">Invoices</Link>
@@ -246,13 +300,19 @@ const DoctorLayoutWrapper = () => {
 
               <Menu.Item
                 key="messages"
-                icon={<FontAwesomeIcon icon={faEnvelope} style={{ color: "#666" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon
+                    icon={faEnvelope}
+                    style={{ color: "#666" }}
+                  />
+                }
+                style={{
                   margin: "4px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "messages" ? "#E3F2FD" : "transparent",
+                  background:
+                    selectedKey === "messages" ? "#E3F2FD" : "transparent",
                   color: selectedKey === "messages" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "messages" ? "500" : "normal"
+                  fontWeight: selectedKey === "messages" ? "500" : "normal",
                 }}
               >
                 <Link to="/doctor/doctorPages/Messages">Messages</Link>
@@ -260,13 +320,19 @@ const DoctorLayoutWrapper = () => {
 
               <Menu.Item
                 key="logout"
-                icon={<FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#666" }} />}
-                style={{ 
+                icon={
+                  <FontAwesomeIcon
+                    icon={faSignOutAlt}
+                    style={{ color: "#666" }}
+                  />
+                }
+                style={{
                   margin: "4px 16px",
                   borderRadius: "8px",
-                  background: selectedKey === "logout" ? "#E3F2FD" : "transparent",
+                  background:
+                    selectedKey === "logout" ? "#E3F2FD" : "transparent",
                   color: selectedKey === "logout" ? "#1976D2" : "#666",
-                  fontWeight: selectedKey === "logout" ? "500" : "normal"
+                  fontWeight: selectedKey === "logout" ? "500" : "normal",
                 }}
               >
                 <Link to="/logout">Logout</Link>

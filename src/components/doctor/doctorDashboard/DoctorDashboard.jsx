@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, useNavigate } from "react-router-dom";
 import {
   Layout,
   Card,
@@ -17,7 +17,7 @@ import {
   Space,
   Pagination,
   Grid,
-} from 'antd';
+} from "antd";
 import {
   UserOutlined,
   CalendarOutlined,
@@ -29,20 +29,20 @@ import {
   PhoneOutlined,
   MailOutlined,
   MoreOutlined,
-} from '@ant-design/icons';
-import axios from 'axios';
+} from "@ant-design/icons";
+import axios from "axios";
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { useBreakpoint } = Grid;
 const DoctorDashboard = () => {
-  const [selectedMenuItem, setSelectedMenuItem] = useState('dashboard');
+  const [selectedMenuItem, setSelectedMenuItem] = useState("dashboard");
   const [userData, setUserData] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     success: true,
     totalAmount: { today: 0, week: 0, month: 0, total: 0 },
-    appointmentTypes: { 'In-Person': 0, Video: 0, 'home-visit': 0 },
+    appointmentTypes: { "In-Person": 0, Video: 0, "home-visit": 0 },
     appointmentCounts: {
       today: 0,
       upcoming: 0,
@@ -65,95 +65,170 @@ const DoctorDashboard = () => {
   const appointments = [
     {
       id: 1,
-      name: 'Adrian Marshall',
-      time: '11 Nov 2024 10:45 AM',
-      type: 'General Visit',
-      status: 'confirmed',
-      avatar: '👨‍💼',
+      name: "Adrian Marshall",
+      time: "11 Nov 2024 10:45 AM",
+      type: "General Visit",
+      status: "confirmed",
+      avatar: "👨‍💼",
     },
     {
       id: 2,
-      name: 'Kelly Stevens',
-      time: '10 Nov 2024 11:30 AM',
-      type: 'Routine Checkup',
-      status: 'confirmed',
-      avatar: '👩‍💼',
+      name: "Kelly Stevens",
+      time: "10 Nov 2024 11:30 AM",
+      type: "Routine Checkup",
+      status: "confirmed",
+      avatar: "👩‍💼",
     },
     {
       id: 3,
-      name: 'Samuel Anderson',
-      time: '09 Nov 2024 02:00 PM',
-      type: 'Follow-up',
-      status: 'pending',
-      avatar: '👨‍💻',
+      name: "Samuel Anderson",
+      time: "09 Nov 2024 02:00 PM",
+      type: "Follow-up",
+      status: "pending",
+      avatar: "👨‍💻",
     },
     {
       id: 4,
-      name: 'Catherine Griffin',
-      time: '07 Nov 2024 04:00 PM',
-      type: 'Consultation',
-      status: 'completed',
-      avatar: '👩‍🦳',
+      name: "Catherine Griffin",
+      time: "07 Nov 2024 04:00 PM",
+      type: "Consultation",
+      status: "completed",
+      avatar: "👩‍🦳",
     },
     {
       id: 5,
-      name: 'Robert Hutchinson',
-      time: '28 Oct 2024 05:30 PM',
-      type: 'Surgery',
-      status: 'completed',
-      avatar: '👨‍🦲',
+      name: "Robert Hutchinson",
+      time: "28 Oct 2024 05:30 PM",
+      type: "Surgery",
+      status: "completed",
+      avatar: "👨‍🦲",
     },
   ];
 
   const recentPatients = [
-    { name: 'Adrian Marshall', lastVisit: 'Mar 2024', id: 'P0001' },
-    { name: 'Kelly Stevens', lastVisit: 'Mar 2024', id: 'P0002' },
-    { name: 'Samuel Anderson', lastVisit: 'Mar 2024', id: 'P0003' },
-    { name: 'Catherine Griffin', lastVisit: 'Mar 2024', id: 'P0004' },
-    { name: 'Robert Hutchinson', lastVisit: 'Feb 2024', id: 'P0005' },
+    { name: "Adrian Marshall", lastVisit: "Mar 2024", id: "P0001" },
+    { name: "Kelly Stevens", lastVisit: "Mar 2024", id: "P0002" },
+    { name: "Samuel Anderson", lastVisit: "Mar 2024", id: "P0003" },
+    { name: "Catherine Griffin", lastVisit: "Mar 2024", id: "P0004" },
+    { name: "Robert Hutchinson", lastVisit: "Feb 2024", id: "P0005" },
   ];
 
   const recentInvoices = [
-    { patient: 'Adrian', amount: '$450', date: '11 Nov 2024', status: 'paid' },
-    { patient: 'Kelly', amount: '$500', date: '10 Nov 2024', status: 'pending' },
-    { patient: 'Samuel', amount: '$320', date: '09 Nov 2024', status: 'paid' },
-    { patient: 'Catherine', amount: '$245', date: '01 Nov 2024', status: 'overdue' },
-    { patient: 'Robert', amount: '$380', date: '28 Oct 2024', status: 'paid' },
+    { patient: "Adrian", amount: "$450", date: "11 Nov 2024", status: "paid" },
+    {
+      patient: "Kelly",
+      amount: "$500",
+      date: "10 Nov 2024",
+      status: "pending",
+    },
+    { patient: "Samuel", amount: "$320", date: "09 Nov 2024", status: "paid" },
+    {
+      patient: "Catherine",
+      amount: "$245",
+      date: "01 Nov 2024",
+      status: "overdue",
+    },
+    { patient: "Robert", amount: "$380", date: "28 Oct 2024", status: "paid" },
   ];
 
   const notifications = [
-    { type: 'success', title: 'Booking Confirmed', message: 'on 21 Mar 2024 10:30 AM', time: '1 min ago' },
-    { type: 'info', title: 'You have a New Review', message: 'for your Appointment', time: '2 Days ago' },
-    { type: 'warning', title: 'You have Appointment', message: 'with Ahmed by 01:20 PM', time: '12:56 PM' },
-    { type: 'error', title: 'You have missed $200', message: 'for an Appointment by 01:20 PM', time: '2 Days ago' },
+    {
+      type: "success",
+      title: "Booking Confirmed",
+      message: "on 21 Mar 2024 10:30 AM",
+      time: "1 min ago",
+    },
+    {
+      type: "info",
+      title: "You have a New Review",
+      message: "for your Appointment",
+      time: "2 Days ago",
+    },
+    {
+      type: "warning",
+      title: "You have Appointment",
+      message: "with Ahmed by 01:20 PM",
+      time: "12:56 PM",
+    },
+    {
+      type: "error",
+      title: "You have missed $200",
+      message: "for an Appointment by 01:20 PM",
+      time: "2 Days ago",
+    },
   ];
 
   const clinics = [
     {
-      name: 'Sofia Clinic',
-      price: '$900',
-      hours: '07:00 AM - 09:00 PM',
-      days: 'Tue: 07:00 AM - 09:00 PM, Wed: 07:00 AM - 09:00 PM',
+      name: "Sofia Clinic",
+      price: "$900",
+      hours: "07:00 AM - 09:00 PM",
+      days: "Tue: 07:00 AM - 09:00 PM, Wed: 07:00 AM - 09:00 PM",
     },
     {
-      name: 'The Family Dentistry Clinic',
-      price: '$600',
-      hours: '07:00 AM - 09:00 PM',
-      days: 'Sat: 07:00 AM - 09:00 PM, Tue: 07:00 AM - 09:00 PM',
+      name: "The Family Dentistry Clinic",
+      price: "$600",
+      hours: "07:00 AM - 09:00 PM",
+      days: "Sat: 07:00 AM - 09:00 PM, Tue: 07:00 AM - 09:00 PM",
     },
   ];
 
   const menuItemsData = [
-    { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard', path: '/doctor/dashboard' },
-    { key: 'appointments', icon: <CalendarOutlined />, label: 'Appointments', path: '/doctor/appointment' },
-    { key: 'patients', icon: <TeamOutlined />, label: 'My Patients', path: '/doctor/patients' },
-    { key: 'reviews', icon: <UserOutlined />, label: 'Walkin Patients', path: '/doctor/walkin' },
-    { key: 'services', icon: <SettingOutlined />, label: 'Staff Management', path: '/doctor/staffManagement' },
-    { key: 'availability', icon: <DashboardOutlined />, label: 'Availability', path: '/doctor/Availability' },
-    { key: 'accounts', icon: <FileTextOutlined />, label: 'Accounts', path: '/doctor/accounts' },
-    { key: 'invoices', icon: <FileTextOutlined />, label: 'Invoices', path: '/doctor/invoices' },
-    { key: 'messages', icon: <MailOutlined />, label: 'Messages', path: '/doctor/messages' },
-    { key: 'logout', icon: <UserOutlined />, label: 'Logout', path: '/logout' },
+    {
+      key: "dashboard",
+      icon: <DashboardOutlined />,
+      label: "Dashboard",
+      path: "/doctor/dashboard",
+    },
+    {
+      key: "appointments",
+      icon: <CalendarOutlined />,
+      label: "Appointments",
+      path: "/doctor/appointment",
+    },
+    {
+      key: "patients",
+      icon: <TeamOutlined />,
+      label: "My Patients",
+      path: "/doctor/patients",
+    },
+    {
+      key: "reviews",
+      icon: <UserOutlined />,
+      label: "Walkin Patients",
+      path: "/doctor/walkin",
+    },
+    {
+      key: "services",
+      icon: <SettingOutlined />,
+      label: "Staff Management",
+      path: "/doctor/staffManagement",
+    },
+    {
+      key: "availability",
+      icon: <DashboardOutlined />,
+      label: "Availability",
+      path: "/doctor/Availability",
+    },
+    {
+      key: "accounts",
+      icon: <FileTextOutlined />,
+      label: "Accounts",
+      path: "/doctor/accounts",
+    },
+    {
+      key: "invoices",
+      icon: <FileTextOutlined />,
+      label: "Invoices",
+      path: "/doctor/invoices",
+    },
+    {
+      key: "messages",
+      icon: <MailOutlined />,
+      label: "Messages",
+      path: "/doctor/messages",
+    },
+    { key: "logout", icon: <UserOutlined />, label: "Logout", path: "/logout" },
   ];
 
   const menuItems = menuItemsData.map((item) => ({
@@ -165,25 +240,33 @@ const DoctorDashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'confirmed': return 'green';
-      case 'pending': return 'orange';
-      case 'completed': return 'blue';
-      default: return 'default';
+      case "confirmed":
+        return "green";
+      case "pending":
+        return "orange";
+      case "completed":
+        return "blue";
+      default:
+        return "default";
     }
   };
 
   const getInvoiceStatusColor = (status) => {
     switch (status) {
-      case 'paid': return 'green';
-      case 'pending': return 'orange';
-      case 'overdue': return 'red';
-      default: return 'default';
+      case "paid":
+        return "green";
+      case "pending":
+        return "orange";
+      case "overdue":
+        return "red";
+      default:
+        return "default";
     }
   };
 
-  const API_BASE_URL = 'http://192.168.1.42:3000';
+  const API_BASE_URL = "http://192.168.1.42:3000";
   const getAuthToken = () => {
-    return localStorage.getItem('accessToken') || 'your-token-here';
+    return localStorage.getItem("accessToken") || "your-token-here";
   };
 
   const getCurrentUserData = async () => {
@@ -192,27 +275,30 @@ const DoctorDashboard = () => {
       const response = await axios.get(`${API_BASE_URL}/users/getUser`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       setUserData(response.data?.data);
     } catch (error) {
-      console.error('Failed to fetch user data:', error);
+      console.error("Failed to fetch user data:", error);
     }
   };
 
   const getDashboardData = async () => {
     try {
       const token = getAuthToken();
-      const response = await axios.get(`${API_BASE_URL}/doctorDashboard/dashboard`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.get(
+        `${API_BASE_URL}/doctorDashboard/dashboard`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
       setDashboardData(response.data);
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+      console.error("Failed to fetch dashboard data:", error);
     }
   };
 
@@ -221,35 +307,67 @@ const DoctorDashboard = () => {
     getDashboardData();
   }, []);
 
-  const paginatedAppointments = appointments.slice((appointmentsPage - 1) * pageSize, appointmentsPage * pageSize);
-  const paginatedPatients = recentPatients.slice((patientsPage - 1) * pageSize, patientsPage * pageSize);
-  const paginatedInvoices = recentInvoices.slice((invoicesPage - 1) * pageSize, invoicesPage * pageSize);
-  const paginatedNotifications = notifications.slice((notificationsPage - 1) * pageSize, notificationsPage * pageSize);
+  const paginatedAppointments = appointments.slice(
+    (appointmentsPage - 1) * pageSize,
+    appointmentsPage * pageSize
+  );
+  const paginatedPatients = recentPatients.slice(
+    (patientsPage - 1) * pageSize,
+    patientsPage * pageSize
+  );
+  const paginatedInvoices = recentInvoices.slice(
+    (invoicesPage - 1) * pageSize,
+    invoicesPage * pageSize
+  );
+  const paginatedNotifications = notifications.slice(
+    (notificationsPage - 1) * pageSize,
+    notificationsPage * pageSize
+  );
 
   return (
-    <Layout style={{ minHeight: '100vh', marginTop: '4rem' }}>
+    <Layout style={{ minHeight: "100vh", marginTop: "4rem" }}>
       <Layout>
         <Header
           style={{
-            background: '#fff',
-            padding: '0 20px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            background: "#fff",
+            padding: "0 20px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
           <Title level={4} style={{ margin: 0 }}>
             Dashboard
           </Title>
         </Header>
-        <Content style={{ margin: '20px', background: '#f0f2f5' }}>
+        <Content style={{ margin: "20px", background: "#f0f2f5" }}>
           <Row gutter={[16, 16]} justify="space-between">
             {[
-              { title: 'Today Appointments', value: dashboardData.appointmentCounts.today, color: '#1890ff' },
-              { title: 'Upcoming Appointments', value: dashboardData.appointmentCounts.upcoming, color: '#fa8c16' },
-              { title: 'Completed Appointments', value: dashboardData.appointmentCounts.completed, color: '#52c41a' },
-              { title: 'Rescheduled Appointments', value: dashboardData.appointmentCounts.rescheduled, color: '#faad14' },
-              { title: 'Cancelled Appointments', value: dashboardData.appointmentCounts.cancelled, color: '#f5222d' },
+              {
+                title: "Today Appointments",
+                value: dashboardData.appointmentCounts.today,
+                color: "#1890ff",
+              },
+              {
+                title: "Upcoming Appointments",
+                value: dashboardData.appointmentCounts.upcoming,
+                color: "#fa8c16",
+              },
+              {
+                title: "Completed Appointments",
+                value: dashboardData.appointmentCounts.completed,
+                color: "#52c41a",
+              },
+              {
+                title: "Rescheduled Appointments",
+                value: dashboardData.appointmentCounts.rescheduled,
+                color: "#faad14",
+              },
+              {
+                title: "Cancelled Appointments",
+                value: dashboardData.appointmentCounts.cancelled,
+                color: "#f5222d",
+              },
             ].map((item) => (
               <Col xs={24} sm={12} md={8} lg={4} key={item.title}>
                 <Card hoverable>
@@ -264,12 +382,32 @@ const DoctorDashboard = () => {
             ))}
           </Row>
 
-          <Row gutter={[16, 16]} style={{ marginTop: '16px' }} justify="space-between">
+          <Row
+            gutter={[16, 16]}
+            style={{ marginTop: "16px" }}
+            justify="space-between"
+          >
             {[
-              { title: 'Today Revenue', value: dashboardData.totalAmount.today, color: '#1890ff' },
-              { title: 'This Week', value: dashboardData.totalAmount.week, color: '#52c41a' },
-              { title: 'This Month', value: dashboardData.totalAmount.month, color: '#fa8c16' },
-              { title: 'Total Revenue', value: dashboardData.totalAmount.total, color: '#13c2c2' },
+              {
+                title: "Today Revenue",
+                value: dashboardData.totalAmount.today,
+                color: "#1890ff",
+              },
+              {
+                title: "This Week",
+                value: dashboardData.totalAmount.week,
+                color: "#52c41a",
+              },
+              {
+                title: "This Month",
+                value: dashboardData.totalAmount.month,
+                color: "#fa8c16",
+              },
+              {
+                title: "Total Revenue",
+                value: dashboardData.totalAmount.total,
+                color: "#13c2c2",
+              },
             ].map((item) => (
               <Col xs={24} sm={12} md={6} key={item.title}>
                 <Card hoverable>
@@ -284,11 +422,30 @@ const DoctorDashboard = () => {
             ))}
           </Row>
 
-          <Row gutter={[16, 16]} style={{ marginTop: '16px' }} justify="space-between">
+          <Row
+            gutter={[16, 16]}
+            style={{ marginTop: "16px" }}
+            justify="space-between"
+          >
             {[
-              { title: 'Total Patients', value: dashboardData.uniquePatients.total, color: '#13c2c2', icon: <UserOutlined /> },
-              { title: 'This Week', value: dashboardData.uniquePatients.week, color: '#52c41a', icon: <UserOutlined /> },
-              { title: 'This Month', value: dashboardData.uniquePatients.month, color: '#fa8c16', icon: <UserOutlined /> },
+              {
+                title: "Total Patients",
+                value: dashboardData.uniquePatients.total,
+                color: "#13c2c2",
+                icon: <UserOutlined />,
+              },
+              {
+                title: "This Week",
+                value: dashboardData.uniquePatients.week,
+                color: "#52c41a",
+                icon: <UserOutlined />,
+              },
+              {
+                title: "This Month",
+                value: dashboardData.uniquePatients.month,
+                color: "#fa8c16",
+                icon: <UserOutlined />,
+              },
             ].map((item) => (
               <Col xs={24} sm={12} md={8} key={item.title}>
                 <Card hoverable>
@@ -303,11 +460,30 @@ const DoctorDashboard = () => {
             ))}
           </Row>
 
-          <Row gutter={[16, 16]} style={{ marginTop: '16px' }} justify="space-between">
+          <Row
+            gutter={[16, 16]}
+            style={{ marginTop: "16px" }}
+            justify="space-between"
+          >
             {[
-              { title: 'In-Person', value: dashboardData.appointmentTypes['In-Person'], color: '#1890ff', icon: <UserOutlined /> },
-              { title: 'Video', value: dashboardData.appointmentTypes.Video, color: '#52c41a', icon: <VideoCameraOutlined /> },
-              { title: 'Home Visit', value: dashboardData.appointmentTypes['home-visit'], color: '#fa8c16', icon: <TeamOutlined /> },
+              {
+                title: "In-Person",
+                value: dashboardData.appointmentTypes["In-Person"],
+                color: "#1890ff",
+                icon: <UserOutlined />,
+              },
+              {
+                title: "Video",
+                value: dashboardData.appointmentTypes.Video,
+                color: "#52c41a",
+                icon: <VideoCameraOutlined />,
+              },
+              {
+                title: "Home Visit",
+                value: dashboardData.appointmentTypes["home-visit"],
+                color: "#fa8c16",
+                icon: <TeamOutlined />,
+              },
             ].map((item) => (
               <Col xs={24} sm={12} md={8} key={item.title}>
                 <Card hoverable>
@@ -322,94 +498,99 @@ const DoctorDashboard = () => {
             ))}
           </Row>
 
-          <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+          <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
             <Col span={24}>
               <Card
                 title="Weekly Overview"
                 extra={<Text>Mar 15 - Mar 21</Text>}
-                style={{ padding: '16px' }}
+                style={{ padding: "16px" }}
                 hoverable
               >
-                <div style={{ position: 'relative', height: '250px' }}>
+                <div style={{ position: "relative", height: "250px" }}>
                   <div
                     style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-end',
-                      height: '200px',
-                      padding: '16px',
-                      background: '#f5f7fa',
-                      borderRadius: '8px',
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
+                      height: "200px",
+                      padding: "16px",
+                      background: "#f5f7fa",
+                      borderRadius: "8px",
                     }}
                   >
                     {[
-                      { day: 'M', appointments: 60, patients: 40 },
-                      { day: 'T', appointments: 50, patients: 30 },
-                      { day: 'W', appointments: 80, patients: 60 },
-                      { day: 'T', appointments: 30, patients: 20 },
-                      { day: 'F', appointments: 70, patients: 50 },
-                      { day: 'S', appointments: 20, patients: 15 },
-                      { day: 'S', appointments: 50, patients: 35 },
+                      { day: "M", appointments: 60, patients: 40 },
+                      { day: "T", appointments: 50, patients: 30 },
+                      { day: "W", appointments: 80, patients: 60 },
+                      { day: "T", appointments: 30, patients: 20 },
+                      { day: "F", appointments: 70, patients: 50 },
+                      { day: "S", appointments: 20, patients: 15 },
+                      { day: "S", appointments: 50, patients: 35 },
                     ].map((item, index) => (
-                      <div key={item.day} style={{ textAlign: 'center', flex: 1 }}>
+                      <div
+                        key={item.day}
+                        style={{ textAlign: "center", flex: 1 }}
+                      >
                         <div
                           style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'flex-end',
-                            height: '100%',
-                            gap: '4px',
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "flex-end",
+                            height: "100%",
+                            gap: "4px",
                           }}
                         >
                           <div
                             style={{
-                              width: '20px',
+                              width: "20px",
                               height: `${item.appointments}px`,
-                              background: '#1890ff',
-                              borderRadius: '4px 4px 0 0',
-                              transition: 'height 0.3s ease',
+                              background: "#1890ff",
+                              borderRadius: "4px 4px 0 0",
+                              transition: "height 0.3s ease",
                             }}
                             title={`Appointments: ${item.appointments}`}
                           ></div>
                           <div
                             style={{
-                              width: '20px',
+                              width: "20px",
                               height: `${item.patients}px`,
-                              background: '#faad14',
-                              borderRadius: '4px 4px 0 0',
-                              transition: 'height 0.3s ease',
+                              background: "#faad14",
+                              borderRadius: "4px 4px 0 0",
+                              transition: "height 0.3s ease",
                             }}
                             title={`Patients: ${item.patients}`}
                           ></div>
                         </div>
-                        <Text style={{ marginTop: '8px', fontSize: '12px' }}>{item.day}</Text>
+                        <Text style={{ marginTop: "8px", fontSize: "12px" }}>
+                          {item.day}
+                        </Text>
                       </div>
                     ))}
                   </div>
                   <div
                     style={{
-                      position: 'absolute',
-                      bottom: '40px',
-                      left: '16px',
-                      right: '16px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '10px',
-                      color: '#888',
+                      position: "absolute",
+                      bottom: "40px",
+                      left: "16px",
+                      right: "16px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "10px",
+                      color: "#888",
                     }}
                   >
-                    {['0', '20', '40', '60', '80', '100'].map((label) => (
+                    {["0", "20", "40", "60", "80", "100"].map((label) => (
                       <Text key={label}>{label}</Text>
                     ))}
                   </div>
                   <div
                     style={{
-                      position: 'absolute',
-                      top: '16px',
-                      left: '-40px',
-                      transform: 'rotate(-90deg)',
-                      fontSize: '12px',
-                      color: '#888',
+                      position: "absolute",
+                      top: "16px",
+                      left: "-40px",
+                      transform: "rotate(-90deg)",
+                      fontSize: "12px",
+                      color: "#888",
                     }}
                   >
                     Count
@@ -417,32 +598,32 @@ const DoctorDashboard = () => {
                 </div>
                 <div
                   style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: '24px',
-                    marginTop: '16px',
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "24px",
+                    marginTop: "16px",
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <div style={{ display: "flex", alignItems: "center" }}>
                     <div
                       style={{
-                        width: '12px',
-                        height: '12px',
-                        background: '#1890ff',
-                        marginRight: '8px',
-                        borderRadius: '2px',
+                        width: "12px",
+                        height: "12px",
+                        background: "#1890ff",
+                        marginRight: "8px",
+                        borderRadius: "2px",
                       }}
                     ></div>
                     <Text>Appointments</Text>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <div style={{ display: "flex", alignItems: "center" }}>
                     <div
                       style={{
-                        width: '12px',
-                        height: '12px',
-                        background: '#faad14',
-                        marginRight: '8px',
-                        borderRadius: '2px',
+                        width: "12px",
+                        height: "12px",
+                        background: "#faad14",
+                        marginRight: "8px",
+                        borderRadius: "2px",
                       }}
                     ></div>
                     <Text>Patients</Text>
@@ -452,11 +633,28 @@ const DoctorDashboard = () => {
             </Col>
           </Row>
 
-          <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+          <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
             <Col span={24}>
               <Card title="Revenue Trend" hoverable>
-                <div style={{ width: '100%', height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="100%" height="260" viewBox="0 0 700 260" style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div
+                  style={{
+                    width: "100%",
+                    height: 300,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <svg
+                    width="100%"
+                    height="260"
+                    viewBox="0 0 700 260"
+                    style={{
+                      background: "#fff",
+                      borderRadius: 12,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                    }}
+                  >
                     {[0, 100, 200, 300, 400, 500].map((y, i) => (
                       <g key={i}>
                         <line
@@ -478,19 +676,21 @@ const DoctorDashboard = () => {
                         </text>
                       </g>
                     ))}
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d, i) => (
-                      <text
-                        key={d}
-                        x={80 + i * 90}
-                        y={240}
-                        fontSize="13"
-                        fill="#888"
-                        textAnchor="middle"
-                        fontWeight={500}
-                      >
-                        {d}
-                      </text>
-                    ))}
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                      (d, i) => (
+                        <text
+                          key={d}
+                          x={80 + i * 90}
+                          y={240}
+                          fontSize="13"
+                          fill="#888"
+                          textAnchor="middle"
+                          fontWeight={500}
+                        >
+                          {d}
+                        </text>
+                      )
+                    )}
                     <path
                       d="
                         M80,200
@@ -504,7 +704,7 @@ const DoctorDashboard = () => {
                       fill="none"
                       stroke="#1890ff"
                       strokeWidth="4"
-                      style={{ filter: 'drop-shadow(0 2px 6px #1890ff33)' }}
+                      style={{ filter: "drop-shadow(0 2px 6px #1890ff33)" }}
                     />
                     <path
                       d="
@@ -530,7 +730,14 @@ const DoctorDashboard = () => {
                       { x: 620, y: 60, value: 500 },
                     ].map((pt, i) => (
                       <g key={i}>
-                        <circle cx={pt.x} cy={pt.y} r={7} fill="#fff" stroke="#1890ff" strokeWidth={3} />
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={7}
+                          fill="#fff"
+                          stroke="#1890ff"
+                          strokeWidth={3}
+                        />
                         <circle cx={pt.x} cy={pt.y} r={3} fill="#1890ff" />
                         <text
                           x={pt.x}
@@ -546,16 +753,28 @@ const DoctorDashboard = () => {
                     ))}
                   </svg>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-                  <span style={{ color: '#888', fontSize: 12 }}>Data is for illustration only</span>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: 8,
+                  }}
+                >
+                  <span style={{ color: "#888", fontSize: 12 }}>
+                    Data is for illustration only
+                  </span>
                 </div>
               </Card>
             </Col>
           </Row>
 
-          <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+          <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
             <Col xs={24} md={12}>
-              <Card title="Appointments" extra={<Button type="link">View All</Button>} hoverable>
+              <Card
+                title="Appointments"
+                extra={<Button type="link">View All</Button>}
+                hoverable
+              >
                 <List
                   itemLayout="horizontal"
                   dataSource={paginatedAppointments}
@@ -570,9 +789,16 @@ const DoctorDashboard = () => {
                       <List.Item.Meta
                         avatar={<Avatar>{item.avatar}</Avatar>}
                         title={
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                          >
                             <Text strong>{item.name}</Text>
-                            <Tag color={getStatusColor(item.status)}>{item.status}</Tag>
+                            <Tag color={getStatusColor(item.status)}>
+                              {item.status}
+                            </Tag>
                           </div>
                         }
                         description={
@@ -591,19 +817,27 @@ const DoctorDashboard = () => {
                   pageSize={pageSize}
                   total={appointments.length}
                   onChange={(page) => setAppointmentsPage(page)}
-                  style={{ marginTop: '16px', textAlign: 'right' }}
+                  style={{ marginTop: "16px", textAlign: "right" }}
                 />
               </Card>
             </Col>
             <Col xs={24} md={12}>
-              <Card title="Recent Patients" extra={<Button type="link">View All</Button>} hoverable>
+              <Card
+                title="Recent Patients"
+                extra={<Button type="link">View All</Button>}
+                hoverable
+              >
                 <List
                   size="small"
                   dataSource={paginatedPatients}
                   renderItem={(item) => (
                     <List.Item>
                       <List.Item.Meta
-                        avatar={<Avatar style={{ background: '#87d068' }}>{item.name.charAt(0)}</Avatar>}
+                        avatar={
+                          <Avatar style={{ background: "#87d068" }}>
+                            {item.name.charAt(0)}
+                          </Avatar>
+                        }
                         title={item.name}
                         description={`Patient ID: ${item.id} | Last Appointment: ${item.lastVisit}`}
                       />
@@ -615,19 +849,28 @@ const DoctorDashboard = () => {
                   pageSize={pageSize}
                   total={recentPatients.length}
                   onChange={(page) => setPatientsPage(page)}
-                  style={{ marginTop: '16px', textAlign: 'right' }}
+                  style={{ marginTop: "16px", textAlign: "right" }}
                 />
               </Card>
             </Col>
             <Col xs={24} md={12}>
-              <Card title="Recent Invoices" extra={<Button type="link">View All</Button>} hoverable>
+              <Card
+                title="Recent Invoices"
+                extra={<Button type="link">View All</Button>}
+                hoverable
+              >
                 <List
                   size="small"
                   dataSource={paginatedInvoices}
                   renderItem={(item) => (
                     <List.Item>
-                      <List.Item.Meta title={item.patient} description={`${item.amount} • ${item.date}`} />
-                      <Tag color={getInvoiceStatusColor(item.status)}>{item.status}</Tag>
+                      <List.Item.Meta
+                        title={item.patient}
+                        description={`${item.amount} • ${item.date}`}
+                      />
+                      <Tag color={getInvoiceStatusColor(item.status)}>
+                        {item.status}
+                      </Tag>
                     </List.Item>
                   )}
                 />
@@ -636,12 +879,16 @@ const DoctorDashboard = () => {
                   pageSize={pageSize}
                   total={recentInvoices.length}
                   onChange={(page) => setInvoicesPage(page)}
-                  style={{ marginTop: '16px', textAlign: 'right' }}
+                  style={{ marginTop: "16px", textAlign: "right" }}
                 />
               </Card>
             </Col>
             <Col xs={24} md={12}>
-              <Card title="Notifications" extra={<Button type="link">View All</Button>} hoverable>
+              <Card
+                title="Notifications"
+                extra={<Button type="link">View All</Button>}
+                hoverable
+              >
                 <List
                   size="small"
                   dataSource={paginatedNotifications}
@@ -652,13 +899,13 @@ const DoctorDashboard = () => {
                           <Avatar
                             style={{
                               backgroundColor:
-                                item.type === 'success'
-                                  ? '#52c41a'
-                                  : item.type === 'info'
-                                  ? '#1890ff'
-                                  : item.type === 'warning'
-                                  ? '#faad14'
-                                  : '#f5222d',
+                                item.type === "success"
+                                  ? "#52c41a"
+                                  : item.type === "info"
+                                  ? "#1890ff"
+                                  : item.type === "warning"
+                                  ? "#faad14"
+                                  : "#f5222d",
                             }}
                           >
                             {item.title.charAt(0)}
@@ -675,24 +922,24 @@ const DoctorDashboard = () => {
                   pageSize={pageSize}
                   total={notifications.length}
                   onChange={(page) => setNotificationsPage(page)}
-                  style={{ marginTop: '16px', textAlign: 'right' }}
+                  style={{ marginTop: "16px", textAlign: "right" }}
                 />
               </Card>
             </Col>
           </Row>
 
-          <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+          <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
             <Col span={24}>
               <Card title="Clinics & Availability" hoverable>
                 <Row gutter={[16, 16]}>
                   {clinics.map((clinic, index) => (
                     <Col xs={24} md={12} key={index}>
-                      <Card size="small" style={{ marginBottom: '10px' }}>
+                      <Card size="small" style={{ marginBottom: "10px" }}>
                         <div
                           style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
                           }}
                         >
                           <div>
@@ -700,16 +947,19 @@ const DoctorDashboard = () => {
                             <br />
                             <Text type="secondary">{clinic.hours}</Text>
                             <br />
-                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                            <Text type="secondary" style={{ fontSize: "12px" }}>
                               {clinic.days}
                             </Text>
                           </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>
+                          <div style={{ textAlign: "right" }}>
+                            <Text
+                              strong
+                              style={{ fontSize: "18px", color: "#1890ff" }}
+                            >
                               {clinic.price}
                             </Text>
                             <br />
-                            <Button size="small" style={{ marginTop: '5px' }}>
+                            <Button size="small" style={{ marginTop: "5px" }}>
                               Change
                             </Button>
                           </div>

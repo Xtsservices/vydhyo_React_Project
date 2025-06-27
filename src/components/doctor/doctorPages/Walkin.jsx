@@ -1,6 +1,21 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Table, Input, Select, Button, DatePicker, TimePicker, Tag, Row, Col, Typography, Modal, message, Card ,Grid} from "antd";
+import {
+  Table,
+  Input,
+  Select,
+  Button,
+  DatePicker,
+  TimePicker,
+  Tag,
+  Row,
+  Col,
+  Typography,
+  Modal,
+  message,
+  Card,
+  Grid,
+} from "antd";
 import {
   SearchOutlined,
   CalendarOutlined,
@@ -79,18 +94,23 @@ const AddWalkInPatient = () => {
   const fetchMyDoctors = async () => {
     setIsLoadingDoctors(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/receptionist/fetchMyDoctors`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/receptionist/fetchMyDoctors`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.status || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          data.status || `HTTP error! status: ${response.status}`
+        );
       }
 
       if (data.status === "success" && data.data) {
@@ -127,7 +147,9 @@ const AddWalkInPatient = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          data.message || `HTTP error! status: ${response.status}`
+        );
       }
 
       if (Array.isArray(data.data)) {
@@ -147,7 +169,8 @@ const AddWalkInPatient = () => {
       console.error("Search User API Error:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to search user",
+        message:
+          error instanceof Error ? error.message : "Failed to search user",
       };
     }
   };
@@ -192,10 +215,15 @@ const AddWalkInPatient = () => {
             lastName: userData.lastname || "",
             gender: userData.gender || "",
             age: userData.DOB
-              ? `${new Date().getFullYear() - parseInt(userData.DOB.split("-")[2])}`
+              ? `${
+                  new Date().getFullYear() -
+                  parseInt(userData.DOB.split("-")[2])
+                }`
               : "",
             dateOfBirth: userData.DOB
-              ? `${userData.DOB.split("-")[2]}-${userData.DOB.split("-")[1]}-${userData.DOB.split("-")[0]}`
+              ? `${userData.DOB.split("-")[2]}-${userData.DOB.split("-")[1]}-${
+                  userData.DOB.split("-")[0]
+                }`
               : "",
           }));
           setUserFound(true);
@@ -207,7 +235,11 @@ const AddWalkInPatient = () => {
             "Multiple patients found with this mobile number. Please select one."
           );
         }
-      } else if (searchResult.success && searchResult.data && !Array.isArray(searchResult.data)) {
+      } else if (
+        searchResult.success &&
+        searchResult.data &&
+        !Array.isArray(searchResult.data)
+      ) {
         const userData = searchResult.data;
         setPatientData((prev) => ({
           ...prev,
@@ -216,10 +248,14 @@ const AddWalkInPatient = () => {
           lastName: userData.lastname || "",
           gender: userData.gender || "",
           age: userData.DOB
-            ? `${new Date().getFullYear() - parseInt(userData.DOB.split("-")[2])}`
+            ? `${
+                new Date().getFullYear() - parseInt(userData.DOB.split("-")[2])
+              }`
             : "",
           dateOfBirth: userData.DOB
-            ? `${userData.DOB.split("-")[2]}-${userData.DOB.split("-")[1]}-${userData.DOB.split("-")[0]}`
+            ? `${userData.DOB.split("-")[2]}-${userData.DOB.split("-")[1]}-${
+                userData.DOB.split("-")[0]
+              }`
             : "",
         }));
         setUserFound(true);
@@ -266,7 +302,9 @@ const AddWalkInPatient = () => {
         ? `${new Date().getFullYear() - parseInt(userData.DOB.split("-")[2])}`
         : "",
       dateOfBirth: userData.DOB
-        ? `${userData.DOB.split("-")[2]}-${userData.DOB.split("-")[1]}-${userData.DOB.split("-")[0]}`
+        ? `${userData.DOB.split("-")[2]}-${userData.DOB.split("-")[1]}-${
+            userData.DOB.split("-")[0]
+          }`
         : "",
     }));
     setUserFound(true);
@@ -377,11 +415,19 @@ const AddWalkInPatient = () => {
   };
 
   const createAppointment = async (appointmentRequest) => {
-    return { success: true, data: { appointmentId: "dummyAppointmentId" }, message: "Appointment created" };
+    return {
+      success: true,
+      data: { appointmentId: "dummyAppointmentId" },
+      message: "Appointment created",
+    };
   };
 
   const createPatient = async (patientRequest) => {
-    return { success: true, data: { patientId: "dummyId" }, message: "Patient created" };
+    return {
+      success: true,
+      data: { patientId: "dummyId" },
+      message: "Patient created",
+    };
   };
 
   const handleContinueToPayment = async () => {
@@ -538,10 +584,29 @@ const AddWalkInPatient = () => {
   };
 
   return (
-    <div style={{ minHeight: "calc(100vh - 64px)", background: "#f0f2f5", padding: screens.xs ? "16px" : "24px" }}>
+    <div
+      style={{
+        minHeight: "calc(100vh - 64px)",
+        background: "#f0f2f5",
+        padding: screens.xs ? "16px" : "24px",
+      }}
+    >
       {/* Header Placeholder */}
-      <div style={{ width: "100%", height: 64, background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.1)", borderBottom: "1px solid #e8e8e8", marginBottom: 24 }}>
-        <Row justify="space-between" align="middle" style={{ height: "100%", padding: "0 24px" }}>
+      <div
+        style={{
+          width: "100%",
+          height: 64,
+          background: "#fff",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+          borderBottom: "1px solid #e8e8e8",
+          marginBottom: 24,
+        }}
+      >
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ height: "100%", padding: "0 24px" }}
+        >
           <Col>
             <Title level={4} style={{ margin: 0, color: "#262626" }}>
               Hospital Management System
@@ -549,17 +614,33 @@ const AddWalkInPatient = () => {
           </Col>
           <Col>
             <Row gutter={16}>
-              <Col><BellOutlined style={{ fontSize: 24, color: "#666" }} /></Col>
-              <Col><UserOutlined style={{ fontSize: 24, color: "#666" }} /></Col>
+              <Col>
+                <BellOutlined style={{ fontSize: 24, color: "#666" }} />
+              </Col>
+              <Col>
+                <UserOutlined style={{ fontSize: 24, color: "#666" }} />
+              </Col>
             </Row>
           </Col>
         </Row>
       </div>
 
       {/* Sidebar Placeholder */}
-      <div style={{ width: 64, background: "#fff", boxShadow: "1px 0 4px rgba(0,0,0,0.1)", borderRight: "1px solid #e8e8e8", minHeight: "calc(100vh - 64px)", position: "absolute", left: 0 }}>
+      <div
+        style={{
+          width: 64,
+          background: "#fff",
+          boxShadow: "1px 0 4px rgba(0,0,0,0.1)",
+          borderRight: "1px solid #e8e8e8",
+          minHeight: "calc(100vh - 64px)",
+          position: "absolute",
+          left: 0,
+        }}
+      >
         <Row justify="center" style={{ padding: "24px 0" }}>
-          <Col><UserOutlined style={{ fontSize: 40, color: "#1890ff" }} /></Col>
+          <Col>
+            <UserOutlined style={{ fontSize: 40, color: "#1890ff" }} />
+          </Col>
         </Row>
       </div>
 
@@ -571,13 +652,21 @@ const AddWalkInPatient = () => {
               Add Walk-in Patient
             </Title>
             <Text type="secondary" style={{ marginBottom: 24 }}>
-              Search for existing patient or enter new patient details for walk-in consultation
+              Search for existing patient or enter new patient details for
+              walk-in consultation
             </Text>
           </Col>
 
           {apiError && (
             <Col span={24}>
-              <div style={{ background: "#fff1f0", border: "1px solid #ffa39e", borderRadius: 4, padding: 12 }}>
+              <div
+                style={{
+                  background: "#fff1f0",
+                  border: "1px solid #ffa39e",
+                  borderRadius: 4,
+                  padding: 12,
+                }}
+              >
                 <Text type="danger">{apiError}</Text>
               </div>
             </Col>
@@ -585,9 +674,17 @@ const AddWalkInPatient = () => {
 
           {userFound && (
             <Col span={24}>
-              <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", borderRadius: 4, padding: 12 }}>
+              <div
+                style={{
+                  background: "#f6ffed",
+                  border: "1px solid #b7eb8f",
+                  borderRadius: 4,
+                  padding: 12,
+                }}
+              >
                 <Text type="success">
-                  Patient found! Details have been pre-filled. You can proceed to create appointment.
+                  Patient found! Details have been pre-filled. You can proceed
+                  to create appointment.
                 </Text>
               </div>
             </Col>
@@ -595,9 +692,17 @@ const AddWalkInPatient = () => {
 
           {patientCreated && !userFound && (
             <Col span={24}>
-              <div style={{ background: "#e6f7ff", border: "1px solid #91d5ff", borderRadius: 4, padding: 12 }}>
+              <div
+                style={{
+                  background: "#e6f7ff",
+                  border: "1px solid #91d5ff",
+                  borderRadius: 4,
+                  padding: 12,
+                }}
+              >
                 <Text type="info">
-                  Patient created successfully! You can now proceed to create appointment.
+                  Patient created successfully! You can now proceed to create
+                  appointment.
                 </Text>
               </div>
             </Col>
@@ -631,7 +736,11 @@ const AddWalkInPatient = () => {
                 {searchResults.length > 1 && (
                   <Col xs={24} sm={8}>
                     <Select
-                      value={selectedUserIndex !== null ? selectedUserIndex : undefined}
+                      value={
+                        selectedUserIndex !== null
+                          ? selectedUserIndex
+                          : undefined
+                      }
                       onChange={handleUserSelect}
                       placeholder="Select Patient"
                       style={{ width: "100%" }}
@@ -663,13 +772,22 @@ const AddWalkInPatient = () => {
               )}
             </Card>
 
-            <Card title={<><UserOutlined /> Basic Information</>} style={{ marginBottom: 16 }}>
+            <Card
+              title={
+                <>
+                  <UserOutlined /> Basic Information
+                </>
+              }
+              style={{ marginBottom: 16 }}
+            >
               <Row gutter={[16, 16]}>
                 <Col xs={24} sm={8}>
                   <Input
                     placeholder="Enter First Name *"
                     value={patientData.firstName}
-                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("firstName", e.target.value)
+                    }
                     disabled={isCreatingPatient || userFound}
                   />
                   {fieldErrors.firstName && (
@@ -682,7 +800,9 @@ const AddWalkInPatient = () => {
                   <Input
                     placeholder="Enter Last Name *"
                     value={patientData.lastName}
-                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("lastName", e.target.value)
+                    }
                     disabled={isCreatingPatient || userFound}
                   />
                   {fieldErrors.lastName && (
@@ -695,7 +815,9 @@ const AddWalkInPatient = () => {
                   <Input
                     placeholder="Enter Phone Number *"
                     value={patientData.phoneNumber}
-                    onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("phoneNumber", e.target.value)
+                    }
                     maxLength={10}
                     disabled={isCreatingPatient || userFound}
                   />
@@ -742,8 +864,17 @@ const AddWalkInPatient = () => {
                 </Col>
                 <Col xs={24} sm={8}>
                   <DatePicker
-                    value={patientData.dateOfBirth ? moment(patientData.dateOfBirth, "DD-MM-YYYY") : null}
-                    onChange={(date) => handleInputChange("dateOfBirth", date ? date.format("DD-MM-YYYY") : "")}
+                    value={
+                      patientData.dateOfBirth
+                        ? moment(patientData.dateOfBirth, "DD-MM-YYYY")
+                        : null
+                    }
+                    onChange={(date) =>
+                      handleInputChange(
+                        "dateOfBirth",
+                        date ? date.format("DD-MM-YYYY") : ""
+                      )
+                    }
                     disabled={isCreatingPatient || userFound}
                     style={{ width: "100%" }}
                     maxDate={moment()}
@@ -763,18 +894,29 @@ const AddWalkInPatient = () => {
                     loading={isCreatingPatient}
                     disabled={isCreatingPatient}
                   >
-                    {isCreatingPatient ? "Creating Patient..." : "Create Patient"}
+                    {isCreatingPatient
+                      ? "Creating Patient..."
+                      : "Create Patient"}
                   </Button>
                 </Row>
               )}
             </Card>
 
-            <Card title={<><CalendarOutlined /> Appointment Details</>} style={{ marginBottom: 16 }}>
+            <Card
+              title={
+                <>
+                  <CalendarOutlined /> Appointment Details
+                </>
+              }
+              style={{ marginBottom: 16 }}
+            >
               <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12}>
                   <Select
                     value={patientData.appointmentType}
-                    onChange={(value) => handleInputChange("appointmentType", value)}
+                    onChange={(value) =>
+                      handleInputChange("appointmentType", value)
+                    }
                     placeholder="Appointment Type *"
                     disabled={!patientCreated && !userFound}
                     style={{ width: "100%" }}
@@ -840,12 +982,22 @@ const AddWalkInPatient = () => {
                   </Text>
                   <Input.TextArea
                     value={patientData.visitReason}
-                    onChange={(e) => handleInputChange("visitReason", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("visitReason", e.target.value)
+                    }
                     placeholder="Describe the reason for visit and symptoms..."
                     autoSize={{ minRows: 3, maxRows: 6 }}
                     disabled={!patientCreated && !userFound}
                   />
-                  <Text type="secondary" style={{ fontSize: 12, textAlign: "right", display: "block", marginTop: 4 }}>
+                  <Text
+                    type="secondary"
+                    style={{
+                      fontSize: 12,
+                      textAlign: "right",
+                      display: "block",
+                      marginTop: 4,
+                    }}
+                  >
                     {patientData.visitReason.length}/500 characters
                   </Text>
                 </Col>
@@ -856,7 +1008,10 @@ const AddWalkInPatient = () => {
               <Row gutter={[8, 8]}>
                 {dayNames.map((day) => (
                   <Col key={day} span={24 / 7}>
-                    <Text type="secondary" style={{ textAlign: "center", display: "block" }}>
+                    <Text
+                      type="secondary"
+                      style={{ textAlign: "center", display: "block" }}
+                    >
                       {day}
                     </Text>
                   </Col>
@@ -864,7 +1019,11 @@ const AddWalkInPatient = () => {
                 {days.map((day, index) => (
                   <Col key={index} span={24 / 7}>
                     <Button
-                      type={day === patientData.selectedDate.getDate() ? "primary" : "default"}
+                      type={
+                        day === patientData.selectedDate.getDate()
+                          ? "primary"
+                          : "default"
+                      }
                       onClick={() => handleDateSelect(day)}
                       disabled={!day || (!patientCreated && !userFound)}
                       style={{ width: "100%" }}
@@ -886,7 +1045,11 @@ const AddWalkInPatient = () => {
                     {afternoonSlots.map((slot, index) => (
                       <Col key={index} xs={12} sm={8} md={6} lg={4}>
                         <Button
-                          type={patientData.selectedTimeSlot === slot ? "primary" : "default"}
+                          type={
+                            patientData.selectedTimeSlot === slot
+                              ? "primary"
+                              : "default"
+                          }
                           onClick={() => handleTimeSlotSelect(slot)}
                           disabled={!patientCreated && !userFound}
                           style={{ width: "100%" }}
@@ -905,7 +1068,11 @@ const AddWalkInPatient = () => {
                     {eveningSlots.map((slot, index) => (
                       <Col key={index} xs={12} sm={8} md={6} lg={4}>
                         <Button
-                          type={patientData.selectedTimeSlot === slot ? "primary" : "default"}
+                          type={
+                            patientData.selectedTimeSlot === slot
+                              ? "primary"
+                              : "default"
+                          }
                           onClick={() => handleTimeSlotSelect(slot)}
                           disabled={!patientCreated && !userFound}
                           style={{ width: "100%" }}
@@ -921,7 +1088,14 @@ const AddWalkInPatient = () => {
           </Col>
 
           <Col xs={24} lg={8}>
-            <Card title={<><Text type="success">₹</Text> Payment Summary</>} style={{ marginBottom: 16 }}>
+            <Card
+              title={
+                <>
+                  <Text type="success">₹</Text> Payment Summary
+                </>
+              }
+              style={{ marginBottom: 16 }}
+            >
               <Row gutter={[16, 16]}>
                 <Col span={24}>
                   <Input
@@ -991,17 +1165,25 @@ const AddWalkInPatient = () => {
                 </Col>
                 <Col span={24}>
                   <Row gutter={[8, 8]}>
-                    <Col span={12}><Text strong>Subtotal</Text></Col>
+                    <Col span={12}>
+                      <Text strong>Subtotal</Text>
+                    </Col>
                     <Col span={12} style={{ textAlign: "right" }}>
                       <Text>₹{consultationFee?.toFixed(2) || "0.00"}</Text>
                     </Col>
-                    <Col span={12}><Text strong>Discount</Text></Col>
+                    <Col span={12}>
+                      <Text strong>Discount</Text>
+                    </Col>
                     <Col span={12} style={{ textAlign: "right" }}>
                       <Text type="danger">
-                        {discountType === "percentage" ? `${discount}%` : `₹${discount.toFixed(2)}`}
+                        {discountType === "percentage"
+                          ? `${discount}%`
+                          : `₹${discount.toFixed(2)}`}
                       </Text>
                     </Col>
-                    <Col span={12}><Title level={5}>Total Amount</Title></Col>
+                    <Col span={12}>
+                      <Title level={5}>Total Amount</Title>
+                    </Col>
                     <Col span={12} style={{ textAlign: "right" }}>
                       <Title level={5} style={{ color: "#52c41a" }}>
                         ₹{totalAmount.toFixed(2)}
@@ -1021,7 +1203,9 @@ const AddWalkInPatient = () => {
                     </Col>
                     <Col>
                       <Button
-                        type={paymentStatus === "pending" ? "primary" : "default"}
+                        type={
+                          paymentStatus === "pending" ? "primary" : "default"
+                        }
                         onClick={() => setPaymentStatus("pending")}
                       >
                         Pending
@@ -1054,8 +1238,16 @@ function validateAppointmentData() {
 }
 
 function getDaysInMonth(currentMonth) {
-  const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-  const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+  const firstDay = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth(),
+    1
+  );
+  const lastDay = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth() + 1,
+    0
+  );
   const daysInMonth = lastDay.getDate();
   const startingDayOfWeek = firstDay.getDay();
 
