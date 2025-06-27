@@ -7,11 +7,22 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // Import DoctorDashboard component
 import DoctorDashboard from "./components/doctor/doctorDashboard/DoctorDashboard";
 import NotFound from "./components/NotFound ";
+import Header from "./components/landingPage/Header";
+// import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingDoctorsPage";
+import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage"; 
+
+
+
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Login Route */}
-      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+
+      {/* landingPage Route */}
+      <Route path="/" element={<Header />} />
+      <Route path="/landingPage" element={<AdvertisingDoctorsPage />} />    
+      
 
       {/* SuperAdmin Routes under LayoutWrapper */}
       <Route element={<LayoutWrapper />}>
