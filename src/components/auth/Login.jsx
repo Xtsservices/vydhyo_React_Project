@@ -45,7 +45,7 @@ const Login = ()=> {
 
   const getRouteFromUserType = (role) => {
     if (role === 'superadmin') return '/SuperAdmin/dashboard';
-    if (role === 'doctor') return '/Doctor/dashboard';
+    if (role === 'doctor' || role === 'receptionist') return '/Doctor/dashboard';
     return '/Admin/app/dashboard'; // Default route if role is unknown
   };
 
