@@ -113,7 +113,7 @@ const DoctorList = () => {
       }
 
       const response = await axios.get(
-        `http://192.168.1.44:3000/users/AllUsers?type=doctor&status=approved`,
+        `http://192.168.1.42:3000/users/AllUsers?type=doctor&status=approved`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -156,7 +156,7 @@ const DoctorList = () => {
       }
 
       const response = await axios.put(
-        `http://192.168.1.44:3000/admin/approveDoctor`,
+        `http://192.168.1.42:3000/admin/approveDoctor`,
         {
           userId: doctorId,
           status: newStatus === "active" ? "Approved" : "Rejected",
