@@ -151,6 +151,7 @@ const Header = () => {
                       padding: "6px 12px",
                       background: "#f8f9fa",
                       borderRadius: 24,
+                      height: 45,
                       border: "1px solid #e9ecef",
                     }}
                   >

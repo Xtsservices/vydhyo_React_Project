@@ -15,7 +15,7 @@ const specialities = [
     name: "Sexologist",
     doctors: 89,
     icon: "❤️",
-    bg: "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    bg: "https://media.istockphoto.com/id/999105208/photo/close-up-of-therapist-hand-writing-notes-during-a-counseling-session-with-a-single-woman.webp?a=1&b=1&s=612x612&w=0&k=20&c=1RaB8d0LNt-Jb1jldYXt9pXNVsbyoKp1S4eChBKi1dg=",
   },
   {
     name: "Paediatrician",
@@ -30,11 +30,216 @@ const specialities = [
     bg: "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
   },
   {
+    name: "Orthopedics",
+    doctors: 151,
+    icon: "🦴",
+    bg: "https://images.unsplash.com/photo-1597764690472-ec054f1c8637?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8T3J0aG9wZWRpY3N8ZW58MHx8MHx8fDA%3D",
+  },
+  {
     name: "Psychologist",
     doctors: 64,
     icon: "🧠",
     bg: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
   },
+  {
+    name: "Pulmonologist",
+    doctors: 83,
+    icon: "🫁",
+    bg: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Dermatologist",
+    doctors: 112,
+    icon: "🌟",
+    bg: "https://media.istockphoto.com/id/993954752/photo/professional-dermatologist-chatting-with-patient-on-laptop-online-consultation.webp?a=1&b=1&s=612x612&w=0&k=20&c=6b4msGLL1_LG76YGZ2SCnMnZJQcM6ayW-kEC7v_Ma18=",
+  },
+  {
+    name: "Psychiatrist",
+    doctors: 67,
+    icon: "🧘",
+    bg: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "ENT",
+    doctors: 95,
+    icon: "👂",
+    bg: "https://media.istockphoto.com/id/1302254900/photo/diagnosis-and-treatment-of-ent-diseases-nasal-and-oral-cavity-anatomical-model-on-a-table.webp?a=1&b=1&s=612x612&w=0&k=20&c=WIighLT4HfLCurl8wt1GcJhdm9uYejuQFjPtRTh0b0E=",
+  },
+  {
+    name: "Ophthalmologist",
+    doctors: 78,
+    icon: "👁️",
+    bg: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Dental",
+    doctors: 134,
+    icon: "🦷",
+    bg: "https://images.unsplash.com/photo-1489278353717-f64c6ee8a4d2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8RGVudGFsfGVufDB8fDB8fHww",
+  },
+  {
+    name: "Physiotherapy",
+    doctors: 89,
+    icon: "🏃‍♀️",
+    bg: "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Nutritionist",
+    doctors: 56,
+    icon: "🥗",
+    bg: "https://media.istockphoto.com/id/1592967928/photo/mother-feeding-her-baby-boy.webp?a=1&b=1&s=612x612&w=0&k=20&c=wXcO29WXi7WW0gCK7mMhhqeY5344xczYDtn28JYQ3RA=",
+  },
+  {
+    name: "Veterinary",
+    doctors: 43,
+    icon: "🐕",
+    bg: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Ayurveda",
+    doctors: 87,
+    icon: "🌿",
+    bg: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Homeopathy",
+    doctors: 72,
+    icon: "💊",
+    bg: "https://media.istockphoto.com/id/158308395/photo/prescription-medicine.webp?a=1&b=1&s=612x612&w=0&k=20&c=Yi6Z1NJphURBnq6NEHshtwCbLsuPsL1S_t7cHraVjM4=",
+  },
+  {
+    name: "Cardiologist",
+    doctors: 156,
+    icon: "❤️",
+    bg: "https://media.istockphoto.com/id/619413554/photo/heart-care-and-ecg.webp?a=1&b=1&s=612x612&w=0&k=20&c=AF6DySmz2eElgQcgXHX3E1ZFuf0AhV2PY7XR7ONkugc=",
+  },
+  {
+    name: "Neurologist",
+    doctors: 98,
+    icon: "🧠",
+    bg: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Nephrologist",
+    doctors: 65,
+    icon: "🏥",
+    bg: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Urologist",
+    doctors: 84,
+    icon: "🩺",
+    bg: "https://plus.unsplash.com/premium_photo-1702598804759-8fb687f774fb?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8VXJvbG9naXN0fGVufDB8fDB8fHww",
+  },
+  {
+    name: "Oncologist",
+    doctors: 73,
+    icon: "🎗️",
+    bg: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Rheumatologist",
+    doctors: 47,
+    icon: "🦴",
+    bg: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Vascular Surgeon",
+    doctors: 39,
+    icon: "⚕️",
+    bg: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Gastroenterologist",
+    doctors: 91,
+    icon: "🏥",
+    bg: "https://media.istockphoto.com/id/1467241368/photo/doctor-performs-ultrasound-examination-of-a-woman.webp?a=1&b=1&s=612x612&w=0&k=20&c=06Uk4Euo6DQBNpD49jD02NciKKsw627HugB0BqwxWO8=",
+  },
+  {
+    name: "General Surgery",
+    doctors: 127,
+    icon: "🔪",
+    bg: "https://media.istockphoto.com/id/2174193633/photo/medical-advice-help-and-doctors-with-a-clipboard-for-healthcare-research-and-medicine.webp?a=1&b=1&s=612x612&w=0&k=20&c=slGHaxm-A2kaHGwYXSJEunzqZPcBB7D4Ac4-gCYqWZE=",
+  },
+  {
+    name: "CTVS",
+    doctors: 24,
+    icon: "❤️‍🩹",
+    bg: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Neurosurgeon",
+    doctors: 31,
+    icon: "🧠",
+    bg: "https://media.istockphoto.com/id/1127376129/photo/medical-diagnosis-in-the-digital-age.webp?a=1&b=1&s=612x612&w=0&k=20&c=hQ4s5nijVCSpfDbbCUiQ4hkcClxQuwY2VJ1LvRhOYvI=",
+  },
+  {
+    name: "Ortho Surgeon",
+    doctors: 68,
+    icon: "🦴",
+    bg: "https://images.unsplash.com/photo-1684752397429-4ce4d7856cb8?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8T3J0aG8lMjBTdXJnZW9ufGVufDB8fDB8fHww",
+  },
+  {
+    name: "ENT Surgeries",
+    doctors: 52,
+    icon: "👂",
+    bg: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Eye Surgeries",
+    doctors: 45,
+    icon: "👁️",
+    bg: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Dental Surgeries",
+    doctors: 73,
+    icon: "🦷",
+    bg: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Plastic Surgery",
+    doctors: 41,
+    icon: "💫",
+    bg: "https://plus.unsplash.com/premium_photo-1682096547754-b2bb5151211a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8UGxhc3RpYyUyMFN1cmdlcnl8ZW58MHx8MHx8fDA%3D",
+  },
+  {
+    name: "Cancer Surgeries",
+    doctors: 35,
+    icon: "🎗️",
+    bg: "https://media.istockphoto.com/id/1334071244/photo/portrait-of-male-surgeon-giving-thumbs-up.webp?a=1&b=1&s=612x612&w=0&k=20&c=Y7LWx59zDAQCf4273PNTceoyfUCHG1b5VcIi-7j_PlQ=",
+  },
+  {
+    name: "Bariatric Surgery",
+    doctors: 28,
+    icon: "⚖️",
+    bg: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Gyn & Obs",
+    doctors: 102,
+    icon: "👩‍⚕️",
+    bg: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+  {
+    name: "Physical Medicine & Rehabilitation",
+    doctors: 37,
+    icon: "🏥",
+    bg: "https://media.istockphoto.com/id/1418999473/photo/doctors-comforting-disabled-elderly-patient.webp?a=1&b=1&s=612x612&w=0&k=20&c=YwTJIt9-LX4Acp_3ng6BD3_pke2MHOqNMqMgR2adg_g=",
+  },
+  {
+    name: "Sports Medicine",
+    doctors: 29,
+    icon: "⚽",
+    bg: "https://media.istockphoto.com/id/1143400985/photo/female-massage-therapist-massaging-patients-back.webp?a=1&b=1&s=612x612&w=0&k=20&c=c_YIt6KvtpBoy_q1lr9ueMnY1cTEXS8AwqzMnOkU7vI=",
+  },
+  {
+    name: "Transfusion Medicine",
+    doctors: 18,
+    icon: "🩸",
+    bg: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=600",
+  },
+
 ];
 
 const SpecialtyCard = ({ spec }) => {
@@ -157,7 +362,7 @@ const SpecialtyCard = ({ spec }) => {
           </Text>
         </div>
 
-        {isHovered && (
+        {/* {isHovered && (
           <div
             style={{
               position: 'absolute',
@@ -175,7 +380,7 @@ const SpecialtyCard = ({ spec }) => {
           >
             View Doctors
           </div>
-        )}
+        )} */}
       </div>
     </Card>
   );
@@ -325,7 +530,7 @@ const TopSpecialities = () => {
           ref={carouselRef}
           style={{
             display: 'flex',
-            gap: 100,
+            gap: 50,
             overflowX: 'auto',
             scrollSnapType: 'x mandatory',
             scrollBehavior: 'smooth',
@@ -359,7 +564,7 @@ const TopSpecialities = () => {
               background:
                 currentIndex === 0
                   ? 'rgba(226, 232, 240, 0.7)'
-                  : 'rgba(66, 133, 244, 0.9)',
+                  : 'rgb(19 45 87 / 90%)',
               color: currentIndex === 0 ? '#4a5568' : '#fff',
             }}
           />
@@ -373,7 +578,7 @@ const TopSpecialities = () => {
               background:
                 currentIndex === specialities.length - 1
                   ? 'rgba(226, 232, 240, 0.7)'
-                  : 'rgba(66, 133, 244, 0.9)',
+                  : 'rgb(19 45 87 / 90%)',
               color:
                 currentIndex === specialities.length - 1 ? '#4a5568' : '#fff',
             }}

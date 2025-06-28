@@ -161,15 +161,35 @@ const PrivacyPolicy = () => {
         <Col xs={24} sm={22} md={20} lg={16} xl={14}>
           {/* Header Section */}
           <div style={{ textAlign: "center", marginBottom: 40 }}>
-            <Badge.Ribbon text="PRIVACY POLICY" color="#00203f">
-              <div style={{ paddingTop: 16 }}>
+            <Row justify="center" style={{ position: 'relative', zIndex: 1, marginBottom: 40 }}>
+              <Col>
+                <button
+                  type="button"
+                  style={{
+                    background: '#00203f',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: 14,
+                    border: 'none',
+                    borderRadius: 20,
+                    height: 'auto',
+                    padding: '10px 20px',
+                    marginTop: 0,
+                    boxShadow: '0 4px 15px rgba(66, 133, 244, 0.3)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Privacy Policy
+                </button>
+              </Col>
+            </Row>
+              <div style={{ paddingTop: 0 }}>
                 <Title 
                   level={1} 
                   style={{ 
                     fontSize: isMobile ? 24 : 32,
                     fontWeight: 700,
                     color: "#1e293b",
-                    marginBottom: 16,
                     lineHeight: 1.2,
                   }}
                 >
@@ -189,7 +209,6 @@ const PrivacyPolicy = () => {
                   explains how we collect, use, and safeguard your data.
                 </Paragraph>
               </div>
-            </Badge.Ribbon>
           </div>
 
           {/* Privacy Policy Sections */}
@@ -316,13 +335,14 @@ const PrivacyPolicy = () => {
             >
               <Tag
                 icon={<CheckCircleOutlined />}
-                color="success"
                 style={{
+                  background: "#dcfce7",
+                  color: "#166534",
                   padding: "8px 16px",
                   borderRadius: 20,
                   fontSize: 14,
                   fontWeight: 600,
-                  border: "1px solid #b7eb8f",
+                  border: "1px solid #bbf7d0",
                 }}
               >
                 ISO 27001 Certified
@@ -330,13 +350,14 @@ const PrivacyPolicy = () => {
               
               <Tag
                 icon={<SafetyCertificateOutlined />}
-                color="processing"
                 style={{
+                  background: "#dbeafe",
+                  color: "#1e40af",
                   padding: "8px 16px",
                   borderRadius: 20,
                   fontSize: 14,
                   fontWeight: 600,
-                  border: "1px solid #91caff",
+                  border: "1px solid #bfdbfe",
                 }}
               >
                 HIPAA Compliant
@@ -344,13 +365,14 @@ const PrivacyPolicy = () => {
               
               <Tag
                 icon={<LockOutlined />}
-                color="warning"
                 style={{
+                  background: "#fef3c7",
+                  color: "#92400e",
                   padding: "8px 16px",
                   borderRadius: 20,
                   fontSize: 14,
                   fontWeight: 600,
-                  border: "1px solid #ffe58f",
+                  border: "1px solid #fde68a",
                 }}
               >
                 256-bit Encryption

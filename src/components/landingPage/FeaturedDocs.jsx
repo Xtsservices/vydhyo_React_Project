@@ -27,14 +27,14 @@ const { useBreakpoint } = Grid;
 
 // Sample doctor images (replace with your own or use URLs)
 const doctorImages = [
-    "https://randomuser.me/api/portraits/men/32.jpg",
-    "https://randomuser.me/api/portraits/women/44.jpg",
-    "https://randomuser.me/api/portraits/men/45.jpg",
-    "https://randomuser.me/api/portraits/women/65.jpg",
-    "https://randomuser.me/api/portraits/men/67.jpg",
-    "https://randomuser.me/api/portraits/women/68.jpg",
-    "https://randomuser.me/api/portraits/men/69.jpg",
-    "https://randomuser.me/api/portraits/women/70.jpg",
+    "https://plus.unsplash.com/premium_photo-1661699733041-a4e02693adf5?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8SW5kaWFuJTIwRG9jdG9yJTIwSW1hZ2V8ZW58MHx8MHx8fDA%3D",
+    "https://images.unsplash.com/photo-1659353888906-adb3e0041693?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8SW5kaWFuJTIwRG9jdG9yJTIwSW1hZ2V8ZW58MHx8MHx8fDA%3D",
+    "https://images.unsplash.com/photo-1678940805950-73f2127f9d4e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fEluZGlhbiUyMERvY3RvciUyMEltYWdlfGVufDB8fDB8fHww",
+    "https://media.istockphoto.com/id/1270790502/photo/medical-concept-of-indian-beautiful-female-doctor-with-note-book.webp?a=1&b=1&s=612x612&w=0&k=20&c=fg_7luuQzYkY9AOwJDtX817uZTIDoFdKgTVG-kIf7BA=",
+    "https://media.istockphoto.com/id/1410398449/photo/male-doctor-in-a-medical-clinic-writing-prescription-for-a-young-female-patient.webp?a=1&b=1&s=612x612&w=0&k=20&c=qc0xflQ7rHLudNluswcw3UqRNMaYFvnP8fjW3CqZ7XU=",
+    "https://media.istockphoto.com/id/1203928556/photo/medical-concept-of-asian-beautiful-female-doctor-in-white-coat-with-stethoscope-waist-up.webp?a=1&b=1&s=612x612&w=0&k=20&c=shFtwxs-81Cyzlb6bDGs_gN2xi0Vwd1s3GG0MEG8_nE=",
+    "https://plus.unsplash.com/premium_photo-1661578535048-7a30e3a71d25?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDV8fEluZGlhbiUyMERvY3RvciUyMEltYWdlfGVufDB8fDB8fHww",
+    "https://plus.unsplash.com/premium_photo-1682089872205-dbbae3e4ba32?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDF8fEluZGlhbiUyMERvY3RvciUyMEltYWdlfGVufDB8fDB8fHww",
 ];
 
 const doctors = [
@@ -158,7 +158,7 @@ const FeaturedDocs = () => {
                     <Tag color="#00203f" style={{ fontWeight: 600, fontSize: 14, borderRadius: 20, padding: "8px 20px" }}>
                         • Accessibility •
                     </Tag>
-                    <Title level={2} style={{ textAlign: "center", margin: 0, color: "#0a2540" }}>
+                    <Title level={2} style={{ textAlign: "center", marginTop: "20px", color: "#0a2540" }}>
                         Our Doctors
                     </Title>
                 </Col>
@@ -166,7 +166,7 @@ const FeaturedDocs = () => {
 
             {/* Carousel Controls and Cards */}
             <Row justify="center" align="middle" style={{ marginBottom: 24 }}>
-                <Button
+                {/* <Button
                     shape="circle"
                     icon={<LeftOutlined />}
                     onClick={handlePrev}
@@ -178,7 +178,7 @@ const FeaturedDocs = () => {
                         color: currentIndex === 0 ? "#64748b" : "#fff",
                         border: "none",
                     }}
-                />
+                /> */}
                 <Row gutter={[24, 24]} style={{ width: "100%", maxWidth: 1200 }} justify="center">
                     {visibleDoctors.map((doc, idx) => (
                         <Col
@@ -194,6 +194,7 @@ const FeaturedDocs = () => {
                                 hoverable
                                 style={{
                                     width: 280,
+                                    height: 400,
                                     borderRadius: 12,
                                     overflow: "hidden",
                                     boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
@@ -272,7 +273,7 @@ const FeaturedDocs = () => {
                                             {doc.available && (
                                                 <Tag
                                                     color="success"
-                                                    icon={<CheckCircleFilled />}
+                                                    // icon={<CheckCircleFilled />}
                                                     style={{
                                                         fontWeight: 600,
                                                         fontSize: 12,
@@ -300,7 +301,7 @@ const FeaturedDocs = () => {
                                         <Text type="secondary" style={{ fontSize: 14 }}>
                                             Consultation Fees
                                         </Text>
-                                        <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+                                        <div style={{ display: "flex", alignItems: "center", marginBottom: 5 }}>
                                             <DollarOutlined style={{ color: "#ff5722", marginRight: 4 }} />
                                             <Text strong style={{ fontSize: 20, color: "#ff5722" }}>
                                                 Rs{doc.fee}
@@ -312,6 +313,10 @@ const FeaturedDocs = () => {
                                             style={{
                                                 borderRadius: 24,
                                                 fontWeight: 500,
+                                                height: 40,
+                                                marginLeft:120,
+                                                marginTop: -50,
+                                                width: "50%",
                                                 fontSize: 14,
                                                 background: "#1a365d",
                                                 border: "none",
@@ -326,6 +331,21 @@ const FeaturedDocs = () => {
                         </Col>
                     ))}
                 </Row>
+
+                <Button
+                    shape="circle"
+                    icon={<LeftOutlined />}
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0}
+                    size="large"
+                    style={{
+                        marginRight: 16,
+                        marginTop: 15,
+                        background: currentIndex === 0 ? "#e2e8f0" : "#1a365d",
+                        color: currentIndex === 0 ? "#64748b" : "#fff",
+                        border: "none",
+                    }}
+                />
                 <Button
                     shape="circle"
                     icon={<RightOutlined />}
@@ -334,6 +354,7 @@ const FeaturedDocs = () => {
                     size="large"
                     style={{
                         marginLeft: 16,
+                        marginTop: 15,
                         background: currentIndex >= maxIndex ? "#e2e8f0" : "#1a365d",
                         color: currentIndex >= maxIndex ? "#64748b" : "#fff",
                         border: "none",
