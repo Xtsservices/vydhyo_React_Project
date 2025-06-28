@@ -16,14 +16,20 @@ const LoginForm = ({
   return (
     <div className="login-form">
       <div className="form-header">
-        <h1 className="form-title">{otpSent ? 'Enter OTP' : 'Login'}</h1>
+        <img
+          src="/images/vydh_logo.png"
+          alt="Login"
+          className="form-image"
+          style={{ width: 200, height: 160, marginBottom: 0, marginTop: -40}}
+        />
+        <h1 className="form-title">{otpSent ? 'Enter OTP' : ''}</h1>
         {!otpSent && <p className="form-subtitle">Enter your registered mobile number to continue</p>}
       </div>
-      {phone.length === 10 && (
+      {/* {phone.length === 10 && (
         <div className="user-type">
           <span>User Type: {userTypeDisplay.slice(2, -1)}</span>
         </div>
-      )}
+      )} */}
       {!otpSent ? (
         <div className="form-content">
           <div className="input-group">

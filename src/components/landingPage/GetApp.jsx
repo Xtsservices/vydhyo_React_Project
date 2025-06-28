@@ -3,8 +3,10 @@ import { Row, Col, Card, Typography, Button, Space } from "antd";
 import { 
   ClockCircleOutlined, 
   ThunderboltOutlined,
-  AppleOutlined,
-  AndroidOutlined 
+  // AppleOutlined,
+  AndroidFilled,
+  AppleFilled,
+  // AndroidOutlined 
 } from "@ant-design/icons";
 import Blogs from "./Blogs"; 
 
@@ -99,7 +101,7 @@ const GetApp = () => {
             <Button
               href="https://play.google.com/store/apps/details?id=com.vydhyo.patient"
               target="_blank"
-              icon={<AndroidOutlined />}
+              icon={<AndroidFilled />}
               size="large"
               style={{
                 height: 48,
@@ -116,7 +118,7 @@ const GetApp = () => {
             <Button
               href="https://apps.apple.com/in/app/vydhyo-doctors/id123456789"
               target="_blank"
-              icon={<AppleOutlined />}
+              icon={<AppleFilled />}
               size="large"
               style={{
                 height: 48,
@@ -157,10 +159,10 @@ const GetApp = () => {
                   />
                 }
                 style={{
-                  width: 200,
+                  width: 300,
                   borderRadius: 32,
                   boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-                  marginRight: -40,
+                  marginRight: -30,
                   border: "8px solid #fff",
                   transform: "rotate(-5deg)",
                 }}
@@ -171,14 +173,15 @@ const GetApp = () => {
               <Card
                 hoverable
                 cover={
-                  <img
+                  <img 
                     alt="Vydhyo App Screenshot"
-                    src="https://images.unsplash.com/photo-1584634731339-252c58ab6554?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&h=600&q=80"
+                    src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&h=600&q=80"
                   />
                 }
                 style={{
-                  width: 180,
-                  borderRadius: 24,
+                  width: 200,
+                  height: 250,
+                  borderRadius: 8,
                   boxShadow: "0 8px 32px rgba(0,0,0,0.10)",
                   border: "8px solid #fff",
                   transform: "rotate(5deg)",

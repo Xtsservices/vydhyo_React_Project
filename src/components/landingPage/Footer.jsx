@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Row, Col, Card, Typography, Button, Input, Space, Divider } from "antd";
 import { 
   CustomerServiceOutlined, 
@@ -14,6 +14,13 @@ import {
 const { Title, Text } = Typography;
 
 const Footer = () => {
+  const [email, setEmail] = useState("");
+
+  const handleEmailSubmit = () => {
+    console.log("Newsletter subscription:", email);
+    setEmail("");
+  };
+
   return (
     <footer style={{ background: "#f7fafd", marginTop: 40 }}>
       {/* Top Banner */}
@@ -30,25 +37,29 @@ const Footer = () => {
         }}
         bodyStyle={{ padding: 48 }}
       >
-        <Row justify="space-between" align="middle">
-          <Col>
-            <Title level={2} style={{ color: "#fff", margin: 0 }}>
+        <Row justify="space-between" align="middle" gutter={[24, 24]}>
+          <Col xs={24} lg={12}>
+            <Title level={2} style={{ color: "#fff", margin: 0, fontSize: "2rem" }}>
               Working for Your <span style={{ color: "#fff" }}>Better Health.</span>
             </Title>
           </Col>
-          <Col>
-            <Space size={48}>
-              <ContactInfo 
-                icon={<CustomerServiceOutlined style={{ fontSize: 24 }} />}
-                title="Customer Support"
-                value="+92 97612 34789"
-              />
-              <ContactInfo 
-                icon={<MessageOutlined style={{ fontSize: 24 }} />}
-                title="Drop Us an Email"
-                value="info1256@example.com"
-              />
-            </Space>
+          <Col xs={24} lg={12}>
+            <Row justify="end" gutter={[48, 24]}>
+              <Col xs={24} sm={12} lg={12}>
+                <ContactInfo 
+                  icon={<CustomerServiceOutlined style={{ fontSize: 24 }} />}
+                  title="Customer Support"
+                  value="+92 97612 34789"
+                />
+              </Col>
+              <Col xs={24} sm={12} lg={12}>
+                <ContactInfo 
+                  icon={<MessageOutlined style={{ fontSize: 24 }} />}
+                  title="Drop Us an Email"
+                  value="info1256@example.com"
+                />
+              </Col>
+            </Row>
           </Col>
         </Row>
       </Card>
@@ -56,44 +67,79 @@ const Footer = () => {
       {/* Main Footer Content */}
       <div style={{ maxWidth: 1320, margin: "0 auto", padding: "64px 32px 32px" }}>
         <Row gutter={[32, 32]} justify="space-between">
-          <Col xs={24} sm={12} md={6}>
-            <FooterSection 
-              title="Company"
-              items={["About", "Features", "Works", "Careers", "Locations"]}
-            />
+          {/* Left side - Navigation columns */}
+          <Col xs={24} lg={16}>
+            <Row gutter={[32, 32]}>
+              <Col xs={12} sm={6} md={6} lg={6}>
+                <FooterSection 
+                  title="Company"
+                  items={["About", "Features", "Works", "Careers", "Locations"]}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={6} lg={6}>
+                <FooterSection 
+                  title="Treatments"
+                  items={["Dental", "Cardiac", "Spinal Cord", "Hair Growth", "Anemia & Disorder"]}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={6} lg={6}>
+                <FooterSection 
+                  title="Specialties"
+                  items={["Transplant", "Cardiologist", "Oncology", "Pediatrics", "Gynecology"]}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={6} lg={6}>
+                <FooterSection 
+                  title="Utilities"
+                  items={["Pricing", "Contact", "Request A Quote", "Premium Membership", "Integrations"]}
+                />
+              </Col>
+            </Row>
           </Col>
-          <Col xs={24} sm={12} md={6}>
-            <FooterSection 
-              title="Treatments"
-              items={["Dental", "Cardiac", "Spinal Cord", "Hair Growth", "Anemia & Disorder"]}
-            />
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <FooterSection 
-              title="Specialities"
-              items={["Transplant", "Cardiologist", "Oncology", "Pediatrics", "Gynacology"]}
-            />
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <FooterSection 
-              title="Utilities"
-              items={["Pricing", "Contact", "Request A Quote", "Premium Membership", "Integrations"]}
-            />
-          </Col>
-          <Col xs={24} md={12} lg={8}>
+
+          {/* Right side - Newsletter */}
+          <Col xs={24} lg={8}>
             <div style={{ minWidth: 320 }}>
-              <Title level={5} style={{ marginBottom: 16 }}>Newsletter</Title>
-              <Text style={{ display: "block", marginBottom: 12 }}>
+              <Title level={5} style={{ marginBottom: 16, fontSize: "1.1rem", fontWeight: 600 }}>
+                Newsletter
+              </Title>
+              <Text style={{ display: "block", marginBottom: 16, fontSize: "1rem", color: "#666" }}>
                 Subscribe & Stay Updated from the Doccure
               </Text>
-              <Space.Compact style={{ width: "100%" }}>
-                <Input placeholder="Enter Email Address" />
-                <Button type="primary" icon={<SendOutlined />}>Send</Button>
+              
+              <Space.Compact style={{ width: "100%", marginBottom: 32 }}>
+                <Input 
+                  placeholder="Enter Email Address" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={{ 
+                    height: 48,
+                    fontSize: "1rem",
+                    borderRadius: "8px 0 0 8px"
+                  }}
+                />
+                <Button 
+                  type="primary" 
+                  icon={<SendOutlined />}
+                  onClick={handleEmailSubmit}
+                  style={{ 
+                    height: 48,
+                    background: "#00203f",
+                    borderColor: "#00203f",
+                    borderRadius: "0 8px 8px 0",
+                    fontSize: "1rem",
+                    fontWeight: 500
+                  }}
+                >
+                  Send
+                </Button>
               </Space.Compact>
               
-              <div style={{ marginTop: 32 }}>
-                <Title level={5} style={{ marginBottom: 12 }}>Connect With Us</Title>
-                <Space size={16}>
+              <div>
+                <Title level={5} style={{ marginBottom: 16, fontSize: "1rem", fontWeight: 600 }}>
+                  Connect With Us
+                </Title>
+                <Space size={12}>
                   <SocialIcon icon={<FacebookOutlined />} />
                   <SocialIcon icon={<TwitterOutlined />} />
                   <SocialIcon icon={<InstagramOutlined />} />
@@ -112,26 +158,51 @@ const Footer = () => {
         <Row 
           justify="space-between" 
           align="middle" 
+          gutter={[16, 16]}
           style={{ maxWidth: 1320, margin: "0 auto", padding: "0 32px" }}
         >
-          <Col>
-            <Text>Copyright © 2025 Doccure. All Rights Reserved</Text>
+          <Col xs={24} sm={8} lg={8}>
+            <Text style={{ fontSize: "0.95rem" }}>
+              Copyright © 2025 Doccure. All Rights Reserved
+            </Text>
           </Col>
-          <Col>
-            <Space split={<Divider type="vertical" />}>
-              <Text type="secondary">Legal Notice</Text>
-              <Text type="secondary">Privacy Policy</Text>
-              <Text type="secondary">Refund Policy</Text>
+          <Col xs={24} sm={8} lg={8}>
+            <Space split={<Divider type="vertical" />} style={{ justifyContent: "center", width: "100%" }}>
+              <Text type="secondary" style={{ fontSize: "0.9rem" }}>Legal Notice</Text>
+              <Text type="secondary" style={{ fontSize: "0.9rem" }}>Privacy Policy</Text>
+              <Text type="secondary" style={{ fontSize: "0.9rem" }}>Refund Policy</Text>
             </Space>
           </Col>
-          <Col>
-            <Space size={8}>
-              <img src="https://img.icons8.com/color/32/000000/visa.png" alt="Visa" />
-              <img src="https://img.icons8.com/color/32/000000/amex.png" alt="Amex" />
-              <img src="https://img.icons8.com/color/32/000000/discover.png" alt="Discover" />
-              <img src="https://img.icons8.com/color/32/000000/stripe.png" alt="Stripe" />
-              <img src="https://img.icons8.com/color/32/000000/paypal.png" alt="Paypal" />
-            </Space>
+          <Col xs={24} sm={8} lg={8}>
+            <div style={{ textAlign: "right" }}>
+              <Space size={8}>
+                <img 
+                  src="https://img.icons8.com/color/32/000000/visa.png" 
+                  alt="Visa" 
+                  style={{ width: 32, height: 32 }}
+                />
+                <img 
+                  src="https://img.icons8.com/color/32/000000/mastercard.png" 
+                  alt="Mastercard" 
+                  style={{ width: 32, height: 32 }}
+                />
+                <img 
+                  src="https://img.icons8.com/color/32/000000/amex.png" 
+                  alt="American Express" 
+                  style={{ width: 32, height: 32 }}
+                />
+                <img 
+                  src="https://img.icons8.com/color/32/000000/discover.png" 
+                  alt="Discover" 
+                  style={{ width: 32, height: 32 }}
+                />
+                <img 
+                  src="https://img.icons8.com/color/32/000000/paypal.png" 
+                  alt="PayPal" 
+                  style={{ width: 32, height: 32 }}
+                />
+              </Space>
+            </div>
           </Col>
         </Row>
       </div>
@@ -141,18 +212,26 @@ const Footer = () => {
 
 const ContactInfo = ({ icon, title, value }) => {
   return (
-    <Space size={12}>
-      {/* <Avatar 
-        size={48} 
-        icon={icon} 
-        style={{ 
-          background: "#fff", 
-          color: "#00203f" 
-        }} 
-      /> */}
+    <Space size={12} align="start">
+      <div style={{
+        width: 48,
+        height: 48,
+        borderRadius: "50%",
+        background: "#fff",
+        color: "#00203f",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
+        {icon}
+      </div>
       <div>
-        <Text style={{ color: "#fff", display: "block" }}>{title}</Text>
-        <Text strong style={{ color: "#fff", display: "block" }}>{value}</Text>
+        <Text style={{ color: "#fff", display: "block", fontSize: "0.9rem", marginBottom: 4 }}>
+          {title}
+        </Text>
+        <Text strong style={{ color: "#fff", display: "block", fontSize: "1.1rem" }}>
+          {value}
+        </Text>
       </div>
     </Space>
   );
@@ -161,10 +240,29 @@ const ContactInfo = ({ icon, title, value }) => {
 const FooterSection = ({ title, items }) => {
   return (
     <div>
-      <Title level={5} style={{ marginBottom: 16 }}>{title}</Title>
-      <Space direction="vertical" size={8}>
+      <Title level={5} style={{ 
+        marginBottom: 20, 
+        fontSize: "1.1rem", 
+        fontWeight: 600,
+        color: "#333"
+      }}>
+        {title}
+      </Title>
+      <Space direction="vertical" size={12} style={{ width: "100%" }}>
         {items.map((item, index) => (
-          <Text key={index} style={{ display: "block" }}>{item}</Text>
+          <Text 
+            key={index} 
+            style={{ 
+              display: "block", 
+              color: "#666",
+              fontSize: "1rem",
+              cursor: "pointer",
+              transition: "color 0.2s"
+            }}
+            className="footer-link"
+          >
+            {item}
+          </Text>
         ))}
       </Space>
     </div>
@@ -176,11 +274,18 @@ const SocialIcon = ({ icon }) => {
     <Button 
       shape="circle" 
       icon={icon} 
+      size="large"
       style={{ 
         background: "#f7fafd", 
         color: "#00203f",
-        border: "none"
-      }} 
+        border: "1px solid #e8e8e8",
+        width: 44,
+        height: 44,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+      className="social-icon-btn"
     />
   );
 };
