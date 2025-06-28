@@ -17,6 +17,14 @@ import Invoices from "./components/doctor/doctorPages/Invoices";
 import Messages from "./components/doctor/doctorPages/Messages"; 
 
 import NotFound from "./components/NotFound ";
+
+import Header from "./components/landingPage/Header";
+// import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingDoctorsPage";
+import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage"; 
+
+
+
+
 import SuperAdminAppointments from "./components/superAdmin/superAdminPages/SuperAdminAppointments";
 import SuperAdminPatients from "./components/superAdmin/superAdminPages/SuperAdminPatients";
 import SuperAdminServices from "./components/superAdmin/superAdminPages/SuperAdminServices";
@@ -27,11 +35,17 @@ import SuperAdminSpecialities from "./components/superAdmin/superAdminPages/Supe
 import SuperAdminReviews from "./components/superAdmin/superAdminPages/SuperAdminReviews";
 import SuperAdminReports from "./components/superAdmin/superAdminPages/SuperAdminReports";
 import SuperAdminProfile from "./components/superAdmin/superAdminPages/SuperAdminProfile";
+
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Login Route */}
-      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+
+      {/* landingPage Route */}
+      <Route path="/" element={<Header />} />
+      <Route path="/landingPage" element={<AdvertisingDoctorsPage />} />    
+      
 
       {/* SuperAdmin Routes under LayoutWrapper */}
       <Route element={<LayoutWrapper />}>

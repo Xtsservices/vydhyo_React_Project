@@ -153,6 +153,11 @@ const Login = ()=> {
 
   return (
     <div className="login-container">
+      {/* <img
+        src="/images/image.png"
+        alt="Login Visual"
+        className="w-full h-auto rounded-xl"
+      /> */}
       <Illustration isMobile={isMobile} />
       <div className="login-form-container">
         <LoginForm
