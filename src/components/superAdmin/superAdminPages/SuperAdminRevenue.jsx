@@ -1,105 +1,114 @@
 import React from "react";
-import { Table, Card, Row, Col, Typography } from "antd";
-import { Pie } from "@ant-design/charts";
+import { Table, Card, Row, Col, Typography, Avatar, Pagination } from "antd";
 import { Tag, Space } from "antd";
 
 const { Title } = Typography;
 
 const revenueData = [
   {
-    key: "1",
-    type: "Home Visit",
-    patientName: "Sarah Johnson",
-    amount: 1200,
-    date: "2024-06-01",
-    status: "Success",
-  },
-  {
-    key: "2",
-    type: "Video",
+    key: "01",
+    doctorName: "Dr. Sarah Johnson",
+    doctorEmail: "sarah.johnson@clinic.com",
     patientName: "Michael Chen",
-    amount: 900,
-    date: "2024-06-02",
-    status: "Success",
+    clinicName: "City Medical Center",
+    date: "2025-06-28",
+    time: "11:00 AM",
+    amount: 900.00,
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=40&h=40&fit=crop&crop=face"
   },
   {
-    key: "3",
-    type: "Walk-In",
-    patientName: "Emily Rodriguez",
-    amount: 700,
-    date: "2024-06-03",
-    status: "Failed",
+    key: "02",
+    doctorName: "Dr. Emily Davis",
+    doctorEmail: "emily.davis@healthcenter.com",
+    patientName: "Jennifer Wilson",
+    clinicName: "Metro Health Clinic",
+    date: "2025-06-28",
+    time: "10:30 AM",
+    amount: 750.00,
+    avatar: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=40&h=40&fit=crop&crop=face"
   },
   {
-    key: "4",
-    type: "Home Visit",
+    key: "03",
+    doctorName: "Dr. Robert Martinez",
+    doctorEmail: "robert.martinez@medical.com",
     patientName: "David Thompson",
-    amount: 1500,
-    date: "2024-06-04",
-    status: "Success",
+    clinicName: "Prime Healthcare",
+    date: "2025-06-27",
+    time: "2:15 PM",
+    amount: 1200.00,
+    avatar: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=40&h=40&fit=crop&crop=face"
   },
   {
-    key: "5",
-    type: "Walk-In",
-    patientName: "Lisa Anderson",
-    amount: 1000,
-    date: "2024-06-05",
-    status: "Success",
+    key: "04",
+    doctorName: "Dr. Lisa Anderson",
+    doctorEmail: "lisa.anderson@wellness.com",
+    patientName: "Amanda Rodriguez",
+    clinicName: "Wellness Center",
+    date: "2025-06-27",
+    time: "9:45 AM",
+    amount: 650.00,
+    avatar: "https://images.unsplash.com/photo-1594824804732-5c0c65068d1c?w=40&h=40&fit=crop&crop=face"
   },
+  {
+    key: "05",
+    doctorName: "Dr. James Wilson",
+    doctorEmail: "james.wilson@specialty.com",
+    patientName: "Kevin Brown",
+    clinicName: "Specialty Clinic",
+    date: "2025-06-26",
+    time: "4:00 PM",
+    amount: 900.00,
+    avatar: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=40&h=40&fit=crop&crop=face"
+  },
+  {
+    key: "06",
+    doctorName: "Dr. Maria Garcia",
+    doctorEmail: "maria.garcia@family.com",
+    patientName: "Patricia Miller",
+    clinicName: "Family Care Center",
+    date: "2025-06-26",
+    time: "1:30 PM",
+    amount: 800.00,
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=40&h=40&fit=crop&crop=face"
+  }
 ];
 
 const RevenueList = () => {
-  const totalRevenue = {
-    "Home Visit": revenueData
-      .filter((r) => r.type === "Home Visit" && r.status === "Success")
-      .reduce((sum, r) => sum + r.amount, 0),
-    Video: revenueData
-      .filter((r) => r.type === "Video" && r.status === "Success")
-      .reduce((sum, r) => sum + r.amount, 0),
-    "Walk-In": revenueData
-      .filter((r) => r.type === "Walk-In" && r.status === "Success")
-      .reduce((sum, r) => sum + r.amount, 0),
-  };
-
-  const pieData = Object.entries(totalRevenue).map(([type, value]) => ({
-    type,
-    value,
-  }));
-
-  const pieConfig = {
-    appendPadding: 10,
-    data: pieData,
-    angleField: "value",
-    colorField: "type",
-    radius: 1,
-    label: {
-      type: "inner",
-      offset: "-30%",
-      content: "{value}",
-      style: {
-        fontSize: 14,
-        textAlign: "center",
-      },
-    },
-    interactions: [{ type: "element-active" }],
-  };
+  const totalRevenue = revenueData.reduce((sum, item) => sum + item.amount, 0);
+  const todayRevenue = 12000;
+  const weekRevenue = 84500;
+  const monthRevenue = 320000;
 
   const columns = [
+    {
+      title: "#",
+      dataIndex: "key",
+      key: "key",
+      width: 50,
+    },
+    {
+      title: "Doctor Name",
+      dataIndex: "doctorName",
+      key: "doctorName",
+      render: (text, record) => (
+        <Space>
+          <Avatar src={record.avatar} size={40} />
+          <div>
+            <div style={{ fontWeight: 500 }}>{text}</div>
+            <div style={{ color: '#666', fontSize: '12px' }}>{record.doctorEmail}</div>
+          </div>
+        </Space>
+      ),
+    },
     {
       title: "Patient Name",
       dataIndex: "patientName",
       key: "patientName",
     },
     {
-      title: "Type",
-      dataIndex: "type",
-      key: "type",
-    },
-    {
-      title: "Amount (₹)",
-      dataIndex: "amount",
-      key: "amount",
-      render: (amt) => `₹${amt}`,
+      title: "Clinic Name",
+      dataIndex: "clinicName",
+      key: "clinicName",
     },
     {
       title: "Date",
@@ -107,64 +116,91 @@ const RevenueList = () => {
       key: "date",
     },
     {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => (
-        <Tag color={status === "Success" ? "green" : "red"}>{status}</Tag>
+      title: "Time",
+      dataIndex: "time",
+      key: "time",
+    },
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      key: "amount",
+      render: (amount) => (
+        <span style={{ color: '#52c41a', fontWeight: 500 }}>
+          ₹{amount.toFixed(2)}
+        </span>
       ),
     },
   ];
 
   return (
-    <div>
-      <Row gutter={[16, 16]}>
-        <Col xs={24}>
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "24px",
-              borderRadius: "8px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            }}
-          >
-            <Title level={3} style={{ marginBottom: 24 }}>
-              Revenue Summary
-            </Title>
-
-            <Row gutter={16} style={{ marginBottom: 32 }}>
-              {Object.entries(totalRevenue).map(([key, value]) => (
-                <Col xs={24} sm={8} key={key}>
-                  <Card bordered={false}>
-                    <Title level={4}>{key}</Title>
-                    <Title level={2} style={{ color: "#3f8600" }}>
-                      ₹{value.toLocaleString()}
-                    </Title>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-
-            <Row gutter={24}>
-              <Col xs={24} lg={12}>
-                <Table
-                  columns={columns}
-                  dataSource={revenueData}
-                  pagination={false}
-                  style={{ backgroundColor: "white" }}
-                />
-              </Col>
-
-              <Col xs={24} lg={12}>
-                <Title level={4} style={{ marginTop: 0, marginBottom: 24 }}>
-                  Revenue Distribution
-                </Title>
-                <Pie {...pieConfig} />
-              </Col>
-            </Row>
-          </div>
+    <div style={{ padding: '20px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      {/* Header Stats */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Col xs={24} sm={6}>
+          <Card style={{ backgroundColor: '#fff3e0', border: 'none' }}>
+            <div style={{ color: '#ff9800', fontSize: '12px', marginBottom: '4px' }}>Today</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#333' }}>₹{todayRevenue.toLocaleString()}</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card style={{ backgroundColor: '#e8f5e8', border: 'none' }}>
+            <div style={{ color: '#4caf50', fontSize: '12px', marginBottom: '4px' }}>This Week</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#333' }}>₹{weekRevenue.toLocaleString()}</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card style={{ backgroundColor: '#e8f5e8', border: 'none' }}>
+            <div style={{ color: '#4caf50', fontSize: '12px', marginBottom: '4px' }}>This Month</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#333' }}>₹{monthRevenue.toLocaleString()}</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card style={{ backgroundColor: '#2c3e50', border: 'none' }}>
+            <div style={{ color: '#bdc3c7', fontSize: '12px', marginBottom: '4px' }}>Total Revenue</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff' }}>₹{totalRevenue.toLocaleString()}</div>
+          </Card>
         </Col>
       </Row>
+
+      {/* Revenue List Section */}
+      <Card style={{ backgroundColor: 'white', borderRadius: '8px', border: 'none' }}>
+        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <Title level={3} style={{ margin: 0, color: '#333' }}>Revenue List</Title>
+            <div style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
+              Manage and track all revenue transactions
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: '#666' }}>2025-06-28</span>
+            <select style={{ padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: '4px', fontSize: '12px' }}>
+              <option>All Clinics</option>
+            </select>
+            <select style={{ padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: '4px', fontSize: '12px' }}>
+              <option>Last 7 Days</option>
+            </select>
+          </div>
+        </div>
+
+        <Table
+          columns={columns}
+          dataSource={revenueData}
+          pagination={false}
+          style={{ backgroundColor: "white" }}
+          rowKey="key"
+        />
+
+        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+          <Pagination
+            current={1}
+            total={50}
+            pageSize={10}
+            showSizeChanger={false}
+            showQuickJumper={false}
+            simple={false}
+          />
+        </div>
+      </Card>
     </div>
   );
 };

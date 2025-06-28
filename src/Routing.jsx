@@ -35,6 +35,8 @@ import SuperAdminSpecialities from "./components/superAdmin/superAdminPages/Supe
 import SuperAdminReviews from "./components/superAdmin/superAdminPages/SuperAdminReviews";
 import SuperAdminReports from "./components/superAdmin/superAdminPages/SuperAdminReports";
 import SuperAdminProfile from "./components/superAdmin/superAdminPages/SuperAdminProfile";
+import SuperAdminProfileView from "./components/superAdmin/superAdminPages/SuperAdminProfileView";
+
 
 const AppRoutes = () => {
   return (
@@ -143,6 +145,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <SuperAdminProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/SuperAdmin/profileView"
+          element={
+            <ProtectedRoute>
+              <SuperAdminProfileView />
             </ProtectedRoute>
           }
         />

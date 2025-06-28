@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Table,
   Input,
   Button,
-  DatePicker,
   Tag,
   Space,
   Select,
@@ -14,70 +14,124 @@ import {
   Row,
   Col,
   Card,
-  Divider,
-  Grid,
+  DatePicker,
 } from "antd";
 import {
   SearchOutlined,
-  CalendarOutlined,
-  DownloadOutlined,
+  EyeOutlined,
   UserOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  BankOutlined,
-  IdcardOutlined,
-  MedicineBoxOutlined,
-  DollarOutlined,
+  ClockCircleOutlined,
+  CloseCircleOutlined,
+  CheckCircleOutlined,
+  CalendarOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
-const { RangePicker } = DatePicker;
 const { Option } = Select;
-const { useBreakpoint } = Grid;
-const DoctorList = () => {
+
+const DoctorOnboardingDashboard = () => {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
-  const [doctors, setDoctors] = useState([]);
+  const [doctors, setDoctors] = useState([
+    {
+      _id: "1",
+      firstname: "Riya",
+      lastname: "Sharma",
+      email: "riya.sharma@email.com",
+      mobile: "9876543210",
+      specialization: [{ name: "Dermatology", experience: 7 }],
+      location: "Delhi",
+      createdAt: "2025-06-25",
+      status: "pending",
+      profilepic: null,
+      requestDate: "02-07-2025",
+    },
+    {
+      _id: "2",
+      firstname: "Aarav",
+      lastname: "Mehta",
+      email: "aarav.mehta@email.com",
+      mobile: "9898989898",
+      specialization: [{ name: "Orthopedics", experience: 10 }],
+      location: "Mumbai",
+      createdAt: "2025-06-26",
+      status: "pending",
+      profilepic: null,
+      requestDate: "02-07-2025",
+    },
+    {
+      _id: "3",
+      firstname: "Sneha",
+      lastname: "Iyer",
+      email: "sneha.iyer@email.com",
+      mobile: "9123456789",
+      specialization: [{ name: "Pediatrics", experience: 5 }],
+      location: "Bengaluru",
+      createdAt: "2025-06-25",
+      status: "pending",
+      profilepic: null,
+      requestDate: "02-07-2025",
+    },
+    {
+      _id: "4",
+      firstname: "Rajeev",
+      lastname: "Nair",
+      email: "rajeev.nair@email.com",
+      mobile: "9000786050",
+      specialization: [{ name: "Cardiology", experience: 12 }],
+      location: "Kochi",
+      createdAt: "2025-06-24",
+      status: "pending",
+      profilepic: null,
+      requestDate: "02-07-2025",
+    },
+    {
+      _id: "5",
+      firstname: "Meera",
+      lastname: "Das",
+      email: "meera.das@email.com",
+      mobile: "9001234567",
+      specialization: [{ name: "Gynecology", experience: 12 }],
+      location: "Kochi",
+      createdAt: "2025-06-24",
+      status: "pending",
+      profilepic: null,
+      requestDate: "02-07-2025",
+    },
+  ]);
   const [loading, setLoading] = useState(false);
   const [filteredDoctors, setFilteredDoctors] = useState([]);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [specializationFilter, setSpecializationFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("Pending");
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
-  const [specializationModalVisible, setSpecializationModalVisible] = useState(false);
-  const [selectedSpecializations, setSelectedSpecializations] = useState([]);
-  const [selectedDoctorName, setSelectedDoctorName] = useState("");
-  const [updatingStatus, setUpdatingStatus] = useState(null);
-  const [doctorDetailsModalVisible, setDoctorDetailsModalVisible] = useState(false);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
+
+  // Stats data
+  const stats = {
+    pending: 23,
+    rejected: 12,
+    approved: 76,
+  };
 
   const applyFilters = (doctorList) => {
     let filtered = doctorList;
 
     if (searchText) {
-      filtered = filtered.filter(
-        (doctor) => {
-          const specializations = Array.isArray(doctor.specialization) 
-            ? doctor.specialization 
-            : doctor.specialization ? [doctor.specialization] : [];
-          
-          return (
-            `${doctor.firstname} ${doctor.lastname}`
-              .toLowerCase()
-              .includes(searchText.toLowerCase()) ||
-            doctor.email.toLowerCase().includes(searchText.toLowerCase()) ||
-            doctor.medicalRegistrationNumber
-              ?.toLowerCase()
-              .includes(searchText.toLowerCase()) ||
-            specializations.some((specialization) =>
-              specialization.name
-                ?.toLowerCase()
-                .includes(searchText.toLowerCase())
-            )
-          );
-        }
-      );
+      filtered = filtered.filter((doctor) => {
+        const specializations = Array.isArray(doctor.specialization)
+          ? doctor.specialization
+          : doctor.specialization
+          ? [doctor.specialization]
+          : [];
+        return (
+          `${doctor.firstname} ${doctor.lastname}`
+            .toLowerCase()
+            .includes(searchText.toLowerCase()) ||
+          doctor.email.toLowerCase().includes(searchText.toLowerCase()) ||
+          specializations.some((specialization) =>
+            specialization.name?.toLowerCase().includes(searchText.toLowerCase())
+          )
+        );
+      });
     }
 
     if (statusFilter !== "all") {
@@ -86,155 +140,16 @@ const DoctorList = () => {
       );
     }
 
-    if (specializationFilter !== "all") {
-      filtered = filtered.filter((doctor) => {
-        const specializations = Array.isArray(doctor.specialization) 
-          ? doctor.specialization 
-          : doctor.specialization ? [doctor.specialization] : [];
-        
-        return specializations.some((specialization) =>
-          specialization.name
-            ?.toLowerCase()
-            .includes(specializationFilter.toLowerCase())
-        );
-      });
-    }
-
     setFilteredDoctors(filtered);
   };
 
-  const fetchDoctors = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        message.error("No authentication token found. Please login again.");
-        return;
-      }
-
-      const response = await axios.get(
-        `http://192.168.1.42:3000/users/AllUsers?type=doctor&status=approved`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.data) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = response.data;
-      let doctorsData = [];
-      if (data.status === "success" && data.data) {
-        doctorsData = Array.isArray(data.data) ? data.data : [data.data];
-      } else if (Array.isArray(data)) {
-        doctorsData = data;
-      } else {
-        doctorsData = data.data || [];
-      }
-
-      setDoctors(doctorsData);
-      setFilteredDoctors(doctorsData);
-    } catch (error) {
-      console.error("Error fetching doctors:", error);
-      message.error("Failed to fetch doctors data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateDoctorStatus = async (doctorId, newStatus) => {
-    setUpdatingStatus(doctorId);
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        message.error("No authentication token found");
-        return;
-      }
-
-      const response = await axios.put(
-        `http://192.168.1.42:3000/admin/approveDoctor`,
-        {
-          userId: doctorId,
-          status: newStatus === "active" ? "Approved" : "Rejected",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.data) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const updatedDoctors = doctors.map((doctor) =>
-        doctor._id === doctorId ? { ...doctor, status: newStatus } : doctor
-      );
-
-      setDoctors(updatedDoctors);
-      applyFilters(updatedDoctors);
-
-      message.success(
-        `Doctor ${newStatus === "active" ? "approved" : "rejected"} successfully`
-      );
-    } catch (error) {
-      console.error("Error updating doctor status:", error);
-      message.error(error.message || "Failed to update doctor status");
-    } finally {
-      setUpdatingStatus(null);
-    }
-  };
-
-  const handleApprove = (doctorId) => {
-    Modal.confirm({
-      title: "Approve Doctor",
-      content: "Are you sure you want to approve this doctor?",
-      okText: "Yes, Approve",
-      okType: "primary",
-      cancelText: "Cancel",
-      onOk: () => updateDoctorStatus(doctorId, "active"),
-    });
-  };
-
-  const handleReject = (doctorId) => {
-    Modal.confirm({
-      title: "Reject Doctor",
-      content:
-        "Are you sure you want to reject this doctor? This action cannot be undone.",
-      okText: "Yes, Reject",
-      okType: "danger",
-      cancelText: "Cancel",
-      onOk: () => updateDoctorStatus(doctorId, "inactive"),
-    });
-  };
-
-  const showDoctorDetailsModal = (doctor) => {
-    setSelectedDoctor(doctor);
-    setDoctorDetailsModalVisible(true);
-  };
-
   useEffect(() => {
-    fetchDoctors();
-  }, []);
+    setFilteredDoctors(doctors);
+  }, [doctors]);
 
   useEffect(() => {
     applyFilters(doctors);
-  }, [searchText, doctors, statusFilter, specializationFilter]);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  }, [searchText, doctors, statusFilter]);
 
   const getImageSrc = (profilepic) => {
     if (profilepic && profilepic.data && profilepic.mimeType) {
@@ -248,41 +163,18 @@ const DoctorList = () => {
     setImageModalVisible(true);
   };
 
-  const showSpecializationModal = (specializations, doctorName) => {
-    setSelectedSpecializations(specializations);
-    setSelectedDoctorName(doctorName);
-    setSpecializationModalVisible(true);
-  };
-
-  const getUniqueSpecializations = () => {
-    const allSpecs = doctors.flatMap((doctor) => {
-      const specializations = Array.isArray(doctor.specialization) 
-        ? doctor.specialization 
-        : doctor.specialization ? [doctor.specialization] : [];
-      return specializations.map((specialization) => specialization.name);
-    });
-    return [...new Set(allSpecs)].filter(
-      (specialization) => specialization && String(specialization).trim() !== ""
-    );
-  };
-
-  const getStatusColor = (status) => {
-    const statusLower = status?.toLowerCase();
-    switch (statusLower) {
-      case "active":
-      case "approved":
-        return "success";
-      case "inactive":
-      case "rejected":
-        return "error";
-      case "pending":
-        return "warning";
-      default:
-        return "default";
-    }
+  const handleViewProfile = (doctorId) => {
+    navigate(`/SuperAdmin/profileView?id=${doctorId}`);
   };
 
   const columns = [
+    {
+      title: "#",
+      dataIndex: "index",
+      key: "index",
+      width: 50,
+      render: (text, record, index) => index + 1,
+    },
     {
       title: "Doctor",
       dataIndex: "name",
@@ -294,91 +186,90 @@ const DoctorList = () => {
             <Avatar
               size={40}
               src={imageSrc}
-              style={{
-                flexShrink: 0,
-                cursor: imageSrc ? "pointer" : "default",
-              }}
-              onClick={imageSrc ? () => showImageModal(imageSrc) : undefined}
+              style={{ flexShrink: 0, borderRadius: "50%", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
             >
               {!imageSrc &&
                 `${record.firstname?.[0] ?? ""}${record.lastname?.[0] ?? ""}`}
             </Avatar>
-            <span 
-              style={{ 
-                fontWeight: 500, 
-                cursor: "pointer", 
-                color: "#1890ff",
-                textDecoration: "underline"
-              }}
-              onClick={() => showDoctorDetailsModal(record)}
-            >
-              Dr. {record.firstname || ""} {record.lastname || ""}
-            </span>
+            <div>
+              <div style={{ fontWeight: 500, color: "#1890ff", fontSize: "clamp(12px, 1.8vw, 14px)" }}>
+                Dr. {record.firstname || ""} {record.lastname || ""}
+              </div>
+              <div style={{ fontSize: "clamp(10px, 1.5vw, 12px)", color: "#8c8c8c" }}>
+                {record.email}
+              </div>
+            </div>
           </Space>
         );
       },
     },
     {
-      title: "Doctor ID",
-      dataIndex: "medicalRegistrationNumber",
-      key: "medicalRegistrationNumber",
-      render: (text) => text || "N/A",
+      title: "Contact",
+      dataIndex: "mobile",
+      key: "mobile",
+      render: (text) => (
+        <span style={{ fontSize: "clamp(12px, 1.8vw, 14px)" }}>{text || "N/A"}</span>
+      ),
     },
     {
-      title: "Specialization",
+      title: "Specialty",
       dataIndex: "specialization",
       key: "specialization",
-      render: (specialization, record) => {
-        const specializations = Array.isArray(specialization) 
-          ? specialization 
-          : specialization ? [specialization] : [];
-        
+      render: (specialization) => {
+        const specializations = Array.isArray(specialization)
+          ? specialization
+          : specialization
+          ? [specialization]
+          : [];
+        const firstSpec = specializations[0];
         return (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div>
-              {specializations.length > 0
-                ? specializations
-                    .map((spec) => spec.name)
-                    .filter((name) => name)
-                    .join(", ")
-                : "Not specified"}
-            </div>
-            {specializations.length > 0 && (
-              <Button
-                type="link"
-                size="small"
-                onClick={() =>
-                  showSpecializationModal(
-                    specializations,
-                    `Dr. ${record.firstname || ""} ${record.lastname || ""}`
-                  )
-                }
-                style={{ padding: "0 4px", height: "auto", fontSize: "12px" }}
-              >
-                View
-              </Button>
-            )}
-          </div>
+          <Tag
+            color="blue"
+            style={{
+              borderRadius: "12px",
+              fontWeight: 500,
+              fontSize: "clamp(10px, 1.5vw, 12px)",
+              padding: "4px 10px",
+            }}
+          >
+            {firstSpec?.name || "Not specified"}
+          </Tag>
         );
       },
     },
     {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-      render: (text) => text || "N/A",
+      title: "Experience",
+      dataIndex: "specialization",
+      key: "experience",
+      render: (specialization) => {
+        const specializations = Array.isArray(specialization)
+          ? specialization
+          : specialization
+          ? [specialization]
+          : [];
+        const firstSpec = specializations[0];
+        return (
+          <span style={{ fontSize: "clamp(12px, 1.8vw, 14px)" }}>
+            {firstSpec?.experience || 0} yr
+          </span>
+        );
+      },
     },
     {
-      title: "Phone",
-      dataIndex: "mobile",
-      key: "mobile",
-      render: (text) => text || "N/A",
+      title: "Location",
+      dataIndex: "location",
+      key: "location",
+      render: (text) => (
+        <span style={{ fontSize: "clamp(12px, 1.8vw, 14px)" }}>{text || "N/A"}</span>
+      ),
     },
     {
-      title: "Registered On",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => formatDate(date),
+      title: "Request Date",
+      dataIndex: "requestDate",
+      key: "requestDate",
+      render: (date) => (
+        <span style={{ fontSize: "clamp(12px, 1.8vw, 14px)" }}>{date || "N/A"}</span>
+      ),
     },
     {
       title: "Status",
@@ -386,32 +277,16 @@ const DoctorList = () => {
       key: "status",
       render: (status) => (
         <Tag
-          color={getStatusColor(status)}
+          color="orange"
           style={{
-            borderRadius: "4px",
+            borderRadius: "12px",
             fontWeight: 500,
-            border: "none",
             textTransform: "capitalize",
+            fontSize: "clamp(10px, 1.5vw, 12px)",
+            padding: "4px 10px",
           }}
         >
-          {status || "Unknown"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Verified",
-      dataIndex: "isVerified",
-      key: "isVerified",
-      render: (isVerified) => (
-        <Tag
-          color={isVerified ? "success" : "warning"}
-          style={{
-            borderRadius: "4px",
-            fontWeight: 500,
-            border: "none",
-          }}
-        >
-          {isVerified ? "Verified" : "Pending"}
+          Pending
         </Tag>
       ),
     },
@@ -419,483 +294,335 @@ const DoctorList = () => {
       title: "Actions",
       key: "actions",
       render: (text, record) => (
-        <Space>
-          <Button
-            type="primary"
-            size="small"
-            onClick={() => handleApprove(record._id)}
-            loading={updatingStatus === record._id}
-            disabled={record.status === "active"}
-          >
-            Approve
-          </Button>
-          <Button
-            type="danger"
-            size="small"
-            onClick={() => handleReject(record._id)}
-            loading={updatingStatus === record._id}
-            disabled={record.status === "inactive"}
-          >
-            Reject
-          </Button>
-        </Space>
+        <Button
+          type="text"
+          icon={<EyeOutlined />}
+          onClick={() => handleViewProfile(record._id)}
+          style={{ color: "#1890ff", fontSize: "clamp(12px, 1.8vw, 14px)" }}
+        />
       ),
     },
   ];
 
   return (
-    <div>
-      <Spin spinning={loading}>
-        <Row gutter={[16, 16]}>
-          <Col xs={24}>
-            <Card title="Doctor List" bordered={false}>
-              <Row gutter={[16, 16]} justify="space-between" align="middle">
-                <Col xs={24} md={12}>
-                  <Input
-                    placeholder="Search by name, ID, email, or specialization"
-                    prefix={<SearchOutlined />}
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
+    <div
+      style={{
+        padding: "clamp(16px, 3vw, 24px)",
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
+      <div style={{ marginBottom: "clamp(16px, 2vw, 24px)" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
+            marginBottom: "clamp(16px, 2vw, 24px)",
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "clamp(18px, 3vw, 24px)",
+              fontWeight: 600,
+              color: "#262626",
+            }}
+          >
+            Doctor Onboarding Request
+          </h2>
+          
+        </div>
+
+        {/* Stats Cards */}
+        <Row gutter={[16, 16]} style={{ marginBottom: "clamp(16px, 2vw, 24px)" }}>
+          <Col xs={24} sm={12} md={8}>
+            <Card
+              style={{
+                backgroundColor: "#fff3cd",
+                border: "1px solid #ffeaa7",
+                borderRadius: "12px",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                transition: "all 0.3s ease",
+              }}
+              hoverable
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div
+                    style={{
+                      fontSize: "clamp(10px, 1.5vw, 12px)",
+                      color: "#856404",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Pending Approvals
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "clamp(20px, 3vw, 32px)",
+                      fontWeight: "bold",
+                      color: "#856404",
+                    }}
+                  >
+                    {stats.pending}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    width: "clamp(32px, 5vw, 40px)",
+                    height: "clamp(32px, 5vw, 40px)",
+                    backgroundColor: "#ffc107",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <ClockCircleOutlined
+                    style={{ color: "white", fontSize: "clamp(16px, 2.5vw, 20px)" }}
                   />
-                </Col>
-                <Col xs={24} md={12} style={{ textAlign: "right" }}>
-                  <Button onClick={fetchDoctors} loading={loading}>
-                    Refresh
-                  </Button>
-                </Col>
-              </Row>
-              <Divider />
-              <Table
-                columns={columns}
-                dataSource={filteredDoctors.map((doctor) => ({
-                  ...doctor,
-                  key: doctor._id,
-                }))}
-                pagination={{
-                  current: 1,
-                  pageSize: 10,
-                  total: filteredDoctors.length,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} of ${total} doctors`,
-                }}
-                scroll={{ x: true }}
-              />
-              <div style={{ marginTop: "16px", color: "#8c8c8c", fontSize: "14px" }}>
-                Showing {filteredDoctors.length} of {doctors.length} doctors
+                </div>
+              </div>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} md={8}>
+            <Card
+              style={{
+                backgroundColor: "#f8d7da",
+                border: "1px solid #f5c6cb",
+                borderRadius: "12px",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                transition: "all 0.3s ease",
+              }}
+              hoverable
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div
+                    style={{
+                      fontSize: "clamp(10px, 1.5vw, 12px)",
+                      color: "#721c24",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Rejected
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "clamp(20px, 3vw, 32px)",
+                      fontWeight: "bold",
+                      color: "#721c24",
+                    }}
+                  >
+                    {stats.rejected}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    width: "clamp(32px, 5vw, 40px)",
+                    height: "clamp(32px, 5vw, 40px)",
+                    backgroundColor: "#dc3545",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <CloseCircleOutlined
+                    style={{ color: "white", fontSize: "clamp(16px, 2.5vw, 20px)" }}
+                  />
+                </div>
+              </div>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} md={8}>
+            <Card
+              style={{
+                backgroundColor: "#d4edda",
+                border: "1px solid #c3e6cb",
+                borderRadius: "12px",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                transition: "all 0.3s ease",
+              }}
+              hoverable
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div
+                    style={{
+                      fontSize: "clamp(10px, 1.5vw, 12px)",
+                      color: "#155724",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Approved
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "clamp(20px, 3vw, 32px)",
+                      fontWeight: "bold",
+                      color: "#155724",
+                    }}
+                  >
+                    {stats.approved}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    width: "clamp(32px, 5vw, 40px)",
+                    height: "clamp(32px, 5vw, 40px)",
+                    backgroundColor: "#28a745",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <CheckCircleOutlined
+                    style={{ color: "white", fontSize: "clamp(16px, 2.5vw, 20px)" }}
+                  />
+                </div>
               </div>
             </Card>
           </Col>
         </Row>
 
-        {/* Doctor Details Modal */}
-        <Modal
-          title={
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <UserOutlined />
-              <span>
-                Dr. {selectedDoctor?.firstname || ""} {selectedDoctor?.lastname || ""} - Details
-              </span>
-            </div>
-          }
-          open={doctorDetailsModalVisible}
-          onCancel={() => setDoctorDetailsModalVisible(false)}
-          footer={[
-            <Button key="close" onClick={() => setDoctorDetailsModalVisible(false)}>
-              Close
-            </Button>,
-          ]}
-          width={900}
-          centered
-        >
-          {selectedDoctor && (
-            <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
-              <Card 
-                title={
-                  <span>
-                    <UserOutlined style={{ marginRight: 8 }} />
-                    Personal Information
-                  </span>
-                }
-                size="small"
-              >
-                <Row gutter={[16, 16]}>
-                  <Col xs={24} md={6} style={{ textAlign: "center" }}>
-                    <Avatar
-                      size={80}
-                      src={getImageSrc(selectedDoctor.profilepic)}
-                      style={{ marginBottom: "8px" }}
-                    >
-                      {!getImageSrc(selectedDoctor.profilepic) &&
-                        `${selectedDoctor.firstname?.[0] ?? ""}${selectedDoctor.lastname?.[0] ?? ""}`}
-                    </Avatar>
-                    <div style={{ fontWeight: 500 }}>
-                      Dr. {selectedDoctor.firstname} {selectedDoctor.lastname}
-                    </div>
-                  </Col>
-                  <Col xs={24} md={18}>
-                    <Row gutter={[16, 16]}>
-                      <Col xs={24} md={12}>
-                        <div>
-                          <strong>User ID:</strong> {selectedDoctor.userId || "N/A"}<br />
-                          <strong>Medical Registration:</strong> {selectedDoctor.medicalRegistrationNumber || "N/A"}<br />
-                          <strong>Gender:</strong> {selectedDoctor.gender || "N/A"}<br />
-                          <strong>Date of Birth:</strong> {selectedDoctor.DOB || "N/A"}
-                        </div>
-                      </Col>
-                      <Col xs={24} md={12}>
-                        <div>
-                          <strong>Blood Group:</strong> {selectedDoctor.bloodgroup || "N/A"}<br />
-                          <strong>Marital Status:</strong> {selectedDoctor.maritalStatus || "N/A"}<br />
-                          <strong>Role:</strong> {selectedDoctor.role || "N/A"}<br />
-                          <strong>Relationship:</strong> {selectedDoctor.relationship || "N/A"}
-                        </div>
-                      </Col>
-                    </Row>
-                  </Col>
-                </Row>
-              </Card>
-
-              <Row gutter={16} style={{ marginTop: "16px" }}>
-                <Col xs={24} md={12}>
-                  <Card 
-                    title={
-                      <span>
-                        <PhoneOutlined style={{ marginRight: 8 }} />
-                        Contact Information
-                      </span>
-                    }
-                    size="small"
-                  >
-                    <div>
-                      <strong>Email:</strong> {selectedDoctor.email || "N/A"}<br />
-                      <strong>Mobile:</strong> {selectedDoctor.mobile || "N/A"}<br />
-                      <strong>Spoken Languages:</strong> {selectedDoctor.spokenLanguage?.join(", ") || "N/A"}<br />
-                      <strong>App Language:</strong> {selectedDoctor.appLanguage || "N/A"}
-                    </div>
-                  </Card>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Card 
-                    title={
-                      <span>
-                        <Tag color={getStatusColor(selectedDoctor.status)} style={{ marginRight: 8 }}>
-                          {selectedDoctor.status}
-                        </Tag>
-                        Status Information
-                      </span>
-                    }
-                    size="small"
-                  >
-                    <div>
-                      <strong>Verified:</strong> <Tag color={selectedDoctor.isVerified ? "success" : "warning"}>
-                        {selectedDoctor.isVerified ? "Verified" : "Pending"}
-                      </Tag><br />
-                      <strong>Deleted:</strong> <Tag color={selectedDoctor.isDeleted ? "error" : "success"}>
-                        {selectedDoctor.isDeleted ? "Yes" : "No"}
-                      </Tag><br />
-                      <strong>Rejection Reason:</strong> {selectedDoctor.rejectionReason || "N/A"}<br />
-                      <strong>Created At:</strong> {formatDate(selectedDoctor.createdAt)}
-                    </div>
-                  </Card>
-                </Col>
-              </Row>
-
-              <Card 
-                title={
-                  <span>
-                    <MedicineBoxOutlined style={{ marginRight: 8 }} />
-                    Specialization
-                  </span>
-                }
-                size="small"
-                style={{ marginTop: "16px" }}
-              >
-                {(() => {
-                  const specializations = Array.isArray(selectedDoctor.specialization) 
-                    ? selectedDoctor.specialization 
-                    : selectedDoctor.specialization ? [selectedDoctor.specialization] : [];
-                  
-                  if (specializations.length === 0) {
-                    return <div style={{ color: "#8c8c8c" }}>No specialization information available</div>;
-                  }
-
-                  return specializations.map((spec, index) => (
-                    <div key={spec._id || index} style={{ 
-                      border: "1px solid #e8e8e8", 
-                      borderRadius: "6px", 
-                      padding: "12px", 
-                      marginBottom: "12px",
-                      backgroundColor: "#fafafa"
-                    }}>
-                      <Row gutter={[16, 8]}>
-                        <Col xs={24} md={8}>
-                          <strong>Name:</strong> {spec.name || "N/A"}
-                        </Col>
-                        <Col xs={24} md={8}>
-                          <strong>Experience:</strong> {spec.experience || 0} years
-                        </Col>
-                        <Col xs={24} md={8}>
-                          <strong>ID:</strong> {spec.id || "N/A"}
-                        </Col>
-                      </Row>
-                      <div style={{ marginTop: "12px" }}>
-                        <strong>Certificates:</strong>
-                        <div style={{ marginTop: "8px" }}>
-                          {spec.drgreeCertificate?.data && (
-                            <Button
-                              type="link"
-                              size="small"
-                              onClick={() => showImageModal(`data:${spec.drgreeCertificate?.mimeType};base64,${spec.drgreeCertificate?.data}`)}
-                            >
-                              View Degree Certificate
-                            </Button>
-                          )}
-                          {spec.specializationCertificate?.data && (
-                            <Button
-                              type="link"
-                              size="small"
-                              onClick={() => showImageModal(`data:${spec.specializationCertificate?.mimeType};base64,${spec.specializationCertificate?.data}`)}
-                            >
-                              View Specialization Certificate
-                            </Button>
-                          )}
-                          {!spec.drgreeCertificate?.data && !spec.specializationCertificate?.data && (
-                            <span style={{ color: "#8c8c8c", fontStyle: "italic" }}>
-                              No certificates available
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ));
-                })()}
-              </Card>
-
-              <Card 
-                title={
-                  <span>
-                    <MedicineBoxOutlined style={{ marginRight: 8 }} />
-                    Practice
-                  </span>
-                }
-                size="small"
-                style={{ marginTop: "16px" }}
-              >
-                <div style={{ color: "#8c8c8c", fontStyle: "italic" }}>
-                  Coming soon
-                </div>
-              </Card>
-
-              {selectedDoctor.consultationModeFee && selectedDoctor.consultationModeFee.length > 0 && (
-                <Card 
-                  title={
-                    <span>
-                      <DollarOutlined style={{ marginRight: 8 }} />
-                      Consultation Fees
-                    </span>
-                  }
-                  size="small"
-                  style={{ marginTop: "16px" }}
-                >
-                  {selectedDoctor.consultationModeFee.map((fee, index) => (
-                    <div key={fee._id || index} style={{ 
-                      display: "flex", 
-                      justifyContent: "space-between", 
-                      padding: "8px 0",
-                      borderBottom: index < selectedDoctor.consultationModeFee.length - 1 ? "1px solid #f0f0f0" : "none"
-                    }}>
-                      <span>{fee.type}</span>
-                      <span style={{ fontWeight: 500 }}>
-                        {fee.currency} {fee.fee}
-                      </span>
-                    </div>
-                  ))}
-                </Card>
-              )}
-
-              {selectedDoctor.bankDetails && (
-                <Card 
-                  title={
-                    <span>
-                      <BankOutlined style={{ marginRight: 8 }} />
-                      Bank Details
-                    </span>
-                  }
-                  size="small"
-                  style={{ marginTop: "16px" }}
-                >
-                  <Row gutter={16}>
-                    <Col xs={24} md={8}>
-                      <strong>Bank Name:</strong> {selectedDoctor.bankDetails.bankName || "N/A"}
-                    </Col>
-                    <Col xs={24} md={8}>
-                      <strong>Account Holder:</strong> {selectedDoctor.bankDetails.accountHolderName || "N/A"}
-                    </Col>
-                    <Col xs={24} md={8}>
-                      <strong>Account Number:</strong> {selectedDoctor.bankDetails.accountNumber || "N/A"}
-                    </Col>
-                    <Col xs={24} md={8} style={{ marginTop: "8px" }}>
-                      <strong>IFSC Code:</strong> {selectedDoctor.bankDetails.ifscCode || "N/A"}
-                    </Col>
-                  </Row>
-                </Card>
-              )}
-
-              <Card 
-                title={
-                  <span>
-                    <IdcardOutlined style={{ marginRight: 8 }} />
-                    KYC Details
-                  </span>
-                }
-                size="small"
-                style={{ marginTop: "16px" }}
-              >
-                <div style={{ color: "#8c8c8c", fontStyle: "italic" }}>
-                  Coming soon
-                </div>
-              </Card>
-            </div>
-          )}
-        </Modal>
-
-        {/* Image Modal */}
-        <Modal
-          title="Certificate View"
-          open={imageModalVisible}
-          onCancel={() => setImageModalVisible(false)}
-          footer={null}
-          width={800}
-          centered
-        >
-          <div style={{ textAlign: "center" }}>
-            <img
-              src={selectedImage}
-              alt="Certificate"
+        {/* Search Bar */}
+        <Row style={{ marginBottom: "clamp(16px, 2vw, 24px)" }}>
+          <Col xs={24}>
+            <Input
+              placeholder="Search doctors..."
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               style={{
-                maxWidth: "100%",
-                maxHeight: "600px",
-                objectFit: "contain",
+                borderRadius: "12px",
+                maxWidth: "clamp(300px, 50vw, 400px)",
+                fontSize: "clamp(12px, 1.8vw, 14px)",
               }}
             />
-          </div>
-        </Modal>
+          </Col>
+        </Row>
 
-        {/* Specialization Modal */}
-        <Modal
-          title={`Specialization Details - ${selectedDoctorName}`}
-          open={specializationModalVisible}
-          onCancel={() => setSpecializationModalVisible(false)}
-          footer={null}
-          width={700}
-          centered
+        {/* Table */}
+        <Card
+          style={{
+            borderRadius: "12px",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+            transition: "all 0.3s ease",
+          }}
+          hoverable
         >
-          <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
-            {selectedSpecializations.map((specialization, index) => (
-              <div
-                key={specialization._id || index}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "clamp(12px, 2vw, 16px)",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: "clamp(14px, 2vw, 16px)",
+                color: "#262626",
+              }}
+            >
+              Doctor Requests
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <DatePicker
+                value={null}
+                placeholder="02-07-2025"
+                style={{ borderRadius: "12px", fontSize: "clamp(12px, 1.8vw, 14px)" }}
+                suffixIcon={<CalendarOutlined />}
+              />
+              <Select
+                value={statusFilter}
+                onChange={setStatusFilter}
                 style={{
-                  border: "1px solid #e8e8e8",
-                  borderRadius: "8px",
-                  padding: "16px",
-                  marginBottom: "16px",
-                  backgroundColor: "#fafafa",
+                  width: "clamp(100px, 20vw, 120px)",
+                  borderRadius: "12px",
+                  fontSize: "clamp(12px, 1.8vw, 14px)",
                 }}
               >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "12px",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <div>
-                    <strong>Specialization:</strong>
-                    <div style={{ marginTop: "4px", color: "#595959" }}>
-                      {specialization.name || "Not specified"}
-                    </div>
-                  </div>
-                  <div>
-                    <strong>Experience:</strong>
-                    <div style={{ marginTop: "4px", color: "#595959" }}>
-                      {specialization.experience || 0} years
-                    </div>
-                  </div>
-                  <div>
-                    <strong>ID:</strong>
-                    <div style={{ marginTop: "4px", color: "#595959" }}>
-                      {specialization.id || "Not available"}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <div>
-                    <strong>Certificates:</strong>
-                    <div
-                      style={{
-                        marginTop: "8px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      {specialization.drgreeCertificate &&
-                      specialization.drgreeCertificate.data ? (
-                        <Button
-                          type="link"
-                          size="small"
-                          onClick={() => showImageModal(`data:${specialization.drgreeCertificate?.mimeType};base64,${specialization.drgreeCertificate?.data}`)}
-                        >
-                          View Degree Certificate
-                        </Button>
-                      ) : null}
-
-                      {specialization.specializationCertificate &&
-                      specialization.specializationCertificate?.data ? (
-                        <Button
-                          type="link"
-                          size="small"
-                          onClick={() => showImageModal(`data:${specialization.specializationCertificate?.mimeType};base64,${specialization.specializationCertificate?.data}`)}
-                        >
-                          View Specialization Certificate
-                        </Button>
-                      ) : null}
-
-                      {(!specialization.drgreeCertificate ||
-                        !specialization.drgreeCertificate.data) &&
-                        (!specialization.specializationCertificate ||
-                          !specialization.specializationCertificate.data) && (
-                          <span
-                            style={{ color: "#8c8c8c", fontStyle: "italic" }}
-                          >
-                            No certificates available
-                          </span>
-                        )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {selectedSpecializations.length === 0 && (
-              <div
-                style={{
-                  textAlign: "center",
-                  color: "#8c8c8c",
-                  padding: "40px",
-                }}
-              >
-                No specialization details available
-              </div>
-            )}
+                <Option value="pending">Pending</Option>
+                <Option value="approved">Approved</Option>
+                <Option value="rejected">Rejected</Option>
+                <Option value="all">All</Option>
+              </Select>
+            </div>
           </div>
-        </Modal>
-      </Spin>
+          <Table
+            columns={columns}
+            dataSource={filteredDoctors.map((doctor) => ({
+              ...doctor,
+              key: doctor._id,
+            }))}
+            pagination={{
+              current: 1,
+              pageSize: 10,
+              total: filteredDoctors.length,
+              showSizeChanger: false,
+              showQuickJumper: false,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} items`,
+              style: { marginTop: "16px" },
+            }}
+            scroll={{ x: true }}
+            rowClassName="custom-row"
+            style={{
+              ".ant-table-thead > tr > th": {
+                backgroundColor: "#fafafa",
+                fontWeight: 600,
+                color: "#262626",
+                fontSize: "clamp(12px, 1.8vw, 14px)",
+              },
+              ".ant-table-row": {
+                transition: "background-color 0.3s ease",
+              },
+              ".ant-table-row:hover": {
+                backgroundColor: "#f0f9ff",
+              },
+            }}
+          />
+        </Card>
+      </div>
+
+      {/* Image Modal */}
+      <Modal
+        title="Image View"
+        open={imageModalVisible}
+        onCancel={() => setImageModalVisible(false)}
+        footer={null}
+        width="clamp(300px, 80vw, 800px)"
+        centered
+      >
+        <div style={{ textAlign: "center" }}>
+          <img
+            src={selectedImage}
+            alt="Document"
+            style={{
+              maxWidth: "100%",
+              maxHeight: "clamp(300px, 60vh, 600px)",
+              objectFit: "contain",
+              borderRadius: "12px",
+            }}
+          />
+        </div>
+      </Modal>
     </div>
   );
 };
 
-export default DoctorList;
+export default DoctorOnboardingDashboard;
