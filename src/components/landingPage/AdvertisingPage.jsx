@@ -50,10 +50,10 @@ const AdvertisingDoctorsPage = () => {
           other Indian languages.
         </p>
 
-        <Space size={16} style={{ marginBottom: 24 }}>
+        <Space size={16} style={{ marginBottom: 20 }}>
           <Button
             icon={<AndroidFilled />}
-            style={{ backgroundColor: "#000", color: "#fff" }}
+            style={{ backgroundColor: "#000", color: "#fff" , height: 45}}
           >
             <div style={{ textAlign: "left" }}>
               <div style={{ fontSize: 10 }}>GET IT ON</div>
@@ -62,7 +62,7 @@ const AdvertisingDoctorsPage = () => {
           </Button>
           <Button
             icon={<AppleFilled />}
-            style={{ backgroundColor: "#000", color: "#fff" }}
+            style={{ backgroundColor: "#000", color: "#fff", height: 45 }}
           >
             <div style={{ textAlign: "left" }}>
               <div style={{ fontSize: 10 }}>Download on the</div>
@@ -647,6 +647,110 @@ const AdvertisingDoctorsPage = () => {
       </section>
  
         {/* footer */}
+        <footer
+        style={{
+          background: "#1A3B34",
+          color: "#F8FCFA",
+          padding: screens.md ? "48px 0 24px 0" : "32px 0 16px 0",
+          marginTop: 0,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1400,
+            margin: "0 auto",
+            padding: "0 32px",
+            display: "flex",
+            flexDirection: screens.md ? "row" : "column",
+            alignItems: screens.md ? "flex-start" : "center",
+            justifyContent: "space-between",
+            gap: screens.md ? 0 : 32,
+          }}
+        >
+          {/* Logo and tagline */}
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+              <span style={{ fontWeight: "bold", fontSize: 32, color: "#F8FCFA", marginRight: 8 }}>
+                Vydhyo
+              </span>
+            </div>
+            <div style={{ color: "#B7EBD7", fontSize: 18, marginBottom: 0 }}>
+              for Healthcare
+            </div>
+            {/* <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                background: "#111C18",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 32,
+                color: "#F8FCFA",
+                border: "2px solid #222",
+                marginBottom: 8,
+              }}
+            >
+              N
+            </div> */}
+          </div>
+          {/* Links */}
+          <div
+            style={{
+              flex: 2,
+              display: "flex",
+              flexDirection: screens.md ? "row" : "column",
+              justifyContent: screens.md ? "flex-end" : "center",
+              gap: screens.md ? 80 : 24,
+              width: "100%",
+              marginTop: screens.md ? 0 : 24,
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: "bold", fontSize: 22, marginBottom: 12 }}>
+                Quick Links
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <a href="/" style={{ color: "#F8FCFA", textDecoration: "none" }}>Home</a>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <a href="/about" style={{ color: "#F8FCFA", textDecoration: "none" }}>About</a>
+              </div>
+              <div>
+                <a href="/contact" style={{ color: "#F8FCFA", textDecoration: "none" }}>Contact</a>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontWeight: "bold", fontSize: 22, marginBottom: 12 }}>
+                Support
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <a href="/help" style={{ color: "#F8FCFA", textDecoration: "none" }}>Help Center</a>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <a href="/privacy" style={{ color: "#F8FCFA", textDecoration: "none" }}>Privacy Policy</a>
+              </div>
+              <div>
+                <a href="/terms" style={{ color: "#F8FCFA", textDecoration: "none" }}>Terms</a>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontWeight: "bold", fontSize: 22, marginBottom: 12 }}>
+                Contact
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <a href="mailto:support@vydhyo.com" style={{ color: "#F8FCFA", textDecoration: "none" }}>
+                  support@vydhyo.com
+                </a>
+              </div>
+              <div>
+                <span style={{ color: "#F8FCFA" }}>+1 234 567 890</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
 
 
     </div>

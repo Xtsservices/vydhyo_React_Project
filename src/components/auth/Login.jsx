@@ -152,13 +152,13 @@ const Login = ()=> {
   };
 
   return (
-    <div className="login-container">
-      {/* <img
+    <div className="login-container" style={{ fontSize: '0.8rem' }}>
+      <img
         src="/images/image.png"
         alt="Login Visual"
         className="w-full h-auto rounded-xl"
-      /> */}
-      <Illustration isMobile={isMobile} />
+        style={{ maxWidth: '440px', maxHeight: '440px',borderRadius:'40px' , width:'100%', marginTop: '80px',marginLeft:'150px', display: 'block' }}
+      />
       <div className="login-form-container">
         <LoginForm
           otpSent={otpSent}
@@ -174,7 +174,7 @@ const Login = ()=> {
           onReset={resetPhoneLogin}
         />
       </div>
-    </div>
+    </div>   
   );
 }
 
