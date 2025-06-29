@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Layout, Menu, Avatar, Badge } from "antd";
+import { Layout, Menu, Avatar, Badge, Dropdown } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
@@ -16,7 +16,7 @@ import {
   faWalking,
   faBell,
 } from "@fortawesome/free-solid-svg-icons";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet ,useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import logo from "../assets/logooo.png"; // Adjust path relative to your component
@@ -28,7 +28,7 @@ const DoctorLayoutWrapper = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [selectedKey, setSelectedKey] = useState("dashboard");
   const user = useSelector((state) => state.currentUserData);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -46,7 +46,16 @@ const DoctorLayoutWrapper = () => {
 
   const handleMenuClick = ({ key }) => {
     setSelectedKey(key);
+    if (key === "logout") {
+      handleLogout();
+    }
   };
+
+   const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
 
   const getProfileImage = (user) => {
     if (user?.profilepic?.data && user?.profilepic?.mimeType) {
@@ -115,14 +124,30 @@ const DoctorLayoutWrapper = () => {
       label: <Link to="/doctor/doctorPages/Messages">Messages</Link>,
       icon: <FontAwesomeIcon icon={faEnvelope} style={{ color: "#ffffff" }} />,
     },
-    {
+     {
       key: "logout",
-      label: <Link to="/logout">Logout</Link>,
+      label: <span onClick={handleLogout}>Logout</span>,
       icon: (
         <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#ffffff" }} />
       ),
     },
   ];
+
+  // Dropdown menu for profile
+  const profileMenu = (
+    <Menu
+      style={{
+        borderRadius: "8px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+      }}
+    >
+      <Menu.Item key="logout" onClick={handleLogout}>
+        <FontAwesomeIcon icon={faSignOutAlt} style={{ marginRight: 8 }} />
+        Logout
+      </Menu.Item>
+    </Menu>
+  );
+
 
   return (
     <Layout className="layout">
@@ -174,7 +199,7 @@ const DoctorLayoutWrapper = () => {
             display: "flex",
             alignItems: "center",
             gap: "24px",
-            marginLeft: "auto", // This pushes the content to the right
+            marginLeft: "auto",
           }}
         >
           {/* Notification Bell */}
@@ -195,50 +220,52 @@ const DoctorLayoutWrapper = () => {
             />
           </Badge>
 
-          {/* User Profile Section */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              padding: "8px 12px",
-              borderRadius: "8px",
-              background: "#f8fafc",
-              cursor: "pointer",
-              marginLeft: "8px",
-            }}
-          >
-            <Avatar
-              size={32}
-              src={profileImageSrc}
-              icon={!profileImageSrc && <FontAwesomeIcon icon={faUser} />}
+          {/* User Profile Section with Dropdown */}
+          <Dropdown overlay={profileMenu} trigger={["click"]}>
+            <div
               style={{
-                backgroundColor: "#e2e8f0",
-                color: "#64748b",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                background: "#f8fafc",
+                cursor: "pointer",
+                marginLeft: "8px",
               }}
-            />
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div
+            >
+              <Avatar
+                size={32}
+                src={profileImageSrc}
+                icon={!profileImageSrc && <FontAwesomeIcon icon={faUser} />}
                 style={{
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  color: "#1e293b",
-                  lineHeight: "1.2",
-                }}
-              >
-                Dr. {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
+                  backgroundColor: "#e2e8f0",
                   color: "#64748b",
-                  lineHeight: "1.2",
                 }}
-              >
-                Super Admin
+              />
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#1e293b",
+                    lineHeight: "1.2",
+                  }}
+                >
+                  Dr. {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#64748b",
+                    lineHeight: "1.2",
+                  }}
+                >
+                  {user?.role || "Doctor"}
+                </div>
               </div>
             </div>
-          </div>
+          </Dropdown>
         </div>
       </Header>
 
@@ -269,47 +296,47 @@ const DoctorLayoutWrapper = () => {
             animate={{ x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Doctor Profile Section */}
-            <div
-              style={{
-                background: "#334155",
-                padding: "32px 16px 24px 16px",
-                textAlign: "center",
-                borderBottom: "1px solid rgba(255,255,255,0.1)",
-              }}
-            >
-              <Avatar
-                size={80}
-                src={profileImageSrc}
-                icon={!profileImageSrc && <FontAwesomeIcon icon={faUser} />}
-                style={{
-                  backgroundColor: "#4a5568",
-                  marginBottom: 16,
-                  border: "3px solid rgba(255,255,255,0.2)",
-                }}
-              />
-
+            {/* Doctor Profile Section - Shown only when not collapsed */}
+            {!collapsed && (
               <div
                 style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  marginBottom: 6,
-                  color: "#ffffff",
+                  background: "#334155",
+                  padding: "32px 16px 24px 16px",
+                  textAlign: "center",
+                  borderBottom: "1px solid rgba(255,255,255,0.1)",
                 }}
               >
-                {user?.firstname || "Doctor"}
+                <Avatar
+                  size={80}
+                  src={profileImageSrc}
+                  icon={!profileImageSrc && <FontAwesomeIcon icon={faUser} />}
+                  style={{
+                    backgroundColor: "#4a5568",
+                    marginBottom: 16,
+                    border: "3px solid rgba(255,255,255,0.2)",
+                  }}
+                />
+                <div
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    marginBottom: 6,
+                    color: "#ffffff",
+                  }}
+                >
+                  {user?.firstname || "Doctor"}
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.7)",
+                    fontSize: "13px",
+                    fontWeight: "400",
+                  }}
+                >
+                  {user?.specialization?.name || "Department"}
+                </div>
               </div>
-
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.7)",
-                  fontSize: "13px",
-                  fontWeight: "400",
-                }}
-              >
-                {user?.specialization?.name || "Department"}
-              </div>
-            </div>
+            )}
 
             {/* Navigation Menu */}
             <Menu

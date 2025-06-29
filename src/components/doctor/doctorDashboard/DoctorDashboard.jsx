@@ -3,16 +3,17 @@ import { Card, Typography, Row, Col, Button, Badge } from "antd";
 import {
   CalendarOutlined,
   UserOutlined,
-  BarChartOutlined,
   SunOutlined,
   DownOutlined,
   LeftOutlined,
   RightOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
 const DoctorDashboard = () => {
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState({
     success: true,
     totalAmount: { today: 25000, week: 0, month: 0, total: 0 },
@@ -26,6 +27,7 @@ const DoctorDashboard = () => {
       total: 0,
     },
   });
+  const [appointments, setAppointments] = useState([]);
 
   // Clinic data for navigation
   const clinics = [
@@ -49,67 +51,145 @@ const DoctorDashboard = () => {
     );
   };
 
-  const appointments = [
-    {
-      id: 1,
-      name: "Priya Sharma",
-      time: "09:00 AM",
-      status: "Active",
-      statusColor: "#52c41a",
-    },
-    {
-      id: 2,
-      name: "Amit Patel",
-      time: "10:30 AM",
-      status: "Completed",
-      statusColor: "#1890ff",
-    },
-    {
-      id: 3,
-      name: "Sunita Gupta",
-      time: "11:15 AM",
-      status: "Rescheduled",
-      statusColor: "#faad14",
-    },
-    {
-      id: 4,
-      name: "Ravi Kumar",
-      time: "02:00 PM",
-      status: "Cancelled",
-      statusColor: "#ff4d4f",
-    },
-    {
-      id: 5,
-      name: "Meera Singh",
-      time: "03:30 PM",
-      status: "Active",
-      statusColor: "#52c41a",
-    },
-  ];
+  // Status color mapping from Appointment component
+  const getStatusColor = (status) => {
+    const statusConfig = {
+      scheduled: "#52c41a", // green
+      completed: "#1890ff", // blue
+      rescheduled: "#fa8c16", // purple (adjusted to match Appointment component)
+      canceled: "#ff4d4f", // red
+    };
+    return statusConfig[status] || "#d9d9d9"; // default color
+  };
+
+  // Fetch appointments from API
+  const API_BASE_URL = "http://216.10.251.239:3000";
+  const getAppointments = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await fetch(`${API_BASE_URL}/appointment/getAllAppointments`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("appointments", JSON.stringify(data?.data));
+        setAppointments(data?.data.totalAppointments || []);
+
+        // Update dashboardData with appointment counts
+        const today = new Date().toISOString().split("T")[0];
+        const todayAppointments = data?.data.totalAppointments.filter(
+          (appt) => appt.appointmentDate === today
+        ).length;
+        setDashboardData((prev) => ({
+          ...prev,
+          appointmentCounts: {
+            ...prev.appointmentCounts,
+            today: todayAppointments,
+            completed: data?.data.totalAppointments.filter(
+              (appt) => appt.appointmentStatus === "completed"
+            ).length,
+            rescheduled: data?.data.totalAppointments.filter(
+              (appt) => appt.appointmentStatus === "rescheduled"
+            ).length,
+            cancelled: data?.data.totalAppointments.filter(
+              (appt) => appt.appointmentStatus === "canceled"
+            ).length,
+            active: data?.data.totalAppointments.filter(
+              (appt) => appt.appointmentStatus === "scheduled"
+            ).length,
+            total: data?.data.totalAppointments.length,
+          },
+        }));
+      } else {
+        // Fallback to localStorage
+        const storedAppointments = JSON.parse(
+          localStorage.getItem("appointments") ||
+            '{"totalAppointmentsCount": 1, "totalAppointments": [{"_id":"685bddbe34896a635716991f","appointmentId":"VYDAPMT1","userId":"VYDUSER1","doctorId":"685bcfdf29ad88ba7165ebaa","patientName":"Rani","doctorName":"Varun","appointmentType":"home-visit","appointmentDepartment":"General Physician","appointmentDate":"2025-07-01","appointmentTime":"08:15","appointmentReason":"Feeling not good with body pains","appointmentStatus":"scheduled","appointmentNotes":"Patient prefers early morning visits","createdBy":"VYDUSER16","updatedBy":"VYDUSER16","createdAt":"2025-06-25T11:30:06.991Z","updatedAt":"2025-06-25T11:30:06.991Z","__v":0}]}'
+        );
+        setAppointments(storedAppointments.totalAppointments || []);
+
+        // Update dashboardData with stored appointment counts
+        const todayAppointments = storedAppointments.totalAppointments.filter(
+          (appt) => appt.appointmentDate === today
+        ).length;
+        setDashboardData((prev) => ({
+          ...prev,
+          appointmentCounts: {
+            ...prev.appointmentCounts,
+            today: todayAppointments,
+            completed: storedAppointments.totalAppointments.filter(
+              (appt) => appt.appointmentStatus === "completed"
+            ).length,
+            rescheduled: storedAppointments.totalAppointments.filter(
+              (appt) => appt.appointmentStatus === "rescheduled"
+            ).length,
+            cancelled: storedAppointments.totalAppointments.filter(
+              (appt) => appt.appointmentStatus === "canceled"
+            ).length,
+            active: storedAppointments.totalAppointments.filter(
+              (appt) => appt.appointmentStatus === "scheduled"
+            ).length,
+            total: storedAppointments.totalAppointments.length,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      // Fallback to localStorage
+      const storedAppointments = JSON.parse(
+        localStorage.getItem("appointments") ||
+          '{"totalAppointmentsCount": 1, "totalAppointments": [{"_id":"685bddbe34896a635716991f","appointmentId":"VYDAPMT1","userId":"VYDUSER1","doctorId":"685bcfdf29ad88ba7165ebaa","patientName":"Rani","doctorName":"Varun","appointmentType":"home-visit","appointmentDepartment":"General Physician","appointmentDate":"2025-07-01","appointmentTime":"08:15","appointmentReason":"Feeling not good with body pains","appointmentStatus":"scheduled","appointmentNotes":"Patient prefers early morning visits","createdBy":"VYDUSER16","updatedBy":"VYDUSER16","createdAt":"2025-06-25T11:30:06.991Z","updatedAt":"2025-06-25T11:30:06.991Z","__v":0}]}'
+      );
+      setAppointments(storedAppointments.totalAppointments || []);
+
+      // Update dashboardData with stored appointment counts
+      const today = new Date().toISOString().split("T")[0];
+      const todayAppointments = storedAppointments.totalAppointments.filter(
+        (appt) => appt.appointmentDate === today
+      ).length;
+      setDashboardData((prev) => ({
+        ...prev,
+        appointmentCounts: {
+          ...prev.appointmentCounts,
+          today: todayAppointments,
+          completed: storedAppointments.totalAppointments.filter(
+            (appt) => appt.appointmentStatus === "completed"
+          ).length,
+          rescheduled: storedAppointments.totalAppointments.filter(
+            (appt) => appt.appointmentStatus === "rescheduled"
+          ).length,
+          cancelled: storedAppointments.totalAppointments.filter(
+            (appt) => appt.appointmentStatus === "canceled"
+          ).length,
+          active: storedAppointments.totalAppointments.filter(
+            (appt) => appt.appointmentStatus === "scheduled"
+          ).length,
+          total: storedAppointments.totalAppointments.length,
+        },
+      }));
+    }
+  };
+
+  useEffect(() => {
+    getAppointments();
+  }, []);
 
   // Calculate appointment status counts for pie chart
   const statusCounts = appointments.reduce((acc, apt) => {
-    acc[apt.status] = (acc[apt.status] || 0) + 1;
+    acc[apt.appointmentStatus] = (acc[apt.appointmentStatus] || 0) + 1;
     return acc;
   }, {});
 
   const pieData = [
-    { label: "Active", count: statusCounts.Active || 0, color: "#52c41a" },
-    {
-      label: "Completed",
-      count: statusCounts.Completed || 0,
-      color: "#1890ff",
-    },
-    {
-      label: "Rescheduled",
-      count: statusCounts.Rescheduled || 0,
-      color: "#faad14",
-    },
-    {
-      label: "Cancelled",
-      count: statusCounts.Cancelled || 0,
-      color: "#ff4d4f",
-    },
+    { label: "Scheduled", count: statusCounts.scheduled || 0, color: "#52c41a" },
+    { label: "Completed", count: statusCounts.completed || 0, color: "#1890ff" },
+    { label: "Rescheduled", count: statusCounts.rescheduled || 0, color: "#fa8c16" },
+    { label: "Canceled", count: statusCounts.canceled || 0, color: "#ff4d4f" },
   ];
 
   const total = pieData.reduce((sum, item) => sum + item.count, 0);
@@ -121,22 +201,9 @@ const DoctorDashboard = () => {
     const centerY = 100;
 
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
         <svg width="200" height="200" style={{ marginBottom: "20px" }}>
-          <circle
-            cx={centerX}
-            cy={centerY}
-            r={radius}
-            fill="none"
-            stroke="#f0f0f0"
-            strokeWidth="2"
-          />
+          <circle cx={centerX} cy={centerY} r={radius} fill="none" stroke="#f0f0f0" strokeWidth="2" />
           {pieData.map((item, index) => {
             if (item.count === 0) return null;
 
@@ -145,14 +212,10 @@ const DoctorDashboard = () => {
             const startAngle = currentAngle;
             const endAngle = currentAngle + angle;
 
-            const x1 =
-              centerX + radius * Math.cos(((startAngle - 90) * Math.PI) / 180);
-            const y1 =
-              centerY + radius * Math.sin(((startAngle - 90) * Math.PI) / 180);
-            const x2 =
-              centerX + radius * Math.cos(((endAngle - 90) * Math.PI) / 180);
-            const y2 =
-              centerY + radius * Math.sin(((endAngle - 90) * Math.PI) / 180);
+            const x1 = centerX + radius * Math.cos(((startAngle - 90) * Math.PI) / 180);
+            const y1 = centerY + radius * Math.sin(((startAngle - 90) * Math.PI) / 180);
+            const x2 = centerX + radius * Math.cos(((endAngle - 90) * Math.PI) / 180);
+            const y2 = centerY + radius * Math.sin(((endAngle - 90) * Math.PI) / 180);
 
             const largeArcFlag = angle > 180 ? 1 : 0;
 
@@ -180,10 +243,7 @@ const DoctorDashboard = () => {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {pieData.map((item, index) => (
-            <div
-              key={index}
-              style={{ display: "flex", alignItems: "center", gap: "8px" }}
-            >
+            <div key={index} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div
                 style={{
                   width: "12px",
@@ -192,9 +252,7 @@ const DoctorDashboard = () => {
                   backgroundColor: item.color,
                 }}
               />
-              <Text style={{ fontSize: "14px", color: "#666" }}>
-                {item.label}
-              </Text>
+              <Text style={{ fontSize: "14px", color: "#666" }}>{item.label}</Text>
             </div>
           ))}
         </div>
@@ -208,7 +266,7 @@ const DoctorDashboard = () => {
     border: "none",
     boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
     backgroundColor: "#fff",
-    height: "150px", // Fixed height for all cards
+    height: "150px",
   };
 
   return (
@@ -232,15 +290,13 @@ const DoctorDashboard = () => {
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <SunOutlined style={{ fontSize: "24px", color: "#faad14" }} />
-          <Title
-            level={3}
-            style={{ margin: 0, fontWeight: 500, color: "#262626" }}
-          >
+          <Title level={3} style={{ margin: 0, fontWeight: 500, color: "#262626" }}>
             Good Morning, Dr. Rajesh Kumar
           </Title>
         </div>
         <Button
           type="primary"
+          onClick={() => navigate("/doctor/doctorPages/Walkin")}
           style={{
             backgroundColor: "#f5f7fa",
             borderColor: "#f5f7fa",
@@ -294,19 +350,10 @@ const DoctorDashboard = () => {
               }}
             >
               <div>
-                <Text
-                  style={{
-                    fontSize: "14px",
-                    color: "#8c8c8c",
-                    display: "block",
-                  }}
-                >
+                <Text style={{ fontSize: "14px", color: "#8c8c8c", display: "block" }}>
                   Today's Appointments
                 </Text>
-                <Title
-                  level={2}
-                  style={{ margin: 0, fontWeight: 600, color: "#262626" }}
-                >
+                <Title level={2} style={{ margin: 0, fontWeight: 600, color: "#262626" }}>
                   {dashboardData.appointmentCounts.today}
                 </Title>
               </div>
@@ -321,9 +368,7 @@ const DoctorDashboard = () => {
                   justifyContent: "center",
                 }}
               >
-                <CalendarOutlined
-                  style={{ fontSize: "24px", color: "#1890ff" }}
-                />
+                <CalendarOutlined style={{ fontSize: "24px", color: "#1890ff" }} />
               </div>
             </div>
           </Card>
@@ -340,19 +385,10 @@ const DoctorDashboard = () => {
               }}
             >
               <div>
-                <Text
-                  style={{
-                    fontSize: "14px",
-                    color: "#8c8c8c",
-                    display: "block",
-                  }}
-                >
+                <Text style={{ fontSize: "14px", color: "#8c8c8c", display: "block" }}>
                   Today's Revenue
                 </Text>
-                <Title
-                  level={2}
-                  style={{ margin: 0, fontWeight: 600, color: "#262626" }}
-                >
+                <Title level={2} style={{ margin: 0, fontWeight: 600, color: "#262626" }}>
                   ₹{dashboardData.totalAmount.today.toLocaleString()}
                 </Title>
               </div>
@@ -384,14 +420,7 @@ const DoctorDashboard = () => {
 
         <Col xs={24} sm={8}>
           <Card style={commonCardStyle}>
-            <div
-              style={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {/* Header section */}
+            <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
               <div
                 style={{
                   display: "flex",
@@ -411,27 +440,14 @@ const DoctorDashboard = () => {
                   >
                     Clinic Status
                   </Text>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <Title
                       level={4}
-                      style={{
-                        margin: 0,
-                        fontWeight: 600,
-                        color: "#52c41a",
-                        fontSize: 20,
-                      }}
+                      style={{ margin: 0, fontWeight: 600, color: "#52c41a", fontSize: 20 }}
                     >
                       Available
                     </Title>
-                    <DownOutlined
-                      style={{ fontSize: "12px", color: "#52c41a" }}
-                    />
+                    <DownOutlined style={{ fontSize: "12px", color: "#52c41a" }} />
                   </div>
                 </div>
                 <div
@@ -446,14 +462,7 @@ const DoctorDashboard = () => {
                   }}
                 >
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                    <rect
-                      x="3"
-                      y="7"
-                      width="5"
-                      height="10"
-                      rx="1.5"
-                      fill="#52c41a"
-                    />
+                    <rect x="3" y="7" width="5" height="10" rx="1.5" fill="#52c41a" />
                     <rect
                       x="10"
                       y="3"
@@ -476,7 +485,6 @@ const DoctorDashboard = () => {
                 </div>
               </div>
 
-              {/* Next availability section */}
               <div style={{ flex: 1 }}>
                 <Text
                   style={{
@@ -635,9 +643,7 @@ const DoctorDashboard = () => {
                 marginBottom: "16px",
               }}
             >
-              <Text style={{ fontWeight: 500, color: "#8c8c8c" }}>
-                Patient Name
-              </Text>
+              <Text style={{ fontWeight: 500, color: "#8c8c8c" }}>Patient Name</Text>
               <Text style={{ fontWeight: 500, color: "#8c8c8c" }}>Time</Text>
               <Text style={{ fontWeight: 500, color: "#8c8c8c" }}>Status</Text>
             </div>
@@ -645,28 +651,25 @@ const DoctorDashboard = () => {
             {/* Appointments List */}
             {appointments.map((appointment, index) => (
               <div
-                key={appointment.id}
+                key={appointment.appointmentId}
                 style={{
                   display: "grid",
                   gridTemplateColumns: "2fr 1fr 1fr",
                   padding: "16px 0",
-                  borderBottom:
-                    index < appointments.length - 1
-                      ? "1px solid #f5f5f5"
-                      : "none",
+                  borderBottom: index < appointments.length - 1 ? "1px solid #f5f5f5" : "none",
                   alignItems: "center",
                 }}
               >
                 <Text style={{ fontWeight: 500, color: "#262626" }}>
-                  {appointment.name}
+                  {appointment.patientName}
                 </Text>
-                <Text style={{ color: "#8c8c8c" }}>{appointment.time}</Text>
+                <Text style={{ color: "#8c8c8c" }}>{appointment.appointmentTime}</Text>
                 <Badge
-                  color={appointment.statusColor}
-                  text={appointment.status}
+                  color={getStatusColor(appointment.appointmentStatus)}
+                  text={appointment.appointmentStatus.charAt(0).toUpperCase() + appointment.appointmentStatus.slice(1)}
                   style={{
                     fontSize: "13px",
-                    color: appointment.statusColor,
+                    color: getStatusColor(appointment.appointmentStatus),
                     fontWeight: 500,
                   }}
                 />
@@ -683,10 +686,7 @@ const DoctorDashboard = () => {
               boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
             }}
           >
-            <Title
-              level={4}
-              style={{ margin: 0, marginBottom: "24px", fontWeight: 600 }}
-            >
+            <Title level={4} style={{ margin: 0, marginBottom: "24px", fontWeight: 600 }}>
               Appointment Status
             </Title>
             <PieChart />
