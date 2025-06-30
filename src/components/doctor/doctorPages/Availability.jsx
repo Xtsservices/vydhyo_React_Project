@@ -43,7 +43,7 @@ const AvailabilityPage = () => {
     toTime: "",
   });
 
-  const API_BASE_URL = "http://192.168.1.42:3000";
+  const API_BASE_URL = "http://192.168.1.44:3000";
   const STAFF_ID = localStorage.getItem("userId");
   const token = localStorage.getItem("accessToken");
 

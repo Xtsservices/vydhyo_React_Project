@@ -497,22 +497,67 @@ const DoctorOnboardingDashboard = () => {
 
         {/* Search Bar */}
         <Row style={{ marginBottom: "clamp(16px, 2vw, 24px)" }}>
-          <Col xs={24}>
+          <Col xs={24} md={8} style={{ marginBottom: 8 }}>
             <Input
-              placeholder="Search doctors..."
+              placeholder="Search by name..."
               prefix={<SearchOutlined />}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              value={searchText.name || ""}
+              onChange={(e) =>
+                setSearchText((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
               style={{
                 borderRadius: "12px",
                 maxWidth: "clamp(300px, 50vw, 400px)",
                 fontSize: "clamp(12px, 1.8vw, 14px)",
+                marginBottom: 8,
               }}
+              allowClear
+            />
+          </Col>
+          <Col xs={24} md={8} style={{ marginBottom: 8 }}>
+            <Input
+              placeholder="Search by locality..."
+              prefix={<SearchOutlined />}
+              value={searchText.locality || ""}
+              onChange={(e) =>
+                setSearchText((prev) => ({
+                  ...prev,
+                  locality: e.target.value,
+                }))
+              }
+              style={{
+                borderRadius: "12px",
+                maxWidth: "clamp(300px, 50vw, 400px)",
+                fontSize: "clamp(12px, 1.8vw, 14px)",
+                marginBottom: 8,
+              }}
+              allowClear
+            />
+          </Col>
+          <Col xs={24} md={8} style={{ marginBottom: 8 }}>
+            <Input
+              placeholder="Search by specialization..."
+              prefix={<SearchOutlined />}
+              value={searchText.specialization || ""}
+              onChange={(e) =>
+                setSearchText((prev) => ({
+                  ...prev,
+                  specialization: e.target.value,
+                }))
+              }
+              style={{
+                borderRadius: "12px",
+                maxWidth: "clamp(300px, 50vw, 400px)",
+                fontSize: "clamp(12px, 1.8vw, 14px)",
+                marginBottom: 8,
+              }}
+              allowClear
             />
           </Col>
         </Row>
-
-        {/* Table */}
         <Card
           style={{
             borderRadius: "12px",
@@ -541,65 +586,67 @@ const DoctorOnboardingDashboard = () => {
               Doctor Requests
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <DatePicker
-                value={null}
-                placeholder="02-07-2025"
-                style={{ borderRadius: "12px", fontSize: "clamp(12px, 1.8vw, 14px)" }}
-                suffixIcon={<CalendarOutlined />}
-              />
-              <Select
-                value={statusFilter}
-                onChange={setStatusFilter}
-                style={{
-                  width: "clamp(100px, 20vw, 120px)",
-                  borderRadius: "12px",
-                  fontSize: "clamp(12px, 1.8vw, 14px)",
-                }}
-              >
-                <Option value="pending">Pending</Option>
-                <Option value="approved">Approved</Option>
-                <Option value="rejected">Rejected</Option>
-                <Option value="all">All</Option>
-              </Select>
-            </div>
-          </div>
-          <Table
-            columns={columns}
-            dataSource={filteredDoctors.map((doctor) => ({
-              ...doctor,
-              key: doctor._id,
-            }))}
-            pagination={{
-              current: 1,
-              pageSize: 10,
-              total: filteredDoctors.length,
-              showSizeChanger: false,
-              showQuickJumper: false,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} of ${total} items`,
-              style: { marginTop: "16px" },
-            }}
-            scroll={{ x: true }}
-            rowClassName="custom-row"
+              {/* Date Range Picker */}
+                <DatePicker.RangePicker
+            value={null}
+            placeholder={["Start date", "End date"]}
+            style={{ borderRadius: "12px", fontSize: "clamp(12px, 1.8vw, 14px)" }}
+            suffixIcon={<CalendarOutlined />}
+            format="DD-MM-YYYY"
+                />
+                <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
             style={{
-              ".ant-table-thead > tr > th": {
-                backgroundColor: "#fafafa",
-                fontWeight: 600,
-                color: "#262626",
-                fontSize: "clamp(12px, 1.8vw, 14px)",
-              },
-              ".ant-table-row": {
-                transition: "background-color 0.3s ease",
-              },
-              ".ant-table-row:hover": {
-                backgroundColor: "#f0f9ff",
-              },
+              width: "clamp(100px, 20vw, 120px)",
+              borderRadius: "12px",
+              fontSize: "clamp(12px, 1.8vw, 14px)",
             }}
-          />
-        </Card>
-      </div>
+                >
+            <Option value="pending">Pending</Option>
+            <Option value="approved">Approved</Option>
+            <Option value="rejected">Rejected</Option>
+            <Option value="all">All</Option>
+                </Select>
+              </div>
+            </div>
+            <Table
+              columns={columns}
+              dataSource={filteredDoctors.map((doctor) => ({
+                ...doctor,
+                key: doctor._id,
+              }))}
+              pagination={{
+                current: 1,
+                pageSize: 10,
+                total: filteredDoctors.length,
+                showSizeChanger: false,
+                showQuickJumper: false,
+                showTotal: (total, range) =>
+            `${range[0]}-${range[1]} of ${total} items`,
+                style: { marginTop: "16px" },
+              }}
+              scroll={{ x: true }}
+              rowClassName="custom-row"
+              style={{
+                ".ant-table-thead > tr > th": {
+            backgroundColor: "#fafafa",
+            fontWeight: 600,
+            color: "#262626",
+            fontSize: "clamp(12px, 1.8vw, 14px)",
+                },
+                ".ant-table-row": {
+            transition: "background-color 0.3s ease",
+                },
+                ".ant-table-row:hover": {
+            backgroundColor: "#f0f9ff",
+                },
+              }}
+            />
+          </Card>
+              </div>
 
-      {/* Image Modal */}
+              {/* Image Modal */}
       <Modal
         title="Image View"
         open={imageModalVisible}

@@ -434,12 +434,12 @@ const LayoutWrapper = () => {
                   <Link to="/SuperAdmin/billing-status">Settlements</Link>
                 </Menu.Item>
 
-                <Menu.Item
+                {/* <Menu.Item
                   key="patients"
                   icon={<FontAwesomeIcon icon={faUserInjured} />}
                 >
                   <Link to="/SuperAdmin/patients">Patients</Link>
-                </Menu.Item>
+                </Menu.Item> */}
                 <Menu.Item
                   key="services"
                   icon={<FontAwesomeIcon icon={faStethoscope} />}
@@ -457,6 +457,13 @@ const LayoutWrapper = () => {
                   icon={<FontAwesomeIcon icon={faCalendarCheck} />}
                 >
                   <Link to="/SuperAdmin/appointments">Settings</Link>
+                </Menu.Item>
+
+                <Menu.Item
+                  key="appointments"
+                  icon={<FontAwesomeIcon icon={faCalendarCheck} />}
+                >
+                  <Link to="/SuperAdmin/appointments">Staff Management</Link>
                 </Menu.Item>
               </Menu>
             </motion.div>
