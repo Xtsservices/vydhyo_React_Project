@@ -301,7 +301,7 @@ const StaffManagement = () => {
         console.log("Sending receptionist data as object:", staffData);
 
         const response = await axios.post(
-          "http://192.168.1.44:3000/doctor/createReceptionist",
+          "http://216.10.251.239:3000/doctor/createReceptionist",
           staffData,
           {
             headers: {
@@ -456,7 +456,7 @@ const StaffManagement = () => {
       setFetchLoading(true);
       const token = localStorage.getItem("accessToken");
       const response = await axios.get(
-        "http://192.168.1.44:3000/doctor/getStaffByCreator",
+        "http://216.10.251.239:3000/doctor/getStaffByCreator",
         {
           headers: {
             Authorization: `Bearer ${token}`,
