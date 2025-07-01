@@ -172,7 +172,27 @@ const RevenueList = () => {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: '#666' }}>2025-06-28</span>
+            {/* <span style={{ fontSize: '12px', color: '#666' }}>2025-06-28</span> */}
+            <input
+              type="date"
+              style={{
+                padding: '4px 8px',
+                border: '1px solid #d9d9d9',
+                borderRadius: '4px',
+                fontSize: '12px'
+              }}
+            />
+            <span style={{ margin: '0 4px', color: '#888' }}>to</span>
+            <input
+              type="date"
+              style={{
+                padding: '4px 8px',
+                border: '1px solid #d9d9d9',
+                borderRadius: '4px',
+                fontSize: '12px'
+              }}
+            />
+
             <select style={{ padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: '4px', fontSize: '12px' }}>
               <option>All Clinics</option>
             </select>

@@ -155,14 +155,46 @@ const Login = ()=> {
   };
 
   return (
-    <div className="login-container" style={{ fontSize: '0.8rem' }}>
+    <div
+      className="login-container"
+      style={{
+        fontSize: '0.8rem',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: isMobile ? '20px 10px' : '0px 50px',
+        // background: '#f8f9fa',
+      }}
+    >
       <img
         src="/images/image.png"
         alt="Login Visual"
-        className="w-full h-auto rounded-xl"
-        style={{ maxWidth: '440px', maxHeight: '440px',borderRadius:'40px' , width:'100%', marginTop: '80px',marginLeft:'150px', display: 'block' }}
+        className="login-image"
+        style={{
+          maxWidth: isMobile ? '90vw' : '550px',
+          maxHeight: isMobile ? '400px' : '640px',
+          borderRadius: '40px',
+          width: isMobile ? '100%' : '100%',
+          marginTop: isMobile ? '20px' : '0px',
+          marginLeft: isMobile ? '0' : '50px',
+          marginRight: isMobile ? '0' : '20px',
+          display: 'block',
+          objectFit: 'cover',
+        }}
       />
-      <div className="login-form-container">
+      <div
+        className="login-form-container"
+        style={{
+          width: isMobile ? '100%' : '350px',
+          margin: isMobile ? '20px 0 0 0' : '50',
+          padding: isMobile ? '10px' : '52px',
+          background: '#fff',
+          borderRadius: '24px',
+          boxShadow: isMobile ? 'none' : '0 2px 16px rgba(0,0,0,0.07)',
+        }}
+      >
         <LoginForm
           otpSent={otpSent}
           phone={phone}
@@ -177,7 +209,7 @@ const Login = ()=> {
           onReset={resetPhoneLogin}
         />
       </div>
-    </div>   
+    </div>
   );
 }
 
