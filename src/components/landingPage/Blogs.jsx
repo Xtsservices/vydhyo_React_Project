@@ -193,7 +193,7 @@ const BlogCard = ({ blog }) => {
           </div>
         </Col>
         <Col xs={24} sm={14}>
-          <div style={{ padding: 24, height: "100%", display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: 20, height: "100%", display: "flex", flexDirection: "column" }}>
             <Tag 
               style={{ 
                 background: categoryColors[blog.category],
@@ -228,7 +228,7 @@ const BlogCard = ({ blog }) => {
             >
               {blog.desc}
             </Text>
-            <div style={{ marginTop: "auto" }}>
+            {/* <div style={{ marginTop: "auto" }}>
               <Button 
                 type="link" 
                 style={{ 
@@ -239,7 +239,7 @@ const BlogCard = ({ blog }) => {
               >
                 Read More
               </Button>
-            </div>
+            </div> */}
           </div>
         </Col>
       </Row>

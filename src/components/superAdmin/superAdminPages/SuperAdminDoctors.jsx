@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Table,
   Button,
@@ -14,6 +14,9 @@ import {
   Tooltip,
   Row,
   Col,
+  Input,
+  DatePicker,
+  Select,
 } from "antd";
 import {
   EyeOutlined,
@@ -23,10 +26,13 @@ import {
   ClockCircleOutlined,
   CloseCircleOutlined,
   CheckCircleOutlined,
+  SearchOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 // Constants
 const API_BASE_URL = "http://216.10.251.239:3000";
@@ -39,6 +45,7 @@ const useLocalStorage = (key) => {
 
 const DoctorOnboardingDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // State management
   const [doctors, setDoctors] = useState([]);
@@ -47,6 +54,8 @@ const DoctorOnboardingDashboard = () => {
   const [selectedImage, setSelectedImage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { userId, doctorId } = location.state || {};
 
   // Fetch doctors from API
@@ -56,7 +65,7 @@ const DoctorOnboardingDashboard = () => {
       const token = useLocalStorage("accessToken");
       if (!token) {
         message.error("No authentication token found. Please login again.");
-        navigate("/login"); // Redirect to login if needed
+        navigate("/login");
         return;
       }
 
@@ -134,6 +143,20 @@ const DoctorOnboardingDashboard = () => {
     return { pending, rejected, approved };
   }, [doctors]);
 
+  // Filter doctors based on search and status
+  const filteredDoctors = useMemo(() => {
+    return doctors.filter((doctor) => {
+      const matchesSearch = 
+        doctor.firstname?.toLowerCase().includes(searchText.toLowerCase()) ||
+        doctor.lastname?.toLowerCase().includes(searchText.toLowerCase()) ||
+        doctor.email?.toLowerCase().includes(searchText.toLowerCase());
+      
+      const matchesStatus = statusFilter === "all" || doctor.status?.toLowerCase() === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [doctors, searchText, statusFilter]);
+
   // Utility functions
   const getImageSrc = useCallback((profilepic) => {
     if (profilepic?.data && profilepic?.mimeType) {
@@ -147,10 +170,9 @@ const DoctorOnboardingDashboard = () => {
     setImageModalVisible(true);
   }, []);
 
-
-  const handleViewProfile = (userId, doctorId) =>{
-    navigate('/SuperAdmin/profileView', { state: { userId: userId, doctorId: doctorId } });
-  }
+  const handleViewProfile = (userId, doctorId) => {
+    navigate('/SuperAdmin/profileView', { state: { userId, doctorId } });
+  };
 
   const handleRefresh = useCallback(() => {
     setCurrentPage(1);
@@ -247,12 +269,12 @@ const DoctorOnboardingDashboard = () => {
           return <Text>{experience} yr</Text>;
         },
       },
-      {
-        title: "Location",
-        key: "location",
-        width: 120,
-        render: () => <Text>-</Text>,
-      },
+      // {
+      //   title: "Location",
+      //   key: "location",
+      //   width: 120,
+      //   render: () => <Text>-</Text>,
+      // },
       {
         title: "Request Date",
         dataIndex: "createdAt",
@@ -308,95 +330,263 @@ const DoctorOnboardingDashboard = () => {
 
       {/* Summary Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={12} md={8}>
           <Card
             style={{
-              background: "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)",
-              border: "none",
+              backgroundColor: "#d4edda",
+              border: "1px solid #c3e6cb",
               borderRadius: "12px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+              transition: "all 0.3s ease",
             }}
+            hoverable
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <Text style={{ fontSize: "14px", color: "#856404" }}>Pending Approvals</Text>
-                <Title level={2} style={{ margin: 0, color: "#856404" }}>
-                  {summaryStats.pending}
-                </Title>
-              </div>
-              <ClockCircleOutlined style={{ fontSize: "24px", color: "#f39c12" }} />
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card
-            style={{
-              background: "linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)",
-              border: "none",
-              borderRadius: "12px",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <Text style={{ fontSize: "14px", color: "#721c24" }}>Rejected</Text>
-                <Title level={2} style={{ margin: 0, color: "#721c24" }}>
-                  {summaryStats.rejected}
-                </Title>
-              </div>
-              <CloseCircleOutlined style={{ fontSize: "24px", color: "#e74c3c" }} />
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card
-            style={{
-              background: "linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)",
-              border: "none",
-              borderRadius: "12px",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <Text style={{ fontSize: "14px", color: "#155724" }}>Approved</Text>
-                <Title level={2} style={{ margin: 0, color: "#155724" }}>
+                <div
+                  style={{
+                    fontSize: "clamp(10px, 1.5vw, 12px)",
+                    color: "#155724",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Approved
+                </div>
+                <div
+                  style={{
+                    fontSize: "clamp(20px, 3vw, 32px)",
+                    fontWeight: "bold",
+                    color: "#155724",
+                  }}
+                >
                   {summaryStats.approved}
-                </Title>
+                </div>
               </div>
-              <CheckCircleOutlined style={{ fontSize: "24px", color: "#27ae60" }} />
+              <div
+                style={{
+                  width: "clamp(32px, 5vw, 40px)",
+                  height: "clamp(32px, 5vw, 40px)",
+                  backgroundColor: "#28a745",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                }}
+              >
+                <CheckCircleOutlined
+                  style={{ color: "white", fontSize: "clamp(16px, 2.5vw, 20px)" }}
+                />
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <Card
+            style={{
+              backgroundColor: "#fff3cd",
+              border: "1px solid #ffeaa7",
+              borderRadius: "12px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+              transition: "all 0.3s ease",
+            }}
+            hoverable
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div
+                  style={{
+                    fontSize: "clamp(10px, 1.5vw, 12px)",
+                    color: "#856404",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Pending Approvals
+                </div>
+                <div
+                  style={{
+                    fontSize: "clamp(20px, 3vw, 32px)",
+                    fontWeight: "bold",
+                    color: "#856404",
+                  }}
+                >
+                  {summaryStats.pending}
+                </div>
+              </div>
+              <div
+                style={{
+                  width: "clamp(32px, 5vw, 40px)",
+                  height: "clamp(32px, 5vw, 40px)",
+                  backgroundColor: "#ffc107",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                }}
+              >
+                <ClockCircleOutlined
+                  style={{ color: "white", fontSize: "clamp(16px, 2.5vw, 20px)" }}
+                />
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <Card
+            style={{
+              backgroundColor: "#f8d7da",
+              border: "1px solid #f5c6cb",
+              borderRadius: "12px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+              transition: "all 0.3s ease",
+            }}
+            hoverable
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div
+                  style={{
+                    fontSize: "clamp(10px, 1.5vw, 12px)",
+                    color: "#721c24",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Rejected
+                </div>
+                <div
+                  style={{
+                    fontSize: "clamp(20px, 3vw, 32px)",
+                    fontWeight: "bold",
+                    color: "#721c24",
+                  }}
+                >
+                  {summaryStats.rejected}
+                </div>
+              </div>
+              <div
+                style={{
+                  width: "clamp(32px, 5vw, 40px)",
+                  height: "clamp(32px, 5vw, 40px)",
+                  backgroundColor: "#dc3545",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                }}
+              >
+                <CloseCircleOutlined
+                  style={{ color: "white", fontSize: "clamp(16px, 2.5vw, 20px)" }}
+                />
+              </div>
             </div>
           </Card>
         </Col>
       </Row>
 
-      {/* Table */}
-      <Card style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(1,0,0,0.1)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <Title level={4} style={{ margin: 0, fontSize: "18px", color: "#262626" }}>
-            Doctor Requests
-          </Title>
-          <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-            Refresh
-          </Button>
-        </div>
+      {/* Search Bar */}
+      <Row style={{ marginBottom: "clamp(16px, 2vw, 24px)" }}>
+        <Col xs={24}>
+          <Input
+            placeholder="Search doctors..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{
+              borderRadius: "12px",
+              maxWidth: "clamp(300px, 50vw, 400px)",
+              fontSize: "clamp(12px, 1.8vw, 14px)",
+            }}
+          />
+        </Col>
+      </Row>
 
-        <Spin spinning={loading}>
+      {/* Table */}
+        <Card
+          style={{
+            borderRadius: "12px",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+            transition: "all 0.3s ease",
+          }}
+          hoverable
+        >
+          <div
+            style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "clamp(12px, 2vw, 16px)",
+          flexWrap: "wrap",
+          gap: "8px",
+            }}
+          >
+            <div
+          style={{
+            fontWeight: 600,
+            fontSize: "clamp(14px, 2vw, 16px)",
+            color: "#262626",
+          }}
+            >
+          Doctor Requests
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <DatePicker.RangePicker
+            value={null}
+            placeholder={["Start Date", "End Date"]}
+            style={{ borderRadius: "12px", fontSize: "clamp(12px, 1.8vw, 14px)" }}
+            suffixIcon={<CalendarOutlined />}
+            allowClear
+          />
+          <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
+            style={{
+              width: "clamp(100px, 20vw, 120px)",
+              borderRadius: "12px",
+              fontSize: "clamp(12px, 1.8vw, 14px)",
+            }}
+          >
+            <Option value="pending">Pending</Option>
+            <Option value="approved">Approved</Option>
+            <Option value="rejected">Rejected</Option>
+            <Option value="all">All</Option>
+          </Select>
+            </div>
+          </div>
           <Table
             columns={columns}
-            dataSource={doctors}
+            dataSource={filteredDoctors}
             pagination={{
-              current: currentPage,
-              pageSize: pageSize,
-              total: doctors.length,
-              showSizeChanger: false,
-              showQuickJumper: false,
-              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-              onChange: (page) => setCurrentPage(page),
-              style: { marginTop: "16px" },
-            }}
-            scroll={{ x: 1200 }}
-            size="middle"
-            bordered={false}
-          />
-        </Spin>
+          current: currentPage,
+          pageSize: pageSize,
+          total: filteredDoctors.length,
+          showSizeChanger: true,
+          onChange: (page, size) => {
+              setCurrentPage(page);
+              setPageSize(size);
+            },
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+            style: { marginTop: "16px" },
+          }}
+          scroll={{ x: true }}
+          loading={loading}
+          rowClassName="custom-row"
+          style={{
+            '.ant-table-thead > tr > th': {
+              backgroundColor: '#fafafa',
+              fontWeight: 600,
+              color: '#262626',
+              fontSize: 'clamp(12px, 1.8vw, 14px)',
+            },
+            '.ant-table-row': {
+              transition: 'background-color 0.3s ease',
+            },
+            '.ant-table-row:hover': {
+              backgroundColor: '#f0f9ff',
+            },
+          }}
+        />
       </Card>
 
       {/* Image Modal */}
