@@ -15,8 +15,11 @@ import {
   faUser,
   faWalking,
   faBell,
+  faFlask,
+  faPills,
+  faStar,
 } from "@fortawesome/free-solid-svg-icons";
-import { Link, Outlet ,useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import logo from "../assets/logooo.png"; // Adjust path relative to your component
@@ -29,6 +32,7 @@ const DoctorLayoutWrapper = () => {
   const [selectedKey, setSelectedKey] = useState("dashboard");
   const user = useSelector((state) => state.currentUserData);
   const navigate = useNavigate();
+  
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -51,11 +55,10 @@ const DoctorLayoutWrapper = () => {
     }
   };
 
-   const handleLogout = () => {
+  const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
-
 
   const getProfileImage = (user) => {
     if (user?.profilepic?.data && user?.profilepic?.mimeType) {
@@ -71,64 +74,64 @@ const DoctorLayoutWrapper = () => {
       key: "dashboard",
       label: <Link to="/doctor/Dashboard">Dashboard</Link>,
       icon: (
-        <FontAwesomeIcon icon={faTachometerAlt} style={{ color: "#ffffff" }} />
+        <FontAwesomeIcon icon={faTachometerAlt} style={{ color: "#ffffff", fontSize: "16px" }} />
       ),
     },
     {
       key: "appointments",
       label: <Link to="/doctor/doctorPages/Appointments">Appointments</Link>,
       icon: (
-        <FontAwesomeIcon icon={faCalendarCheck} style={{ color: "#ffffff" }} />
+        <FontAwesomeIcon icon={faCalendarCheck} style={{ color: "#ffffff", fontSize: "16px" }} />
       ),
     },
     {
       key: "my-patients",
       label: <Link to="/doctor/doctorPages/Patients">My Patients</Link>,
-      icon: <FontAwesomeIcon icon={faUsers} style={{ color: "#ffffff" }} />,
+      icon: <FontAwesomeIcon icon={faUsers} style={{ color: "#ffffff", fontSize: "16px" }} />,
     },
     {
-      key: "walkin-patients",
-      label: <Link to="/doctor/doctorPages/Walkin">Walkin Patients</Link>,
-      icon: <FontAwesomeIcon icon={faWalking} style={{ color: "#ffffff" }} />,
+      key: "labs",
+      label: <Link to="/doctor/doctorPages/Labs">Labs</Link>,
+      icon: <FontAwesomeIcon icon={faFlask} style={{ color: "#ffffff", fontSize: "16px" }} />,
+    },
+    {
+      key: "pharmacy",
+      label: <Link to="/doctor/doctorPages/Pharmacy">Pharmacy</Link>,
+      icon: <FontAwesomeIcon icon={faPills} style={{ color: "#ffffff", fontSize: "16px" }} />,
     },
     {
       key: "staff-management",
       label: (
         <Link to="/doctor/doctorPages/staffManagement">Staff Management</Link>
       ),
-      icon: <FontAwesomeIcon icon={faCog} style={{ color: "#ffffff" }} />,
+      icon: <FontAwesomeIcon icon={faCog} style={{ color: "#ffffff", fontSize: "16px" }} />,
     },
     {
       key: "availability",
       label: <Link to="/doctor/doctorPages/Availability">Availability</Link>,
       icon: (
-        <FontAwesomeIcon icon={faCalendarAlt} style={{ color: "#ffffff" }} />
+        <FontAwesomeIcon icon={faCalendarAlt} style={{ color: "#ffffff", fontSize: "16px" }} />
       ),
     },
     {
       key: "accounts",
       label: <Link to="/doctor/doctorPages/Accounts">Accounts</Link>,
       icon: (
-        <FontAwesomeIcon icon={faFileInvoice} style={{ color: "#ffffff" }} />
+        <FontAwesomeIcon icon={faFileInvoice} style={{ color: "#ffffff", fontSize: "16px" }} />
       ),
     },
     {
-      key: "invoices",
-      label: <Link to="/doctor/doctorPages/Invoices">Invoices</Link>,
+      key: "reviews",
+      label: <Link to="/doctor/doctorPages/Reviews">Reviews</Link>,
       icon: (
-        <FontAwesomeIcon icon={faFileInvoice} style={{ color: "#ffffff" }} />
+        <FontAwesomeIcon icon={faStar} style={{ color: "#ffffff", fontSize: "16px" }} />
       ),
     },
     {
-      key: "messages",
-      label: <Link to="/doctor/doctorPages/Messages">Messages</Link>,
-      icon: <FontAwesomeIcon icon={faEnvelope} style={{ color: "#ffffff" }} />,
-    },
-     {
       key: "logout",
       label: <span onClick={handleLogout}>Logout</span>,
       icon: (
-        <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#ffffff" }} />
+        <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#ffffff", fontSize: "16px" }} />
       ),
     },
   ];
@@ -147,7 +150,6 @@ const DoctorLayoutWrapper = () => {
       </Menu.Item>
     </Menu>
   );
-
 
   return (
     <Layout className="layout">
@@ -287,7 +289,7 @@ const DoctorLayoutWrapper = () => {
             top: 64,
             zIndex: 1000,
             display: isMobile && collapsed ? "none" : "block",
-            background: "#334155",
+            background: "#2E4861",
             boxShadow: "2px 0 8px rgba(0,0,0,0.15)",
           }}
         >
@@ -296,48 +298,6 @@ const DoctorLayoutWrapper = () => {
             animate={{ x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Doctor Profile Section - Shown only when not collapsed */}
-            {!collapsed && (
-              <div
-                style={{
-                  background: "#334155",
-                  padding: "32px 16px 24px 16px",
-                  textAlign: "center",
-                  borderBottom: "1px solid rgba(255,255,255,0.1)",
-                }}
-              >
-                <Avatar
-                  size={80}
-                  src={profileImageSrc}
-                  icon={!profileImageSrc && <FontAwesomeIcon icon={faUser} />}
-                  style={{
-                    backgroundColor: "#4a5568",
-                    marginBottom: 16,
-                    border: "3px solid rgba(255,255,255,0.2)",
-                  }}
-                />
-                <div
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    marginBottom: 6,
-                    color: "#ffffff",
-                  }}
-                >
-                  {user?.firstname || "Doctor"}
-                </div>
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.7)",
-                    fontSize: "13px",
-                    fontWeight: "400",
-                  }}
-                >
-                  {user?.specialization?.name || "Department"}
-                </div>
-              </div>
-            )}
-
             {/* Navigation Menu */}
             <Menu
               mode="inline"
@@ -345,9 +305,10 @@ const DoctorLayoutWrapper = () => {
               onClick={handleMenuClick}
               style={{
                 border: "none",
-                background: "#334155",
+                background: "#2E4861",
                 color: "#ffffff",
-                fontSize: "14px",
+                fontSize: "15px",
+                padding: "0",
               }}
               theme="dark"
             >
@@ -357,19 +318,23 @@ const DoctorLayoutWrapper = () => {
                   icon={item.icon}
                   style={{
                     color: "#ffffff",
-                    height: "48px",
-                    lineHeight: "48px",
-                    margin: "2px 8px",
-                    borderRadius: "6px",
+                    height: "50px",
+                    lineHeight: "50px",
+                    margin: "0",
+                    borderRadius: "0",
                     display: "flex",
                     alignItems: "center",
+                    paddingLeft: "24px",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                    background: selectedKey === item.key ? "#1e3a52" : "transparent",
                   }}
                 >
                   <span
                     style={{
-                      marginLeft: "8px",
+                      marginLeft: "12px",
                       color: "#ffffff",
-                      fontWeight: "500",
+                      fontWeight: "400",
+                      fontSize: "15px",
                     }}
                   >
                     {item.label}
@@ -401,16 +366,18 @@ const DoctorLayoutWrapper = () => {
 
       <style jsx>{`
         .ant-menu-dark .ant-menu-item-selected {
-          background-color: rgba(59, 130, 246, 0.8) !important;
+          background-color: #1e3a52 !important;
+          border-left: 3px solid #64b5f6 !important;
         }
 
         .ant-menu-dark .ant-menu-item:hover {
-          background-color: rgba(255, 255, 255, 0.1) !important;
+          background-color: rgba(255, 255, 255, 0.08) !important;
         }
 
         .ant-menu-dark .ant-menu-item {
-          border-radius: 6px !important;
-          margin: 2px 8px !important;
+          border-radius: 0 !important;
+          margin: 0 !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
         }
 
         .ant-menu-dark .ant-menu-item a {
@@ -424,6 +391,10 @@ const DoctorLayoutWrapper = () => {
 
         .toggle-button:hover {
           color: #1e40af !important;
+        }
+
+        .ant-menu-dark .ant-menu-item-icon {
+          font-size: 16px !important;
         }
       `}</style>
     </Layout>
