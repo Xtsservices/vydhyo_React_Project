@@ -5,11 +5,6 @@ import {
   TeamOutlined, 
   MedicineBoxOutlined,
   CalendarOutlined,
-  VideoCameraOutlined,
-  HomeOutlined,
-  UsergroupAddOutlined,
-  ExperimentOutlined,
-  CarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   ClockCircleOutlined
@@ -43,7 +38,7 @@ const revenueContributionData = [
   { title: 'Labs', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
   { title: 'Ambulance', value: '₹2,000', icon: '🚑', bgColor: '#f0f9ff' },
   { title: 'BloodBank', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
-    { title: 'Labs', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
+  { title: 'Labs', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
   { title: 'Home Care', value: '₹2,000', icon: '🏠', bgColor: '#EFF6FF'},
 
 ];
@@ -76,14 +71,6 @@ const topDoctorsAppointments = [
   { name: 'Dr. Sandeep Yadav', appointments: 43 },
 ];
 
-const topDoctorsRevenue = [
-  { name: 'Dr. Meena Joshi', revenue: '₹1,20,000',bgColor: '#F0FDF4' },
-  { name: 'Dr. Arvind Sharma', revenue: '₹98,000',bgColor: '#F0FDF4' },
-  { name: 'Dr. Neha Verma', revenue: '₹90,500',bgColor: '#F0FDF4' },
-  { name: 'Dr. Ravi Menon', revenue: '₹87,000',bgColor: '#F0FDF4' },
-  { name: 'Dr. Kavita Rao', revenue: '₹84,300',bgColor: '#F0FDF4' },
-];
-
 const revenueTrendsData = [
   { name: 'Jan', revenue: 17 },
   { name: 'Feb', revenue: 25 },
@@ -106,6 +93,46 @@ const appointmentDistributionData = [
 const SuperAdminDashboard = () => {
   // Calculate total points for percentage
   const totalPoints = appointmentDistributionData.reduce((sum, item) => sum + item.value, 0);
+
+  // Prepare pie chart data from consultationStatsData
+  const consultationPieData = consultationStatsData.map((item, idx) => ({
+    name: item.title,
+    value: item.value,
+    color: [
+      '#FF6384', // bright red-pink
+      '#36A2EB', // bright blue
+      '#FFCE56', // bright yellow
+      '#4BC0C0', // bright teal
+      '#9966FF', // bright purple
+      '#FF9F40', // bright orange
+      '#43E97B', // bright green
+    ][idx % 7],
+  }));
+  const totalConsultation = consultationPieData.reduce((sum, item) => sum + item.value, 0);
+
+  // Custom tooltip for the consultation pie chart
+  const ConsultationPieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const entry = payload[0].payload;
+      return (
+        <div style={{
+          background: '#fff',
+          border: '1px solid #d9d9d9',
+          borderRadius: 6,
+          padding: '8px 12px',
+          fontSize: 13,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        }}>
+          <div style={{ fontWeight: 600, color: '#262626' }}>{entry.name}</div>
+          <div style={{ color: '#1890ff', fontWeight: 600 }}>{entry.value} pts</div>
+          <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+            {((entry.value / totalConsultation) * 100).toFixed(1)}%
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div style={{ padding: '16px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
@@ -341,11 +368,11 @@ const SuperAdminDashboard = () => {
         </Col>
         
         <Col xs={24} lg={8}>
-          <Card title="Appointment Distribution" style={{ borderRadius: '8px', minHeight: 0, padding: 0 }}>
+          <Card title="Consultation Stats Distribution" style={{ borderRadius: '8px', minHeight: 0, padding: 0 }}>
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0px 0' }}>
               <PieChart width={220} height={180}>
                 <Pie
-                  data={appointmentDistributionData}
+                  data={consultationPieData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -354,15 +381,15 @@ const SuperAdminDashboard = () => {
                   innerRadius={48}
                   paddingAngle={2}
                   labelLine={false}
-                  // Remove label prop to hide all labels
                 >
-                  {appointmentDistributionData.map((entry, idx) => (
+                  {consultationPieData.map((entry, idx) => (
                     <Cell key={`cell-${idx}`} fill={entry.color} />
                   ))}
                 </Pie>
+                <Tooltip content={<ConsultationPieTooltip />} />
               </PieChart>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0px 0 0 0', width: '100%' }}>
-                {appointmentDistributionData.map((entry, idx) => (
+                {consultationPieData.map((entry, idx) => (
                   <li
                     key={entry.name}
                     style={{
@@ -370,7 +397,7 @@ const SuperAdminDashboard = () => {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       padding: '0px 0',
-                      borderBottom: idx < appointmentDistributionData.length - 1 ? '1px solid #f0f0f0' : 'none',
+                      borderBottom: idx < consultationPieData.length - 1 ? '1px solid #f0f0f0' : 'none',
                       fontSize: 13
                     }}
                   >
@@ -390,7 +417,7 @@ const SuperAdminDashboard = () => {
                     <div style={{ fontWeight: 600, color: '#1890ff' }}>
                       {entry.value} pts
                       <span style={{ color: '#8c8c8c', fontWeight: 400, fontSize: 12, marginLeft: 6 }}>
-                        ({((entry.value / totalPoints) * 100).toFixed(1)}%)
+                        ({((entry.value / totalConsultation) * 100).toFixed(1)}%)
                       </span>
                     </div>
                   </li>
