@@ -15,7 +15,8 @@ import Availability from "./components/doctor/doctorPages/Availability";
 import Accounts from "./components/doctor/doctorPages/Accounts"; 
 import Invoices from "./components/doctor/doctorPages/Invoices"; 
 import Messages from "./components/doctor/doctorPages/Messages"; 
-
+import Pharmacy from "./components/doctor/doctorPages/Pharmacy";
+import Labs from "./components/doctor/doctorPages/Labs";
 import NotFound from "./components/NotFound ";
 
 import Header from "./components/landingPage/Header";
@@ -180,10 +181,28 @@ const AppRoutes = () => {
         />
 
         <Route
+          path="/doctor/doctorPages/Labs"
+          element={
+            <ProtectedRoute>
+              <Labs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/doctor/doctorPages/Patients"
           element={
             <ProtectedRoute>
               <Patients />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/doctor/doctorPages/Pharmacy"
+          element={
+            <ProtectedRoute>
+              <Pharmacy />
             </ProtectedRoute>
           }
         />
@@ -196,6 +215,8 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+
+        
 
         <Route
           path="/doctor/doctorPages/staffManagement"

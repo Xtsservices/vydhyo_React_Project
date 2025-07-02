@@ -406,7 +406,7 @@ const DoctorDashboard = () => {
             }}
             icon={<UserOutlined />}
           >
-            Walk-ins
+            Appointments
           </Button>
         </div>
 
