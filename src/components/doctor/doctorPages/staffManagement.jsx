@@ -21,6 +21,7 @@ import {
   Statistic,
   Avatar,
   Tag,
+  Radio,
 } from "antd";
 import {
   PlusOutlined,
@@ -30,230 +31,65 @@ import {
   EyeOutlined,
   DeleteOutlined,
   MoreOutlined,
+  SearchOutlined,
+   UserAddOutlined 
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import dayjs from "dayjs";
+import '../../../components/stylings/StaffManagement.css';
+
 
 const { Option } = Select;
 const { TextArea } = Input;
 const { useBreakpoint } = Grid;
 
 // Add Staff Modal Component
-const AddStaffModal = ({ isOpen, onCancel, onSubmit, staffType, loading }) => {
+const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
   const [form] = Form.useForm();
-  const [fileList, setFileList] = useState([]);
 
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
+      const staffData = {
+        firstname: values.firstName,
+        lastname: values.lastName,
+        DOB: dayjs(values.DOB).format("DD-MM-YYYY"),
+        gender: values.gender,
+        mobile: values.mobile,
+        email: values.email,
+        role: values.role,
+        access: values.access,
 
-      const staffData = {};
-
-      if (staffType === "receptionist") {
-        Object.assign(staffData, {
-          firstname: values.firstname,
-          lastname: values.lastname,
-          gender: values.gender,
-          DOB: dayjs(values.DOB).format("DD-MM-YYYY"),
-          mobile: values.mobile,
-        });
-      } else {
-        Object.keys(values).forEach((key) => {
-          if (key === "DOB") {
-            staffData[key] = dayjs(values[key]).format("DD-MM-YYYY");
-          } else {
-            staffData[key] = values[key];
-          }
-        });
-        staffData.staffType = staffType;
-      }
-
+      };
       await onSubmit(staffData);
       form.resetFields();
-      setFileList([]);
     } catch (error) {
-      console.error("Form validation failed:", error);
+      console.error("Validation failed:", error);
     }
-  };
-
-  const validateMobile = (_, value) => {
-    if (!value) {
-      return Promise.reject("Please enter mobile number");
-    }
-    const cleanedValue = value.replace(/\D/g, "");
-
-    if (cleanedValue.length !== 10) {
-      return Promise.reject("Mobile number must be exactly 10 digits");
-    }
-    if (!/^[6-9]\d{9}$/.test(cleanedValue)) {
-      return Promise.reject("Mobile number must start with 6, 7, 8, or 9");
-    }
-    return Promise.resolve();
-  };
-
-  const validateName = (_, value) => {
-    if (!value) {
-      return Promise.reject("This field is required");
-    }
-    if (value.length < 2) {
-      return Promise.reject("Name must be at least 2 characters");
-    }
-    if (value.length > 50) {
-      return Promise.reject("Name cannot exceed 50 characters");
-    }
-    if (!/^[A-Za-z\s]+$/.test(value)) {
-      return Promise.reject("Name should contain only letters and spaces");
-    }
-    return Promise.resolve();
-  };
-
-  const renderFormFields = () => {
-    if (staffType === "receptionist") {
-      return (
-        <>
-          <Form.Item
-            name="firstname"
-            label="First Name"
-            rules={[{ validator: validateName }]}
-          >
-            <Input placeholder="Enter first name" />
-          </Form.Item>
-
-          <Form.Item
-            name="lastname"
-            label="Last Name"
-            rules={[{ validator: validateName }]}
-          >
-            <Input placeholder="Enter last name" />
-          </Form.Item>
-
-          <Form.Item
-            name="gender"
-            label="Gender"
-            rules={[{ required: true, message: "Please select gender" }]}
-          >
-            <Select placeholder="Select gender">
-              <Option value="Male">Male</Option>
-              <Option value="Female">Female</Option>
-              <Option value="Other">Other</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="DOB"
-            label="Date of Birth"
-            rules={[{ required: true, message: "Please select date of birth" }]}
-          >
-            <DatePicker
-              style={{ width: "100%" }}
-              format="DD-MM-YYYY"
-              placeholder="Select date of birth"
-              disabledDate={(current) =>
-                current && current > dayjs().endOf("day")
-              }
-              showToday={true}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="mobile"
-            label="Mobile Number"
-            rules={[{ validator: validateMobile }]}
-          >
-            <Input
-              placeholder="Enter 10-digit mobile number"
-              maxLength={10}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "");
-                e.target.value = value;
-              }}
-            />
-          </Form.Item>
-        </>
-      );
-    }
-
-    return (
-      <>
-        <Form.Item
-          name="firstname"
-          label="First Name"
-          rules={[{ validator: validateName }]}
-        >
-          <Input placeholder="Enter first name" />
-        </Form.Item>
-
-        <Form.Item
-          name="lastname"
-          label="Last Name"
-          rules={[{ validator: validateName }]}
-        >
-          <Input placeholder="Enter last name" />
-        </Form.Item>
-
-        <Form.Item
-          name="mobile"
-          label="Mobile Number"
-          rules={[{ validator: validateMobile }]}
-        >
-          <Input
-            placeholder="Enter 10-digit mobile number"
-            maxLength={10}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, "");
-              e.target.value = value;
-            }}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="email"
-          label="Email"
-          rules={[
-            { required: true, message: "Please enter email" },
-            { type: "email", message: "Please enter a valid email" },
-          ]}
-        >
-          <Input placeholder="Enter email address" />
-        </Form.Item>
-
-        <Form.Item
-          name="DOB"
-          label="Date of Birth"
-          rules={[{ required: true, message: "Please select date of birth" }]}
-        >
-          <DatePicker
-            style={{ width: "100%" }}
-            format="DD-MM-YYYY"
-            placeholder="Select date of birth"
-            disabledDate={(current) =>
-              current && current > dayjs().endOf("day")
-            }
-            showToday={true}
-          />
-        </Form.Item>
-      </>
-    );
   };
 
   return (
     <Modal
-      title={`Add New ${
-        staffType.charAt(0).toUpperCase() + staffType.slice(1)
-      }`}
       open={isOpen}
       onCancel={() => {
         onCancel();
         form.resetFields();
-        setFileList([]);
       }}
-      onOk={handleOk}
-      confirmLoading={loading}
-      width={600}
+      footer={null}
+      width={700}
       centered
-      okText={`Add ${staffType.charAt(0).toUpperCase() + staffType.slice(1)}`}
-      cancelText="Cancel"
+      title={
+        <div>
+          <h2 style={{ marginBottom: 0 }}>
+            <UserAddOutlined style={{ marginRight: 8 }} />
+            Add New Staff Member
+          </h2>
+          <p style={{ margin: 0, color: "#888" }}>
+            Fill in the details below to add a new staff member to your organization
+          </p>
+        </div>
+      }
     >
       <Spin spinning={loading}>
         <Form
@@ -261,12 +97,147 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, staffType, loading }) => {
           layout="vertical"
           style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: "10px" }}
         >
-          {renderFormFields()}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="First Name"
+                name="firstName"
+                rules={[{ required: true, message: "Please enter first name" }]}
+              >
+                <Input placeholder="Enter first name" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Last Name"
+                name="lastName"
+                rules={[{ required: true, message: "Please enter last name" }]}
+              >
+                <Input placeholder="Enter last name" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Date of Birth"
+                name="DOB"
+                rules={[{ required: true, message: "Please select DOB" }]}
+              >
+                <DatePicker
+                  style={{ width: "100%" }}
+                  format="DD-MM-YYYY"
+                  placeholder="Select DOB"
+                  disabledDate={(current) =>
+                    current && current > dayjs().endOf("day")
+                  }
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Gender"
+                name="gender"
+                rules={[{ required: true, message: "Please select gender" }]}
+              >
+                <Radio.Group>
+                  <Radio value="Male">Male</Radio>
+                  <Radio value="Female">Female</Radio>
+                  <Radio value="Other">Other</Radio>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Mobile Number"
+                name="mobile"
+                rules={[
+                  { required: true, message: "Please enter mobile number" },
+                  {
+                    pattern: /^[6-9]\d{9}$/,
+                    message: "Enter valid 10-digit mobile number",
+                  },
+                ]}
+              >
+                <Input placeholder="Enter mobile number" maxLength={10} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Email ID"
+                name="email"
+                rules={[
+                  { required: true, message: "Please enter email" },
+                  { type: "email", message: "Invalid email format" },
+                ]}
+              >
+                <Input placeholder="Enter email address" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Role"
+                name="role"
+                rules={[{ required: true, message: "Please select role" }]}
+              >
+                <Select placeholder="Select role">
+                  <Option value="admin">Lab Assistant</Option>
+                  <Option value="doctor">pharmacy Assistant</Option>
+                  <Option value="receptionist">Receptionist</Option>
+                  <Option value="receptionist">Assistent</Option>
+
+                </Select>
+              </Form.Item>
+            </Col>
+<Col span={12}>
+  <Form.Item
+    label="Access"
+    name="access"
+    rules={[{ required: true, message: "Please select access permissions" }]}
+  >
+    <Select
+      mode="multiple"
+      placeholder="Select access permissions"
+      allowClear
+    >
+      <Option value="viewPatients">My Patients</Option>
+      <Option value="editAppointments"> Appointments</Option>
+      <Option value="manageBilling">Labs</Option>
+      <Option value="dashboardAccess">Dashboard</Option>
+      <Option value="dashboardAccess">Pharmacy</Option>
+      <Option value="dashboardAccess">Availability</Option>
+      <Option value="dashboardAccess">Accounts</Option>
+    </Select>
+  </Form.Item>
+</Col>
+          </Row>
+
+          <Row justify="end" gutter={16}>
+            <Col>
+              <Button onClick={onCancel}>Cancel</Button>
+            </Col>
+            <Col>
+              <Button type="primary" onClick={handleOk}>
+                Add Staff
+              </Button>
+            </Col>
+          </Row>
         </Form>
       </Spin>
     </Modal>
   );
 };
+
+
+
+
 
 const StaffManagement = () => {
   const screens = useBreakpoint();
@@ -276,6 +247,12 @@ const StaffManagement = () => {
   const [loading, setLoading] = useState(false);
   const [staffData, setStaffData] = useState([]);
   const [fetchLoading, setFetchLoading] = useState(false);
+  const [SearchText, setSearchText] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterRole, setFilterRole] = useState("all");
+  const [modalMode, setModalMode] = useState("view"); // or 'edit', 'delete'
+const [modalVisible, setModalVisible] = useState(false);
+const [modalData, setModalData] = useState(null);
 
   const handleStaffTypeChange = (value) => {
     setSelectedStaffType(value);
@@ -361,95 +338,76 @@ const StaffManagement = () => {
     }
   };
 
+
+  
+
   const columns = [
     {
-      title: "Name",
+      title: "Staff Name",
       dataIndex: "name",
       key: "name",
-      render: (name) => (
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <Avatar style={{ marginRight: 8 }}>{name.charAt(0)}</Avatar>
-          {name}
-        </div>
-      ),
+      render: (_, record) => (
+  <div style={{ display: "flex", alignItems: "center" }}>
+    <Avatar style={{ marginRight: 8 }}>
+      {record.name ? record.name.charAt(0) : "?"}
+    </Avatar>
+    {record.name || "N/A"}
+     <span style={{ color: "#595959", marginLeft: 32 }}>
+        {record.email || "No email"}
+      </span>
+  </div>
+)
     },
     {
-      title: "Staff Type",
+      title: "Role",
       dataIndex: "type",
-      key: "type",
-      render: (type) => <Tag color="blue">{type}</Tag>,
+      key: "role",
+      // render: (type) => <Tag color="blue">{type}</Tag>,
     },
     {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
+      title: "Login Status",
+      dataIndex: "isLoggedIn",
+      key: "Login Status",
     },
     {
-      title: "Phone",
-      dataIndex: "phone",
-      key: "phone",
+      title: "Last Login",
+      dataIndex: "lastLogout",
+      key: "Last Login",
     },
-    {
-      title: "Join Date",
-      dataIndex: "joinDate",
-      key: "joinDate",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => (
-        <Tag color={status === "Active" ? "green" : "red"}>{status}</Tag>
-      ),
-    },
+    
     {
       title: "Actions",
       key: "actions",
-      render: (_, record) => {
-        const actionMenu = (
-          <Menu
-            items={[
-              {
-                key: "edit",
-                label: (
-                  <>
-                    <EditOutlined /> Edit
-                  </>
-                ),
-                onClick: () =>
-                  console.log(`Edit staff: ${record.id} - ${record.name}`),
-              },
-              {
-                key: "view",
-                label: (
-                  <>
-                    <EyeOutlined /> View
-                  </>
-                ),
-                onClick: () =>
-                  console.log(`View staff: ${record.id} - ${record.name}`),
-              },
-              {
-                key: "delete",
-                label: (
-                  <>
-                    <DeleteOutlined /> Delete
-                  </>
-                ),
-                onClick: () =>
-                  console.log(`Delete staff: ${record.id} - ${record.name}`),
-              },
-            ]}
-          />
-        );
-        return (
-          <Dropdown overlay={actionMenu} trigger={["click"]}>
-            <Button type="text" icon={<MoreOutlined />} />
-          </Dropdown>
-        );
-      },
+      render: (_, record) => (
+             <div className="action-icons">
+        <EyeOutlined className="icon-view" onClick={() => handleView(record)} />
+        <EditOutlined className="icon-edit" onClick={() => handleEdit(record)} />
+        <DeleteOutlined className="icon-delete" onClick={() => handleDelete(record)} />
+      </div>
+
+      ),
     },
   ];
+
+  const handleView = (record) => {
+    console.log("View record:", record);
+  setModalMode("view");
+  setModalData(record);
+  setModalVisible(true);
+};
+
+const handleEdit = (record) => {
+  setModalMode("edit");
+  setModalData(record);
+  setModalVisible(true);
+};
+
+const handleDelete = (record) => {
+  setModalMode("delete");
+  setModalData(record);
+  setModalVisible(true);
+};
+
 
   const fetchStaff = async () => {
     try {
@@ -466,6 +424,8 @@ const StaffManagement = () => {
         }
       );
 
+      console.log("Staff data fetched:", response.data.data);
+
       const formattedData = response.data.data.map((staff, index) => ({
         id: index + 1,
         name: staff.name,
@@ -474,8 +434,11 @@ const StaffManagement = () => {
         phone: staff.mobile,
         joinDate: dayjs(staff.joinDate).format("YYYY-MM-DD"),
         status: staff.status.charAt(0).toUpperCase() + staff.status.slice(1),
+ lastLogout: staff.lastLogout
+    ? dayjs(staff.lastLogout).format("YYYY-MM-DD HH:mm:ss")
+    : "N/A",
+  isLoggedIn: staff.isLoggedIn ? "Online" : "Offline",
       }));
-
       setStaffData(formattedData);
     } catch (error) {
       console.error("Error fetching staff:", error);
@@ -492,20 +455,49 @@ const StaffManagement = () => {
     } finally {
       setFetchLoading(false);
     }
-  };
+};
 
+  const handleUpdate = async (data) => {
+  try {
+    await axios.put(`/api/updateStaff`, data);
+    message.success("Updated successfully");
+    setModalVisible(false);
+    fetchStaffData();
+  } catch (err) {
+    message.error("Update failed");
+  }
+};
+
+const confirmDelete = async (userId) => {
+  try {
+    await axios.get(`/deleteMyAccount?userId=${userId}`);
+    message.success("Deleted successfully");
+    setModalVisible(false);
+    fetchStaffData();
+  } catch (err) {
+    message.error("Delete failed");
+  }
+};
+
+  const handleSearch = (e) => {
+  const value = e.target.value.toLowerCase();
+  setSearchText(value);
+
+  const filtered = staffData.filter((staff) =>
+    staff.name.toLowerCase().includes(value)
+  );
+  setStaffData(filtered);
+};
   useEffect(() => {
     fetchStaff();
+    handleUpdate();
+    confirmDelete();
   }, []);
 
+
+
   return (
-    <div
-      style={{
-        padding: screens.xs ? "16px" : "24px",
-        background: "#f0f2f5",
-        minHeight: "calc(100vh - 64px)",
-      }}
-    >
+    <div>
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
         <Col>
           <Typography.Title level={4} style={{ margin: 0 }}>
@@ -514,89 +506,70 @@ const StaffManagement = () => {
         </Col>
         <Col>
           <Space>
-            <Select
-              value={selectedStaffType}
-              onChange={handleStaffTypeChange}
-              style={{ width: screens.xs ? 120 : 150 }}
-              placeholder="Select staff type"
-            >
-              <Option value="receptionist">Receptionist</Option>
-            </Select>
+            
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={handleQuickAdd}
               loading={loading}
             >
-              Quick Add
+              Add Staff
             </Button>
           </Space>
         </Col>
       </Row>
-
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Total Staff"
-              value={staffData.length}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: "#1890ff" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Receptionists"
-              value={
-                staffData.filter((staff) => staff.type === "receptionist")
-                  .length
-              }
-              prefix={<UserOutlined />}
-              valueStyle={{ color: "#52c41a" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Doctor"
-              value={
-                staffData.filter((staff) => staff.type === "doctor").length
-              }
-              prefix={<UserOutlined />}
-              valueStyle={{ color: "#faad14" }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
+      
       <Row gutter={[16, 16]}>
+              <div className="filters-container">
+  <Row justify="space-between" align="middle">
+    <Col>
+      <Input
+        placeholder="Search staff members..."
+        prefix={<SearchOutlined />}
+        onChange={handleSearch}
+        className="filters-input"
+      />
+    </Col>
+    <Col>
+      <div className="selects-group">
+        <Select className="filters-select" defaultValue="all" onChange={setFilterStatus}>
+          <Option value="all">All Status</Option>
+          <Option value="paid">Active</Option>
+          <Option value="pending">InActive</Option>
+        </Select>
+        <Select className="filters-select" defaultValue="all" onChange={setFilterStatus}>
+          <Option value="all">All Roles</Option>
+          <Option value="paid">Lab Assistent</Option>
+          <Option value="pending">Pharmacy Assistent</Option>
+          <Option value="refunded">Receptionist</Option>
+          <Option value="refunded">Assistent</Option>
+        </Select>
+      </div>
+    </Col>
+  </Row>
+</div>
         <Col span={24}>
-          <Card
-            title="Current Staff Members"
-            extra={
-              <Space>
-                <Button type="link">Export List</Button>
-                <Button type="link">Import Staff</Button>
-              </Space>
-            }
-          >
+          
             <Table
               dataSource={staffData}
               columns={columns}
               rowKey="id"
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} of ${total} items`,
-              }}
+               pagination={{
+    pageSize: 5,
+    showPrevNextJumpers: true,
+    showSizeChanger: false,
+    showQuickJumper: false,
+    itemRender: (_, type, originalElement) => {
+      if (type === "prev") return <a>Previous</a>;
+      if (type === "next") return <a>Next</a>;
+      
+      return null;
+    },
+  }}
               loading={fetchLoading}
+              bordered
             />
-          </Card>
+          
         </Col>
       </Row>
 
@@ -607,6 +580,71 @@ const StaffManagement = () => {
         staffType={selectedStaffType}
         loading={loading}
       />
+      <Modal
+  title={
+    modalMode === "view"
+      ? "View Staff Details"
+      : modalMode === "edit"
+      ? "Edit Staff"
+      : "Confirm Delete"
+  }
+  open={modalVisible}
+  onCancel={() => setModalVisible(false)}
+  onOk={() => {
+    if (modalMode === "edit") {
+      handleUpdate(modalData); // send updated data
+    } else if (modalMode === "delete") {
+      confirmDelete(modalData.userId);
+    } else {
+      setModalVisible(false);
+    }
+  }}
+  okText={modalMode === "delete" ? "Delete" : modalMode === "edit" ? "Save" : "OK"}
+  okButtonProps={
+    modalMode === "delete" ? { danger: true } : modalMode === "view" ? { style: { display: "none" } } : {}
+  }
+>
+  {modalMode === "view" && (
+    <>
+      <p><strong>Name:</strong> {modalData?.name}</p>
+      <p><strong>Email:</strong> {modalData?.email}</p>
+      <p><strong>Phone:</strong> {modalData?.phone}</p>
+      <p><strong>Role:</strong> {modalData?.type}</p>
+      <p><strong>Status:</strong> {modalData?.status}</p>
+    </>
+  )}
+
+  {modalMode === "edit" && (
+    <Form layout="vertical">
+      <Form.Item label="Name">
+        <Input
+          value={modalData?.name}
+          onChange={(e) => setModalData({ ...modalData, name: e.target.value })}
+        />
+      </Form.Item>
+      <Form.Item label="Email">
+        <Input
+          value={modalData?.email}
+          onChange={(e) => setModalData({ ...modalData, email: e.target.value })}
+        />
+      </Form.Item>
+      <Form.Item label="Phone">
+        <Input
+          value={modalData?.phone}
+          onChange={(e) => setModalData({ ...modalData, phone: e.target.value })}
+        />
+      </Form.Item>
+    </Form>
+  )}
+
+  {modalMode === "delete" && (
+    <>
+      <p>Are you sure you want to delete this staff member?</p>
+      <p><strong>Name:</strong> {modalData?.name}</p>
+      <p><strong>Email:</strong> {modalData?.email}</p>
+    </>
+  )}
+</Modal>
     </div>
   );
 };

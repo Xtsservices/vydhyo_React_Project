@@ -18,18 +18,27 @@ import {
   message,
   Radio,
   Grid,
+  Input,
+  Select,
+  Table,
+  Popover,
 } from "antd";
 import {
+  SearchOutlined,
   PhoneOutlined,
   VideoCameraOutlined,
   MoreOutlined,
   UserOutlined,
   CalendarOutlined,
-  ClockCircleOutlined,
+CheckOutlined,
+  CalendarFilled,
+  ClockCircleFilled,
   ArrowUpOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
+import '../../../components/stylings/Appointments.css';
+
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -46,6 +55,9 @@ const Appointment = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [newDate, setNewDate] = useState(null);
   const [newTime, setNewTime] = useState(null);
+  const [searchText, setSearchText] = useState("");
+    const [filterStatus, setFilterStatus] = useState("all");
+  
 
   const getStatusTag = (status) => {
     const statusConfig = {
@@ -274,98 +286,190 @@ const Appointment = () => {
   useEffect(() => {
     getAppointments();
   }, []);
+console.log(appointments);
+
+  const handleSearch = (e) => {
+    const value = e.target.value.toLowerCase();
+    setSearchText(value);
+   
+  };
+
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const handleFilterChange = (value) => {
+    setFilterStatus(value);}
+
+
+
+
+const columns = [
+  {
+    title: "Patient ID",
+    dataIndex: "patientId",
+    key: "patientId",
+  },
+  {
+    title: "Patient Name",
+    dataIndex: "fullName",
+    key: "fullName",
+  },
+  {
+    title: "Clinic Name",
+    dataIndex: "clinicName",
+    key: "clinicName",
+  },
+  {
+    title: "Type",
+    dataIndex: "appointmentType",
+    key: "appointmentType",
+  },
+  {
+    title: "Status",
+    dataIndex: "appointmentStatus",
+    key: "appointmentStatus",
+    render: (text) => (
+      <Tag
+        color={
+          text === "completed"
+            ? "green"
+            : text === "cancelled"
+            ? "red"
+            : "blue"
+        }
+      >
+        {text.charAt(0).toUpperCase() + text.slice(1)}
+      </Tag>
+    ),
+  },
+  {
+    title: "Date & Time",
+    dataIndex: "dateTime",
+    key: "dateTime",
+  },
+  {
+    title: "Action",
+    key: "action",
+    render: (_, record) => (
+      <Popover
+        content={
+          <div>
+            <p style={{ margin: 0, cursor: "pointer" }}>View</p>
+            <p style={{ margin: 0, cursor: "pointer" }}>Edit</p>
+            <p style={{ margin: 0, cursor: "pointer" }}>Cancel</p>
+          </div>
+        }
+        trigger="click"
+        placement="bottomRight"
+      >
+        <Button type="text" icon={<MoreOutlined />} />
+      </Popover>
+    ),
+  },
+];
+
+
+
+
+      const filteredAppointments = appointments.totalAppointments.filter(
+  (appt) => appt.appointmentStatus === "scheduled" // or other statuses
+);
+
+console.log(filteredAppointments, "after filteration")
+
+const tableData = filteredAppointments.map((appt, index) => ({
+  key: index,
+  patientId: appt.patientId,
+  fullName: appt.fullName,
+  clinicName: appt.clinicName,
+  appointmentType: appt.appointmentType,
+  appointmentStatus: appt.appointmentStatus,
+  dateTime: appt.dateTime, // e.g., "2025-07-01 10:00 AM"
+}));
 
   return (
     <div style={{ padding: "24px" }}>
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Row justify="end" style={{ marginBottom: 16 }}>
-            <Col>
-              <Radio.Group
-                optionType="button"
-                buttonStyle="solid"
-                defaultValue="online"
-                size={screens.xs ? "small" : "middle"}
-              >
-                <Radio.Button value="online">Online</Radio.Button>
-                <Radio.Button value="walk-in">Walk-in</Radio.Button>
-                <Radio.Button value="home-services">Home-services</Radio.Button>
-              </Radio.Group>
-            </Col>
-          </Row>
-
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col span={24}>
               <Title level={2} style={{ margin: 0 }}>
                 Appointments
               </Title>
-              <Text type="secondary">Manage your patient appointments</Text>
+              <Text type="secondary">View all your schedules and appointments in one place</Text>
             </Col>
           </Row>
 
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col xs={24} sm={12} lg={6}>
-              <Card>
-                <Statistic
-                  title="Completed Appointments"
-                  value={
+    <Card className="appointments-card">
+      <Statistic
+        title="Total Appointments"
+        value={
                     appointments.totalAppointments.filter(
                       (appt) => appt.appointmentStatus === "completed"
                     ).length
                   }
-                  valueStyle={{ color: "#1890ff" }}
-                  prefix={<UserOutlined />}
-                  suffix={
-                    <Text type="success" style={{ fontSize: "12px" }}>
-                      <ArrowUpOutlined /> +4% From Last Week
-                    </Text>
-                  }
-                />
-              </Card>
+        valueRender={(value) => (
+          <div className="statistic-value-row">
+            <span className="statistic-value">{value}</span>
+            <CalendarFilled className="calendar-icon" />
+          </div>
+        )}
+        suffix={
+          <Text type="success" className="statistic-suffix">
+            <ArrowUpOutlined /> +8% from Last month
+          </Text>
+        }
+      />
+    </Card>
+  
+
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <Card>
+              <Card  className="appointments-card , upcomming-card">
                 <Statistic
-                  title="Scheduled Appointments"
+                  title="Upcomming"
                   value={
                     appointments.totalAppointments.filter(
                       (appt) => appt.appointmentStatus === "scheduled"
                     ).length
                   }
-                  valueStyle={{ color: "#52c41a" }}
-                  prefix={<UserOutlined />}
+                  valueRender={(value) => ( <div className="statistic-value-row">
+            <span className="statistic-value">{value}</span>
+            <ClockCircleFilled className="calendar-icon" style={{color:"#75c34e "}} />
+          </div>)}
+                  
                   suffix={
                     <Text type="success" style={{ fontSize: "12px" }}>
-                      <ArrowUpOutlined /> +8% From Yesterday
                     </Text>
                   }
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <Card>
+              <Card className="appointments-card, completed-card">
                 <Statistic
-                  title="Rescheduled Appointments"
+                  title="Completed"
                   value={
                     appointments.totalAppointments.filter(
                       (appt) => appt.appointmentStatus === "rescheduled"
                     ).length
                   }
-                  valueStyle={{ color: "#fa8c16" }}
-                  prefix={<CalendarOutlined />}
+                  valueRender={(value) => ( <div className="statistic-value-row">
+            <span className="statistic-value">{value}</span>
+            <CheckOutlined className="right-mark-icon"  />
+          </div>)}
                   suffix={
                     <Text type="success" style={{ fontSize: "12px" }}>
-                      <ArrowUpOutlined /> +2% From Yesterday
                     </Text>
                   }
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <Card>
+              <Card  className="appointments-card, cancled-card">
                 <Space direction="vertical">
                   <Text type="secondary" style={{ fontSize: "14px" }}>
-                    Cancelled Appointments
+                    Cancelled 
                   </Text>
                   <Text strong style={{ fontSize: "16px" }}>
                     {appointments.totalAppointments.find(
@@ -392,8 +496,114 @@ const Appointment = () => {
             </Col>
           </Row>
 
-          <Col span={24}>
-            <Card>
+          <Col span={24} >
+          {/* <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 24 }}>
+<Col>
+              <Input
+                placeholder="Search by Patient ID or Name"
+                prefix={<SearchOutlined />}
+                value={searchText}
+                onChange={handleSearch}
+                style={{ width: screens.xs ? 200 : 300 }}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+            <Select
+              style={{ width: "100%" }}
+              defaultValue="all"
+              onChange={setFilterStatus}
+            >
+              <Option value="all">All clinics</Option>
+              <Option value="paid">b</Option>
+              <Option value="pending">c</Option>
+              <Option value="refunded">d</Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={4}>
+            <Select
+              style={{ width: "100%" }}
+              defaultValue="all"
+              onChange={setFilterStatus}
+            >
+              <Option value="all">All Types</Option>
+              <Option value="paid">b</Option>
+              <Option value="pending">c</Option>
+              <Option value="refunded">d</Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={4}>
+            <Select
+              style={{ width: "100%" }}
+              defaultValue="all"
+              onChange={setFilterStatus}
+            >
+              <Option value="all">All Status</Option>
+              <Option value="paid">b</Option>
+              <Option value="pending">c</Option>
+              <Option value="refunded">d</Option>
+            </Select>
+          </Col>
+          </Row> */}
+
+          <Row gutter={[16, 16]} align="middle" className="filters-row">
+      {/* Search Input */}
+      <Col>
+        <Input
+          placeholder="Search by Patient ID or Name"
+          prefix={<SearchOutlined />}
+          value={searchText}
+          onChange={handleSearch}
+          className="filters-input"
+        />
+      </Col>
+
+      {/* Select Filters */}
+      <Col xs={24} sm={12} md={4}>
+        <Select className="filters-select" defaultValue="all" onChange={setFilterStatus}>
+          <Option value="all">All clinics</Option>
+          <Option value="paid">b</Option>
+          <Option value="pending">c</Option>
+          <Option value="refunded">d</Option>
+        </Select>
+      </Col>
+
+      <Col xs={24} sm={12} md={4}>
+        <Select className="filters-select" defaultValue="all" onChange={setFilterStatus}>
+          <Option value="all">All Types</Option>
+          <Option value="paid">b</Option>
+          <Option value="pending">c</Option>
+          <Option value="refunded">d</Option>
+        </Select>
+      </Col>
+
+      <Col xs={24} sm={12} md={4}>
+        <Select className="filters-select" defaultValue="all" onChange={setFilterStatus}>
+          <Option value="all">All Status</Option>
+          <Option value="paid">b</Option>
+          <Option value="pending">c</Option>
+          <Option value="refunded">d</Option>
+        </Select>
+      </Col>
+
+      {/* Calendar Icon Trigger */}
+      <Col xs={2}>
+        <DatePicker
+          open={calendarVisible}
+          onOpenChange={(open) => setCalendarVisible(open)}
+          className="filters-hidden-datepicker"
+          onChange={(date) => console.log("Selected Date:", date)}
+        />
+        <div className="icon-box" onClick={() => setCalendarVisible(true)}>
+          <CalendarOutlined className="calendar-icon" />
+        </div>
+      </Col>
+
+      {/* Right Mark Icon */}
+      <Col xs={2}>
+        <CheckOutlined className="filters-icon right-icon" />
+      </Col>
+    </Row>
+            {/* <Card>
               <Tabs
                 activeKey={activeKey}
                 onChange={setActiveKey}
@@ -405,41 +615,18 @@ const Appointment = () => {
                   borderBottom: "1px solid #f0f0f0",
                 }}
               />
-            </Card>
+            </Card> */}
           </Col>
         </Col>
       </Row>
 
-      <Modal
-        title="Reschedule Appointment"
-        open={isRescheduleModalVisible}
-        onOk={handleRescheduleSubmit}
-        onCancel={() => {
-          setIsRescheduleModalVisible(false);
-          setNewDate(null);
-          setNewTime(null);
-          setSelectedAppointment(null);
-        }}
-        okText="Reschedule"
-        cancelText="Cancel"
-      >
-        <Space direction="vertical" style={{ width: "100%" }}>
-          <Text>Select new date:</Text>
-          <DatePicker
-            style={{ width: "100%" }}
-            onChange={(date) => setNewDate(date ? moment(date.toDate()) : null)}
-            disabledDate={(current) =>
-              current && current < moment().startOf("day")
-            }
-          />
-          <Text style={{ marginTop: 16 }}>Select new time:</Text>
-          <TimePicker
-            style={{ width: "100%" }}
-            format="HH:mm"
-            onChange={(time) => setNewTime(time ? moment(time.toDate()) : null)}
-          />
-        </Space>
-      </Modal>
+
+<Table
+  columns={columns}
+  dataSource={tableData}
+  pagination={{ pageSize: 5 }}
+  scroll={{ x: screens.xs ? 1000 : undefined }}
+/> 
     </div>
   );
 };
