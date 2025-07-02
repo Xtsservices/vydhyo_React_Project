@@ -35,7 +35,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 // Constants
-const API_BASE_URL = "http://216.10.251.239:3000";
+const API_BASE_URL = "http://192.168.1.44:3000";
 const DEFAULT_PAGE_SIZE = 10;
 
 // Custom hooks
