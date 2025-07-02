@@ -32,7 +32,7 @@ const { Title, Text } = Typography;
 // Mock data matching the image exactly
 const revenueSnapshotData = [
   { title: 'Today', value: '₹12,000' , bgColor: '#F1C1151A' },
-  { title: 'This Week', value: '₹84,500', bgColor: '#EFF6FF' },
+  // { title: 'This Week', value: '₹84,500', bgColor: '#EFF6FF' },
   { title: 'This Month', value: '₹3,20,000', bgColor: '#F0FDF4' },
   { title: 'Total Revenue', value: '₹18,56,000', isHighlight: true, bgColor: '#2E4861',color: '#FFFFFF' },
 ];
@@ -42,6 +42,10 @@ const revenueContributionData = [
   { title: 'Pharmacy', value: '₹2,000', icon: '⚕️', bgColor: '#F1C1151A' },
   { title: 'Labs', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
   { title: 'Ambulance', value: '₹2,000', icon: '🚑', bgColor: '#f0f9ff' },
+  { title: 'BloodBank', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
+    { title: 'Labs', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
+  { title: 'Home Care', value: '₹2,000', icon: '🏠', bgColor: '#EFF6FF'},
+
 ];
 
 const approvalRequestsData = [
@@ -51,16 +55,18 @@ const approvalRequestsData = [
 ];
 
 const userMetricsData = [
-  { title: 'Active Patients', value: '1,234', bgcolor: '#EFF6FF', icon: <TeamOutlined />, iconBg: '#1890ff' },
-  { title: 'Active Doctors', value: 76, bgcolor: '#FAF5FF', icon: <UserOutlined />, iconBg: '#722ed1' },
-  { title: 'Total Patients', value: '5,690', bgcolor: '#EFF6FF', icon: <UserOutlined />, iconBg: '#1890ff' },
+  { title: 'Total Downloads', value: '1,234', bgcolor: '#EFF6FF', icon: <TeamOutlined />, iconBg: '#1890ff' },
+  { title: 'Active User', value: 76, bgcolor: '#FAF5FF', icon: <UserOutlined />, iconBg: '#722ed1' },
+  { title: 'Repeated User', value: '5,690', bgcolor: '#EFF6FF', icon: <UserOutlined />, iconBg: '#1890ff' },
 ];
 
 const consultationStatsData = [
   { title: 'Walk-ins', value: 214, icon: '🚶', bgColor: '#f5f5f5' },
-  { title: 'Appointments', value: 156, icon: '📅', bgColor: '#F1C1151A' },
+  { title: 'Home Care', value: 47, icon: '🏠', bgColor: '#F0FDF4' },
+  { title: 'Ambulance', value: 156, icon: '📅', bgColor: '#F1C1151A' },
+  { title: 'Diagnostic', value: 156, icon: '📅', bgColor: '#F1C1151A' },
   { title: 'Video Consults', value: 92, icon: '📹', bgColor: '#f0f9ff' },
-  { title: 'Home Visits', value: 47, icon: '🏠', bgColor: '#F0FDF4' },
+  { title: 'Pharmacy', value: 47, icon: '🏠', bgColor: '#F0FDF4' },
 ];
 
 const topDoctorsAppointments = [
@@ -98,6 +104,9 @@ const appointmentDistributionData = [
 ];
 
 const SuperAdminDashboard = () => {
+  // Calculate total points for percentage
+  const totalPoints = appointmentDistributionData.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <div style={{ padding: '16px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       <Title level={4} style={{ marginBottom: '16px', color: '#8c8c8c', fontWeight: 400 }}>
@@ -108,7 +117,7 @@ const SuperAdminDashboard = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
         {/* Revenue Snapshot - Left Side */}
         <Col xs={24} md={14}>
-          <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '46px', color: '#262626' }}>
+          <div style={{ fontSize: '20px', fontWeight: 600, marginBottom: '46px', color: '#262626' }}>
             Revenue Snapshot
           </div>
           <Row gutter={[8, 8]}>
@@ -120,11 +129,13 @@ const SuperAdminDashboard = () => {
                     backgroundColor: item.bgColor,
                     borderRadius: '8px',
                     border: '1px solid #f0f0f0',
-                    height: '100px'
+                    height: '150px',
+                    marginLeft: '30px',
+                    width: '100%',
                   }}
                   bodyStyle={{ padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}
                 >
-                  <div style={{ fontSize: '12px', color: item.color || '#8c8c8c', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '15px', color: item.color || '#8c8c8c', marginBottom: '4px' }}>
                     {item.title}
                   </div>
                   <div style={{ 
@@ -142,19 +153,22 @@ const SuperAdminDashboard = () => {
 
         {/* Revenue Contribution - Right Side */}
         <Col xs={24} md={10}>
-          <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', color: '#262626' }}>
+          <div style={{ fontSize: '20px',marginLeft: '-40px', fontWeight: 600, marginBottom: '26px', color: '#262626' }}>
             Revenue Contribution
           </div>
           <Row gutter={[8, 8]}>
             {revenueContributionData.map((item, index) => (
-              <Col xs={12} sm={6} md={12} key={index}>
+              <Col xs={12} sm={6} md={6} key={index}>
                 <Card 
                   style={{
                     textAlign: 'center',
                     backgroundColor: item.bgColor,
                     borderRadius: '8px',
                     border: '1px solid #f0f0f0',
-                    height: '100px'
+                    height: '100px',
+                    // marginRight: '30px',
+                    marginLeft: '-40px',
+                    width: '100%',
                   }}
                   bodyStyle={{ padding: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}
                 >
@@ -179,8 +193,8 @@ const SuperAdminDashboard = () => {
         {/* Approval Requests */}
         <Col xs={24} sm={12} md={8}>
           <Card 
-            title="Approval Requests" 
-            style={{ borderRadius: '8px', minHeight: '280px' }}
+            title="Partners" 
+            style={{ borderRadius: '8px', minHeight: '380px' }}
             headStyle={{ fontSize: '16px', fontWeight: 600 }}
             bodyStyle={{ padding: '12px' }}
           >
@@ -195,7 +209,7 @@ const SuperAdminDashboard = () => {
                   backgroundColor: item.bgColor,
                   borderRadius: '6px',
                   marginBottom: index < approvalRequestsData.length - 1 ? '8px' : '0',
-                  minHeight: '60px'
+                  minHeight: '90px'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -216,7 +230,7 @@ const SuperAdminDashboard = () => {
         <Col xs={24} sm={12} md={8}>
           <Card 
             title="User Metrics" 
-            style={{ borderRadius: '8px', minHeight: '280px' }}
+            style={{ borderRadius: '8px', minHeight: '380px' }}
             headStyle={{ fontSize: '16px', fontWeight: 600 }}
             bodyStyle={{ padding: '12px' }}
           >
@@ -227,9 +241,10 @@ const SuperAdminDashboard = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '12px 0',
-                  borderBottom: index < userMetricsData.length - 1 ? '1px solid #f0f0f0' : 'none',
-                  minHeight: '60px',
+                  padding: '12px 20px',
+                  borderRadius: '16px',
+                  borderBottom: index < userMetricsData.length - 1 ? '8px solidrgb(255, 253, 253)' : 'none',
+                  minHeight: '100px',
                   backgroundColor: item.bgcolor,
                 }}
               >
@@ -251,7 +266,7 @@ const SuperAdminDashboard = () => {
 
         {/* Consultation Stats */}
         <Col xs={24} md={8}>
-          <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', color: '#262626' }}>
+          <div style={{ fontSize: '16px', fontWeight: 600,marginTop: 15 , marginBottom: '20px', color: '#262626' }}>
             Consultation Stats
           </div>
           <Row gutter={[8, 8]} style={{ minHeight: '220px' }}>
@@ -280,100 +295,6 @@ const SuperAdminDashboard = () => {
               </Col>
             ))}
           </Row>
-        </Col>
-      </Row>
-
-      {/* Top Doctors */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} lg={12}>
-          <Card title="Top Doctors - Appointments" style={{ borderRadius: '8px', minHeight: '350px' }}>
-            {topDoctorsAppointments.map((doctor, index) => (
-              <div 
-                key={index} 
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 0',
-                  borderBottom: index < topDoctorsAppointments.length - 1 ? '1px solid #f0f0f0' : 'none'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <Avatar 
-                    size={40} 
-                    style={{ 
-                      backgroundColor: `hsl(${index * 60}, 60%, 70%)`, 
-                      marginRight: '12px',
-                      border: '2px solid #fff',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                    }}
-                    src={`https://i.pravatar.cc/40?img=${index + 10}`}
-                  />
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#262626' }}>
-                    {doctor.name}
-                  </span>
-                </div>
-                <div 
-                  style={{
-                    backgroundColor: '#fff7e6',
-                    borderRadius: '12px',
-                    padding: '4px 8px',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    color: '#fa8c16'
-                  }}
-                >
-                  {doctor.appointments}
-                </div>
-              </div>
-            ))}
-          </Card>
-        </Col>
-        
-        <Col xs={24} lg={12}>
-          <Card title="Top Doctors - Revenue" style={{ borderRadius: '8px', minHeight: '350px' }}>
-            {topDoctorsRevenue.map((doctor, index) => (
-              <div 
-                key={index} 
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 0',
-                  borderBottom: index < topDoctorsRevenue.length - 1 ? '1px solid #f0f0f0' : 'none',
-                  backgroundColor: '#F0FDF4'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <Avatar 
-                    size={40} 
-                    style={{ 
-                      backgroundColor: `hsl(${(index + 3) * 60}, 60%, 70%)`, 
-                      marginRight: '12px',
-                      border: '2px solid #fff',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                    }}
-                    src={`https://i.pravatar.cc/40?img=${index + 15}`}
-                  />
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#262626' }}>
-                    {doctor.name}
-                  </span>
-                </div>
-                <div 
-                  style={{
-                    backgroundColor: '#f6ffed',
-                    borderRadius: '12px',
-                    padding: '4px 8px',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    color: '#52c41a'
-                  }}
-                >
-                  {doctor.revenue}
-                </div>
-              </div>
-            ))}
-          </Card>
         </Col>
       </Row>
 
@@ -420,35 +341,61 @@ const SuperAdminDashboard = () => {
         </Col>
         
         <Col xs={24} lg={8}>
-          <Card title="Appointment Distribution" style={{ borderRadius: '8px' }}>
-            <div style={{ width: '100%', height: '300px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={appointmentDistributionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={90}
-                    dataKey="value"
-                    label={({ value }) => value}
-                    labelStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+          <Card title="Appointment Distribution" style={{ borderRadius: '8px', minHeight: 0, padding: 0 }}>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0px 0' }}>
+              <PieChart width={220} height={180}>
+                <Pie
+                  data={appointmentDistributionData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  innerRadius={48}
+                  paddingAngle={2}
+                  labelLine={false}
+                  // Remove label prop to hide all labels
+                >
+                  {appointmentDistributionData.map((entry, idx) => (
+                    <Cell key={`cell-${idx}`} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0px 0 0 0', width: '100%' }}>
+                {appointmentDistributionData.map((entry, idx) => (
+                  <li
+                    key={entry.name}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0px 0',
+                      borderBottom: idx < appointmentDistributionData.length - 1 ? '1px solid #f0f0f0' : 'none',
+                      fontSize: 13
+                    }}
                   >
-                    {appointmentDistributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #d9d9d9', 
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                    }} 
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          background: entry.color,
+                          marginRight: 8
+                        }}
+                      />
+                      <span style={{ color: '#262626' }}>{entry.name}</span>
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#1890ff' }}>
+                      {entry.value} pts
+                      <span style={{ color: '#8c8c8c', fontWeight: 400, fontSize: 12, marginLeft: 6 }}>
+                        ({((entry.value / totalPoints) * 100).toFixed(1)}%)
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           </Card>
         </Col>

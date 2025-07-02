@@ -74,8 +74,12 @@ const Header = () => {
                 src="/images/vydh_logo.png" // Updated path (ensure the image exists in public/images/)
                 alt="Logo"
                 style={{
-                  width: screens.xs ? 80 : 120,
-                  height: screens.xs ? 80 : 120,
+                  // width: screens.xs ? 80 : 180,
+                  // height: screens.xs ? 80 : 90,
+                  height: screens.xs ? "100px" : "110px",
+                  marginBottom: screens.xs ? "0px" : "-20px",
+                  marginRight: screens.xs ? "8px" : "16px" ,
+                  marginTop: screens.xs ? "0px" : "-10px",
                   objectFit: "contain",
                   borderRadius: 12,
                 }}
