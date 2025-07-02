@@ -236,6 +236,9 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
 };
 
 
+
+
+
 const StaffManagement = () => {
   const screens = useBreakpoint();
   const navigate = useNavigate();
@@ -247,6 +250,9 @@ const StaffManagement = () => {
   const [SearchText, setSearchText] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterRole, setFilterRole] = useState("all");
+  const [modalMode, setModalMode] = useState("view"); // or 'edit', 'delete'
+const [modalVisible, setModalVisible] = useState(false);
+const [modalData, setModalData] = useState(null);
 
   const handleStaffTypeChange = (value) => {
     setSelectedStaffType(value);
@@ -332,6 +338,9 @@ const StaffManagement = () => {
     }
   };
 
+
+  
+
   const columns = [
     {
       title: "Staff Name",
@@ -357,14 +366,15 @@ const StaffManagement = () => {
     },
     {
       title: "Login Status",
-      dataIndex: "Login Status",
+      dataIndex: "isLoggedIn",
       key: "Login Status",
     },
     {
       title: "Last Login",
-      dataIndex: "Last Login",
+      dataIndex: "lastLogout",
       key: "Last Login",
     },
+    
     {
       title: "Actions",
       key: "actions",
@@ -379,12 +389,32 @@ const StaffManagement = () => {
     },
   ];
 
+  const handleView = (record) => {
+    console.log("View record:", record);
+  setModalMode("view");
+  setModalData(record);
+  setModalVisible(true);
+};
+
+const handleEdit = (record) => {
+  setModalMode("edit");
+  setModalData(record);
+  setModalVisible(true);
+};
+
+const handleDelete = (record) => {
+  setModalMode("delete");
+  setModalData(record);
+  setModalVisible(true);
+};
+
+
   const fetchStaff = async () => {
     try {
       setFetchLoading(true);
       const token = localStorage.getItem("accessToken");
       const response = await axios.get(
-        "http://216.10.251.239:3000/doctor/getStaffByCreator",
+        "http://192.168.1.44:3000/doctor/getStaffByCreator",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -394,6 +424,8 @@ const StaffManagement = () => {
         }
       );
 
+      console.log("Staff data fetched:", response.data.data);
+
       const formattedData = response.data.data.map((staff, index) => ({
         id: index + 1,
         name: staff.name,
@@ -402,8 +434,11 @@ const StaffManagement = () => {
         phone: staff.mobile,
         joinDate: dayjs(staff.joinDate).format("YYYY-MM-DD"),
         status: staff.status.charAt(0).toUpperCase() + staff.status.slice(1),
+ lastLogout: staff.lastLogout
+    ? dayjs(staff.lastLogout).format("YYYY-MM-DD HH:mm:ss")
+    : "N/A",
+  isLoggedIn: staff.isLoggedIn ? "Online" : "Offline",
       }));
-
       setStaffData(formattedData);
     } catch (error) {
       console.error("Error fetching staff:", error);
@@ -420,10 +455,30 @@ const StaffManagement = () => {
     } finally {
       setFetchLoading(false);
     }
-  };
+};
 
-    
-console.log ("Staff Data:", staffData);
+  const handleUpdate = async (data) => {
+  try {
+    await axios.put(`/api/updateStaff`, data);
+    message.success("Updated successfully");
+    setModalVisible(false);
+    fetchStaffData();
+  } catch (err) {
+    message.error("Update failed");
+  }
+};
+
+const confirmDelete = async (userId) => {
+  try {
+    await axios.get(`/deleteMyAccount?userId=${userId}`);
+    message.success("Deleted successfully");
+    setModalVisible(false);
+    fetchStaffData();
+  } catch (err) {
+    message.error("Delete failed");
+  }
+};
+
   const handleSearch = (e) => {
   const value = e.target.value.toLowerCase();
   setSearchText(value);
@@ -435,7 +490,11 @@ console.log ("Staff Data:", staffData);
 };
   useEffect(() => {
     fetchStaff();
+    handleUpdate();
+    confirmDelete();
   }, []);
+
+
 
   return (
     <div>
@@ -521,6 +580,71 @@ console.log ("Staff Data:", staffData);
         staffType={selectedStaffType}
         loading={loading}
       />
+      <Modal
+  title={
+    modalMode === "view"
+      ? "View Staff Details"
+      : modalMode === "edit"
+      ? "Edit Staff"
+      : "Confirm Delete"
+  }
+  open={modalVisible}
+  onCancel={() => setModalVisible(false)}
+  onOk={() => {
+    if (modalMode === "edit") {
+      handleUpdate(modalData); // send updated data
+    } else if (modalMode === "delete") {
+      confirmDelete(modalData.userId);
+    } else {
+      setModalVisible(false);
+    }
+  }}
+  okText={modalMode === "delete" ? "Delete" : modalMode === "edit" ? "Save" : "OK"}
+  okButtonProps={
+    modalMode === "delete" ? { danger: true } : modalMode === "view" ? { style: { display: "none" } } : {}
+  }
+>
+  {modalMode === "view" && (
+    <>
+      <p><strong>Name:</strong> {modalData?.name}</p>
+      <p><strong>Email:</strong> {modalData?.email}</p>
+      <p><strong>Phone:</strong> {modalData?.phone}</p>
+      <p><strong>Role:</strong> {modalData?.type}</p>
+      <p><strong>Status:</strong> {modalData?.status}</p>
+    </>
+  )}
+
+  {modalMode === "edit" && (
+    <Form layout="vertical">
+      <Form.Item label="Name">
+        <Input
+          value={modalData?.name}
+          onChange={(e) => setModalData({ ...modalData, name: e.target.value })}
+        />
+      </Form.Item>
+      <Form.Item label="Email">
+        <Input
+          value={modalData?.email}
+          onChange={(e) => setModalData({ ...modalData, email: e.target.value })}
+        />
+      </Form.Item>
+      <Form.Item label="Phone">
+        <Input
+          value={modalData?.phone}
+          onChange={(e) => setModalData({ ...modalData, phone: e.target.value })}
+        />
+      </Form.Item>
+    </Form>
+  )}
+
+  {modalMode === "delete" && (
+    <>
+      <p>Are you sure you want to delete this staff member?</p>
+      <p><strong>Name:</strong> {modalData?.name}</p>
+      <p><strong>Email:</strong> {modalData?.email}</p>
+    </>
+  )}
+</Modal>
     </div>
   );
 };
