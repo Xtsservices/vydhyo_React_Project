@@ -1,0 +1,79 @@
+.appointments-card {
+  background:#fcecb7 ;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+}
+.upcomming-card{
+    background-color: #caf7e3 ;
+}
+.completed-card {
+  background-color: #cadaf7  ;
+}
+.cancled-card {
+  background-color: #f7caca  ;
+}
+
+.statistic-value-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statistic-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: black;
+}
+
+.calendar-icon {
+  font-size: 24px;
+  color: #c19f29 ;
+}
+
+.statistic-suffix {
+  font-size: 12px;
+}
+
+.right-mark-icon {
+  color: #773ff0; /* success green */
+  font-size: 18px;
+}
+
+.filters-row {
+  margin-bottom: 24px;
+}
+
+.filters-input {
+  width: 300px;
+}
+
+@media (max-width: 576px) {
+  .filters-input {
+    width: 200px;
+  }
+}
+
+.filters-select {
+  width: 100%;
+}
+
+.filters-icon {
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.calendar-icon {
+  font-size: 18px;
+  color: #1890ff;
+}
+
+.right-icon {
+  color: #52c41a; /* Green for "success" */
+}
+
+.filters-hidden-datepicker {
+  display: none;
+}
+
+
