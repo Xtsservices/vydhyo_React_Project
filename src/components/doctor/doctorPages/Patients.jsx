@@ -1,306 +1,454 @@
-import React, { useState } from "react";
-import { Search, Filter, Download, MoreVertical, ChevronDown } from "lucide-react";
-
-const patients = [
-  {
-    id: "P-234512",
-    name: "John Doe",
-    gender: "Male",
-    age: 34,
-    phone: "+91 98765XXXXX",
-    lastVisit: "28 June 2025",
-    status: "New Patient",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face&auto=format"
-  },
-  {
-    id: "P-234513",
-    name: "Sarah Wilson",
-    gender: "Female",
-    age: 28,
-    phone: "+91 98765XXXXY",
-    lastVisit: "25 June 2025",
-    status: "Follow-up",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face&auto=format"
-  },
-  {
-    id: "P-234514",
-    name: "Michael Chen",
-    gender: "Male",
-    age: 45,
-    phone: "+91 98765XXXXZ",
-    lastVisit: "20 June 2025",
-    status: "",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face&auto=format"
-  }
-];
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Search, Filter, Download, MoreVertical } from "lucide-react";
+import { message } from "antd";
+import moment from "moment";
 
 const MyPatients = () => {
+  const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useState("Name");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredPatients, setFilteredPatients] = useState(patients);
+  const [filteredPatients, setFilteredPatients] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [totalPatients, setTotalPatients] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const pageSize = 10;
 
-  const handleSearch = (e) => {
-    const value = e.target.value.toLowerCase();
-    setSearchText(value);
-    setFilteredPatients(
-      patients.filter(
-        (patient) =>
-          patient.name.toLowerCase().includes(value) ||
-          patient.id.toLowerCase().includes(value) ||
-          patient.phone.includes(value)
-      )
-    );
+  // API base URL
+  const API_BASE_URL = "http://192.168.1.44:3000";
+
+  // Calculate age from DOB (if available)
+  const calculateAge = (dob) => {
+    if (!dob) return "N/A";
+    return moment().diff(moment(dob, "DD-MM-YYYY"), "years");
   };
 
+const fetchPatients = useCallback(async () => {
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      message.error("No authentication token found. Please login again.");
+      return;
+    }
+
+    const doctorId = localStorage.getItem("doctorId") || "patients";
+    const response = await fetch(
+      `${API_BASE_URL}/appointment/getAppointmentsByDoctorID/${"patients"}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("response===============", response)
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        message.error("Session expired. Please login again.");
+        navigate("/login");
+        return;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let patientsData = [];
+
+    if (data.status === "success" && data.data) {
+      const appointmentsData = Array.isArray(data.data) ? data.data : [data.data];
+      
+      const patientMap = new Map();
+      
+      appointmentsData.forEach((appointment) => {
+        const uniqueKey = `${appointment.userId || 'unknown'}_${appointment.patientName?.toLowerCase().replace(/\s+/g, '') || 'unnamed'}`;
+        
+        if (!patientMap.has(uniqueKey)) {
+          patientMap.set(uniqueKey, {
+            id: appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`,
+            name: appointment.patientName || "N/A",
+            gender: "N/A", 
+            age: "N/A", 
+            phone: "N/A", 
+            lastVisit: appointment.appointmentDate
+              ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
+              : "N/A",
+            appointmentType: appointment.appointmentType || "N/A",
+            status: appointment.appointmentType === "New-Walkin" || appointment.appointmentType === "new-walkin" 
+              ? "New Patient" : "Follow-up",
+            department: appointment.appointmentDepartment || "N/A",
+            appointmentTime: appointment.appointmentTime || "N/A",
+            appointmentStatus: appointment.appointmentStatus || "N/A",
+            appointmentReason: appointment.appointmentReason || "N/A",
+            appointmentCount: 1, // Track how many appointments this patient has
+            allAppointments: [appointment] // Store all appointments for this patient
+          });
+        } else {
+          // If patient exists, update with more recent appointment data
+          const existingPatient = patientMap.get(uniqueKey);
+          const currentAppointmentDate = moment(appointment.appointmentDate);
+          const existingAppointmentDate = moment(existingPatient.lastVisit, "DD MMMM YYYY");
+          
+          // Increment appointment count
+          existingPatient.appointmentCount += 1;
+          existingPatient.allAppointments.push(appointment);
+          
+          // Update with most recent appointment details
+          if (currentAppointmentDate.isAfter(existingAppointmentDate)) {
+            existingPatient.lastVisit = currentAppointmentDate.format("DD MMMM YYYY");
+            existingPatient.appointmentType = appointment.appointmentType || "N/A";
+            existingPatient.appointmentTime = appointment.appointmentTime || "N/A";
+            existingPatient.appointmentStatus = appointment.appointmentStatus || "N/A";
+            existingPatient.appointmentReason = appointment.appointmentReason || "N/A";
+            existingPatient.department = appointment.appointmentDepartment || "N/A";
+          }
+        }
+      });
+      
+      patientsData = Array.from(patientMap.values());
+      
+      // Optional: Log for debugging
+      console.log("Processed patients:", patientsData);
+      console.log("Total unique patients:", patientsData.length);
+    } else {
+      patientsData = [];
+    }
+
+    setPatients(patientsData);
+    setFilteredPatients(patientsData);
+    setTotalPatients(patientsData.length);
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    message.error("Failed to fetch patients data. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+}, [navigate]);
+
+  // Fetch patients on mount
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  // Handle search
+  const handleSearch = useCallback(
+    (e) => {
+      const value = e.target.value.toLowerCase();
+      setSearchText(value);
+      setCurrentPage(1);
+      setFilteredPatients(
+        patients.filter(
+          (patient) =>
+            patient.name.toLowerCase().includes(value) ||
+            patient.id.toLowerCase().includes(value) ||
+            patient.phone.includes(value) ||
+            patient.department.toLowerCase().includes(value)
+        )
+      );
+    },
+    [patients]
+  );
+
+  // Handle sorting
+  const handleSort = useCallback(
+    (value) => {
+      setSortBy(value);
+      setCurrentPage(1);
+      const sortedPatients = [...filteredPatients].sort((a, b) => {
+        if (value === "Name") {
+          return a.name.localeCompare(b.name);
+        } else if (value === "Date") {
+          const dateA = moment(a.lastVisit, "DD MMMM YYYY");
+          const dateB = moment(b.lastVisit, "DD MMMM YYYY");
+          return dateB - dateA; // Recent first
+        } else if (value === "ID") {
+          return a.id.localeCompare(b.id);
+        }
+        return 0;
+      });
+      setFilteredPatients(sortedPatients);
+    },
+    [filteredPatients]
+  );
+
+  // Handle view patient profile
+  const handleViewProfile = useCallback(
+    (patientId) => {
+      navigate(`/SuperAdmin/patientView?id=${patientId}`);
+    },
+    [navigate]
+  );
+
+  // Status badge rendering
   const getStatusBadge = (status) => {
     if (status === "New Patient") {
-      return (
-        <span style={styles.statusBadgeGreen}>
-          New Patient
-        </span>
-      );
+      return <span style={styles.statusBadgeGreen}>New Patient</span>;
     }
     if (status === "Follow-up") {
-      return (
-        <span style={styles.statusBadgeOrange}>
-          Follow-up
-        </span>
-      );
+      return <span style={styles.statusBadgeOrange}>Follow-up</span>;
     }
     return null;
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredPatients.length / pageSize);
+  const paginatedPatients = filteredPatients.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // Styles
   const styles = {
     container: {
-      minHeight: '100vh',
-      backgroundColor: '#f8fafc',
-      padding: '24px',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      minHeight: "100vh",
+      backgroundColor: "#f8fafc",
+      padding: "clamp(16px, 3vw, 24px)",
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     },
     header: {
-      marginBottom: '32px'
+      marginBottom: "clamp(24px, 4vw, 32px)",
     },
     title: {
-      fontSize: '28px',
-      fontWeight: '700',
-      color: '#1e293b',
-      marginBottom: '8px'
+      fontSize: "clamp(24px, 4vw, 28px)",
+      fontWeight: "700",
+      color: "#1e293b",
+      marginBottom: "8px",
     },
     subtitle: {
-      fontSize: '16px',
-      color: '#64748b'
+      fontSize: "clamp(14px, 2vw, 16px)",
+      color: "#64748b",
     },
     controls: {
-      marginBottom: '24px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '16px'
+      marginBottom: "clamp(16px, 3vw, 24px)",
+      display: "flex",
+      flexDirection: "column",
+      gap: "16px",
     },
     controlsRow: {
-      display: 'flex',
-      gap: '12px',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      flexWrap: 'wrap'
+      display: "flex",
+      gap: "12px",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
     },
     leftControls: {
-      display: 'flex',
-      gap: '12px',
-      alignItems: 'center',
-      flex: '1'
+      display: "flex",
+      gap: "12px",
+      alignItems: "center",
+      flex: "1",
     },
     searchContainer: {
-      position: 'relative',
-      flex: '1',
-      maxWidth: '400px'
+      position: "relative",
+      flex: "1",
+      maxWidth: "clamp(300px, 50vw, 400px)",
     },
     searchInput: {
-      width: '100%',
-      padding: '12px 12px 12px 40px',
-      border: '1px solid #d1d5db',
-      borderRadius: '8px',
-      fontSize: '14px',
-      outline: 'none',
-      transition: 'all 0.2s',
-      backgroundColor: 'white'
+      width: "100%",
+      padding: "12px 12px 12px 40px",
+      border: "1px solid #d1d5db",
+      borderRadius: "8px",
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      outline: "none",
+      transition: "all 0.2s",
+      backgroundColor: "white",
     },
     searchIcon: {
-      position: 'absolute',
-      left: '12px',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#9ca3af',
-      width: '16px',
-      height: '16px'
+      position: "absolute",
+      left: "12px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      color: "#9ca3af",
+      width: "16px",
+      height: "16px",
     },
     filterButton: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '12px 16px',
-      border: '1px solid #d1d5db',
-      borderRadius: '8px',
-      backgroundColor: 'white',
-      cursor: 'pointer',
-      fontSize: '14px',
-      color: '#374151',
-      transition: 'all 0.2s'
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "12px 16px",
+      border: "1px solid #d1d5db",
+      borderRadius: "8px",
+      backgroundColor: "white",
+      cursor: "pointer",
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      color: "#374151",
+      transition: "all 0.2s",
     },
     sortSelect: {
-      padding: '12px 32px 12px 16px',
-      border: '1px solid #d1d5db',
-      borderRadius: '8px',
-      backgroundColor: 'white',
-      fontSize: '14px',
-      color: '#374151',
-      outline: 'none',
-      cursor: 'pointer',
-      appearance: 'none',
-      backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
-      backgroundPosition: 'right 12px center',
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: '16px'
+      padding: "12px 32px 12px 16px",
+      border: "1px solid #d1d5db",
+      borderRadius: "8px",
+      backgroundColor: "white",
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      color: "#374151",
+      outline: "none",
+      cursor: "pointer",
+      appearance: "none",
+      backgroundImage:
+        'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
+      backgroundPosition: "right 12px center",
+      backgroundRepeat: "no-repeat",
+      backgroundSize: "16px",
     },
     exportButton: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '12px 20px',
-      backgroundColor: '#16a34a',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontWeight: '500',
-      cursor: 'pointer',
-      transition: 'all 0.2s'
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "12px 20px",
+      backgroundColor: "#16a34a",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      fontWeight: "500",
+      cursor: "pointer",
+      transition: "all 0.2s",
     },
     tableContainer: {
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e2e8f0',
-      overflow: 'hidden'
+      backgroundColor: "white",
+      borderRadius: "12px",
+      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+      border: "1px solid #e2e8f0",
+      overflow: "hidden",
+      overflowX: "auto",
     },
     tableHeader: {
-      display: 'grid',
-      gridTemplateColumns: '120px 2fr 1fr 80px 140px 120px 80px',
-      gap: '16px',
-      padding: '16px',
-      backgroundColor: '#f8fafc',
-      borderBottom: '1px solid #e2e8f0',
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#475569'
+      display: "grid",
+      gridTemplateColumns:
+        "minmax(100px, 120px) minmax(200px, 2fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",
+      gap: "16px",
+      padding: "16px",
+      backgroundColor: "#f8fafc",
+      borderBottom: "1px solid #e2e8f0",
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      fontWeight: "600",
+      color: "#475569",
+      minWidth: "800px",
     },
     tableBody: {
-      borderTop: '1px solid #e2e8f0'
+      borderTop: "1px solid #e2e8f0",
+      minWidth: "800px",
     },
     tableRow: {
-      display: 'grid',
-      gridTemplateColumns: '120px 2fr 1fr 80px 140px 120px 80px',
-      gap: '16px',
-      padding: '16px',
-      alignItems: 'center',
-      borderBottom: '1px solid #f1f5f9',
-      transition: 'all 0.2s'
+      display: "grid",
+      gridTemplateColumns:
+        "minmax(100px, 120px) minmax(200px, 2fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",
+      gap: "16px",
+      padding: "16px",
+      alignItems: "center",
+      borderBottom: "1px solid #f1f5f9",
+      transition: "all 0.2s",
     },
     patientId: {
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#1e293b'
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      fontWeight: "600",
+      color: "#1e293b",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     },
     patientInfo: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px'
-    },
-    avatar: {
-      width: '40px',
-      height: '40px',
-      borderRadius: '50%',
-      objectFit: 'cover'
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
     },
     patientDetails: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '4px'
+      display: "flex",
+      flexDirection: "column",
+      gap: "4px",
+      minWidth: 0,
     },
     patientName: {
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#1e293b'
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      fontWeight: "600",
+      color: "#1e293b",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    },
+    appointmentType: {
+      fontSize: "clamp(10px, 1.5vw, 12px)",
+      color: "#64748b",
+      fontWeight: "500",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     },
     statusBadgeGreen: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      padding: '4px 8px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: '500',
-      backgroundColor: '#dcfce7',
-      color: '#166534'
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "4px 8px",
+      borderRadius: "20px",
+      fontSize: "clamp(10px, 1.5vw, 12px)",
+      fontWeight: "500",
+      backgroundColor: "#dcfce7",
+      color: "#166534",
     },
     statusBadgeOrange: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      padding: '4px 8px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: '500',
-      backgroundColor: '#fed7aa',
-      color: '#9a3412'
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "4px 8px",
+      borderRadius: "20px",
+      fontSize: "clamp(10px, 1.5vw, 12px)",
+      fontWeight: "500",
+      backgroundColor: "#fed7aa",
+      color: "#9a3412",
     },
     tableCell: {
-      fontSize: '14px',
-      color: '#64748b'
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      color: "#64748b",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     },
     actionButton: {
-      padding: '8px',
-      border: 'none',
-      backgroundColor: 'transparent',
-      cursor: 'pointer',
-      borderRadius: '4px',
-      transition: 'all 0.2s'
+      padding: "8px",
+      border: "none",
+      backgroundColor: "transparent",
+      cursor: "pointer",
+      borderRadius: "4px",
+      transition: "all 0.2s",
     },
     pagination: {
-      marginTop: '24px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      flexWrap: 'wrap',
-      gap: '16px'
+      marginTop: "clamp(16px, 3vw, 24px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: "16px",
     },
     paginationInfo: {
-      fontSize: '14px',
-      color: '#64748b'
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      color: "#64748b",
     },
     paginationControls: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px'
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
     },
     paginationButton: {
-      padding: '8px 12px',
-      fontSize: '14px',
-      border: 'none',
-      backgroundColor: 'transparent',
-      color: '#64748b',
-      cursor: 'pointer',
-      borderRadius: '6px',
-      transition: 'all 0.2s'
+      padding: "8px 12px",
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      border: "none",
+      backgroundColor: "transparent",
+      color: "#64748b",
+      cursor: "pointer",
+      borderRadius: "6px",
+      transition: "all 0.2s",
     },
     paginationButtonActive: {
-      padding: '8px 12px',
-      fontSize: '14px',
-      border: 'none',
-      backgroundColor: '#3b82f6',
-      color: 'white',
-      cursor: 'pointer',
-      borderRadius: '6px',
-      fontWeight: '500'
-    }
+      padding: "8px 12px",
+      fontSize: "clamp(12px, 1.8vw, 14px)",
+      border: "none",
+      backgroundColor: "#3b82f6",
+      color: "white",
+      cursor: "pointer",
+      borderRadius: "6px",
+      fontWeight: "500",
+    },
   };
 
   return (
@@ -320,29 +468,29 @@ const MyPatients = () => {
               <Search style={styles.searchIcon} />
               <input
                 type="text"
-                placeholder="Search by Patient ID, Name or Mobile Number"
+                placeholder="Search by Patient ID, Name or Department"
                 value={searchText}
                 onChange={handleSearch}
                 style={styles.searchInput}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                onFocus={(e) => (e.target.style.borderColor = "#3b82f6")}
+                onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
               />
             </div>
 
             {/* Filter */}
-            <button 
+            <button
               style={styles.filterButton}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#f9fafb'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#f9fafb")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "white")}
             >
-              <Filter style={{width: '16px', height: '16px'}} />
+              <Filter style={{ width: "16px", height: "16px" }} />
               Filter
             </button>
 
             {/* Sort */}
-            <select 
+            <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(e) => handleSort(e.target.value)}
               style={styles.sortSelect}
             >
               <option value="Name">Sort by Name</option>
@@ -352,12 +500,12 @@ const MyPatients = () => {
           </div>
 
           {/* Export */}
-          <button 
+          <button
             style={styles.exportButton}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#15803d'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#16a34a'}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = "#15803d")}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = "#16a34a")}
           >
-            <Download style={{width: '16px', height: '16px'}} />
+            <Download style={{ width: "16px", height: "16px" }} />
             Export
           </button>
         </div>
@@ -378,96 +526,119 @@ const MyPatients = () => {
 
         {/* Table Body */}
         <div style={styles.tableBody}>
-          {filteredPatients.map((patient) => (
-            <div 
-              key={patient.id} 
-              style={styles.tableRow}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-            >
-              <div style={styles.patientId}>{patient.id}</div>
-              
-              <div style={styles.patientInfo}>
-                <img
-                  src={patient.avatar}
-                  alt={patient.name}
-                  style={styles.avatar}
-                />
-                <div style={styles.patientDetails}>
-                  <div style={styles.patientName}>{patient.name}</div>
-                  {patient.status && (
-                    <div style={{marginTop: '4px'}}>
-                      {getStatusBadge(patient.status)}
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "24px" }}>
+              Loading...
+            </div>
+          ) : paginatedPatients.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px" }}>
+              No patients found.
+            </div>
+          ) : (
+            paginatedPatients.map((patient) => (
+              <div
+                key={patient.id}
+                style={styles.tableRow}
+                onMouseEnter={(e) => (e.target.style.backgroundColor = "#f8fafc")}
+                onMouseLeave={(e) => (e.target.style.backgroundColor = "white")}
+              >
+                <div style={styles.patientId}>{patient.id}</div>
+
+                <div style={styles.patientInfo}>
+                  
+                  <div style={styles.patientDetails}>
+                    <div style={styles.patientName}>{patient.name}</div>
+                    <div style={styles.appointmentType}>
+                      {patient.appointmentType}
                     </div>
-                  )}
+                    {patient.status && (
+                      <div style={{ marginTop: "4px" }}>
+                        {getStatusBadge(patient.status)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={styles.tableCell}>{patient.gender}</div>
+                <div style={styles.tableCell}>{patient.age}</div>
+                <div style={styles.tableCell}>{patient.phone}</div>
+                <div style={styles.tableCell}>{patient.lastVisit}</div>
+
+                <div>
+                  <button
+                    style={styles.actionButton}
+                    onClick={() => handleViewProfile(patient.id)}
+                    onMouseEnter={(e) =>
+                      (e.target.style.backgroundColor = "#f3f4f6")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.backgroundColor = "transparent")
+                    }
+                  >
+                    <MoreVertical
+                      style={{ width: "16px", height: "16px", color: "#9ca3af" }}
+                    />
+                  </button>
                 </div>
               </div>
-              
-              <div style={styles.tableCell}>{patient.gender}</div>
-              <div style={styles.tableCell}>{patient.age}</div>
-              <div style={styles.tableCell}>{patient.phone}</div>
-              <div style={styles.tableCell}>{patient.lastVisit}</div>
-              
-              <div>
-                <button 
-                  style={styles.actionButton}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                >
-                  <MoreVertical style={{width: '16px', height: '16px', color: '#9ca3af'}} />
-                </button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
       {/* Pagination */}
       <div style={styles.pagination}>
         <div style={styles.paginationInfo}>
-          Showing 1 to 10 of 97 results
+          Showing {(currentPage - 1) * pageSize + 1} to{" "}
+          {Math.min(currentPage * pageSize, filteredPatients.length)} of {filteredPatients.length}{" "}
+          results
         </div>
-        
+
         <div style={styles.paginationControls}>
-          <button 
+          <button
             style={styles.paginationButton}
             disabled={currentPage === 1}
-            onMouseEnter={(e) => !e.target.disabled && (e.target.style.color = '#1e293b')}
-            onMouseLeave={(e) => !e.target.disabled && (e.target.style.color = '#64748b')}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+            onMouseEnter={(e) =>
+              !e.target.disabled && (e.target.style.color = "#1e293b")
+            }
+            onMouseLeave={(e) =>
+              !e.target.disabled && (e.target.style.color = "#64748b")
+            }
           >
             Previous
           </button>
-          
-          <button 
-            style={styles.paginationButtonActive}
-            onClick={() => setCurrentPage(1)}
-          >
-            1
-          </button>
-          
-          <button 
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              style={
+                page === currentPage
+                  ? styles.paginationButtonActive
+                  : styles.paginationButton
+              }
+              onClick={() => setCurrentPage(page)}
+              onMouseEnter={(e) =>
+                page !== currentPage && (e.target.style.color = "#1e293b")
+              }
+              onMouseLeave={(e) =>
+                page !== currentPage && (e.target.style.color = "#64748b")
+              }
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
             style={styles.paginationButton}
-            onClick={() => setCurrentPage(2)}
-            onMouseEnter={(e) => e.target.style.color = '#1e293b'}
-            onMouseLeave={(e) => e.target.style.color = '#64748b'}
-          >
-            2
-          </button>
-          
-          <button 
-            style={styles.paginationButton}
-            onClick={() => setCurrentPage(3)}
-            onMouseEnter={(e) => e.target.style.color = '#1e293b'}
-            onMouseLeave={(e) => e.target.style.color = '#64748b'}
-          >
-            3
-          </button>
-          
-          <button 
-            style={styles.paginationButton}
-            disabled={currentPage === 3}
-            onMouseEnter={(e) => !e.target.disabled && (e.target.style.color = '#1e293b')}
-            onMouseLeave={(e) => !e.target.disabled && (e.target.style.color = '#64748b')}
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            onMouseEnter={(e) =>
+              !e.target.disabled && (e.target.style.color = "#1e293b")
+            }
+            onMouseLeave={(e) =>
+              !e.target.disabled && (e.target.style.color = "#64748b")
+            }
           >
             Next
           </button>

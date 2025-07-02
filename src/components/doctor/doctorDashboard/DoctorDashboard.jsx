@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Typography, Row, Col, Button, Badge, Progress } from "antd";
+import { Card, Typography, Row, Col, Button, Badge, Progress, DatePicker } from "antd";
 import {
   CalendarOutlined,
   UserOutlined,
@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import moment from "moment";
 
 const { Title, Text } = Typography;
 
@@ -157,6 +158,14 @@ const DoctorDashboard = () => {
 
   const [appointments, setAppointments] = useState([]);
   const [currentClinicIndex, setCurrentClinicIndex] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(moment());
+  const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+
+  // Helper function to format date for comparison
+  const formatDateForComparison = (dateString) => {
+    const date = new Date(dateString);
+    return date.toISOString().split("T")[0];
+  };
 
   // Status color mapping
   const getStatusColor = (status) => {
@@ -170,7 +179,21 @@ const DoctorDashboard = () => {
   };
 
   const getTypeColor = (type) => {
-    return type === "New" || type === "home-visit" ? "#1E40AF" : "#16A34A";
+    return type === "New-Walkin" || type === "home-visit" ? "#1E40AF" : "#16A34A";
+  };
+
+  // Helper function to get display text for appointment type
+  const getAppointmentTypeDisplay = (type) => {
+    switch (type) {
+      case "New-Walkin":
+        return "New";
+      case "home-visit":
+        return "New";
+      case "follow-up":
+        return "Follow-up";
+      default:
+        return type;
+    }
   };
 
   const handlePreviousClinic = () => {
@@ -183,10 +206,12 @@ const DoctorDashboard = () => {
 
   // Fetch appointments from API
   const API_BASE_URL = "http://192.168.1.44:3000";
-  const getAppointments = async () => {
+  
+  const getAppointments = async (date) => {
     try {
+      const formattedDate = date.format("YYYY-MM-DD");
       const token = localStorage.getItem("accessToken");
-      const response = await fetch(`${API_BASE_URL}/appointment/getAllAppointments`, {
+      const response = await fetch(`${API_BASE_URL}/appointment/getAppointmentsByDoctorID/patients?date=${formattedDate}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -196,14 +221,28 @@ const DoctorDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("appointments", JSON.stringify(data?.data));
-        setAppointments(data?.data.totalAppointments || []);
-        updateDashboardData(data?.data.totalAppointments || []);
-      } 
+        console.log("API Response:", data); // Debug log
+        
+        // Handle the corrected API response structure
+        if (data.status === "success" && Array.isArray(data.data)) {
+          const appointmentsList = data.data;
+          localStorage.setItem("appointments", JSON.stringify(appointmentsList));
+          setAppointments(appointmentsList);
+          updateDashboardData(appointmentsList, formattedDate);
+        } else {
+          console.warn("Unexpected API response structure:", data);
+          setAppointments([]);
+          updateDashboardData([], formattedDate);
+        }
+      } else {
+        console.error("Failed to fetch appointments:", response.status);
+        setAppointments([]);
+        updateDashboardData([], formattedDate);
+      }
     } catch (error) {
       console.error("Error fetching appointments:", error);
-      setAppointments(setAppointments.totalAppointments || []);
-      updateDashboardData(setAppointments.totalAppointments || []);
+      setAppointments([]);
+      updateDashboardData([], date.format("YYYY-MM-DD"));
     }
   };
 
@@ -246,42 +285,69 @@ const DoctorDashboard = () => {
     }
   };
 
-  const updateDashboardData = (appointmentsList) => {
-    const today = new Date().toISOString().split("T")[0];
-    const todayAppointments = appointmentsList.filter(
-      (appt) => appt.appointmentDate === today
-    ).length;
+  const updateDashboardData = (appointmentsList, date) => {
+    const today = date || moment().format("YYYY-MM-DD");
+    
+    // Filter appointments for the selected date
+    const dateAppointments = appointmentsList.filter(
+      (appt) => formatDateForComparison(appt.appointmentDate) === today
+    );
+    
+    // Count different types of appointments
     const newAppointments = appointmentsList.filter(
-      (appt) => appt.appointmentType === "home-visit"
+      (appt) => appt.appointmentType === "New-Walkin" || appt.appointmentType === "home-visit"
     ).length;
+    
     const followUpAppointments = appointmentsList.filter(
-      (appt) => appt.appointmentType === "follow-up"
+      (appt) => appt.appointmentType === "follow-up" || appt.isFollowUp === true
+    ).length;
+
+    // Count appointments by status
+    const completedCount = appointmentsList.filter(
+      (appt) => appt.appointmentStatus === "completed"
+    ).length;
+    
+    const rescheduledCount = appointmentsList.filter(
+      (appt) => appt.appointmentStatus === "rescheduled"
+    ).length;
+    
+    const cancelledCount = appointmentsList.filter(
+      (appt) => appt.appointmentStatus === "canceled"
+    ).length;
+    
+    const scheduledCount = appointmentsList.filter(
+      (appt) => appt.appointmentStatus === "scheduled"
     ).length;
 
     setDashboardData((prev) => ({
       ...prev,
       appointmentCounts: {
         ...prev.appointmentCounts,
-        upcoming: 0,
-        completed: appointmentsList.filter(
-          (appt) => appt.appointmentStatus === "completed"
-        ).length,
-        rescheduled: appointmentsList.filter(
-          (appt) => appt.appointmentStatus === "rescheduled"
-        ).length,
-        cancelled: appointmentsList.filter(
-          (appt) => appt.appointmentStatus === "canceled"
-        ).length,
-        active: appointmentsList.filter(
-          (appt) => appt.appointmentStatus === "scheduled"
-        ).length,
+        today: dateAppointments.length,
+        newAppointments: newAppointments,
+        followUp: followUpAppointments,
+        upcoming: scheduledCount, // Use scheduled appointments as upcoming
+        completed: completedCount,
+        rescheduled: rescheduledCount,
+        cancelled: cancelledCount,
+        active: scheduledCount,
         total: appointmentsList.length,
       },
     }));
   };
 
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    getAppointments(date);
+    setIsDatePickerVisible(false);
+  };
+
+  const toggleDatePicker = () => {
+    setIsDatePickerVisible(!isDatePickerVisible);
+  };
+
   useEffect(() => {
-    getAppointments();
+    getAppointments(moment());
     getTodayAppointmentCount();
   }, []);
 
@@ -426,13 +492,37 @@ const DoctorDashboard = () => {
         <Title level={4} style={{ margin: 0, fontWeight: 600, color: "#1a1a1a", fontSize: "18px", fontFamily: "Poppins, sans-serif" }}>
           Patient Appointments
         </Title>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 16px", backgroundColor: "#f8f9fa", borderRadius: "8px", border: "1px solid #e9ecef" }}>
+        <div 
+          style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "8px", 
+            padding: "8px 16px", 
+            backgroundColor: "#f8f9fa", 
+            borderRadius: "8px", 
+            border: "1px solid #e9ecef",
+            cursor: "pointer"
+          }}
+          onClick={toggleDatePicker}
+        >
           <CalendarOutlined style={{ color: "#6c757d", fontSize: "14px" }} />
           <Text style={{ color: "#495057", fontSize: "14px", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
-            02-07-2025
+            {selectedDate.format("DD-MM-YYYY")}
           </Text>
         </div>
       </div>
+
+      {isDatePickerVisible && (
+        <div style={{ position: "absolute", right: "24px", zIndex: 1, marginTop: "8px" }}>
+          <DatePicker
+            value={selectedDate}
+            onChange={handleDateChange}
+            onOpenChange={setIsDatePickerVisible}
+            open={isDatePickerVisible}
+            format="DD-MM-YYYY"
+          />
+        </div>
+      )}
 
       {/* Table Header */}
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", padding: "12px 0", borderBottom: "2px solid #f1f3f4", marginBottom: "16px" }}>
@@ -451,62 +541,68 @@ const DoctorDashboard = () => {
       </div>
 
       {/* Appointments List */}
-      {appointments.map((appointment, index) => (
-        <div
-          key={appointment.appointmentId}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr 1fr",
-            padding: "16px 0",
-            borderBottom: index < appointments.length - 1 ? "1px solid #f8f9fa" : "none",
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ fontWeight: 500, color: "#1a1a1a", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
-            {appointment.patientName}
-          </Text>
-          <Text style={{ color: "#6c757d", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
-            {appointment.appointmentTime}
-          </Text>
+      {appointments.length > 0 ? (
+        appointments.map((appointment, index) => (
           <div
+            key={appointment.appointmentId || index}
             style={{
-              padding: "4px 12px",
-              backgroundColor: appointment.appointmentType === "home-visit" ? "#DBEAFE" : "#e8f5e8",
-              color: getTypeColor(appointment.appointmentType),
-              borderRadius: "16px",
-              fontSize: "12px",
-              fontWeight: 400,
-              textAlign: "center",
-              width: "fit-content",
-              fontFamily: "Poppins, sans-serif",
+              display: "grid",
+              gridTemplateColumns: "2fr 1fr 1fr 1fr",
+              padding: "16px 0",
+              borderBottom: index < appointments.length - 1 ? "1px solid #f8f9fa" : "none",
+              alignItems: "center",
             }}
           >
-            {appointment.appointmentType === "home-visit" ? "New" : "Follow-up"}
+            <Text style={{ fontWeight: 500, color: "#1a1a1a", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
+              {appointment.patientName || "Unknown Patient"}
+            </Text>
+            <Text style={{ color: "#6c757d", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
+              {appointment.appointmentTime || "N/A"}
+            </Text>
+            <div
+              style={{
+                padding: "4px 12px",
+                backgroundColor: appointment.appointmentType === "New-Walkin" ? "#DBEAFE" : "#e8f5e8",
+                color: getTypeColor(appointment.appointmentType),
+                borderRadius: "16px",
+                fontSize: "12px",
+                fontWeight: 400,
+                textAlign: "center",
+                width: "fit-content",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              {getAppointmentTypeDisplay(appointment.appointmentType)}
+            </div>
+            <div
+              style={{
+                padding: "4px 12px",
+                backgroundColor:
+                  appointment.appointmentStatus === "scheduled"
+                    ? "#e8f5e8"
+                    : appointment.appointmentStatus === "completed"
+                    ? "#e3f2fd"
+                    : appointment.appointmentStatus === "rescheduled"
+                    ? "#fff3e0"
+                    : "#ffebee",
+                color: getStatusColor(appointment.appointmentStatus),
+                borderRadius: "16px",
+                fontSize: "12px",
+                fontWeight: 400,
+                textAlign: "center",
+                width: "fit-content",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              {appointment.appointmentStatus?.charAt(0).toUpperCase() + appointment.appointmentStatus?.slice(1) || "Unknown"}
+            </div>
           </div>
-          <div
-            style={{
-              padding: "4px 12px",
-              backgroundColor:
-                appointment.appointmentStatus === "scheduled"
-                  ? "#e8f5e8"
-                  : appointment.appointmentStatus === "completed"
-                  ? "#e3f2fd"
-                  : appointment.appointmentStatus === "rescheduled"
-                  ? "#fff3e0"
-                  : "#ffebee",
-              color: getStatusColor(appointment.appointmentStatus),
-              borderRadius: "16px",
-              fontSize: "12px",
-              fontWeight: 400,
-              textAlign: "center",
-              width: "fit-content",
-              fontFamily: "Poppins, sans-serif",
-            }}
-          >
-            {appointment.appointmentStatus.charAt(0).toUpperCase() + appointment.appointmentStatus.slice(1)}
-          </div>
+        ))
+      ) : (
+        <div style={{ textAlign: "center", padding: "40px 0", color: "#8c8c8c" }}>
+          <Text style={{ fontFamily: "Poppins, sans-serif" }}>No appointments found for selected date</Text>
         </div>
-      ))}
+      )}
 
       <div style={{ textAlign: "center", marginTop: "20px" }}>
         <Button
