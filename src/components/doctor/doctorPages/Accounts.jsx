@@ -30,6 +30,7 @@ const { RangePicker } = DatePicker;
 const AccountsPage = () => {
   const [filterDate, setFilterDate] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
+  
   const [searchText, setSearchText] = useState("");
 
   // Mock data for transactions

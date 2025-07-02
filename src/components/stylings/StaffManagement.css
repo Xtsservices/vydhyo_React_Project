@@ -1,0 +1,40 @@
+.filters-container {
+  border: 1px solid #d9d9d9;
+  padding: 8px;
+  border-radius: 4px;
+  width:100%
+}
+
+.filters-input {
+  width: 300px;
+}
+
+.selects-group {
+  display: flex;
+  gap: 16px;
+}
+
+.filters-select {
+  width: 150px;
+}
+
+.action-icons {
+  display: flex;
+  gap: 12px;
+}
+
+.icon-view {
+  color: #1890ff;
+  cursor: pointer;
+}
+
+.icon-edit {
+  color: #52c41a;
+  cursor: pointer;
+}
+
+.icon-delete {
+  color: #ff4d4f;
+  cursor: pointer;
+}
+
