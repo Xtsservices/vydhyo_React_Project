@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Table,
   Input,
@@ -25,6 +25,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
+import { useSelector } from "react-redux";
 
 const { useBreakpoint } = Grid;
 const { Title, Text } = Typography;
@@ -33,7 +34,6 @@ const { Option } = Select;
 const AddWalkInPatient = () => {
   const screens = useBreakpoint();
   const [patientData, setPatientData] = useState({
-    doctorId: "",
     firstName: "",
     lastName: "",
     age: "",
@@ -56,9 +56,6 @@ const AddWalkInPatient = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [userFound, setUserFound] = useState(false);
-  const [doctors, setDoctors] = useState([]);
-  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [createdPatientId, setCreatedPatientId] = useState("");
   const [patientCreated, setPatientCreated] = useState(false);
   const [consultationFee, setConsultationFee] = useState(undefined);
@@ -67,6 +64,9 @@ const AddWalkInPatient = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [searchResults, setSearchResults] = useState([]);
   const [selectedUserIndex, setSelectedUserIndex] = useState(null);
+  const user = useSelector(state => state.currentUserData)
+  const [patientID, setPatientID] = useState(null)
+  console.log("user==========", user)
 
   const calculateTotalAmount = () => {
     const fee = consultationFee ?? 0;
@@ -79,7 +79,8 @@ const AddWalkInPatient = () => {
 
   const totalAmount = calculateTotalAmount();
 
-  const API_BASE_URL = "http://192.168.1.44:3000";
+  // const API_BASE_URL = "http://192.168.1.42:3000";
+  const API_BASE_URL = "http://216.10.251.239:3000"
   const getAuthToken = () => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("accessToken");
@@ -87,48 +88,11 @@ const AddWalkInPatient = () => {
     return "";
   };
 
-  useEffect(() => {
-    fetchMyDoctors();
-  }, []);
-
-  const fetchMyDoctors = async () => {
-    setIsLoadingDoctors(true);
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/receptionist/fetchMyDoctors`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.status || `HTTP error! status: ${response.status}`
-        );
-      }
-
-      if (data.status === "success" && data.data) {
-        setDoctors(data.data);
-        if (data.data.length > 0) {
-          setSelectedDoctor(data.data[0]);
-          setPatientData((prev) => ({
-            ...prev,
-            doctorId: data.data[0].doctorId,
-          }));
-        }
-      }
-    } catch (error) {
-      console.error("Fetch Doctors API Error:", error);
-      setApiError("Failed to load doctors list. Please refresh the page.");
-    } finally {
-      setIsLoadingDoctors(false);
+  const getDoctorId = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("doctorId") || "";
     }
+    return "";
   };
 
   const searchUser = async (mobile) => {
@@ -509,6 +473,8 @@ const AddWalkInPatient = () => {
       });
 
       const data = await response.json();
+      console.log("data=====",data)
+      setPatientID(data.data.userId)
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to create patient");
@@ -529,6 +495,7 @@ const AddWalkInPatient = () => {
   };
 
   const createAppointment = async (appointmentRequest) => {
+    console.log("appointmentRequest-----", appointmentRequest)
     try {
       const response = await fetch(`${API_BASE_URL}/appointment/createAppointment`, {
         method: "POST",
@@ -581,18 +548,21 @@ const AddWalkInPatient = () => {
         setPatientCreated(true);
         setIsCreatingPatient(false);
       }
+const currentUserID = localStorage.getItem("userID")
+console.log("patientID",patientID)
 
       const appointmentRequest = {
-        userId: createdPatientId,
-        doctorId: patientData.doctorId,
+        userId: patientID,
+        doctorId: currentUserID,
         patientName: `${patientData.firstName} ${patientData.lastName}`,
-        doctorName: selectedDoctor?.doctor?.name || "Doctor",
+        doctorName: `${user.firstname} ${user.lastname}`, 
         appointmentType: patientData.appointmentType,
         appointmentDepartment: patientData.department,
         appointmentDate: formatDateForAPI(patientData.selectedDate),
         appointmentTime: formatTimeForAPI(patientData.selectedTimeSlot),
+        appointmentStatus: "scheduled",
         appointmentReason: patientData.visitReason || "Not specified",
-        amount: totalAmount,
+        amount:  consultationFee?.toFixed(2),
         discount: discount,
         discountType: discountType,
         paymentStatus: paymentStatus,
@@ -669,7 +639,6 @@ const AddWalkInPatient = () => {
 
   const resetForm = () => {
     setPatientData({
-      doctorId: doctors.length > 0 ? doctors[0].doctorId : "",
       firstName: "",
       lastName: "",
       age: "",
@@ -696,10 +665,6 @@ const AddWalkInPatient = () => {
     setFieldErrors({});
     setSearchResults([]);
     setSelectedUserIndex(null);
-
-    if (doctors.length > 0) {
-      setSelectedDoctor(doctors[0]);
-    }
   };
 
   const days = getDaysInMonth(currentMonth);
@@ -873,11 +838,6 @@ const AddWalkInPatient = () => {
           </Button>
         </Col>
       </Row>
-      {isLoadingDoctors && (
-        <Text type="info" style={{ marginTop: 8 }}>
-          Loading doctors...
-        </Text>
-      )}
     </Card>
   );
 
@@ -1325,6 +1285,7 @@ const AddWalkInPatient = () => {
     </Card>
   );
 
+  console.log("user------------", user)
   return (
     <div
       style={{
@@ -1347,21 +1308,6 @@ const AddWalkInPatient = () => {
               walk-in consultation
             </Text>
           </Col>
-
-          {apiError && (
-            <Col span={24}>
-              <div
-                style={{
-                  background: "#fff1f0",
-                  border: "1px solid #ffa39e",
-                  borderRadius: 4,
-                  padding: 12,
-                }}
-              >
-                <Text type="danger">{apiError}</Text>
-              </div>
-            </Col>
-          )}
 
           {userFound && (
             <Col span={24}>

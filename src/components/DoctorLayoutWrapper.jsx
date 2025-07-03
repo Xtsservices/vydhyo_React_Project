@@ -23,6 +23,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import logo from "../assets/logooo.png"; // Adjust path relative to your component
+import { apiPost } from "./api";
 
 const { Header, Sider, Content, Footer } = Layout;
 
@@ -32,7 +33,7 @@ const DoctorLayoutWrapper = () => {
   const [selectedKey, setSelectedKey] = useState("dashboard");
   const user = useSelector((state) => state.currentUserData);
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -55,9 +56,18 @@ const DoctorLayoutWrapper = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      try {
+        const response = await apiPost("/auth/logout")
+        console.log("Logout successful:", response.data.message);
+      } catch (error) {
+        console.error("Logout API failed:", error.response?.statusText || error.message);
+      }
+    } finally {
+      localStorage.removeItem("token");
+      navigate("/login");
+    }
   };
 
   const getProfileImage = (user) => {
@@ -127,13 +137,21 @@ const DoctorLayoutWrapper = () => {
         <FontAwesomeIcon icon={faStar} style={{ color: "#ffffff", fontSize: "16px" }} />
       ),
     },
+
     {
-      key: "logout",
-      label: <span onClick={handleLogout}>Logout</span>,
+      key: "clinic management",
+      label: <Link to="/doctor/doctorPages/ClinicManagement">Clinic Management</Link>,
       icon: (
-        <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#ffffff", fontSize: "16px" }} />
+        <FontAwesomeIcon icon={faStar} style={{ color: "#ffffff", fontSize: "16px" }} />
       ),
     },
+    // {
+    //   key: "logout",
+    //   label: <span onClick={handleLogout}>Logout</span>,
+    //   icon: (
+    //     <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#ffffff", fontSize: "16px" }} />
+    //   ),
+    // },
   ];
 
   // Dropdown menu for profile

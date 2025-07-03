@@ -10,6 +10,7 @@ import {
   faStethoscope,
   faFileInvoiceDollar,
   faListAlt,
+  faSignOutAlt,
   faComments,
   faStar,
   faUserCircle,
@@ -28,6 +29,7 @@ const LayoutWrapper = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const user = useSelector((state) => state.currentUserData);
+  console.log("User Data:", user);
 
   useEffect(() => {
     const handleResize = () => {
@@ -193,7 +195,7 @@ const LayoutWrapper = () => {
     .ant-menu-dark .ant-menu-item {
       background: transparent !important;
       border-radius: 8px !important;
-      margin: 4px 12px !important;
+      // margin: 4px 12px !important;
       padding: 12px 16px !important;
       height: auto !important;
       line-height: 1.4 !important;
@@ -268,6 +270,20 @@ const LayoutWrapper = () => {
 
   const profileImageSrc = getProfileImage(user);
 
+  // const profileMenu = (
+  //    <Menu
+  //      style={{
+  //        borderRadius: "8px",
+  //        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+  //      }}
+  //    >
+  //      <Menu.Item key="logout" onClick={handleLogout}>
+  //        <FontAwesomeIcon icon={faSignOutAlt} style={{ marginRight: 8 }} />
+  //        Logout
+  //      </Menu.Item>
+  //    </Menu>
+  //  ); 
+
   return (
     <>
       <style>{customStyles}</style>
@@ -317,6 +333,7 @@ const LayoutWrapper = () => {
                 }}
               />
             </div> */}
+            
             <div
               style={{
                 display: "flex",
@@ -359,7 +376,7 @@ const LayoutWrapper = () => {
                   {user?.role || "Doctor"}
                 </div>
               </div>
-            </div>
+            </div>            
           </div>
         </Header>
 
@@ -456,15 +473,22 @@ const LayoutWrapper = () => {
                   key="appointments"
                   icon={<FontAwesomeIcon icon={faCalendarCheck} />}
                 >
-                  <Link to="/SuperAdmin/appointments">Settings</Link>
+                  <Link to="/SuperAdmin/dashboard">Settings</Link>
                 </Menu.Item>
 
                 <Menu.Item
                   key="appointments"
                   icon={<FontAwesomeIcon icon={faCalendarCheck} />}
                 >
-                  <Link to="/SuperAdmin/appointments">Staff Management</Link>
+                  <Link to="/SuperAdmin/dashboard">Staff Management</Link>
                 </Menu.Item>
+                <Menu.Item
+                  key="logout"
+                  icon={<FontAwesomeIcon icon={faSignOutAlt} />}
+                >
+                  <Link to="/login">Logout</Link>
+                </Menu.Item>
+
               </Menu>
             </motion.div>
           </Sider>
