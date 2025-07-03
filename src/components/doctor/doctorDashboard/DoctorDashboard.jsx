@@ -137,7 +137,7 @@ const DoctorDashboard = () => {
   const user = useSelector((state) => state.currentUserData);
   const [dashboardData, setDashboardData] = useState({
     success: true,
-    totalAmount: { today: 12450, week: 0, month: 3385200, total: 0 },
+    totalAmount: { today: 0, week: 0, month: 0, total: 0 },
     appointmentCounts: {
       today: 0,
       newAppointments: 0,
@@ -285,6 +285,39 @@ const DoctorDashboard = () => {
     }
   };
 
+  const getTodayRevenue = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await fetch(`http://192.168.1.42:3000/finance/getTodayRevenuebyDoctorId`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === "success") {
+          setDashboardData((prev) => ({
+            ...prev,
+            totalAmount: {
+              ...prev.totalAmount,
+              today: data.data.todayRevenue,
+              month: data.data.monthRevenue,
+            },
+          }));
+        } else {
+          console.error("API response status is not success:", data);
+        }
+      } else {
+        console.error("Failed to fetch today's revenue:", response.status);
+      }
+    } catch (error) {
+      console.error("Error fetching today's revenue:", error);
+    }
+  };
+
   const updatePatientAppointmentsData = (appointmentsList, date) => {
     const today = date || moment().format("YYYY-MM-DD");
     
@@ -364,6 +397,7 @@ const DoctorDashboard = () => {
   useEffect(() => {
     getAppointments(moment());
     getTodayAppointmentCount();
+    getTodayRevenue();
   }, []);
 
   const renderHeader = () => (
@@ -396,7 +430,7 @@ const DoctorDashboard = () => {
         }}
         icon={<UserOutlined />}
       >
-        Appointments
+        + New Appointments
       </Button>
     </div>
   );
@@ -746,24 +780,24 @@ const DoctorDashboard = () => {
         </div>
 
         <Text style={{ fontSize: "14px", color: "#6c757d", display: "block", marginBottom: "12px", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
-          Unavailable Slots:
+          Available Slots:
         </Text>
 
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-          <div style={{ padding: "6px 12px", backgroundColor: "#ffebee", color: "#d32f2f", borderRadius: "15px", fontSize: "12px", fontWeight: 600, border: "1px solid #ffcdd2", fontFamily: "Poppins, sans-serif" }}>
+          <div style={{ padding: "6px 12px", backgroundColor: "#f0f8f0", color: "#16A34A", borderRadius: "15px", fontSize: "12px", fontWeight: 500, border: "", fontFamily: "Poppins, sans-serif" }}>
             10:00 AM - 11:00 AM
           </div>
-          <div style={{ padding: "6px 12px", backgroundColor: "#ffebee", color: "#d32f2f", borderRadius: "16px", fontSize: "12px", fontWeight: 600, border: "1px solid #ffcdd2", fontFamily: "Poppins, sans-serif" }}>
+          <div style={{ padding: "6px 12px", backgroundColor: "#f0f8f0", color: "#16A34A", borderRadius: "16px", fontSize: "12px", fontWeight: 500, border: "", fontFamily: "Poppins, sans-serif" }}>
             2:00 PM - 3:00 PM
           </div>
         </div>
       </div>
 
       <div style={{ padding: "16px", backgroundColor: "#f0f8f0", borderRadius: "12px", position: "relative", marginBottom: "3rem" }}>
-        <Text style={{ fontSize: "14px", color: "#2e7d32", display: "block", marginBottom: "4px", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
+        <Text style={{ fontSize: "14px", color: "", display: "block", marginBottom: "4px", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
           Next Availability
         </Text>
-        <Title level={4} style={{ margin: 0, fontWeight: 700, color: "#1b5e20", fontSize: "16px", fontFamily: "Poppins, sans-serif" }}>
+        <Title level={4} style={{ margin: 0, fontWeight: 500, color: "#16A34A", fontSize: "16px", fontFamily: "Poppins, sans-serif" }}>
           Tomorrow 9:30 AM
         </Title>
       </div>
