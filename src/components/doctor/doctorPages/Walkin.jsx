@@ -79,7 +79,9 @@ const AddWalkInPatient = () => {
 
   const totalAmount = calculateTotalAmount();
 
+
   const API_BASE_URL = "http://192.168.1.42:3000";
+
   const getAuthToken = () => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("accessToken");

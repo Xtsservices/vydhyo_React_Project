@@ -59,10 +59,13 @@ const DoctorLayoutWrapper = () => {
   const handleLogout = async () => {
     try {
       try {
-        const response = await apiPost("/auth/logout")
+        const response = await apiPost("/auth/logout");
         console.log("Logout successful:", response.data.message);
       } catch (error) {
-        console.error("Logout API failed:", error.response?.statusText || error.message);
+        console.error(
+          "Logout API failed:",
+          error.response?.statusText || error.message
+        );
       }
     } finally {
       localStorage.removeItem("token");
@@ -84,67 +87,107 @@ const DoctorLayoutWrapper = () => {
       key: "dashboard",
       label: <Link to="/doctor/Dashboard">Dashboard</Link>,
       icon: (
-        <FontAwesomeIcon icon={faTachometerAlt} style={{ color: "#ffffff", fontSize: "16px" }} />
+        <FontAwesomeIcon
+          icon={faTachometerAlt}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
       ),
     },
     {
       key: "appointments",
       label: <Link to="/doctor/doctorPages/Appointments">Appointments</Link>,
       icon: (
-        <FontAwesomeIcon icon={faCalendarCheck} style={{ color: "#ffffff", fontSize: "16px" }} />
+        <FontAwesomeIcon
+          icon={faCalendarCheck}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
       ),
     },
     {
       key: "my-patients",
       label: <Link to="/doctor/doctorPages/Patients">My Patients</Link>,
-      icon: <FontAwesomeIcon icon={faUsers} style={{ color: "#ffffff", fontSize: "16px" }} />,
+      icon: (
+        <FontAwesomeIcon
+          icon={faUsers}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
+      ),
     },
     {
       key: "labs",
       label: <Link to="/doctor/doctorPages/Labs">Labs</Link>,
-      icon: <FontAwesomeIcon icon={faFlask} style={{ color: "#ffffff", fontSize: "16px" }} />,
+      icon: (
+        <FontAwesomeIcon
+          icon={faFlask}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
+      ),
     },
     {
       key: "pharmacy",
       label: <Link to="/doctor/doctorPages/Pharmacy">Pharmacy</Link>,
-      icon: <FontAwesomeIcon icon={faPills} style={{ color: "#ffffff", fontSize: "16px" }} />,
+      icon: (
+        <FontAwesomeIcon
+          icon={faPills}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
+      ),
     },
     {
       key: "staff-management",
       label: (
         <Link to="/doctor/doctorPages/staffManagement">Staff Management</Link>
       ),
-      icon: <FontAwesomeIcon icon={faCog} style={{ color: "#ffffff", fontSize: "16px" }} />,
+      icon: (
+        <FontAwesomeIcon
+          icon={faCog}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
+      ),
+    },
+    {
+      key: "clinic management",
+      label: (
+        <Link to="/doctor/doctorPages/ClinicManagement">Clinic Management</Link>
+      ),
+      icon: (
+        <FontAwesomeIcon
+          icon={faStar}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
+      ),
     },
     {
       key: "availability",
       label: <Link to="/doctor/doctorPages/Availability">Availability</Link>,
       icon: (
-        <FontAwesomeIcon icon={faCalendarAlt} style={{ color: "#ffffff", fontSize: "16px" }} />
+        <FontAwesomeIcon
+          icon={faCalendarAlt}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
       ),
     },
     {
       key: "accounts",
       label: <Link to="/doctor/doctorPages/Accounts">Accounts</Link>,
       icon: (
-        <FontAwesomeIcon icon={faFileInvoice} style={{ color: "#ffffff", fontSize: "16px" }} />
+        <FontAwesomeIcon
+          icon={faFileInvoice}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
       ),
     },
     {
       key: "reviews",
       label: <Link to="/doctor/doctorPages/Reviews">Reviews</Link>,
       icon: (
-        <FontAwesomeIcon icon={faStar} style={{ color: "#ffffff", fontSize: "16px" }} />
+        <FontAwesomeIcon
+          icon={faStar}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
       ),
     },
 
-    {
-      key: "clinic management",
-      label: <Link to="/doctor/doctorPages/ClinicManagement">Clinic Management</Link>,
-      icon: (
-        <FontAwesomeIcon icon={faStar} style={{ color: "#ffffff", fontSize: "16px" }} />
-      ),
-    },
     // {
     //   key: "logout",
     //   label: <span onClick={handleLogout}>Logout</span>,
@@ -309,6 +352,7 @@ const DoctorLayoutWrapper = () => {
             display: isMobile && collapsed ? "none" : "block",
             background: "#2E4861",
             boxShadow: "2px 0 8px rgba(0,0,0,0.15)",
+            marginTop: "2px",
           }}
         >
           <motion.div
@@ -344,7 +388,8 @@ const DoctorLayoutWrapper = () => {
                     alignItems: "center",
                     paddingLeft: "24px",
                     borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                    background: selectedKey === item.key ? "#1e3a52" : "transparent",
+                    background:
+                      selectedKey === item.key ? "#1e3a52" : "transparent",
                   }}
                 >
                   <span
