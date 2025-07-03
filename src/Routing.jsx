@@ -18,7 +18,7 @@ import Invoices from "./components/doctor/doctorPages/Invoices";
 import Messages from "./components/doctor/doctorPages/Messages"; 
 import Pharmacy from "./components/doctor/doctorPages/Pharmacy";
 import Labs from "./components/doctor/doctorPages/Labs";
-// import ClinicManagement from "./components/doctor/doctorPages/ClinicManagement"
+import ClinicManagement from "./components/doctor/doctorPages/ClinicManagement"
 import NotFound from "./components/NotFound ";
 
 import Header from "./components/landingPage/Header";
@@ -191,14 +191,14 @@ const AppRoutes = () => {
           }
         />
 
-        {/* <Route
+        <Route
           path="/doctor/doctorPages/ClinicManagement"
           element={
             <ProtectedRoute>
               <ClinicManagement />
             </ProtectedRoute>
           }
-        /> */}
+        />
 
         <Route
           path="/doctor/doctorPages/Patients"
