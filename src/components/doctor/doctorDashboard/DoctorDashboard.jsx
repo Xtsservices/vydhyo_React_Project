@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Card, Typography, Row, Col, Button, Badge, Progress, DatePicker } from "antd";
+import { Card, Typography, Row, Col, Button, Badge, Progress } from "antd";
 import {
-  CalendarOutlined,
   UserOutlined,
   SunOutlined,
   DownOutlined,
@@ -14,6 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import moment from "moment";
+import { apiGet } from "../../api";
 
 const { Title, Text } = Typography;
 
@@ -158,8 +158,6 @@ const DoctorDashboard = () => {
 
   const [appointments, setAppointments] = useState([]);
   const [currentClinicIndex, setCurrentClinicIndex] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(moment());
-  const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
 
   // Helper function to format date for comparison
   const formatDateForComparison = (dateString) => {
@@ -205,80 +203,51 @@ const DoctorDashboard = () => {
   };
 
   // Fetch appointments from API
-  const API_BASE_URL = "http://192.168.1.44:3000";
-  
-  const getAppointments = async (date) => {
+  const getAppointments = async () => {
     try {
-      const formattedDate = date.format("YYYY-MM-DD");
-      const token = localStorage.getItem("accessToken");
-      const response = await fetch(`${API_BASE_URL}/appointment/getAppointmentsByDoctorID/patients?date=${formattedDate}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("API Response:", data); // Debug log
-        
-        // Handle the corrected API response structure
-        if (data.status === "success" && Array.isArray(data.data)) {
-          const appointmentsList = data.data;
-          localStorage.setItem("appointments", JSON.stringify(appointmentsList));
-          setAppointments(appointmentsList);
-          updatePatientAppointmentsData(appointmentsList, formattedDate);
-        } else {
-          console.warn("Unexpected API response structure:", data);
-          setAppointments([]);
-          updatePatientAppointmentsData([], formattedDate);
-        }
+      const formattedDate = moment().format("YYYY-MM-DD");
+      const response = await apiGet(`/appointment/getAppointmentsByDoctorID/patients?date=${formattedDate}`);
+      
+      console.log("API Response:", response); // Debug log
+      
+      // Handle the corrected API response structure
+      if (response.data.status === "success" && Array.isArray(response.data.data)) {
+        const appointmentsList = response.data.data;
+        localStorage.setItem("appointments", JSON.stringify(appointmentsList));
+        setAppointments(appointmentsList);
+        updatePatientAppointmentsData(appointmentsList, formattedDate);
       } else {
-        console.error("Failed to fetch appointments:", response.status);
+        console.warn("Unexpected API response structure:", response.data);
         setAppointments([]);
         updatePatientAppointmentsData([], formattedDate);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
       setAppointments([]);
-      updatePatientAppointmentsData([], date.format("YYYY-MM-DD"));
+      updatePatientAppointmentsData([], moment().format("YYYY-MM-DD"));
     }
   };
 
   const getTodayAppointmentCount = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const response = await fetch(`${API_BASE_URL}/appointment/getTodayAppointmentCount`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.status === "success") {
-          setDashboardData((prev) => ({
-            ...prev,
-            appointmentCounts: {
-              ...prev.appointmentCounts,
-              today: data.data.totalAppointments.today,
-              newAppointments: data.data.newAppointments.today,
-              followUp: data.data.followupAppointments.today,
-            },
-            percentageChanges: {
-              today: data.data.totalAppointments.percentageChange,
-              newAppointments: data.data.newAppointments.percentageChange,
-              followUp: data.data.followupAppointments.percentageChange,
-            },
-          }));
-        } else {
-          console.error("API response status is not success:", data);
-        }
+      const response = await apiGet("/appointment/getTodayAppointmentCount");
+      if (response.data.status === "success") {
+        setDashboardData((prev) => ({
+          ...prev,
+          appointmentCounts: {
+            ...prev.appointmentCounts,
+            today: response.data.data.totalAppointments.today,
+            newAppointments: response.data.data.newAppointments.today,
+            followUp: response.data.data.followupAppointments.today,
+          },
+          percentageChanges: {
+            today: response.data.data.totalAppointments.percentageChange,
+            newAppointments: response.data.data.newAppointments.percentageChange,
+            followUp: response.data.data.followupAppointments.percentageChange,
+          },
+        }));
       } else {
-        console.error("Failed to fetch today's appointment count:", response.status);
+        console.error("API response status is not success:", response.data);
       }
     } catch (error) {
       console.error("Error fetching today's appointment count:", error);
@@ -287,31 +256,18 @@ const DoctorDashboard = () => {
 
   const getTodayRevenue = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const response = await fetch(`http://192.168.1.42:3000/finance/getTodayRevenuebyDoctorId`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.status === "success") {
-          setDashboardData((prev) => ({
-            ...prev,
-            totalAmount: {
-              ...prev.totalAmount,
-              today: data.data.todayRevenue,
-              month: data.data.monthRevenue,
-            },
-          }));
-        } else {
-          console.error("API response status is not success:", data);
-        }
+      const response = await apiGet("/finance/getTodayRevenuebyDoctorId");
+      if (response.data.status === "success") {
+        setDashboardData((prev) => ({
+          ...prev,
+          totalAmount: {
+            ...prev.totalAmount,
+            today: response.data.data.todayRevenue,
+            month: response.data.data.monthRevenue,
+          },
+        }));
       } else {
-        console.error("Failed to fetch today's revenue:", response.status);
+        console.error("API response status is not success:", response.data);
       }
     } catch (error) {
       console.error("Error fetching today's revenue:", error);
@@ -321,7 +277,7 @@ const DoctorDashboard = () => {
   const updatePatientAppointmentsData = (appointmentsList, date) => {
     const today = date || moment().format("YYYY-MM-DD");
     
-    // Filter appointments for the selected date
+    // Filter appointments for today
     const dateAppointments = appointmentsList.filter(
       (appt) => formatDateForComparison(appt.appointmentDate) === today
     );
@@ -366,36 +322,8 @@ const DoctorDashboard = () => {
     }));
   };
 
-  // Fixed calendar handlers
-  const handleDateChange = (date) => {
-    if (date && date.isValid()) {
-      setSelectedDate(date);
-      getAppointments(date);
-    }
-    setIsDatePickerVisible(false);
-  };
-
-  const toggleDatePicker = (e) => {
-    e.stopPropagation();
-    setIsDatePickerVisible(!isDatePickerVisible);
-  };
-
-  // Add click outside handler to close calendar
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isDatePickerVisible && !event.target.closest('.ant-picker-dropdown') && !event.target.closest('.date-picker-container')) {
-        setIsDatePickerVisible(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [isDatePickerVisible]);
-
-  useEffect(() => {
-    getAppointments(moment());
+    getAppointments();
     getTodayAppointmentCount();
     getTodayRevenue();
   }, []);
@@ -528,11 +456,11 @@ const DoctorDashboard = () => {
     </Card>
   );
 
-  console.log("selectedDate",selectedDate)
   const renderPatientAppointments = () => {
-    // Filter appointments for the selected date
+    // Filter appointments for today
+    const todayFormatted = moment().format("YYYY-MM-DD");
     const filteredAppointments = appointments.filter(
-      (appt) => formatDateForComparison(appt.appointmentDate) === selectedDate.format("YYYY-MM-DD")
+      (appt) => formatDateForComparison(appt.appointmentDate) === todayFormatted
     );
 
     return (
@@ -551,50 +479,9 @@ const DoctorDashboard = () => {
           <Title level={4} style={{ margin: 0, fontWeight: 600, color: "#1a1a1a", fontSize: "18px", fontFamily: "Poppins, sans-serif" }}>
             Patient Appointments
           </Title>
-          <div style={{ position: "relative" }} className="date-picker-container">
-            <div 
-              style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: "8px", 
-                padding: "8px 16px", 
-                backgroundColor: "#f8f9fa", 
-                borderRadius: "8px", 
-                border: "1px solid #e9ecef",
-                cursor: "pointer"
-              }}
-              onClick={toggleDatePicker}
-            >
-              <CalendarOutlined style={{ color: "#6c757d", fontSize: "14px" }} />
-              <Text style={{ color: "#495057", fontSize: "14px", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
-                {selectedDate.format("DD-MM-YYYY")}
-              </Text>
-            </div>
-            
-            {isDatePickerVisible && (
-              <div style={{ 
-                position: "absolute", 
-                right: "0", 
-                top: "50px", 
-                zIndex: 1000
-              }}>
-                <DatePicker
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  format="DD-MM-YYYY"
-                  allowClear={false}
-                  open={isDatePickerVisible}
-                  onOpenChange={(open) => {
-                    if (!open) {
-                      setIsDatePickerVisible(false);
-                    }
-                  }}
-                  getPopupContainer={(trigger) => trigger.parentNode}
-                  style={{ opacity: 0, position: "absolute", pointerEvents: "none" }}
-                />
-              </div>
-            )}
-          </div>
+          <Text style={{ color: "#495057", fontSize: "14px", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
+            Today - {moment().format("DD-MM-YYYY")}
+          </Text>
         </div>
 
         {/* Table Header */}
@@ -673,7 +560,7 @@ const DoctorDashboard = () => {
           ))
         ) : (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#8c8c8c" }}>
-            <Text style={{ fontFamily: "Poppins, sans-serif" }}>No appointments found for {selectedDate.format("DD-MM-YYYY")}</Text>
+            <Text style={{ fontFamily: "Poppins, sans-serif" }}>No appointments found for today</Text>
           </div>
         )}
 
@@ -774,6 +661,7 @@ const DoctorDashboard = () => {
           <Text style={{ fontSize: "12px", color: "#8c8c8c", fontFamily: "Poppins, sans-serif" }}>
             {clinics[currentClinicIndex].date}
           </Text>
+
           <Text style={{ fontSize: "12px", color: "#1890ff", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
             {clinics[currentClinicIndex].location}
           </Text>
