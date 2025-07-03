@@ -562,10 +562,11 @@ console.log("patientID",patientID)
         appointmentTime: formatTimeForAPI(patientData.selectedTimeSlot),
         appointmentStatus: "scheduled",
         appointmentReason: patientData.visitReason || "Not specified",
-        amount: totalAmount,
+        amount:  consultationFee?.toFixed(2),
         discount: discount,
         discountType: discountType,
         paymentStatus: paymentStatus,
+        finalAmount: totalAmount,
       };
 
       console.log("Appointment Request:", appointmentRequest);
@@ -1285,6 +1286,7 @@ console.log("patientID",patientID)
     </Card>
   );
 
+  console.log("user------------", user)
   return (
     <div
       style={{
