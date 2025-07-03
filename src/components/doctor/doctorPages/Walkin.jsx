@@ -79,7 +79,8 @@ const AddWalkInPatient = () => {
 
   const totalAmount = calculateTotalAmount();
 
-  const API_BASE_URL = "http://192.168.1.44:3000";
+  // const API_BASE_URL = "http://192.168.1.42:3000";
+  const API_BASE_URL = "http://216.10.251.239:3000"
   const getAuthToken = () => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("accessToken");
@@ -551,9 +552,8 @@ const currentUserID = localStorage.getItem("userID")
 console.log("patientID",patientID)
 
       const appointmentRequest = {
-        userId: currentUserID,
+        userId: patientID,
         doctorId: currentUserID,
-        patientID:patientID, 
         patientName: `${patientData.firstName} ${patientData.lastName}`,
         doctorName: `${user.firstname} ${user.lastname}`, 
         appointmentType: patientData.appointmentType,
@@ -566,7 +566,6 @@ console.log("patientID",patientID)
         discount: discount,
         discountType: discountType,
         paymentStatus: paymentStatus,
-        finalAmount: totalAmount,
       };
 
       console.log("Appointment Request:", appointmentRequest);
