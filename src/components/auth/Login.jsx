@@ -111,6 +111,7 @@ const Login = ()=> {
       console.log("logindatadata:", data.data.userData.role);
       if (data.data.accessToken) {
         localStorage.setItem('accessToken', data.data.accessToken);
+        localStorage.setItem('userID', userId);
         localStorage.setItem('role', data.data.userData.role || currentUserType);
         
         const redirectRoute = getRouteFromUserType(data.data.userData.role || currentUserType);
