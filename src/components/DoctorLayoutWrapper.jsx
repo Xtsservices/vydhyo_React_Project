@@ -60,6 +60,9 @@ const DoctorLayoutWrapper = () => {
     try {
       try {
         const response = await apiPost("/auth/logout");
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('userID');
+        localStorage.removeItem('role');
         console.log("Logout successful:", response.data.message);
       } catch (error) {
         console.error(
@@ -68,7 +71,7 @@ const DoctorLayoutWrapper = () => {
         );
       }
     } finally {
-      localStorage.removeItem("token");
+      localStorage.removeItem("accessToken");
       navigate("/login");
     }
   };
