@@ -214,7 +214,6 @@ const DoctorDashboard = () => {
       // Handle the corrected API response structure
       if (response.data.status === "success" && Array.isArray(response.data.data)) {
         const appointmentsList = response.data.data;
-        localStorage.setItem("appointments", JSON.stringify(appointmentsList));
         setAppointments(appointmentsList);
         updatePatientAppointmentsData(appointmentsList, formattedDate);
       } else {

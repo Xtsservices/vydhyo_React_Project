@@ -32,13 +32,14 @@ import {
   DeleteOutlined,
   MoreOutlined,
   SearchOutlined,
-   UserAddOutlined 
+  UserAddOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import dayjs from "dayjs";
-import '../../../components/stylings/StaffManagement.css';
-
+import "../../../components/stylings/StaffManagement.css";
+import { apiGet, apiPost } from "../../api";
+import { useSelector } from "react-redux";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -60,7 +61,6 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
         email: values.email,
         role: values.role,
         access: values.access,
-
       };
       await onSubmit(staffData);
       form.resetFields();
@@ -86,7 +86,8 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
             Add New Staff Member
           </h2>
           <p style={{ margin: 0, color: "#888" }}>
-            Fill in the details below to add a new staff member to your organization
+            Fill in the details below to add a new staff member to your
+            organization
           </p>
         </div>
       }
@@ -192,31 +193,35 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
                   <Option value="doctor">pharmacy Assistant</Option>
                   <Option value="receptionist">Receptionist</Option>
                   <Option value="receptionist">Assistent</Option>
-
                 </Select>
               </Form.Item>
             </Col>
-<Col span={12}>
-  <Form.Item
-    label="Access"
-    name="access"
-    rules={[{ required: true, message: "Please select access permissions" }]}
-  >
-    <Select
-      mode="multiple"
-      placeholder="Select access permissions"
-      allowClear
-    >
-      <Option value="viewPatients">My Patients</Option>
-      <Option value="editAppointments"> Appointments</Option>
-      <Option value="manageBilling">Labs</Option>
-      <Option value="dashboardAccess">Dashboard</Option>
-      <Option value="dashboardAccess">Pharmacy</Option>
-      <Option value="dashboardAccess">Availability</Option>
-      <Option value="dashboardAccess">Accounts</Option>
-    </Select>
-  </Form.Item>
-</Col>
+            <Col span={12}>
+              <Form.Item
+                label="Access"
+                name="access"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please select access permissions",
+                  },
+                ]}
+              >
+                <Select
+                  mode="multiple"
+                  placeholder="Select access permissions"
+                  allowClear
+                >
+                  <Option value="viewPatients">My Patients</Option>
+                  <Option value="editAppointments"> Appointments</Option>
+                  <Option value="manageBilling">Labs</Option>
+                  <Option value="dashboardAccess">Dashboard</Option>
+                  <Option value="dashboardAccess">Pharmacy</Option>
+                  <Option value="dashboardAccess">Availability</Option>
+                  <Option value="dashboardAccess">Accounts</Option>
+                </Select>
+              </Form.Item>
+            </Col>
           </Row>
 
           <Row justify="end" gutter={16}>
@@ -235,10 +240,6 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
   );
 };
 
-
-
-
-
 const StaffManagement = () => {
   const screens = useBreakpoint();
   const navigate = useNavigate();
@@ -251,8 +252,9 @@ const StaffManagement = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterRole, setFilterRole] = useState("all");
   const [modalMode, setModalMode] = useState("view"); // or 'edit', 'delete'
-const [modalVisible, setModalVisible] = useState(false);
-const [modalData, setModalData] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalData, setModalData] = useState(null);
+  const user = useSelector((state) => state.currentUserData);
 
   const handleStaffTypeChange = (value) => {
     setSelectedStaffType(value);
@@ -276,17 +278,7 @@ const [modalData, setModalData] = useState(null);
 
       if (selectedStaffType === "receptionist") {
         console.log("Sending receptionist data as object:", staffData);
-
-        const response = await axios.post(
-          "http://192.168.0.100:3000/doctor/createReceptionist",
-          staffData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const response = await apiPost("/doctor/createReceptionist", staffData);
 
         console.log("Receptionist created:", response.data);
         notification.success({
@@ -338,25 +330,22 @@ const [modalData, setModalData] = useState(null);
     }
   };
 
-
-  
-
   const columns = [
     {
       title: "Staff Name",
       dataIndex: "name",
       key: "name",
       render: (_, record) => (
-  <div style={{ display: "flex", alignItems: "center" }}>
-    <Avatar style={{ marginRight: 8 }}>
-      {record.name ? record.name.charAt(0) : "?"}
-    </Avatar>
-    {record.name || "N/A"}
-     <span style={{ color: "#595959", marginLeft: 32 }}>
-        {record.email || "No email"}
-      </span>
-  </div>
-)
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <Avatar style={{ marginRight: 8 }}>
+            {record.name ? record.name.charAt(0) : "?"}
+          </Avatar>
+          {record.name || "N/A"}
+          <span style={{ color: "#595959", marginLeft: 32 }}>
+            {record.email || "No email"}
+          </span>
+        </div>
+      ),
     },
     {
       title: "Role",
@@ -374,58 +363,53 @@ const [modalData, setModalData] = useState(null);
       dataIndex: "lastLogout",
       key: "Last Login",
     },
-    
+
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
-             <div className="action-icons">
-        <EyeOutlined className="icon-view" onClick={() => handleView(record)} />
-        <EditOutlined className="icon-edit" onClick={() => handleEdit(record)} />
-        <DeleteOutlined className="icon-delete" onClick={() => handleDelete(record)} />
-      </div>
-
+        <div className="action-icons">
+          <EyeOutlined
+            className="icon-view"
+            onClick={() => handleView(record)}
+          />
+          <EditOutlined
+            className="icon-edit"
+            onClick={() => handleEdit(record)}
+          />
+          <DeleteOutlined
+            className="icon-delete"
+            onClick={() => handleDelete(record)}
+          />
+        </div>
       ),
     },
   ];
 
   const handleView = (record) => {
     console.log("View record:", record);
-  setModalMode("view");
-  setModalData(record);
-  setModalVisible(true);
-};
+    setModalMode("view");
+    setModalData(record);
+    setModalVisible(true);
+  };
 
-const handleEdit = (record) => {
-  setModalMode("edit");
-  setModalData(record);
-  setModalVisible(true);
-};
+  const handleEdit = (record) => {
+    setModalMode("edit");
+    setModalData(record);
+    setModalVisible(true);
+  };
 
-const handleDelete = (record) => {
-  setModalMode("delete");
-  setModalData(record);
-  setModalVisible(true);
-};
-
+  const handleDelete = (record) => {
+    setModalMode("delete");
+    setModalData(record);
+    setModalVisible(true);
+  };
 
   const fetchStaff = async () => {
     try {
       setFetchLoading(true);
-      const token = localStorage.getItem("accessToken");
-      const response = await axios.get(
-        "http://192.168.0.100:3000/doctor/getStaffByCreator",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            userid: localStorage.getItem("userId"),
-          },
-        }
-      );
-
-      console.log("Staff data fetched:", response.data.data);
-
+      const userid = user.userId;
+      const response = await apiGet(`/doctor/getStaffByCreator/${userid}`);
       const formattedData = response.data.data.map((staff, index) => ({
         id: index + 1,
         name: staff.name,
@@ -434,10 +418,10 @@ const handleDelete = (record) => {
         phone: staff.mobile,
         joinDate: dayjs(staff.joinDate).format("YYYY-MM-DD"),
         status: staff.status.charAt(0).toUpperCase() + staff.status.slice(1),
- lastLogout: staff.lastLogout
-    ? dayjs(staff.lastLogout).format("YYYY-MM-DD HH:mm:ss")
-    : "N/A",
-  isLoggedIn: staff.isLoggedIn ? "Online" : "Offline",
+        lastLogout: staff.lastLogout
+          ? dayjs(staff.lastLogout).format("YYYY-MM-DD HH:mm:ss")
+          : "N/A",
+        isLoggedIn: staff.isLoggedIn ? "Online" : "Offline",
       }));
       setStaffData(formattedData);
     } catch (error) {
@@ -455,46 +439,46 @@ const handleDelete = (record) => {
     } finally {
       setFetchLoading(false);
     }
-};
+  };
 
   const handleUpdate = async (data) => {
-  try {
-    await axios.put(`/api/updateStaff`, data);
-    message.success("Updated successfully");
-    setModalVisible(false);
-    fetchStaffData();
-  } catch (err) {
-    message.error("Update failed");
-  }
-};
+    try {
+      await axios.put(`/api/updateStaff`, data);
+      message.success("Updated successfully");
+      setModalVisible(false);
+      fetchStaffData();
+    } catch (err) {
+      message.error("Update failed");
+    }
+  };
 
-const confirmDelete = async (userId) => {
-  try {
-    await axios.get(`/deleteMyAccount?userId=${userId}`);
-    message.success("Deleted successfully");
-    setModalVisible(false);
-    fetchStaffData();
-  } catch (err) {
-    message.error("Delete failed");
-  }
-};
+  const confirmDelete = async (userId) => {
+    try {
+      await axios.get(`/deleteMyAccount?userId=${userId}`);
+      message.success("Deleted successfully");
+      setModalVisible(false);
+      fetchStaffData();
+    } catch (err) {
+      message.error("Delete failed");
+    }
+  };
 
   const handleSearch = (e) => {
-  const value = e.target.value.toLowerCase();
-  setSearchText(value);
+    const value = e.target.value.toLowerCase();
+    setSearchText(value);
 
-  const filtered = staffData.filter((staff) =>
-    staff.name.toLowerCase().includes(value)
-  );
-  setStaffData(filtered);
-};
+    const filtered = staffData.filter((staff) =>
+      staff.name.toLowerCase().includes(value)
+    );
+    setStaffData(filtered);
+  };
   useEffect(() => {
-    fetchStaff();
-    handleUpdate();
-    confirmDelete();
-  }, []);
-
-
+    console.log("start=========");
+    if (user) {
+      fetchStaff();
+    }
+  }, [user]);
+  console.log("user======", user);
 
   return (
     <div>
@@ -506,7 +490,6 @@ const confirmDelete = async (userId) => {
         </Col>
         <Col>
           <Space>
-            
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -518,58 +501,64 @@ const confirmDelete = async (userId) => {
           </Space>
         </Col>
       </Row>
-      
+
       <Row gutter={[16, 16]}>
-              <div className="filters-container">
-  <Row justify="space-between" align="middle">
-    <Col>
-      <Input
-        placeholder="Search staff members..."
-        prefix={<SearchOutlined />}
-        onChange={handleSearch}
-        className="filters-input"
-      />
-    </Col>
-    <Col>
-      <div className="selects-group">
-        <Select className="filters-select" defaultValue="all" onChange={setFilterStatus}>
-          <Option value="all">All Status</Option>
-          <Option value="paid">Active</Option>
-          <Option value="pending">InActive</Option>
-        </Select>
-        <Select className="filters-select" defaultValue="all" onChange={setFilterStatus}>
-          <Option value="all">All Roles</Option>
-          <Option value="paid">Lab Assistent</Option>
-          <Option value="pending">Pharmacy Assistent</Option>
-          <Option value="refunded">Receptionist</Option>
-          <Option value="refunded">Assistent</Option>
-        </Select>
-      </div>
-    </Col>
-  </Row>
-</div>
+        <div className="filters-container">
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Input
+                placeholder="Search staff members..."
+                prefix={<SearchOutlined />}
+                onChange={handleSearch}
+                className="filters-input"
+              />
+            </Col>
+            <Col>
+              <div className="selects-group">
+                <Select
+                  className="filters-select"
+                  defaultValue="all"
+                  onChange={setFilterStatus}
+                >
+                  <Option value="all">All Status</Option>
+                  <Option value="paid">Active</Option>
+                  <Option value="pending">InActive</Option>
+                </Select>
+                <Select
+                  className="filters-select"
+                  defaultValue="all"
+                  onChange={setFilterStatus}
+                >
+                  <Option value="all">All Roles</Option>
+                  <Option value="paid">Lab Assistent</Option>
+                  <Option value="pending">Pharmacy Assistent</Option>
+                  <Option value="refunded">Receptionist</Option>
+                  <Option value="refunded">Assistent</Option>
+                </Select>
+              </div>
+            </Col>
+          </Row>
+        </div>
         <Col span={24}>
-          
-            <Table
-              dataSource={staffData}
-              columns={columns}
-              rowKey="id"
-               pagination={{
-    pageSize: 5,
-    showPrevNextJumpers: true,
-    showSizeChanger: false,
-    showQuickJumper: false,
-    itemRender: (_, type, originalElement) => {
-      if (type === "prev") return <a>Previous</a>;
-      if (type === "next") return <a>Next</a>;
-      
-      return null;
-    },
-  }}
-              loading={fetchLoading}
-              bordered
-            />
-          
+          <Table
+            dataSource={staffData}
+            columns={columns}
+            rowKey="id"
+            pagination={{
+              pageSize: 5,
+              showPrevNextJumpers: true,
+              showSizeChanger: false,
+              showQuickJumper: false,
+              itemRender: (_, type, originalElement) => {
+                if (type === "prev") return <a>Previous</a>;
+                if (type === "next") return <a>Next</a>;
+
+                return null;
+              },
+            }}
+            loading={fetchLoading}
+            bordered
+          />
         </Col>
       </Row>
 
@@ -581,70 +570,100 @@ const confirmDelete = async (userId) => {
         loading={loading}
       />
       <Modal
-  title={
-    modalMode === "view"
-      ? "View Staff Details"
-      : modalMode === "edit"
-      ? "Edit Staff"
-      : "Confirm Delete"
-  }
-  open={modalVisible}
-  onCancel={() => setModalVisible(false)}
-  onOk={() => {
-    if (modalMode === "edit") {
-      handleUpdate(modalData); // send updated data
-    } else if (modalMode === "delete") {
-      confirmDelete(modalData.userId);
-    } else {
-      setModalVisible(false);
-    }
-  }}
-  okText={modalMode === "delete" ? "Delete" : modalMode === "edit" ? "Save" : "OK"}
-  okButtonProps={
-    modalMode === "delete" ? { danger: true } : modalMode === "view" ? { style: { display: "none" } } : {}
-  }
->
-  {modalMode === "view" && (
-    <>
-      <p><strong>Name:</strong> {modalData?.name}</p>
-      <p><strong>Email:</strong> {modalData?.email}</p>
-      <p><strong>Phone:</strong> {modalData?.phone}</p>
-      <p><strong>Role:</strong> {modalData?.type}</p>
-      <p><strong>Status:</strong> {modalData?.status}</p>
-    </>
-  )}
+        title={
+          modalMode === "view"
+            ? "View Staff Details"
+            : modalMode === "edit"
+            ? "Edit Staff"
+            : "Confirm Delete"
+        }
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        onOk={() => {
+          if (modalMode === "edit") {
+            handleUpdate(modalData); // send updated data
+          } else if (modalMode === "delete") {
+            confirmDelete(modalData.userId);
+          } else {
+            setModalVisible(false);
+          }
+        }}
+        okText={
+          modalMode === "delete"
+            ? "Delete"
+            : modalMode === "edit"
+            ? "Save"
+            : "OK"
+        }
+        okButtonProps={
+          modalMode === "delete"
+            ? { danger: true }
+            : modalMode === "view"
+            ? { style: { display: "none" } }
+            : {}
+        }
+      >
+        {modalMode === "view" && (
+          <>
+            <p>
+              <strong>Name:</strong> {modalData?.name}
+            </p>
+            <p>
+              <strong>Email:</strong> {modalData?.email}
+            </p>
+            <p>
+              <strong>Phone:</strong> {modalData?.phone}
+            </p>
+            <p>
+              <strong>Role:</strong> {modalData?.type}
+            </p>
+            <p>
+              <strong>Status:</strong> {modalData?.status}
+            </p>
+          </>
+        )}
 
-  {modalMode === "edit" && (
-    <Form layout="vertical">
-      <Form.Item label="Name">
-        <Input
-          value={modalData?.name}
-          onChange={(e) => setModalData({ ...modalData, name: e.target.value })}
-        />
-      </Form.Item>
-      <Form.Item label="Email">
-        <Input
-          value={modalData?.email}
-          onChange={(e) => setModalData({ ...modalData, email: e.target.value })}
-        />
-      </Form.Item>
-      <Form.Item label="Phone">
-        <Input
-          value={modalData?.phone}
-          onChange={(e) => setModalData({ ...modalData, phone: e.target.value })}
-        />
-      </Form.Item>
-    </Form>
-  )}
+        {modalMode === "edit" && (
+          <Form layout="vertical">
+            <Form.Item label="Name">
+              <Input
+                value={modalData?.name}
+                onChange={(e) =>
+                  setModalData({ ...modalData, name: e.target.value })
+                }
+              />
+            </Form.Item>
+            <Form.Item label="Email">
+              <Input
+                value={modalData?.email}
+                onChange={(e) =>
+                  setModalData({ ...modalData, email: e.target.value })
+                }
+              />
+            </Form.Item>
+            <Form.Item label="Phone">
+              <Input
+                value={modalData?.phone}
+                onChange={(e) =>
+                  setModalData({ ...modalData, phone: e.target.value })
+                }
+              />
+            </Form.Item>
+          </Form>
+        )}
 
-  {modalMode === "delete" && (
-    <>
-      <p>Are you sure you want to delete this staff member?</p>
-      <p><strong>Name:</strong> {modalData?.name}</p>
-      <p><strong>Email:</strong> {modalData?.email}</p>
-    </>
-  )}
-</Modal>
+        {modalMode === "delete" && (
+          <>
+            <p>Are you sure you want to delete this staff member?</p>
+            <p>
+              <strong>Name:</strong> {modalData?.name}
+            </p>
+            <p>
+              <strong>Email:</strong> {modalData?.email}
+            </p>
+          </>
+        )}
+      </Modal>
     </div>
   );
 };
