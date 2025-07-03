@@ -1,377 +1,632 @@
-import React, { useState } from 'react';
-import { Edit, Eye, Plus, Search, X, Trash2 } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { Edit, Eye, Plus, Search, X, Trash2 } from "lucide-react";
+import {
+  GoogleMap,
+  useLoadScript,
+  Autocomplete,
+  Marker,
+} from "@react-google-maps/api";
+import { apiPost } from "../../api";
+
+const libraries = ["places", "geocoding"];
+const googleAPI = "AIzaSyCrmF3351j82RVuTZbVBJ-X3ufndylJsvo";
 
 export default function ClinicManagement() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: googleAPI,
+    libraries,
+  });
+
+  const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
-    clinicName: '',
-    opdAddress: '',
-    landmark: '',
-    city: '',
-    state: '',
-    pincode: ''
+    type: "Clinic",
+    clinicName: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    mobile: "",
+    pincode: "",
+    startTime: "",
+    endTime: "",
+    latitude: "",
+    longitude: "",
   });
-  
+  const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 }); // Default to India center
+  const [markerPosition, setMarkerPosition] = useState(null);
+
+  const autocompleteRef = useRef(null);
+  const mapRef = useRef(null);
+
   const clinics = [
     {
-      id: 'CLN001',
-      name: 'Apollo Clinic',
-      type: 'General',
-      address: 'Hyderabad',
-      contact: '+91 9876SXXXX',
-      status: 'Active'
+      addressId: "CLN001",
+      clinicName: "Apollo Clinic",
+      type: "Clinic",
+      address: "123 Main Street",
+      placeName: "Apollo Medical Center",
+      city: "Hyderabad",
+      state: "Telangana",
+      country: "India",
+      mobile: "",
+      pincode: "500001",
+      status: "Active",
+      startTime: "09:00",
+      endTime: "17:00",
+      latitude: 17.385044,
+      longitude: 78.486671,
     },
     {
-      id: 'CLN002',
-      name: 'MedLife Center',
-      type: 'Diagnostic',
-      address: 'Bangalore',
-      contact: '+91 9876SYYYY',
-      status: 'Pending'
+      addressId: "CLN002",
+      clinicName: "MedLife Center",
+      type: "Hospital",
+      address: "456 Health Road",
+      placeName: "MedLife Diagnostic",
+      city: "Bangalore",
+      state: "Karnataka",
+      country: "India",
+      mobile: "",
+      pincode: "560001",
+      status: "Pending",
+      startTime: "08:00",
+      endTime: "16:00",
+      latitude: 12.971599,
+      longitude: 77.594566,
     },
     {
-      id: 'CLN003',
-      name: 'City Health Hub',
-      type: 'Specialty',
-      address: 'Chennai',
-      contact: '+91 9876SZZZZ',
-      status: 'Inactive'
-    }
+      addressId: "CLN003",
+      clinicName: "City Health Hub",
+      type: "Clinic",
+      address: "789 Wellness Avenue",
+      placeName: "City Specialty Clinic",
+      city: "Chennai",
+      state: "Tamil Nadu",
+      country: "India",
+      mobile: "",
+      pincode: "600001",
+      status: "Inactive",
+      startTime: "10:00",
+      endTime: "18:00",
+      latitude: 13.08268,
+      longitude: 80.270718,
+    },
   ];
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'Active':
+      case "Active":
         return {
-          backgroundColor: '#dcfce7',
-          color: '#15803d',
-          border: '1px solid #bbf7d0',
-          fontWeight: 600
+          backgroundColor: "#dcfce7",
+          color: "#15803d",
+          border: "1px solid #bbf7d0",
+          fontWeight: 600,
         };
-      case 'Pending':
+      case "Pending":
         return {
-          backgroundColor: '#fed7aa',
-          color: '#c2410c',
-          border: '1px solid #fdba74',
-          fontWeight: 600
+          backgroundColor: "#fed7aa",
+          color: "#c2410c",
+          border: "1px solid #fdba74",
+          fontWeight: 600,
         };
-      case 'Inactive':
+      case "Inactive":
         return {
-          backgroundColor: '#fecaca',
-          color: '#dc2626',
-          border: '1px solid #fca5a5',
-          fontWeight: 600
+          backgroundColor: "#fecaca",
+          color: "#dc2626",
+          border: "1px solid #fca5a5",
+          fontWeight: 600,
         };
       default:
         return {
-          backgroundColor: '#f3f4f6',
-          color: '#374151',
-          border: '1px solid #d1d5db',
-          fontWeight: 600
+          backgroundColor: "#f3f4f6",
+          color: "#374151",
+          border: "1px solid #d1d5db",
+          fontWeight: 600,
         };
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const geocodeLatLng = useCallback((lat, lng) => {
+    if (!window.google) return;
+    const geocoder = new window.google.maps.Geocoder();
+    const latlng = { lat, lng };
+
+    geocoder.geocode({ location: latlng }, (results, status) => {
+      if (status === "OK" && results[0]) {
+        const addressComponents = results[0].address_components || [];
+        const componentMap = {
+          street_number: "",
+          route: "",
+          locality: "",
+          administrative_area_level_1: "",
+          country: "",
+          postal_code: "",
+        };
+
+        for (const component of addressComponents) {
+          const componentType = component.types[0];
+          if (componentMap.hasOwnProperty(componentType)) {
+            componentMap[componentType] = component.long_name;
+          }
+        }
+
+        const formattedAddress =
+          `${componentMap.street_number} ${componentMap.route}`.trim();
+        setFormData((prev) => ({
+          ...prev,
+          address: formattedAddress || results[0].formatted_address,
+          city: componentMap.locality,
+          state: componentMap.administrative_area_level_1,
+          country: componentMap.country,
+          pincode: componentMap.postal_code,
+          latitude: lat.toString(),
+          longitude: lng.toString(),
+        }));
+      } else {
+        console.error("Geocoder failed due to: " + status);
+      }
+    });
+  }, []);
+
+  const handlePlaceChanged = useCallback(() => {
+    if (!autocompleteRef.current) return;
+    const place = autocompleteRef.current.getPlace();
+    if (!place.geometry) {
+      setFormData((prev) => ({ ...prev, address: "" }));
+      return;
+    }
+
+    const addressComponents = place.address_components || [];
+    const componentMap = {
+      street_number: "",
+      route: "",
+      locality: "",
+      administrative_area_level_1: "",
+      country: "",
+      postal_code: "",
+    };
+
+    for (const component of addressComponents) {
+      const componentType = component.types[0];
+      if (componentMap.hasOwnProperty(componentType)) {
+        componentMap[componentType] = component.long_name;
+      }
+    }
+
+    const formattedAddress =
+      `${componentMap.street_number} ${componentMap.route}`.trim();
+    const latitude = place.geometry.location.lat();
+    const longitude = place.geometry.location.lng();
+
+    setFormData((prev) => ({
+      ...prev,
+      address: formattedAddress || place.formatted_address,
+      city: componentMap.locality,
+      state: componentMap.administrative_area_level_1,
+      country: componentMap.country,
+      pincode: componentMap.postal_code,
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+    }));
+
+    setMapCenter({ lat: latitude, lng: longitude });
+    setMarkerPosition({ lat: latitude, lng: longitude });
+  }, []);
+
+  const handleMapClick = useCallback(
+    (event) => {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      setMapCenter({ lat, lng });
+      setMarkerPosition({ lat, lng });
+      geocodeLatLng(lat, lng);
+    },
+    [geocodeLatLng]
+  );
+
+  const handleAddClinic = () => {
+    setShowModal(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setMapCenter({ lat: latitude, lng: longitude });
+          setMarkerPosition({ lat: latitude, lng: longitude });
+          geocodeLatLng(latitude, longitude);
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          // Fallback to default India center
+          setMapCenter({ lat: 20.5937, lng: 78.9629 });
+          setMarkerPosition(null);
+        }
+      );
+    } else {
+      console.error("Geolocation not supported");
+      setMapCenter({ lat: 20.5937, lng: 78.9629 });
+      setMarkerPosition(null);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
+    if (["Clinic", "Hospital"].includes(formData.type)) { 
+      if (!formData.startTime || !formData.endTime) {
+        alert(
+          "Both start time and end time are required for Clinic or Hospital type"
+        );
+        return;
+      }
+      if (
+        !timeRegex.test(formData.startTime) ||
+        !timeRegex.test(formData.endTime)
+      ) {
+        alert("Invalid time format. Use HH:MM (24-hour format)");
+        return;
+      }
+      const toMinutes = (t) => {
+        const [h, m] = t.split(":").map(Number);
+        return h * 60 + m;
+      };
+      if (toMinutes(formData.startTime) >= toMinutes(formData.endTime)) {
+        alert("Start time must be before end time");
+        return;
+      }
+    }
+
+    //here make api call for add clinical address
+
+    console.log("Form submitted:", formData);
+    const response = await apiPost("/users/addAddress", formData)
+    if(response.status !== 200) {
+      // display success message
+    }
+    console.log("Form submitted:response", response);
+    
     setShowModal(false);
     setFormData({
-      clinicName: '',
-      opdAddress: '',
-      landmark: '',
-      city: '',
-      state: '',
-      pincode: ''
+      mobile: "",
+      type: "Clinic",
+      clinicName: "",
+      address: "",
+      city: "",
+      state: "",
+      country: "",
+      pincode: "",
+      startTime: "",
+      endTime: "",
+      latitude: "",
+      longitude: "",
     });
+    setMapCenter({ lat: 20.5937, lng: 78.9629 });
+    setMarkerPosition(null);
   };
 
   const handleCancel = () => {
     setShowModal(false);
     setFormData({
-      clinicName: '',
-      opdAddress: '',
-      landmark: '',
-      city: '',
-      state: '',
-      pincode: ''
+      type: "Clinic",
+      clinicName: "",
+      address: "",
+      city: "",
+      state: "",
+      country: "India",
+      mobile: "",
+      pincode: "",
+      startTime: "",
+      endTime: "",
+      latitude: "",
+      longitude: "",
     });
+    setMapCenter({ lat: 20.5937, lng: 78.9629 });
+    setMarkerPosition(null);
   };
 
-  const filteredClinics = clinics.filter(clinic =>
-    clinic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    clinic.id.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClinics = clinics.filter(
+    (clinic) =>
+      clinic.clinicName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      clinic.addressId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const containerStyle = {
-    minHeight: '100vh',
-    backgroundColor: '#f9fafb',
-    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    minHeight: "100vh",
+    backgroundColor: "#f9fafb",
+    fontFamily:
+      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   };
 
   const mainStyle = {
-    maxWidth: '1000px',
-    margin: '0 auto',
-    padding: '16px'
+    maxWidth: "1000px",
+    margin: "0 auto",
+    padding: "16px",
   };
 
   const headerStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '20px'
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "20px",
   };
 
   const titleStyle = {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: '4px'
+    fontSize: "24px",
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: "4px",
   };
 
   const subtitleStyle = {
-    color: '#6b7280',
-    fontSize: '14px'
+    color: "#6b7280",
+    fontSize: "14px",
   };
 
   const addButtonStyle = {
-    backgroundColor: '#2563eb',
-    color: 'white',
-    border: 'none',
-    padding: '8px 16px',
-    borderRadius: '6px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    transition: 'background-color 0.2s',
-    fontSize: '14px'
+    backgroundColor: "#2563eb",
+    color: "white",
+    border: "none",
+    padding: "8px 16px",
+    borderRadius: "6px",
+    fontWeight: "500",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    transition: "background-color 0.2s",
+    fontSize: "14px",
   };
 
   const searchContainerStyle = {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '16px'
+    display: "flex",
+    gap: "12px",
+    marginBottom: "16px",
   };
 
   const searchInputContainerStyle = {
-    position: 'relative',
-    flex: '1',
-    maxWidth: '300px'
+    position: "relative",
+    flex: "1",
+    maxWidth: "300px",
   };
 
   const searchIconStyle = {
-    position: 'absolute',
-    left: '10px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    color: '#9ca3af'
+    position: "absolute",
+    left: "10px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#9ca3af",
   };
 
   const searchInputStyle = {
-    width: '100%',
-    paddingLeft: '32px',
-    paddingRight: '12px',
-    paddingTop: '8px',
-    paddingBottom: '8px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '13px',
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s'
+    width: "100%",
+    paddingLeft: "32px",
+    paddingRight: "12px",
+    paddingTop: "8px",
+    paddingBottom: "8px",
+    border: "1px solid #d1d5db",
+    borderRadius: "6px",
+    fontSize: "13px",
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
   };
 
   const searchButtonStyle = {
-    backgroundColor: '#2563eb',
-    color: 'white',
-    border: 'none',
-    padding: '8px 20px',
-    borderRadius: '6px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    fontSize: '13px'
+    backgroundColor: "#2563eb",
+    color: "white",
+    border: "none",
+    padding: "8px 20px",
+    borderRadius: "6px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+    fontSize: "13px",
   };
 
   const tableContainerStyle = {
-    backgroundColor: 'white',
-    borderRadius: '6px',
-    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-    border: '1px solid #e5e7eb',
-    overflow: 'hidden'
+    backgroundColor: "white",
+    borderRadius: "6px",
+    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+    border: "1px solid #e5e7eb",
+    overflow: "hidden",
   };
 
   const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '13px'
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: "13px",
   };
 
   const theadStyle = {
-    backgroundColor: '#f9fafb',
-    borderBottom: '1px solid #e5e7eb'
+    backgroundColor: "#f9fafb",
+    borderBottom: "1px solid #e5e7eb",
   };
 
   const thStyle = {
-    padding: '10px 16px',
-    textAlign: 'left',
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#374151'
+    padding: "10px 16px",
+    textAlign: "left",
+    fontSize: "12px",
+    fontWeight: "600",
+    color: "#374151",
   };
 
   const trStyle = {
-    borderBottom: '1px solid #e5e7eb',
-    transition: 'background-color 0.2s',
-    height: '60px'
+    borderBottom: "1px solid #e5e7eb",
+    transition: "background-color 0.2s",
+    height: "60px",
   };
 
   const tdStyle = {
-    padding: '16px',
-    fontSize: '13px',
-    lineHeight: '18px',
-    fontWeight: '400',
-    color: '#374151'
+    padding: "16px",
+    fontSize: "13px",
+    lineHeight: "18px",
+    fontWeight: "400",
+    color: "#374151",
   };
 
   const statusBadgeStyle = {
-    display: 'inline-flex',
-    padding: '2px 8px',
-    fontSize: '12px',
-    fontWeight: '400',
-    borderRadius: '12px'
+    display: "inline-flex",
+    padding: "2px 8px",
+    fontSize: "12px",
+    fontWeight: "400",
+    borderRadius: "12px",
   };
 
   const actionButtonsStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
   };
 
   const iconButtonStyle = {
-    padding: '4px',
-    cursor: 'pointer',
-    transition: 'color 0.2s',
-    border: 'none',
-    backgroundColor: 'transparent',
-    borderRadius: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    padding: "4px",
+    cursor: "pointer",
+    transition: "color 0.2s",
+    border: "none",
+    backgroundColor: "transparent",
+    borderRadius: "4px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
   const modalOverlayStyle = {
-    position: 'fixed',
+    position: "fixed",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
   };
 
   const modalStyle = {
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    padding: '32px',
-    width: '90%',
-    maxWidth: '800px',
-    position: 'relative',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-    maxHeight: '90vh',
-    overflowY: 'auto',
-    marginTop:'4rem'
+    backgroundColor: "white",
+    borderRadius: "8px",
+    padding: "32px",
+    width: "90%",
+    maxWidth: "800px",
+    position: "relative",
+    boxShadow:
+      "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    marginTop: "4rem",
   };
 
   const modalHeaderStyle = {
-    fontSize: '22px',
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: '32px',
-    textAlign: 'left'
+    fontSize: "22px",
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: "32px",
+    textAlign: "left",
   };
 
   const formGroupStyle = {
-    marginBottom: '24px'
+    marginBottom: "24px",
   };
 
   const labelStyle = {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: '8px'
+    display: "block",
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: "8px",
   };
 
   const inputStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-    backgroundColor: '#ffffff'
+    width: "100%",
+    padding: "12px 16px",
+    border: "1px solid #d1d5db",
+    borderRadius: "6px",
+    fontSize: "14px",
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+    backgroundColor: "#ffffff",
+  };
+
+  const selectStyle = {
+    width: "100%",
+    padding: "12px 16px",
+    border: "1px solid #d1d5db",
+    borderRadius: "6px",
+    fontSize: "14px",
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+    backgroundColor: "#ffffff",
+    appearance: "none",
   };
 
   const formRowStyle = {
-    display: 'flex',
-    gap: '16px',
-    marginBottom: '24px'
+    display: "flex",
+    gap: "16px",
+    marginBottom: "24px",
   };
 
   const buttonGroupStyle = {
-    display: 'flex',
-    gap: '12px',
-    marginTop: '32px'
+    display: "flex",
+    gap: "12px",
+    marginTop: "32px",
   };
 
   const cancelButtonStyle = {
     flex: 1,
-    padding: '12px 24px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    backgroundColor: 'white',
-    color: '#374151',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px'
+    padding: "12px 24px",
+    border: "1px solid #d1d5db",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    backgroundColor: "white",
+    color: "#374151",
+    transition: "all 0.2s",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
   };
 
   const confirmButtonStyle = {
     flex: 1,
-    padding: '12px 24px',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    backgroundColor: '#2563eb',
-    color: 'white',
-    transition: 'background-color 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    padding: "12px 24px",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    backgroundColor: "#2563eb",
+    color: "white",
+    transition: "background-color 0.2s",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
+  const mapContainerStyle = {
+    width: "100%",
+    height: "300px",
+    borderRadius: "6px",
+    marginBottom: "24px",
+  };
+
+  if (loadError) {
+    return <div>Error loading Google Maps</div>;
+  }
+
+  if (!isLoaded) {
+    return <div>Loading...</div>;
+  }
+
+  console.log("Clinics:", formData);
   return (
     <div style={containerStyle}>
       <div style={mainStyle}>
@@ -379,13 +634,15 @@ export default function ClinicManagement() {
         <div style={headerStyle}>
           <div>
             <h1 style={titleStyle}>Clinic Management</h1>
-            <p style={subtitleStyle}>Manage your clinic information, address, and operating status.</p>
+            <p style={subtitleStyle}>
+              Manage your clinic information, address, and operating status.
+            </p>
           </div>
-          <button 
+          <button
             style={addButtonStyle}
-            onClick={() => setShowModal(true)}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
+            onClick={handleAddClinic}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = "#2563eb")}
           >
             <Plus size={16} />
             Add Clinic
@@ -403,19 +660,19 @@ export default function ClinicManagement() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onFocus={(e) => {
-                e.target.style.borderColor = '#3b82f6';
-                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                e.target.style.borderColor = "#3b82f6";
+                e.target.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.1)";
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = '#d1d5db';
-                e.target.style.boxShadow = 'none';
+                e.target.style.borderColor = "#d1d5db";
+                e.target.style.boxShadow = "none";
               }}
             />
           </div>
-          <button 
+          <button
             style={searchButtonStyle}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = "#2563eb")}
           >
             Search
           </button>
@@ -426,67 +683,81 @@ export default function ClinicManagement() {
           <table style={tableStyle}>
             <thead style={theadStyle}>
               <tr>
-                <th style={thStyle}>Clinic ID</th>
+                <th style={thStyle}>Address ID</th>
                 <th style={thStyle}>Clinic Name</th>
                 <th style={thStyle}>Type</th>
                 <th style={thStyle}>Address</th>
                 <th style={thStyle}>Contact</th>
+                <th style={thStyle}>Operating Hours</th>
                 <th style={thStyle}>Status</th>
                 <th style={thStyle}>Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredClinics.map((clinic) => (
-                <tr 
-                  key={clinic.id} 
+                <tr
+                  key={clinic.addressId}
                   style={trStyle}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f9fafb'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                  onMouseEnter={(e) =>
+                    (e.target.style.backgroundColor = "#f9fafb")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.target.style.backgroundColor = "transparent")
+                  }
                 >
-                  <td style={{...tdStyle, fontWeight: '500', color: '#111827'}}>
-                    {clinic.id}
+                  <td
+                    style={{ ...tdStyle, fontWeight: "500", color: "#111827" }}
+                  >
+                    {clinic.addressId}
                   </td>
-                  <td style={{...tdStyle, color: '#111827'}}>
-                    {clinic.name}
+                  <td style={{ ...tdStyle, color: "#111827" }}>
+                    {clinic.clinicName}
+                  </td>
+                  <td style={tdStyle}>{clinic.type}</td>
+                  <td style={tdStyle}>
+                    {clinic.address}, {clinic.city}, {clinic.state},{" "}
+                    {clinic.country} {clinic.pincode}
+                  </td>
+                  <td style={tdStyle}>{clinic.mobile}</td>
+                  <td style={tdStyle}>
+                    {clinic.startTime} - {clinic.endTime}
                   </td>
                   <td style={tdStyle}>
-                    {clinic.type}
-                  </td>
-                  <td style={tdStyle}>
-                    {clinic.address}
-                  </td>
-                  <td style={tdStyle}>
-                    {clinic.contact}
-                  </td>
-                  <td style={tdStyle}>
-                    <span style={{...statusBadgeStyle, ...getStatusStyle(clinic.status)}}>
+                    <span
+                      style={{
+                        ...statusBadgeStyle,
+                        ...getStatusStyle(clinic.status),
+                      }}
+                    >
                       {clinic.status}
                     </span>
                   </td>
                   <td style={tdStyle}>
                     <div style={actionButtonsStyle}>
-                      <button 
-                        style={{...iconButtonStyle, color: '#2563eb'}}
-                        onMouseEnter={(e) => e.target.style.color = '#1d4ed8'}
-                        onMouseLeave={(e) => e.target.style.color = '#2563eb'}
+                      <button
+                        style={{ ...iconButtonStyle, color: "#2563eb" }}
+                        onMouseEnter={(e) => (e.target.style.color = "#1d4ed8")}
+                        onMouseLeave={(e) => (e.target.style.color = "#2563eb")}
                         title="Edit"
                       >
                         <Edit size={16} />
                       </button>
-                      <button 
-                        style={{...iconButtonStyle, color: '#6b7280'}}
-                        onMouseEnter={(e) => e.target.style.color = '#374151'}
-                        onMouseLeave={(e) => e.target.style.color = '#6b7280'}
+                      <button
+                        style={{ ...iconButtonStyle, color: "#6b7280" }}
+                        onMouseEnter={(e) => (e.target.style.color = "#374151")}
+                        onMouseLeave={(e) => (e.target.style.color = "#6b7280")}
                         title="View"
                       >
                         <Eye size={16} />
                       </button>
-                      <button 
-                        style={{...iconButtonStyle, color: '#dc2626'}}
-                        onMouseEnter={(e) => e.target.style.color = '#b91c1c'}
-                        onMouseLeave={(e) => e.target.style.color = '#dc2626'}
+                      <button
+                        style={{ ...iconButtonStyle, color: "#dc2626" }}
+                        onMouseEnter={(e) => (e.target.style.color = "#b91c1c")}
+                        onMouseLeave={(e) => (e.target.style.color = "#dc2626")}
                         title="Delete"
-                        onClick={() => console.log('Delete clinic:', clinic.id)}
+                        onClick={() =>
+                          console.log("Delete clinic:", clinic.addressId)
+                        }
                       >
                         <Trash2 size={16} />
                       </button>
@@ -503,10 +774,25 @@ export default function ClinicManagement() {
           <div style={modalOverlayStyle} onClick={handleCancel}>
             <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
               <h2 style={modalHeaderStyle}>Add New Clinic Details</h2>
-              
+
               <div>
                 <div style={formGroupStyle}>
-                  <label style={labelStyle}>Clinic name</label>
+                  <label style={labelStyle}>
+                    Location Preview (Click to select location)
+                  </label>
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={mapCenter}
+                    zoom={15}
+                    onClick={handleMapClick}
+                    onLoad={(map) => (mapRef.current = map)}
+                  >
+                    {markerPosition && <Marker position={markerPosition} />}
+                  </GoogleMap>
+                </div>
+
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>Clinic Name</label>
                   <input
                     type="text"
                     name="clinicName"
@@ -515,57 +801,50 @@ export default function ClinicManagement() {
                     value={formData.clinicName}
                     onChange={handleInputChange}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                      e.target.style.borderColor = "#3b82f6";
+                      e.target.style.boxShadow =
+                        "0 0 0 3px rgba(59, 130, 246, 0.1)";
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      e.target.style.borderColor = "#d1d5db";
+                      e.target.style.boxShadow = "none";
                     }}
                   />
                 </div>
 
                 <div style={formGroupStyle}>
-                  <label style={labelStyle}>OPD Address</label>
-                  <input
-                    type="text"
-                    name="opdAddress"
-                    placeholder="Enter OPD address"
-                    style={inputStyle}
-                    value={formData.opdAddress}
-                    onChange={handleInputChange}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
+                  <label style={labelStyle}>
+                    Address (or click on map to select)
+                  </label>
+                  <Autocomplete
+                    onLoad={(autocomplete) =>
+                      (autocompleteRef.current = autocomplete)
+                    }
+                    onPlaceChanged={handlePlaceChanged}
+                    restrictions={{ country: "in" }}
+                  >
+                    <input
+                      type="text"
+                      name="address"
+                      placeholder="Enter address or select on map"
+                      style={inputStyle}
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#3b82f6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#d1d5db";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </Autocomplete>
                 </div>
 
                 <div style={formRowStyle}>
-                  <div style={{flex: 1}}>
-                    <label style={labelStyle}>Landmark</label>
-                    <input
-                      type="text"
-                      name="landmark"
-                      placeholder="Enter landmark"
-                      style={inputStyle}
-                      value={formData.landmark}
-                      onChange={handleInputChange}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#3b82f6';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#d1d5db';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    />
-                  </div>
-                  <div style={{flex: 1}}>
+                  <div style={{ flex: 1 }}>
                     <label style={labelStyle}>City</label>
                     <input
                       type="text"
@@ -575,19 +854,17 @@ export default function ClinicManagement() {
                       value={formData.city}
                       onChange={handleInputChange}
                       onFocus={(e) => {
-                        e.target.style.borderColor = '#3b82f6';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        e.target.style.borderColor = "#3b82f6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderColor = '#d1d5db';
-                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = "#d1d5db";
+                        e.target.style.boxShadow = "none";
                       }}
                     />
                   </div>
-                </div>
-
-                <div style={formRowStyle}>
-                  <div style={{flex: 1}}>
+                  <div style={{ flex: 1 }}>
                     <label style={labelStyle}>State</label>
                     <input
                       type="text"
@@ -597,16 +874,51 @@ export default function ClinicManagement() {
                       value={formData.state}
                       onChange={handleInputChange}
                       onFocus={(e) => {
-                        e.target.style.borderColor = '#3b82f6';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        e.target.style.borderColor = "#3b82f6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderColor = '#d1d5db';
-                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = "#d1d5db";
+                        e.target.style.boxShadow = "none";
                       }}
                     />
                   </div>
-                  <div style={{flex: 1}}>
+                </div>
+
+                <div style={formRowStyle}>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Mobile</label>
+                    <input
+                      type="text"
+                      name="mobile"
+                      placeholder="Enter mobile number"
+                      style={inputStyle}
+                      value={formData.mobile}
+                      maxLength={10} // ✅ limit to 10 characters
+                      onChange={(e) => {
+                        const onlyDigits = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+                        if (onlyDigits.length <= 10) {
+                          handleInputChange({
+                            target: {
+                              name: "mobile",
+                              value: onlyDigits,
+                            },
+                          });
+                        }
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#3b82f6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#d1d5db";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
                     <label style={labelStyle}>Pincode</label>
                     <input
                       type="text"
@@ -616,34 +928,133 @@ export default function ClinicManagement() {
                       value={formData.pincode}
                       onChange={handleInputChange}
                       onFocus={(e) => {
-                        e.target.style.borderColor = '#3b82f6';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        e.target.style.borderColor = "#3b82f6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderColor = '#d1d5db';
-                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = "#d1d5db";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={formRowStyle}>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Latitude</label>
+                    <input
+                      type="number"
+                      name="latitude"
+                      placeholder="Enter latitude"
+                      style={inputStyle}
+                      value={formData.latitude}
+                      onChange={handleInputChange}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#3b82f6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#d1d5db";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Longitude</label>
+                    <input
+                      type="number"
+                      name="longitude"
+                      placeholder="Enter longitude"
+                      style={inputStyle}
+                      value={formData.longitude}
+                      onChange={handleInputChange}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#3b82f6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#d1d5db";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={formRowStyle}>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>
+                      Start Time (required for Clinic/Hospital)
+                    </label>
+                    <input
+                      type="text"
+                      name="startTime"
+                      placeholder="HH:MM (e.g., 09:00)"
+                      style={inputStyle}
+                      value={formData.startTime}
+                      onChange={handleInputChange}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#3b82f6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#d1d5db";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>
+                      End Time (required for Clinic/Hospital)
+                    </label>
+                    <input
+                      type="text"
+                      name="endTime"
+                      placeholder="HH:MM (e.g., 17:00)"
+                      style={inputStyle}
+                      value={formData.endTime}
+                      onChange={handleInputChange}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#3b82f6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#d1d5db";
+                        e.target.style.boxShadow = "none";
                       }}
                     />
                   </div>
                 </div>
 
                 <div style={buttonGroupStyle}>
-                  <button 
+                  <button
                     type="button"
                     style={cancelButtonStyle}
                     onClick={handleCancel}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                    onMouseEnter={(e) =>
+                      (e.target.style.backgroundColor = "#f3f4f6")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.backgroundColor = "white")
+                    }
                   >
                     <X size={16} />
                     Cancel
                   </button>
-                  <button 
+                  <button
                     type="button"
                     style={confirmButtonStyle}
                     onClick={handleSubmit}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
+                    onMouseEnter={(e) =>
+                      (e.target.style.backgroundColor = "#1d4ed8")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.backgroundColor = "#2563eb")
+                    }
                   >
                     Confirm
                   </button>
