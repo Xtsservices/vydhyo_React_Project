@@ -198,7 +198,7 @@ const ReviewsComponent = () => {
           gap: '16px'
         }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 0 }}>
               <Text style={{ fontSize: 32, fontWeight: 600, color: '#1f2937' }}>
                 4.0
               </Text>
@@ -247,7 +247,7 @@ const ReviewsComponent = () => {
                   {getAvatarContent(review)}
                 </Avatar>
                 
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, backgroundColor: '#F3FFFD' }}>
                   <div style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -295,7 +295,11 @@ const ReviewsComponent = () => {
                   {review.hasReply && !review.isDoctor && (
                     <Button 
                       type="text" 
-                      icon={<MessageOutlined />}
+                      icon={<img 
+                      src="https://cdn-icons-png.flaticon.com/128/1933/1933011.png" 
+                      alt="Doctors Reply" 
+                      style={{ width: 16, height: 16, marginRight: 4 }} 
+                    />}
                       size="small"
                       onClick={() => toggleReplyBox(review.id)}
                       style={{ 
