@@ -228,21 +228,21 @@ const DoctorDashboard = () => {
           const appointmentsList = data.data;
           localStorage.setItem("appointments", JSON.stringify(appointmentsList));
           setAppointments(appointmentsList);
-          updateDashboardData(appointmentsList, formattedDate);
+          updatePatientAppointmentsData(appointmentsList, formattedDate);
         } else {
           console.warn("Unexpected API response structure:", data);
           setAppointments([]);
-          updateDashboardData([], formattedDate);
+          updatePatientAppointmentsData([], formattedDate);
         }
       } else {
         console.error("Failed to fetch appointments:", response.status);
         setAppointments([]);
-        updateDashboardData([], formattedDate);
+        updatePatientAppointmentsData([], formattedDate);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
       setAppointments([]);
-      updateDashboardData([], date.format("YYYY-MM-DD"));
+      updatePatientAppointmentsData([], date.format("YYYY-MM-DD"));
     }
   };
 
@@ -285,7 +285,7 @@ const DoctorDashboard = () => {
     }
   };
 
-  const updateDashboardData = (appointmentsList, date) => {
+  const updatePatientAppointmentsData = (appointmentsList, date) => {
     const today = date || moment().format("YYYY-MM-DD");
     
     // Filter appointments for the selected date
@@ -323,10 +323,7 @@ const DoctorDashboard = () => {
       ...prev,
       appointmentCounts: {
         ...prev.appointmentCounts,
-        today: dateAppointments.length,
-        newAppointments: newAppointments,
-        followUp: followUpAppointments,
-        upcoming: scheduledCount, // Use scheduled appointments as upcoming
+        upcoming: scheduledCount,
         completed: completedCount,
         rescheduled: rescheduledCount,
         cancelled: cancelledCount,
@@ -336,15 +333,33 @@ const DoctorDashboard = () => {
     }));
   };
 
+  // Fixed calendar handlers
   const handleDateChange = (date) => {
-    setSelectedDate(date);
-    getAppointments(date);
+    if (date && date.isValid()) {
+      setSelectedDate(date);
+      getAppointments(date);
+    }
     setIsDatePickerVisible(false);
   };
 
-  const toggleDatePicker = () => {
+  const toggleDatePicker = (e) => {
+    e.stopPropagation();
     setIsDatePickerVisible(!isDatePickerVisible);
   };
+
+  // Add click outside handler to close calendar
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isDatePickerVisible && !event.target.closest('.ant-picker-dropdown') && !event.target.closest('.date-picker-container')) {
+        setIsDatePickerVisible(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isDatePickerVisible]);
 
   useEffect(() => {
     getAppointments(moment());
@@ -395,24 +410,25 @@ const DoctorDashboard = () => {
         boxShadow: "0 8px 32px rgba(32, 208, 196, 0.3)",
         position: "relative",
         overflow: "hidden",
+        height: "220px",
       }}
-      bodyStyle={{ padding: "32px" }}
+      bodyStyle={{ padding: "16px" }}
     >
-      <div style={{ textAlign: "center", marginBottom: "32px" }}>
-        <Title level={1} style={{ color: "white", margin: 0, fontSize: "72px", fontWeight: 700, lineHeight: "1", textShadow: "0 2px 4px rgba(0,0,0,0.1)", fontFamily: "Poppins, sans-serif" }}>
+      <div style={{ textAlign: "center", marginBottom: "12px" }}>
+        <Title level={1} style={{ color: "white", margin: 0, fontSize: "48px", fontWeight: 700, lineHeight: "1", textShadow: "0 2px 4px rgba(0,0,0,0.1)", fontFamily: "Poppins, sans-serif" }}>
           {dashboardData.appointmentCounts.today}
         </Title>
-        <Text style={{ color: "white", fontSize: "18px", fontWeight: 500, marginTop: "8px", display: "block", fontFamily: "Poppins, sans-serif" }}>
+        <Text style={{ color: "white", fontSize: "14px", fontWeight: 500, marginTop: "6px", display: "block", fontFamily: "Poppins, sans-serif" }}>
           Today's Appointments
         </Text>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-        <div style={{ backgroundColor: "#F0FDF4", borderRadius: "12px", padding: "20px", textAlign: "center", backdropFilter: "blur(10px)" }}>
-          <Title level={2} style={{ color: "#16A34A", margin: 0, fontSize: "32px", fontWeight: 700, fontFamily: "Poppins, sans-serif" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+        <div style={{ backgroundColor: "#F0FDF4", borderRadius: "10px", padding: "12px", textAlign: "center", backdropFilter: "blur(10px)" }}>
+          <Title level={2} style={{ color: "#16A34A", margin: 0, fontSize: "24px", fontWeight: 700, fontFamily: "Poppins, sans-serif" }}>
             {dashboardData.appointmentCounts.newAppointments}
           </Title>
-          <Text style={{ color: "#16A34A", fontSize: "14px", fontWeight: 500, display: "block", marginTop: "4px", fontFamily: "Poppins, sans-serif" }}>
+          <Text style={{ color: "#16A34A", fontSize: "12px", fontWeight: 500, display: "block", marginTop: "4px", fontFamily: "Poppins, sans-serif" }}>
             New Appointments
           </Text>
           <PercentageChangeIndicator 
@@ -422,11 +438,11 @@ const DoctorDashboard = () => {
           />
         </div>
 
-        <div style={{ backgroundColor: "#EFF6FF", borderRadius: "12px", padding: "20px", textAlign: "center", backdropFilter: "blur(10px)" }}>
-          <Title level={2} style={{ color: "#2563EB", margin: 0, fontSize: "32px", fontWeight: 700, fontFamily: "Poppins, sans-serif" }}>
+        <div style={{ backgroundColor: "#EFF6FF", borderRadius: "10px", padding: "12px", textAlign: "center", backdropFilter: "blur(10px)" }}>
+          <Title level={2} style={{ color: "#2563EB", margin: 0, fontSize: "24px", fontWeight: 700, fontFamily: "Poppins, sans-serif" }}>
             {dashboardData.appointmentCounts.followUp}
           </Title>
-          <Text style={{ color: "#2563EB", fontSize: "14px", fontWeight: 500, display: "block", marginTop: "4px", fontFamily: "Poppins, sans-serif" }}>
+          <Text style={{ color: "#2563EB", fontSize: "12px", fontWeight: 500, display: "block", marginTop: "4px", fontFamily: "Poppins, sans-serif" }}>
             Follow-ups
           </Text>
           <PercentageChangeIndicator 
@@ -446,179 +462,203 @@ const DoctorDashboard = () => {
         border: "none",
         boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
         background: "white",
+        height: "220px",
       }}
-      bodyStyle={{ padding: "24px" }}
+      bodyStyle={{ padding: "16px" }}
     >
       <div style={{ marginBottom: "8px" }}>
-        <Title level={4} style={{ margin: 0, fontWeight: 600, color: "#1a1a1a", fontSize: "18px", fontFamily: "Poppins, sans-serif" }}>
+        <Title level={4} style={{ margin: 0, fontWeight: 600, color: "#1a1a1a", fontSize: "16px", fontFamily: "Poppins, sans-serif" }}>
           Revenue
         </Title>
       </div>
 
-      <div style={{ marginBottom: "24px", backgroundColor: "#FAF5FF", padding: "16px", borderRadius: "8px", position: "relative" }}>
+      <div style={{ marginBottom: "12px", backgroundColor: "#FAF5FF", padding: "12px", borderRadius: "8px", position: "relative" }}>
         <Text style={{ fontSize: "12px", color: "#9333EA", display: "block", marginBottom: "4px", fontFamily: "Poppins, sans-serif" }}>
           Today's Revenue
         </Text>
         <div>
-          <Title level={2} style={{ margin: 0, fontWeight: 700, color: "#9333EA", fontSize: "32px", fontFamily: "Poppins, sans-serif" }}>
+          <Title level={2} style={{ margin: 0, fontWeight: 700, color: "#9333EA", fontSize: "28px", fontFamily: "Poppins, sans-serif" }}>
             ₹{dashboardData.totalAmount.today.toLocaleString()}
           </Title>
         </div>
       </div>
 
-      <div style={{ marginBottom: "24px", backgroundColor: "#FFF7ED", padding: "16px", borderRadius: "8px" }}>
+      <div style={{ marginBottom: "12px", backgroundColor: "#FFF7ED", padding: "12px", borderRadius: "8px" }}>
         <Text style={{ fontSize: "12px", color: "#EA580C", display: "block", marginBottom: "4px", fontFamily: "Poppins, sans-serif" }}>
           This Month
         </Text>
-        <Title level={3} style={{ margin: 0, fontWeight: 700, color: "#EA580C", fontSize: "24px", fontFamily: "Poppins, sans-serif" }}>
+        <Title level={3} style={{ margin: 0, fontWeight: 700, color: "#EA580C", fontSize: "20px", fontFamily: "Poppins, sans-serif" }}>
           ₹{dashboardData.totalAmount.month.toLocaleString()}
         </Title>
       </div>
     </Card>
   );
 
-  const renderPatientAppointments = () => (
-    <Card
-      style={{
-        borderRadius: "16px",
-        border: "none",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-        background: "white",
-        marginBottom: "24px",
-      }}
-      bodyStyle={{ padding: "24px" }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <Title level={4} style={{ margin: 0, fontWeight: 600, color: "#1a1a1a", fontSize: "18px", fontFamily: "Poppins, sans-serif" }}>
-          Patient Appointments
-        </Title>
-        <div 
-          style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: "8px", 
-            padding: "8px 16px", 
-            backgroundColor: "#f8f9fa", 
-            borderRadius: "8px", 
-            border: "1px solid #e9ecef",
-            cursor: "pointer"
-          }}
-          onClick={toggleDatePicker}
-        >
-          <CalendarOutlined style={{ color: "#6c757d", fontSize: "14px" }} />
-          <Text style={{ color: "#495057", fontSize: "14px", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
-            {selectedDate.format("DD-MM-YYYY")}
+  console.log("selectedDate",selectedDate)
+  const renderPatientAppointments = () => {
+    // Filter appointments for the selected date
+    const filteredAppointments = appointments.filter(
+      (appt) => formatDateForComparison(appt.appointmentDate) === selectedDate.format("YYYY-MM-DD")
+    );
+
+    return (
+      <Card
+        style={{
+          borderRadius: "16px",
+          border: "none",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+          background: "white",
+          marginBottom: "24px",
+          position: "relative"
+        }}
+        bodyStyle={{ padding: "24px" }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+          <Title level={4} style={{ margin: 0, fontWeight: 600, color: "#1a1a1a", fontSize: "18px", fontFamily: "Poppins, sans-serif" }}>
+            Patient Appointments
+          </Title>
+          <div style={{ position: "relative" }} className="date-picker-container">
+            <div 
+              style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: "8px", 
+                padding: "8px 16px", 
+                backgroundColor: "#f8f9fa", 
+                borderRadius: "8px", 
+                border: "1px solid #e9ecef",
+                cursor: "pointer"
+              }}
+              onClick={toggleDatePicker}
+            >
+              <CalendarOutlined style={{ color: "#6c757d", fontSize: "14px" }} />
+              <Text style={{ color: "#495057", fontSize: "14px", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
+                {selectedDate.format("DD-MM-YYYY")}
+              </Text>
+            </div>
+            
+            {isDatePickerVisible && (
+              <div style={{ 
+                position: "absolute", 
+                right: "0", 
+                top: "50px", 
+                zIndex: 1000
+              }}>
+                <DatePicker
+                  value={selectedDate}
+                  onChange={handleDateChange}
+                  format="DD-MM-YYYY"
+                  allowClear={false}
+                  open={isDatePickerVisible}
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      setIsDatePickerVisible(false);
+                    }
+                  }}
+                  getPopupContainer={(trigger) => trigger.parentNode}
+                  style={{ opacity: 0, position: "absolute", pointerEvents: "none" }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Table Header */}
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", padding: "12px 0", borderBottom: "2px solid #f1f3f4", marginBottom: "16px" }}>
+          <Text style={{ fontWeight: 600, color: "#6c757d", fontSize: "12px", textTransform: "uppercase", fontFamily: "Poppins, sans-serif" }}>
+            Patient Name
+          </Text>
+          <Text style={{ fontWeight: 600, color: "#6c757d", fontSize: "12px", textTransform: "uppercase", fontFamily: "Poppins, sans-serif" }}>
+            Time
+          </Text>
+          <Text style={{ fontWeight: 600, color: "#6c757d", fontSize: "12px", textTransform: "uppercase", fontFamily: "Poppins, sans-serif" }}>
+            Type
+          </Text>
+          <Text style={{ fontWeight: 600, color: "#6c757d", fontSize: "12px", textTransform: "uppercase", fontFamily: "Poppins, sans-serif" }}>
+            Status
           </Text>
         </div>
-      </div>
 
-      {isDatePickerVisible && (
-        <div style={{ position: "absolute", right: "24px", zIndex: 1, marginTop: "8px" }}>
-          <DatePicker
-            value={selectedDate}
-            onChange={handleDateChange}
-            onOpenChange={setIsDatePickerVisible}
-            open={isDatePickerVisible}
-            format="DD-MM-YYYY"
-          />
-        </div>
-      )}
+        {/* Appointments List */}
+        {filteredAppointments.length > 0 ? (
+          filteredAppointments.map((appointment, index) => (
+            <div
+              key={appointment.appointmentId || index}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                padding: "16px 0",
+                borderBottom: index < filteredAppointments.length - 1 ? "1px solid #f8f9fa" : "none",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontWeight: 500, color: "#1a1a1a", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
+                {appointment.patientName || "Unknown Patient"}
+              </Text>
+              <Text style={{ color: "#6c757d", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
+                {appointment.appointmentTime || "N/A"}
+              </Text>
+              <div
+                style={{
+                  padding: "4px 12px",
+                  backgroundColor: appointment.appointmentType === "New-Walkin" ? "#DBEAFE" : "#e8f5e8",
+                  color: getTypeColor(appointment.appointmentType),
+                  borderRadius: "16px",
+                  fontSize: "12px",
+                  fontWeight: 400,
+                  textAlign: "center",
+                  width: "fit-content",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {getAppointmentTypeDisplay(appointment.appointmentType)}
+              </div>
+              <div
+                style={{
+                  padding: "4px 12px",
+                  backgroundColor:
+                    appointment.appointmentStatus === "scheduled"
+                      ? "#e8f5e8"
+                      : appointment.appointmentStatus === "completed"
+                      ? "#e3f2fd"
+                      : appointment.appointmentStatus === "rescheduled"
+                      ? "#fff3e0"
+                      : "#ffebee",
+                  color: getStatusColor(appointment.appointmentStatus),
+                  borderRadius: "16px",
+                  fontSize: "12px",
+                  fontWeight: 400,
+                  textAlign: "center",
+                  width: "fit-content",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {appointment.appointmentStatus?.charAt(0).toUpperCase() + appointment.appointmentStatus?.slice(1) || "Unknown"}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#8c8c8c" }}>
+            <Text style={{ fontFamily: "Poppins, sans-serif" }}>No appointments found for {selectedDate.format("DD-MM-YYYY")}</Text>
+          </div>
+        )}
 
-      {/* Table Header */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", padding: "12px 0", borderBottom: "2px solid #f1f3f4", marginBottom: "16px" }}>
-        <Text style={{ fontWeight: 600, color: "#6c757d", fontSize: "12px", textTransform: "uppercase", fontFamily: "Poppins, sans-serif" }}>
-          Patient Name
-        </Text>
-        <Text style={{ fontWeight: 600, color: "#6c757d", fontSize: "12px", textTransform: "uppercase", fontFamily: "Poppins, sans-serif" }}>
-          Time
-        </Text>
-        <Text style={{ fontWeight: 600, color: "#6c757d", fontSize: "12px", textTransform: "uppercase", fontFamily: "Poppins, sans-serif" }}>
-          Type
-        </Text>
-        <Text style={{ fontWeight: 600, color: "#6c757d", fontSize: "12px", textTransform: "uppercase", fontFamily: "Poppins, sans-serif" }}>
-          Status
-        </Text>
-      </div>
-
-      {/* Appointments List */}
-      {appointments.length > 0 ? (
-        appointments.map((appointment, index) => (
-          <div
-            key={appointment.appointmentId || index}
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <Button
+            type="link"
             style={{
-              display: "grid",
-              gridTemplateColumns: "2fr 1fr 1fr 1fr",
-              padding: "16px 0",
-              borderBottom: index < appointments.length - 1 ? "1px solid #f8f9fa" : "none",
-              alignItems: "center",
+              color: "#4285f4",
+              fontWeight: 500,
+              fontSize: "14px",
+              fontFamily: "Poppins, sans-serif",
             }}
           >
-            <Text style={{ fontWeight: 500, color: "#1a1a1a", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
-              {appointment.patientName || "Unknown Patient"}
-            </Text>
-            <Text style={{ color: "#6c757d", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
-              {appointment.appointmentTime || "N/A"}
-            </Text>
-            <div
-              style={{
-                padding: "4px 12px",
-                backgroundColor: appointment.appointmentType === "New-Walkin" ? "#DBEAFE" : "#e8f5e8",
-                color: getTypeColor(appointment.appointmentType),
-                borderRadius: "16px",
-                fontSize: "12px",
-                fontWeight: 400,
-                textAlign: "center",
-                width: "fit-content",
-                fontFamily: "Poppins, sans-serif",
-              }}
-            >
-              {getAppointmentTypeDisplay(appointment.appointmentType)}
-            </div>
-            <div
-              style={{
-                padding: "4px 12px",
-                backgroundColor:
-                  appointment.appointmentStatus === "scheduled"
-                    ? "#e8f5e8"
-                    : appointment.appointmentStatus === "completed"
-                    ? "#e3f2fd"
-                    : appointment.appointmentStatus === "rescheduled"
-                    ? "#fff3e0"
-                    : "#ffebee",
-                color: getStatusColor(appointment.appointmentStatus),
-                borderRadius: "16px",
-                fontSize: "12px",
-                fontWeight: 400,
-                textAlign: "center",
-                width: "fit-content",
-                fontFamily: "Poppins, sans-serif",
-              }}
-            >
-              {appointment.appointmentStatus?.charAt(0).toUpperCase() + appointment.appointmentStatus?.slice(1) || "Unknown"}
-            </div>
-          </div>
-        ))
-      ) : (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "#8c8c8c" }}>
-          <Text style={{ fontFamily: "Poppins, sans-serif" }}>No appointments found for selected date</Text>
+            View All
+          </Button>
         </div>
-      )}
-
-      <div style={{ textAlign: "center", marginTop: "20px" }}>
-        <Button
-          type="link"
-          style={{
-            color: "#4285f4",
-            fontWeight: 500,
-            fontSize: "14px",
-            fontFamily: "Poppins, sans-serif",
-          }}
-        >
-          View All
-        </Button>
-      </div>
-    </Card>
-  );
+      </Card>
+    );
+  };
 
   const renderPatientFeedback = () => (
     <Card
