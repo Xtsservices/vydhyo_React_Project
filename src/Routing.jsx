@@ -13,6 +13,7 @@ import Walkin from "./components/doctor/doctorPages/Walkin";
 import StaffManagement from "./components/doctor/doctorPages/staffManagement"; 
 import Availability from "./components/doctor/doctorPages/Availability";
 import Accounts from "./components/doctor/doctorPages/Accounts"; 
+import Reviews from "./components/doctor/doctorPages/Reviews";
 import Invoices from "./components/doctor/doctorPages/Invoices"; 
 import Messages from "./components/doctor/doctorPages/Messages"; 
 import Pharmacy from "./components/doctor/doctorPages/Pharmacy";
@@ -241,6 +242,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Accounts />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/doctor/doctorPages/Reviews"
+          element={
+            <ProtectedRoute>
+              <Reviews />
             </ProtectedRoute>
           }
         />

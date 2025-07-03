@@ -1,632 +1,334 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
+  Card,
+  Select,
+  Button,
+  InputNumber,
   Row,
   Col,
-  Card,
-  Button,
-  DatePicker,
-  TimePicker,
-  Select,
-  Spin,
   Tag,
   Typography,
-  Dropdown,
-  Menu,
-  message,
-} from "antd";
+  Space,
+  Divider,
+  Input
+} from 'antd';
 import {
   DownOutlined,
-  CloseOutlined,
-  LeftOutlined,
-  RightOutlined,
-} from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+  UpOutlined,
+  ClockCircleOutlined,
+  StopOutlined,
+  FieldTimeOutlined
+} from '@ant-design/icons';
 
+const { Title, Text } = Typography;
 const { Option } = Select;
-const { Title } = Typography;
 
-const AvailabilityPage = () => {
-  const navigate = useNavigate();
-  const [selectedAction, setSelectedAction] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+const AvailabilityScreen = () => {
+  const [selectedClinic, setSelectedClinic] = useState('Clinic Availability');
+  const [selectedDay, setSelectedDay] = useState('Monday');
+  const [startTime, setStartTime] = useState(9);
+  const [startPeriod, setStartPeriod] = useState('AM');
+  const [endTime, setEndTime] = useState(11);
+  const [endPeriod, setEndPeriod] = useState('AM');
+  const [duration, setDuration] = useState(30);
+  const [appointmentFee, setAppointmentFee] = useState(254);
+  const [timeSlots, setTimeSlots] = useState([
+    { time: '09:00 AM', available: true },
+    { time: '09:30 AM', available: true },
+    { time: '10:00 AM', available: false },
+    { time: '10:30 AM', available: false },
+    { time: '11:00 AM', available: true }
+  ]);
 
-  const scheduleData = [];
-  const leaveData = [];
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  const [formData, setFormData] = useState({
-    fromDate: "",
-    toDate: "",
-    fromTime: "",
-    toTime: "",
-  });
-
-  const API_BASE_URL = "http://192.168.1.44:3000";
-  const STAFF_ID = localStorage.getItem("userId");
-  const token = localStorage.getItem("accessToken");
-
-  useEffect(() => {
-    const fetchSchedulesAndLeaves = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axios.get(
-          `${API_BASE_URL}/doctor/getSchedulesAndLeaves`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.data) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = response.data;
-        if (result.data) {
-          const schedules = result.data.filter(
-            (item) => !item.type || item.type === "schedule"
-          );
-          const leaves = result.data.filter((item) => item.type === "leave");
-
-          scheduleData.push(...schedules);
-          leaveData.push(...leaves);
-        }
-      } catch (error) {
-        console.error("Error fetching schedules and leaves:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (STAFF_ID && token) {
-      fetchSchedulesAndLeaves();
-    }
-  }, [STAFF_ID, token]);
-
-  const createSchedule = async (scheduleData) => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/doctor/createSchedule`,
-        {
-          staffId: STAFF_ID,
-          fromDate: scheduleData.fromDate,
-          toDate: scheduleData.toDate,
-          fromTime: scheduleData.fromTime,
-          toTime: scheduleData.toTime,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.data) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return response.data;
-    } catch (error) {
-      console.error("Error creating schedule:", error);
-      throw error;
-    }
-  };
-
-  const createLeave = async (leaveData) => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/doctor/createLeave`,
-        {
-          staffId: STAFF_ID,
-          fromDate: leaveData.fromDate,
-          toDate: leaveData.toDate,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.data) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return response.data;
-    } catch (error) {
-      console.error("Error creating leave:", error);
-      throw error;
-    }
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toISOString().split("T")[0];
-  };
-
-  const generateCalendarDays = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
-    const days = [];
-
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateString = `${year}-${String(month + 1).padStart(
-        2,
-        "0"
-      )}-${String(day).padStart(2, "0")}`;
-      days.push({
-        day,
-        dateString,
-        isScheduled: scheduleData.some((item) =>
-          isDateInRange(
-            dateString,
-            formatDate(item.fromDate),
-            formatDate(item.toDate)
-          )
-        ),
-        isLeave: leaveData.some((item) =>
-          isDateInRange(
-            dateString,
-            formatDate(item.fromDate),
-            formatDate(item.toDate)
-          )
-        ),
+  const generateTimeSlots = () => {
+    const slots = [];
+    const startHour = startPeriod === 'PM' && startTime !== 12 ? startTime + 12 : startTime;
+    const endHour = endPeriod === 'PM' && endTime !== 12 ? endTime + 12 : endTime;
+    
+    let currentTime = startHour * 60; // Convert to minutes
+    const endTimeMinutes = endHour * 60;
+    
+    while (currentTime < endTimeMinutes) {
+      const hour = Math.floor(currentTime / 60);
+      const minute = currentTime % 60;
+      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const timeString = `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${period}`;
+      
+      slots.push({
+        time: timeString,
+        available: Math.random() > 0.3 // Random availability for demo
       });
+      
+      currentTime += duration;
     }
-
-    return days;
+    
+    return slots;
   };
 
-  const isDateInRange = (date, fromDate, toDate) => {
-    return date >= fromDate && date <= toDate;
+  const handleAddSlots = () => {
+    const newSlots = generateTimeSlots();
+    setTimeSlots(newSlots);
   };
 
-  const handleAdd = async () => {
-    if (!formData.fromDate || !formData.toDate) return;
-
-    setIsLoading(true);
-
-    try {
-      if (selectedAction === "schedule") {
-        const result = await createSchedule(formData);
-        const newEntry = {
-          id: result.data.id,
-          fromDate: formData.fromDate,
-          toDate: formData.toDate,
-          fromTime: formData.fromTime,
-          toTime: formData.toTime,
-          status: "pending",
-        };
-        scheduleData.push(newEntry);
-
-        message.success("Schedule created successfully!");
-      } else if (selectedAction === "leave") {
-        const result = await createLeave(formData);
-        const newEntry = {
-          id: result.data.id,
-          type: "leave",
-          fromDate: formData.fromDate,
-          toDate: formData.toDate,
-          status: result.data.status || "pending",
-        };
-        leaveData.push(newEntry);
-
-        message.success("Leave created successfully!");
-      }
-
-      setFormData({
-        fromDate: "",
-        toDate: "",
-        fromTime: "",
-        toTime: "",
-      });
-    } catch (error) {
-      console.error("Error adding entry:", error);
-      message.error("Error saving data. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleDeleteAll = () => {
+    setTimeSlots([]);
   };
 
-  const handleDelete = async (type, id) => {
-    try {
-      setIsLoading(true);
-      if (type === "schedule") {
-        const index = scheduleData.findIndex((s) => s.id === id);
-        if (index !== -1) scheduleData.splice(index, 1);
-      } else {
-        const index = leaveData.findIndex((l) => l.id === id);
-        if (index !== -1) leaveData.splice(index, 1);
-      }
-    } catch (error) {
-      console.error("Error deleting entry:", error);
-      message.error("Error deleting entry. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+  const toggleSlotAvailability = (index) => {
+    const newSlots = [...timeSlots];
+    newSlots[index].available = !newSlots[index].available;
+    setTimeSlots(newSlots);
   };
-
-  const navigateMonth = (direction) => {
-    setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() + direction);
-      return newDate;
-    });
-  };
-
-  const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const dayNames = ["S", "M", "T", "W", "T", "F", "S"];
-
-  const menu = (
-    <Menu>
-      <Menu.Item
-        key="schedule"
-        onClick={() => {
-          setSelectedAction("schedule");
-          setIsDropdownOpen(false);
-        }}
-      >
-        Schedule
-      </Menu.Item>
-      <Menu.Item
-        key="leave"
-        onClick={() => {
-          setSelectedAction("leave");
-          setIsDropdownOpen(false);
-        }}
-      >
-        Leave
-      </Menu.Item>
-    </Menu>
-  );
 
   return (
-    <div>
-      <Spin spinning={isLoading}>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} lg={8}>
-            <Card title="Action Selection" bordered={false}>
-              <Dropdown
-                overlay={menu}
-                visible={isDropdownOpen}
-                onVisibleChange={setIsDropdownOpen}
-              >
-                <Button
-                  type="primary"
-                  block
-                  icon={<DownOutlined />}
-                  disabled={isLoading}
-                >
-                  {selectedAction
-                    ? selectedAction === "schedule"
-                      ? "Schedule"
-                      : "Leave"
-                    : "Select Action"}
-                </Button>
-              </Dropdown>
-              {selectedAction && (
-                <div className="mt-2">
-                  <Row gutter={[8, 8]}>
-                    <Col xs={12}>
-                      <DatePicker
-                        value={
-                          formData.fromDate ? new Date(formData.fromDate) : null
-                        }
-                        onChange={(date) =>
-                          setFormData({
-                            ...formData,
-                            fromDate: date ? date.format("YYYY-MM-DD") : "",
-                          })
-                        }
-                        placeholder="From Date"
-                        disabled={isLoading}
-                        style={{ width: "100%" }}
-                      />
-                    </Col>
-                    <Col xs={12}>
-                      <DatePicker
-                        value={
-                          formData.toDate ? new Date(formData.toDate) : null
-                        }
-                        onChange={(date) =>
-                          setFormData({
-                            ...formData,
-                            toDate: date ? date.format("YYYY-MM-DD") : "",
-                          })
-                        }
-                        placeholder="To Date"
-                        disabled={isLoading}
-                        style={{ width: "100%" }}
-                      />
-                    </Col>
-                  </Row>
-                  {selectedAction === "schedule" && (
-                    <Row gutter={[8, 8]} className="mt-2">
-                      <Col xs={12}>
-                        <TimePicker
-                          value={
-                            formData.fromTime
-                              ? moment(formData.fromTime, "HH:mm")
-                              : null
-                          }
-                          onChange={(time) =>
-                            setFormData({
-                              ...formData,
-                              fromTime: time ? time.format("HH:mm") : "",
-                            })
-                          }
-                          placeholder="From Time"
-                          disabled={isLoading}
-                          style={{ width: "100%" }}
-                        />
-                      </Col>
-                      <Col xs={12}>
-                        <TimePicker
-                          value={
-                            formData.toTime
-                              ? moment(formData.toTime, "HH:mm")
-                              : null
-                          }
-                          onChange={(time) =>
-                            setFormData({
-                              ...formData,
-                              toTime: time ? time.format("HH:mm") : "",
-                            })
-                          }
-                          placeholder="To Time"
-                          disabled={isLoading}
-                          style={{ width: "100%" }}
-                        />
-                      </Col>
-                    </Row>
-                  )}
+    <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <Title level={3} style={{ marginBottom: '24px', color: '#1f2937' }}>
+          Available Timings
+        </Title>
+
+        {/* Clinic Selection */}
+        <Card style={{ marginBottom: '24px', borderRadius: '12px' }}>
+          <Select
+            value={selectedClinic}
+            onChange={setSelectedClinic}
+            style={{ width: '250px' }}
+            suffixIcon={<DownOutlined />}
+          >
+            <Option value="Clinic Availability">Clinic Availability</Option>
+            <Option value="Video Availability">Video Availability</Option>
+            <Option value="Home Visit">Home Visit</Option>
+          </Select>
+        </Card>
+
+        {/* Main Content */}
+        <Card 
+          title="Select Available Slots" 
+          style={{ borderRadius: '12px' }}
+          bodyStyle={{ padding: '32px' }}
+        >
+          {/* Day Selection */}
+          <div style={{ marginBottom: '32px' }}>
+            <Text strong style={{ display: 'block', marginBottom: '16px', fontSize: '16px' }}>
+              Select Available days
+            </Text>
+            <Row gutter={[8, 8]}>
+              {days.map(day => (
+                <Col key={day}>
                   <Button
-                    type="primary"
-                    block
-                    onClick={handleAdd}
-                    disabled={
-                      !formData.fromDate || !formData.toDate || isLoading
-                    }
-                    className="mt-2"
+                    type={selectedDay === day ? 'primary' : 'default'}
+                    onClick={() => setSelectedDay(day)}
+                    style={{
+                      borderRadius: '20px',
+                      minWidth: '80px',
+                      height: '36px'
+                    }}
                   >
-                    Add
+                    {day}
                   </Button>
+                </Col>
+              ))}
+            </Row>
+          </div>
+
+          <Divider />
+
+          {/* Time Configuration */}
+          <Row gutter={[24, 24]} align="middle" style={{ marginBottom: '32px' }}>
+            <Col xs={24} sm={6}>
+              <Title level={4} style={{ margin: 0, color: '#1f2937' }}>
+                {selectedDay}
+              </Title>
+            </Col>
+
+            {/* Start Time */}
+            <Col xs={12} sm={4}>
+              <Text strong>Start Time :</Text>
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                <InputNumber
+                  min={1}
+                  max={12}
+                  value={startTime}
+                  onChange={setStartTime}
+                  style={{ width: '70px', marginRight: '8px' }}
+                />
+                <div>
+                  {/* <Button
+                    size="small"
+                    icon={<UpOutlined />}
+                    // onClick={() => setStartPeriod(startPeriod === 'AM' ? 'PM' : 'AM')}
+                    style={{ display: 'block', marginBottom: '2px', width: '40px' }}
+                  /> */}
+                  <Button
+                    size="small"
+                    icon={<FieldTimeOutlined />}
+                    onClick={() => setStartPeriod(startPeriod === 'AM' ? 'PM' : 'AM')}
+                    style={{ display: 'block', width: '40px' }}
+                  />
                 </div>
-              )}
-            </Card>
-            <Card title="Legend" bordered={false} className="mt-2">
-              <div>
-                <Tag color="green">Scheduled</Tag>
-                <Tag color="red">Unavailable</Tag>
-                <Tag color="purple">Both</Tag>
+                <Text style={{ marginLeft: '8px', fontWeight: 'bold' }}>{startPeriod}</Text>
               </div>
-            </Card>
-          </Col>
-          <Col xs={24} lg={16}>
-            <Card
-              title={
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
+            </Col>
+
+            {/* End Time */}
+            <Col xs={12} sm={4}>
+              <Text strong>End Time :</Text>
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                <InputNumber
+                  min={1}
+                  max={12}
+                  value={endTime}
+                  onChange={setEndTime}
+                  style={{ width: '70px', marginRight: '8px' }}
+                />
+                <div>
+                  {/* <Button
+                    size="small"
+                    icon={<UpOutlined />}
+                    onClick={() => setEndPeriod(endPeriod === 'AM' ? 'PM' : 'AM')}
+                    style={{ display: 'block', marginBottom: '2px', width: '40px' }}
+                  /> */}
+                  <Button
+                    size="small"
+                    icon={<FieldTimeOutlined />}
+                    onClick={() => setEndPeriod(endPeriod === 'AM' ? 'PM' : 'AM')}
+                    style={{ display: 'block', width: '40px' }}
+                  />
+                </div>
+                <Text style={{ marginLeft: '8px', fontWeight: 'bold' }}>{endPeriod}</Text>
+              </div>
+            </Col>
+
+            {/* Duration */}
+            <Col xs={12} sm={4}>
+              <Text strong>Duration :</Text>
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                <InputNumber
+                  min={15}
+                  max={120}
+                  step={15}
+                  value={duration}
+                  onChange={setDuration}
+                  style={{ width: '70px', marginRight: '8px' }}
+                />
+                <div>
+                  <Button
+                    size="small"
+                    icon={<UpOutlined />}
+                    onClick={() => setDuration(prev => Math.min(120, prev + 15))}
+                    style={{ display: 'block', marginBottom: '2px', width: '40px' }}
+                  />
+                  <Button
+                    size="small"
+                    icon={<DownOutlined />}
+                    onClick={() => setDuration(prev => Math.max(15, prev - 15))}
+                    style={{ display: 'block', width: '40px' }}
+                  />
+                </div>
+              </div>
+            </Col>
+
+            {/* Action Buttons */}
+            <Col xs={12} sm={6}>
+              <Space>
+                <Button 
+                  type="link" 
+                  onClick={handleAddSlots}
+                  style={{ color: '#1890ff', fontWeight: 'bold' }}
                 >
-                  <Title level={4}>
-                    {monthNames[currentDate.getMonth()]}{" "}
-                    {currentDate.getFullYear()}
-                  </Title>
-                  <div>
-                    <Button
-                      icon={<LeftOutlined />}
-                      onClick={() => navigateMonth(-1)}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Button
-                      icon={<RightOutlined />}
-                      onClick={() => navigateMonth(1)}
-                    />
-                  </div>
-                </div>
-              }
-              bordered={false}
-            >
-              <Row gutter={[8, 8]}>
-                {dayNames.map((day) => (
-                  <Col key={day} span={24 / 7}>
-                    <div
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        color: "#666",
-                      }}
-                    >
-                      {day}
-                    </div>
-                  </Col>
-                ))}
-                {generateCalendarDays().map((dayData, index) => (
-                  <Col key={index} span={24 / 7}>
-                    {dayData ? (
-                      <div
-                        style={{
-                          textAlign: "center",
-                          padding: "4px",
-                          borderRadius: "4px",
-                          backgroundColor:
-                            dayData.isScheduled && dayData.isLeave
-                              ? "#d8b4fe"
-                              : dayData.isScheduled
-                              ? "#bbf7d0"
-                              : dayData.isLeave
-                              ? "#fecaca"
-                              : "transparent",
-                          color:
-                            dayData.isScheduled || dayData.isLeave
-                              ? "#6b21a8"
-                              : "#000",
-                          fontWeight:
-                            dayData.isScheduled || dayData.isLeave
-                              ? "bold"
-                              : "normal",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {dayData.day}
-                      </div>
-                    ) : (
-                      <div style={{ padding: "4px" }}></div>
-                    )}
-                  </Col>
-                ))}
-              </Row>
-            </Card>
-          </Col>
-        </Row>
-        <Row gutter={[16, 16]} className="mt-2">
-          <Col xs={24} md={12}>
-            <Card title={`Scheduled (${scheduleData.length})`} bordered={false}>
-              {scheduleData.length === 0 ? (
-                <Typography.Text type="secondary">
-                  No scheduled periods
-                </Typography.Text>
-              ) : (
-                <div style={{ maxHeight: "128px", overflowY: "auto" }}>
-                  {scheduleData.map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "8px",
-                        background: "#f0fdf4",
-                        borderRadius: "4px",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: "bold", color: "#166534" }}>
-                          {formatDate(item.fromDate)} -{" "}
-                          {formatDate(item.toDate)}
-                        </div>
-                        {item.fromTime && item.toTime && (
-                          <div style={{ color: "#047857" }}>
-                            {item.fromTime} - {item.toTime}
-                          </div>
-                        )}
-                        {item.status && (
-                          <div
-                            style={{
-                              color:
-                                item.status === "approved"
-                                  ? "#166534"
-                                  : item.status === "rejected"
-                                  ? "#dc2626"
-                                  : "#ca8a04",
-                            }}
-                          >
-                            Status: {item.status}
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        icon={<CloseOutlined />}
-                        onClick={() => handleDelete("schedule", item.id)}
-                        disabled={isLoading}
-                        style={{ color: "#166534" }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </Col>
-          <Col xs={24} md={12}>
-            <Card title={`Leave (${leaveData.length})`} bordered={false}>
-              {leaveData.length === 0 ? (
-                <Typography.Text type="secondary">
-                  No leave periods
-                </Typography.Text>
-              ) : (
-                <div style={{ maxHeight: "128px", overflowY: "auto" }}>
-                  {leaveData.map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "8px",
-                        background: "#fee2e2",
-                        borderRadius: "4px",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: "bold", color: "#991b1b" }}>
-                          {formatDate(item.fromDate)} -{" "}
-                          {formatDate(item.toDate)}
-                        </div>
-                        {item.status && (
-                          <div
-                            style={{
-                              color:
-                                item.status === "approved"
-                                  ? "#166534"
-                                  : item.status === "rejected"
-                                  ? "#dc2626"
-                                  : "#ca8a04",
-                            }}
-                          >
-                            Status: {item.status}
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        icon={<CloseOutlined />}
-                        onClick={() => handleDelete("leave", item.id)}
-                        disabled={isLoading}
-                        style={{ color: "#991b1b" }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </Col>
-        </Row>
-      </Spin>
+                  Add Slots
+                </Button>
+                <Button 
+                  type="link" 
+                  danger 
+                  onClick={handleDeleteAll}
+                  style={{ fontWeight: 'bold' }}
+                >
+                  Delete All
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+
+          {/* Legend */}
+          <div style={{ marginBottom: '24px' }}>
+            <Space>
+              <Tag color="#16A34A" icon={<ClockCircleOutlined />}>
+                Availability
+              </Tag>
+              <Tag color="#FF3B30" icon={<StopOutlined />}>
+                Unavailability
+              </Tag>
+            </Space>
+          </div>
+
+          {/* Time Slots */}
+          <Row gutter={[12, 12]} style={{ marginBottom: '32px' }}>
+            {timeSlots.map((slot, index) => (
+              <Col key={index} xs={12} sm={8} md={6} lg={4}>
+                <Button
+                  block
+                  onClick={() => toggleSlotAvailability(index)}
+                  style={{
+                    height: '48px',
+                    borderRadius: '8px',
+                    border: slot.available ? '2px solid #52c41a' : '2px solid #ff4d4f',
+                    backgroundColor: slot.available ? '#f6ffed' : '#fff2f0',
+                    color: slot.available ? '#52c41a' : '#ff4d4f',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  icon={slot.available ? <ClockCircleOutlined /> : <StopOutlined />}
+                >
+                  {slot.time}
+                </Button>
+              </Col>
+            ))}
+          </Row>
+
+          <Divider />
+
+          {/* Appointment Fee */}
+          <Row gutter={[16, 16]} align="middle" justify="space-between">
+            <Col xs={24} sm={12}>
+              <div>
+                <Text strong style={{ fontSize: '16px', display: 'block', marginBottom: '8px' }}>
+                  Appointment Fees (₹)
+                </Text>
+                <Input
+                  value={appointmentFee}
+                  onChange={(e) => setAppointmentFee(e.target.value)}
+                  style={{ width: '150px', fontSize: '18px', fontWeight: 'bold' }}
+                  prefix="₹"
+                />
+              </div>
+            </Col>
+
+            {/* Action Buttons */}
+            <Col xs={24} sm={12} style={{ textAlign: 'right' }}>
+              <Space>
+                <Button size="large" style={{ minWidth: '100px' }}>
+                  Cancel
+                </Button>
+                <Button 
+                  type="primary" 
+                  size="large" 
+                  style={{ minWidth: '120px', borderRadius: '8px' }}
+                >
+                  Save Changes
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+        </Card>
+      </div>
     </div>
   );
 };
 
-export default AvailabilityPage;
+export default AvailabilityScreen;
