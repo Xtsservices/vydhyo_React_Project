@@ -65,6 +65,7 @@ const AddWalkInPatient = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [selectedUserIndex, setSelectedUserIndex] = useState(null);
   const user = useSelector(state => state.currentUserData)
+  const [patientID, setPatientID] = useState(null)
   console.log("user==========", user)
 
   const calculateTotalAmount = () => {
@@ -471,6 +472,8 @@ const AddWalkInPatient = () => {
       });
 
       const data = await response.json();
+      console.log("data=====",data)
+      setPatientID(data.data.userId)
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to create patient");
@@ -545,12 +548,14 @@ const AddWalkInPatient = () => {
         setIsCreatingPatient(false);
       }
 const currentUserID = localStorage.getItem("userID")
+console.log("patientID",patientID)
 
       const appointmentRequest = {
         userId: currentUserID,
-        doctorId: currentUserID, // Include doctorId from logged-in user
+        doctorId: currentUserID,
+        patientID:patientID, 
         patientName: `${patientData.firstName} ${patientData.lastName}`,
-        doctorName: `${user.firstname} ${user.lastname}`, // You may want to fetch the doctor's name from auth context if needed
+        doctorName: `${user.firstname} ${user.lastname}`, 
         appointmentType: patientData.appointmentType,
         appointmentDepartment: patientData.department,
         appointmentDate: formatDateForAPI(patientData.selectedDate),

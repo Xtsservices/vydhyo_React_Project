@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Filter, Download, MoreVertical } from "lucide-react";
-import { message } from "antd";
+import { message, Modal, Select, Button } from "antd";
+
+const { Option } = Select;
 import moment from "moment";
 
 const MyPatients = () => {
@@ -13,6 +15,9 @@ const MyPatients = () => {
   const [patients, setPatients] = useState([]);
   const [totalPatients, setTotalPatients] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterDepartment, setFilterDepartment] = useState("");
   const pageSize = 10;
 
   // API base URL
@@ -24,114 +29,109 @@ const MyPatients = () => {
     return moment().diff(moment(dob, "DD-MM-YYYY"), "years");
   };
 
-const fetchPatients = useCallback(async () => {
-  setLoading(true);
-  try {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      message.error("No authentication token found. Please login again.");
-      return;
-    }
-
-    const doctorId = localStorage.getItem("doctorId") || "patients";
-    const response = await fetch(
-      `${API_BASE_URL}/appointment/getAppointmentsByDoctorID/${"patients"}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    console.log("response===============", response)
-    
-    if (!response.ok) {
-      if (response.status === 401) {
-        message.error("Session expired. Please login again.");
-        navigate("/login");
+  const fetchPatients = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        message.error("No authentication token found. Please login again.");
         return;
       }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
 
-    const data = await response.json();
-    let patientsData = [];
-
-    if (data.status === "success" && data.data) {
-      const appointmentsData = Array.isArray(data.data) ? data.data : [data.data];
-      
-      const patientMap = new Map();
-      
-      appointmentsData.forEach((appointment) => {
-        const uniqueKey = `${appointment.userId || 'unknown'}_${appointment.patientName?.toLowerCase().replace(/\s+/g, '') || 'unnamed'}`;
-        
-        if (!patientMap.has(uniqueKey)) {
-          patientMap.set(uniqueKey, {
-            id: appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`,
-            name: appointment.patientName || "N/A",
-            gender: "N/A", 
-            age: "N/A", 
-            phone: "N/A", 
-            lastVisit: appointment.appointmentDate
-              ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
-              : "N/A",
-            appointmentType: appointment.appointmentType || "N/A",
-            status: appointment.appointmentType === "New-Walkin" || appointment.appointmentType === "new-walkin" 
-              ? "New Patient" : "Follow-up",
-            department: appointment.appointmentDepartment || "N/A",
-            appointmentTime: appointment.appointmentTime || "N/A",
-            appointmentStatus: appointment.appointmentStatus || "N/A",
-            appointmentReason: appointment.appointmentReason || "N/A",
-            appointmentCount: 1, // Track how many appointments this patient has
-            allAppointments: [appointment] // Store all appointments for this patient
-          });
-        } else {
-          // If patient exists, update with more recent appointment data
-          const existingPatient = patientMap.get(uniqueKey);
-          const currentAppointmentDate = moment(appointment.appointmentDate);
-          const existingAppointmentDate = moment(existingPatient.lastVisit, "DD MMMM YYYY");
-          
-          // Increment appointment count
-          existingPatient.appointmentCount += 1;
-          existingPatient.allAppointments.push(appointment);
-          
-          // Update with most recent appointment details
-          if (currentAppointmentDate.isAfter(existingAppointmentDate)) {
-            existingPatient.lastVisit = currentAppointmentDate.format("DD MMMM YYYY");
-            existingPatient.appointmentType = appointment.appointmentType || "N/A";
-            existingPatient.appointmentTime = appointment.appointmentTime || "N/A";
-            existingPatient.appointmentStatus = appointment.appointmentStatus || "N/A";
-            existingPatient.appointmentReason = appointment.appointmentReason || "N/A";
-            existingPatient.department = appointment.appointmentDepartment || "N/A";
-          }
+      const doctorId = localStorage.getItem("doctorId") || "patients";
+      const response = await fetch(
+        `${API_BASE_URL}/appointment/getAppointmentsByDoctorID/${"patients"}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
+      console.log("response===============", response);
       
-      patientsData = Array.from(patientMap.values());
-      
-      // Optional: Log for debugging
-      console.log("Processed patients:", patientsData);
-      console.log("Total unique patients:", patientsData.length);
-    } else {
-      patientsData = [];
+      if (!response.ok) {
+        if (response.status === 401) {
+          message.error("Session expired. Please login again.");
+          navigate("/login");
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      let patientsData = [];
+
+      if (data.status === "success" && data.data) {
+        const appointmentsData = Array.isArray(data.data) ? data.data : [data.data];
+        
+        const patientMap = new Map();
+        
+        appointmentsData.forEach((appointment) => {
+          const uniqueKey = `${appointment.userId || 'unknown'}_${appointment.patientName?.toLowerCase().replace(/\s+/g, '') || 'unnamed'}`;
+          
+          if (!patientMap.has(uniqueKey)) {
+            patientMap.set(uniqueKey, {
+              id: appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`,
+              name: appointment.patientName || "N/A",
+              gender: "N/A", 
+              age: "N/A", 
+              phone: "N/A", 
+              lastVisit: appointment.appointmentDate
+                ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
+                : "N/A",
+              appointmentType: appointment.appointmentType || "N/A",
+              status: appointment.appointmentType === "New-Walkin" || appointment.appointmentType === "new-walkin" 
+                ? "New Patient" : "Follow-up",
+              department: appointment.appointmentDepartment || "N/A",
+              appointmentTime: appointment.appointmentTime || "N/A",
+              appointmentStatus: appointment.appointmentStatus || "N/A",
+              appointmentReason: appointment.appointmentReason || "N/A",
+              appointmentCount: 1,
+              allAppointments: [appointment]
+            });
+          } else {
+            const existingPatient = patientMap.get(uniqueKey);
+            const currentAppointmentDate = moment(appointment.appointmentDate);
+            const existingAppointmentDate = moment(existingPatient.lastVisit, "DD MMMM YYYY");
+            
+            existingPatient.appointmentCount += 1;
+            existingPatient.allAppointments.push(appointment);
+            
+            if (currentAppointmentDate.isAfter(existingAppointmentDate)) {
+              existingPatient.lastVisit = currentAppointmentDate.format("DD MMMM YYYY");
+              existingPatient.appointmentType = appointment.appointmentType || "N/A";
+              existingPatient.appointmentTime = appointment.appointmentTime || "N/A";
+              existingPatient.appointmentStatus = appointment.appointmentStatus || "N/A";
+              existingPatient.appointmentReason = appointment.appointmentReason || "N/A";
+              existingPatient.department = appointment.appointmentDepartment || "N/A";
+            }
+          }
+        });
+        
+        patientsData = Array.from(patientMap.values());
+        
+        console.log("Processed patients:", patientsData);
+        console.log("Total unique patients:", patientsData.length);
+      } else {
+        patientsData = [];
+      }
+
+      setPatients(patientsData);
+      setFilteredPatients(patientsData);
+      setTotalPatients(patientsData.length);
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+      message.error("Failed to fetch patients data. Please try again.");
+    } finally {
+      setLoading(false);
     }
+  }, [navigate]);
 
-    setPatients(patientsData);
-    setFilteredPatients(patientsData);
-    setTotalPatients(patientsData.length);
-  } catch (error) {
-    console.error("Error fetching patients:", error);
-    message.error("Failed to fetch patients data. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-}, [navigate]);
-
-  // Fetch patients on mount
   useEffect(() => {
     fetchPatients();
-  }, []);
+  }, [fetchPatients]);
 
   // Handle search
   const handleSearch = useCallback(
@@ -163,7 +163,7 @@ const fetchPatients = useCallback(async () => {
         } else if (value === "Date") {
           const dateA = moment(a.lastVisit, "DD MMMM YYYY");
           const dateB = moment(b.lastVisit, "DD MMMM YYYY");
-          return dateB - dateA; // Recent first
+          return dateB.isBefore(dateA) ? -1 : dateB.isAfter(dateA) ? 1 : 0;
         } else if (value === "ID") {
           return a.id.localeCompare(b.id);
         }
@@ -173,6 +173,76 @@ const fetchPatients = useCallback(async () => {
     },
     [filteredPatients]
   );
+
+  // Handle filter
+  const showFilterModal = () => {
+    setIsFilterModalVisible(true);
+  };
+
+  const handleFilterOk = () => {
+    setCurrentPage(1);
+    let filtered = [...patients];
+
+    if (filterStatus) {
+      filtered = filtered.filter((patient) => patient.status === filterStatus);
+    }
+
+    if (filterDepartment) {
+      filtered = filtered.filter((patient) =>
+        patient.department.toLowerCase().includes(filterDepartment.toLowerCase())
+      );
+    }
+
+    setFilteredPatients(filtered);
+    setIsFilterModalVisible(false);
+  };
+
+  const handleFilterCancel = () => {
+    setIsFilterModalVisible(false);
+  };
+
+  const resetFilters = () => {
+    setFilterStatus("");
+    setFilterDepartment("");
+    setFilteredPatients(patients);
+    setIsFilterModalVisible(false);
+  };
+
+  // Handle export
+  const handleExport = () => {
+    if (filteredPatients.length === 0) {
+      message.warning("No data to export");
+      return;
+    }
+
+    const csvHeaders = ["Patient ID", "Name", "Gender", "Age", "Phone", "Last Visit", "Status", "Department"];
+    const csvRows = filteredPatients.map((patient) => [
+      patient.id,
+      patient.name,
+      patient.gender,
+      patient.age,
+      patient.phone,
+      patient.lastVisit,
+      patient.status,
+      patient.department,
+    ]);
+
+    const csvContent = [
+      csvHeaders.join(","),
+      ...csvRows.map((row) => row.join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `patients_export_${moment().format("YYYYMMDD")}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    message.success("Patients data exported successfully");
+  };
 
   // Handle view patient profile
   const handleViewProfile = useCallback(
@@ -449,7 +519,26 @@ const fetchPatients = useCallback(async () => {
       borderRadius: "6px",
       fontWeight: "500",
     },
+    filterModalContent: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "16px",
+      padding: "16px",
+    },
+    filterField: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+    },
+    filterLabel: {
+      fontSize: "14px",
+      fontWeight: "500",
+      color: "#374151",
+    },
   };
+
+  // Get unique departments for filter dropdown
+  const uniqueDepartments = [...new Set(patients.map((patient) => patient.department))];
 
   return (
     <div style={styles.container}>
@@ -480,6 +569,7 @@ const fetchPatients = useCallback(async () => {
             {/* Filter */}
             <button
               style={styles.filterButton}
+              onClick={showFilterModal}
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#f9fafb")}
               onMouseLeave={(e) => (e.target.style.backgroundColor = "white")}
             >
@@ -502,6 +592,7 @@ const fetchPatients = useCallback(async () => {
           {/* Export */}
           <button
             style={styles.exportButton}
+            onClick={handleExport}
             onMouseEnter={(e) => (e.target.style.backgroundColor = "#15803d")}
             onMouseLeave={(e) => (e.target.style.backgroundColor = "#16a34a")}
           >
@@ -510,6 +601,57 @@ const fetchPatients = useCallback(async () => {
           </button>
         </div>
       </div>
+
+      {/* Filter Modal */}
+      <Modal
+        title="Filter Patients"
+        visible={isFilterModalVisible}
+        onOk={handleFilterOk}
+        onCancel={handleFilterCancel}
+        footer={[
+          <Button key="reset" onClick={resetFilters}>
+            Reset
+          </Button>,
+          <Button key="cancel" onClick={handleFilterCancel}>
+            Cancel
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleFilterOk}>
+            Apply Filters
+          </Button>,
+        ]}
+      >
+        <div style={styles.filterModalContent}>
+          <div style={styles.filterField}>
+            <label style={styles.filterLabel}>Status</label>
+            <Select
+              value={filterStatus}
+              onChange={(value) => setFilterStatus(value)}
+              style={{ width: "100%" }}
+              placeholder="Select status"
+              allowClear
+            >
+              <Option value="New Patient">New Patient</Option>
+              <Option value="Follow-up">Follow-up</Option>
+            </Select>
+          </div>
+          <div style={styles.filterField}>
+            <label style={styles.filterLabel}>Department</label>
+            <Select
+              value={filterDepartment}
+              onChange={(value) => setFilterDepartment(value)}
+              style={{ width: "100%" }}
+              placeholder="Select department"
+              allowClear
+            >
+              {uniqueDepartments.map((dept) => (
+                <Option key={dept} value={dept}>
+                  {dept}
+                </Option>
+              ))}
+            </Select>
+          </div>
+        </div>
+      </Modal>
 
       {/* Table */}
       <div style={styles.tableContainer}>
@@ -545,7 +687,6 @@ const fetchPatients = useCallback(async () => {
                 <div style={styles.patientId}>{patient.id}</div>
 
                 <div style={styles.patientInfo}>
-                  
                   <div style={styles.patientDetails}>
                     <div style={styles.patientName}>{patient.name}</div>
                     <div style={styles.appointmentType}>
