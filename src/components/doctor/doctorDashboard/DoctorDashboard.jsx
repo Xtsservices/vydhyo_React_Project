@@ -203,6 +203,7 @@ const DoctorDashboard = () => {
   };
 
   // Fetch appointments from API
+
   const getAppointments = async () => {
     try {
       const formattedDate = moment().format("YYYY-MM-DD");

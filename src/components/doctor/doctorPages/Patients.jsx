@@ -21,7 +21,7 @@ const MyPatients = () => {
   const pageSize = 10;
 
   // API base URL
-  const API_BASE_URL = "http://192.168.1.44:3000";
+  const API_BASE_URL = "http://192.168.1.42:3000";
 
   // Calculate age from DOB (if available)
   const calculateAge = (dob) => {
