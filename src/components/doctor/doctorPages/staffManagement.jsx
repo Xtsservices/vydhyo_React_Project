@@ -278,7 +278,7 @@ const [modalData, setModalData] = useState(null);
         console.log("Sending receptionist data as object:", staffData);
 
         const response = await axios.post(
-          "http://192.168.1.42:3000/doctor/createReceptionist",
+          "http://192.168.0.100:3000/doctor/createReceptionist",
           staffData,
           {
             headers: {
@@ -414,7 +414,7 @@ const handleDelete = (record) => {
       setFetchLoading(true);
       const token = localStorage.getItem("accessToken");
       const response = await axios.get(
-        "http://192.168.1.42:3000/doctor/getStaffByCreator",
+        "http://192.168.0.100:3000/doctor/getStaffByCreator",
         {
           headers: {
             Authorization: `Bearer ${token}`,
