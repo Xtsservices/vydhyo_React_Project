@@ -39,6 +39,7 @@ const { Option } = Select;
 const Appointment = () => {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
+  const [appointmentsCount, setAppointmentsCount] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
@@ -105,7 +106,7 @@ const Appointment = () => {
       console.error("Cancellation error:", error);
       message.error(
         error.response?.data?.message ||
-          "Failed to cancel appointment. Please     try again."
+        "Failed to cancel appointment. Please     try again."
       );
     } finally {
       setCancelLoading(false);
@@ -171,7 +172,7 @@ const Appointment = () => {
       console.error("Reschedule error:", error);
       message.error(
         error.response?.data?.message ||
-          "Failed to reschedule appointment. Please try again."
+        "Failed to reschedule appointment. Please try again."
       );
     } finally {
       setRescheduleLoading(false);
@@ -234,9 +235,33 @@ const Appointment = () => {
     }
   };
 
+  const getAppointmentsCount = async () => {
+    setLoading(true);
+    try {
+      const response = await apiGet(
+        "/appointment/getAppointmentsCountByDoctorID"
+      );
+
+      if (response.status === 200) {
+        const updatedAppointments = response.data.data;
+        setAppointmentsCount(updatedAppointments);
+      } else {
+        message.error("Failed to fetch appointments");
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      message.error("Error fetching appointments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     getAppointments();
+    getAppointmentsCount()
   }, []);
+
+
 
   useEffect(() => {
     setFilteredData(applyFilters(appointments));
@@ -364,7 +389,7 @@ const Appointment = () => {
                 <Card className="appointments-card">
                   <Statistic
                     title="Total Appointments"
-                    value={appointments.length}
+                    value={appointmentsCount.length}
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
@@ -383,11 +408,13 @@ const Appointment = () => {
                 <Card className="appointments-card upcomming-card">
                   <Statistic
                     title="Upcoming"
+
                     value={
-                      appointments.filter(
-                        (appt) => appt.appointmentStatus === "scheduled"
+                      appointmentsCount.filter(
+                        (appt) => appt.appointmentStatus === "scheduled" || appt.appointmentStatus === "rescheduled"
                       ).length
                     }
+
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
@@ -405,7 +432,7 @@ const Appointment = () => {
                   <Statistic
                     title="Completed"
                     value={
-                      appointments.filter(
+                      appointmentsCount.filter(
                         (appt) => appt.appointmentStatus === "completed"
                       ).length
                     }
@@ -423,7 +450,7 @@ const Appointment = () => {
                   <Statistic
                     title="Cancelled"
                     value={
-                      appointments.filter(
+                      appointmentsCount.filter(
                         (appt) => appt.appointmentStatus === "canceled"
                       ).length
                     }
