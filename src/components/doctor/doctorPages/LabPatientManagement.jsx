@@ -58,7 +58,7 @@ const LabPatientManagement = () => {
   async function getAllTestsPatientsByDoctorID() {
     try {
       const response = await apiGet(
-        `lab/getAllTestsPatientsByDoctorID${doctorId}`
+        `lab/getAllTestsPatientsByDoctorID/${doctorId}`
       );
       console.log("getAllTestsPatientsByDoctorID", response);
     } catch (error) {
@@ -66,6 +66,7 @@ const LabPatientManagement = () => {
     }
   }
 
+  console.log(doctorId,user,"=============lool=============")
   useEffect(() => {
     if (doctorId && user) {
       getAllTestsPatientsByDoctorID();
