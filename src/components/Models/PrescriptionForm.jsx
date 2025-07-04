@@ -64,7 +64,6 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
     }
     const selectedMedicine = medInventory.find(med => med.medName === medicineName);
     const newMedicine = {
-      id: Date.now(),
       medName: medicineName,
       quantity: medicineQuantity,
       medInventoryId: selectedMedicine ? selectedMedicine._id : null,
@@ -87,7 +86,6 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
     }
     const selectedTest = testList.find(test => test.testName === testName);
     const newTest = {
-      id: Date.now(),
       testName: testName,
       testInventoryId: selectedTest ? selectedTest.id : null,
     };
@@ -111,9 +109,10 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
         patientId: selectedPatient.userId,
         medicines,
         tests,
-        notes: 'Prescription generated from appointment',
         doctorId: doctorId,
       };
+      // console.log("prescriptionData",prescriptionData)
+      
       const response = await apiPost('/pharmacy/addPrescription', prescriptionData);
       console.log('Prescription response:', response);
       if (response?.data?.success === true) {
