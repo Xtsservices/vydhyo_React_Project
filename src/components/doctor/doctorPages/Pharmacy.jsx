@@ -12,7 +12,9 @@ import {
   Col,
   Statistic,
   Typography,
-  Pagination
+  Pagination,
+   Modal,
+  InputNumber
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -27,366 +29,23 @@ import {
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
+import  '../../stylings/pharmacy.css'; // Import the CSS file for styling
+import { apiPost } from '../../api';
+import { useSelector } from 'react-redux';
 
-const styles = `
-  .pharmacy-layout {
-    min-height: 100vh;
-    background: #f8f9fa !important;
-  }
-
-  .pharmacy-header {
-    background: #fff !important;
-    padding: 12px 24px !important;
-    box-shadow: none !important;
-    border-bottom: 1px solid #e8e8e8 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    height: 64px !important;
-  }
-
-  .pharmacy-logo {
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-  }
-
-  .pharmacy-logo .anticon {
-    font-size: 20px !important;
-    color: #4285f4 !important;
-  }
-
-  .pharmacy-title {
-    font-size: 20px !important;
-    font-weight: 600 !important;
-    color: #333 !important;
-    margin: 0 !important;
-  }
-
-  .pharmacy-search {
-    width: 400px !important;
-    height: 40px !important;
-    border-radius: 20px !important;
-    border: 1px solid #e0e0e0 !important;
-    background: #f8f9fa !important;
-  }
-
-  .pharmacy-search .ant-input {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-size: 14px !important;
-    color: #999 !important;
-  }
-
-  .pharmacy-search .ant-input::placeholder {
-    color: #999 !important;
-  }
-
-  .pharmacy-search .anticon {
-    color: #999 !important;
-  }
-
-  .revenue-card-today {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 20px !important;
-    position: relative !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-  }
-
-  .revenue-card-month {
-    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%) !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 20px !important;
-    position: relative !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-  }
-
-  .revenue-icon {
-    position: absolute !important;
-    top: 16px !important;
-    right: 16px !important;
-  }
-
-  .revenue-icon-today {
-    background: #2196f3 !important;
-    width: 40px !important;
-    height: 40px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 8px !important;
-  }
-
-  .revenue-icon-month {
-    background: #4caf50 !important;
-    width: 40px !important;
-    height: 40px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 8px !important;
-  }
-
-  .revenue-title-today {
-    color: #2196f3 !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    margin-bottom: 8px !important;
-  }
-
-  .revenue-title-month {
-    color: #4caf50 !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    margin-bottom: 8px !important;
-  }
-
-  .revenue-value-today {
-    color: #2196f3 !important;
-    font-size: 32px !important;
-    font-weight: 700 !important;
-    margin-bottom: 4px !important;
-  }
-
-  .revenue-value-month {
-    color: #4caf50 !important;
-    font-size: 32px !important;
-    font-weight: 700 !important;
-    margin-bottom: 4px !important;
-  }
-
-  .revenue-subtitle-today {
-    color: #2196f3 !important;
-    font-size: 14px !important;
-  }
-
-  .revenue-subtitle-month {
-    color: #4caf50 !important;
-    font-size: 14px !important;
-  }
-
-  .main-card {
-    border-radius: 12px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
-    border: 1px solid #e8e8e8 !important;
-    overflow: hidden !important;
-  }
-
-  .ant-tabs-nav {
-    margin: 0 !important;
-    background: #fff !important;
-  }
-
-  .ant-tabs-tab {
-    padding: 16px 24px !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    color: #666 !important;
-    border-right: 1px solid #e8e8e8 !important;
-    margin: 0 !important;
-    background: #fff !important;
-  }
-
-  .ant-tabs-tab:last-child {
-    border-right: none !important;
-  }
-
-  .ant-tabs-tab-active {
-    background: #fff !important;
-    color: #333 !important;
-    border-bottom: 2px solid #4285f4 !important;
-  }
-
-  .ant-tabs-ink-bar {
-    background: #4285f4 !important;
-  }
-
-  .ant-tabs-content-holder {
-    background: #fff !important;
-  }
-
-  .ant-table {
-    background: #fff !important;
-  }
-
-  .ant-table-thead > tr > th {
-    background: #fff !important;
-    border-bottom: 1px solid #e8e8e8 !important;
-    font-weight: 400 !important;
-    color: #666 !important;
-    font-size: 12px !important;
-    padding: 12px 16px !important;
-  }
-
-  .ant-table-tbody > tr > td {
-    padding: 16px !important;
-    border-bottom: 1px solid #e8e8e8 !important;
-    font-size: 14px !important;
-  }
-
-  .ant-table-tbody > tr:hover > td {
-    background: #fafafa !important;
-  }
-
-  .patient-avatar {
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 50% !important;
-    object-fit: cover !important;
-  }
-
-  .patient-name {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    color: #333 !important;
-    margin-left: 12px !important;
-  }
-
-  .patient-info {
-    display: flex !important;
-    align-items: center !important;
-  }
-
-  .date-time-cell {
-    line-height: 1.2 !important;
-  }
-
-  .date-time-cell .date {
-    font-size: 13px !important;
-    color: #333 !important;
-    font-weight: 400 !important;
-  }
-
-  .date-time-cell .time {
-    font-size: 12px !important;
-    color: #666 !important;
-  }
-
-  .amount-cell {
-    font-weight: 600 !important;
-    color: #333 !important;
-    font-size: 14px !important;
-  }
-
-  .action-buttons {
-    display: flex !important;
-    gap: 8px !important;
-  }
-
-  .accept-btn {
-    background: #4caf50 !important;
-    border: none !important;
-    color: white !important;
-    padding: 4px 12px !important;
-    border-radius: 4px !important;
-    font-size: 12px !important;
-    height: 28px !important;
-    font-weight: 500 !important;
-  }
-
-  .reject-btn {
-    background: #f44336 !important;
-    border: none !important;
-    color: white !important;
-    padding: 4px 12px !important;
-    border-radius: 4px !important;
-    font-size: 12px !important;
-    height: 28px !important;
-    font-weight: 500 !important;
-  }
-
-  .edit-btn {
-    background: #757575 !important;
-    border: none !important;
-    color: white !important;
-    padding: 4px 8px !important;
-    border-radius: 4px !important;
-    font-size: 12px !important;
-    height: 28px !important;
-    width: 28px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  .pagination-container {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 16px 24px !important;
-    border-top: 1px solid #e8e8e8 !important;
-    background: #fff !important;
-  }
-
-  .pagination-info {
-    color: #666 !important;
-    font-size: 13px !important;
-  }
-
-  .ant-pagination {
-    margin: 0 !important;
-  }
-
-  .ant-pagination-item {
-    border: 1px solid #e0e0e0 !important;
-    background: #fff !important;
-  }
-
-  .ant-pagination-item-active {
-    background: #4285f4 !important;
-    border-color: #4285f4 !important;
-  }
-
-  .ant-pagination-item-active a {
-    color: #fff !important;
-  }
-
-  .notes-section {
-    margin-top: 24px !important;
-  }
-
-  .notes-header {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    margin-bottom: 16px !important;
-  }
-
-  .notes-title {
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    font-size: 18px !important;
-    font-weight: 600 !important;
-    color: #333 !important;
-  }
-
-  .add-note-btn {
-    background: #4285f4 !important;
-    border: none !important;
-    border-radius: 50% !important;
-    width: 36px !important;
-    height: 36px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3) !important;
-  }
-
-  .add-note-btn .anticon {
-    color: white !important;
-    font-size: 16px !important;
-  }
-`;
 
 export default function Pharmacy() {
+  const user = useSelector((state) => state.currentUserData);
+
   const [activeTab, setActiveTab] = useState('1');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form, setForm] = useState({
+    medName: '',
+    quantity: '',
+    price: ''
+  });
+  const [errors, setErrors] = useState({});   
 
   const patientData = [
     {
@@ -552,9 +211,80 @@ export default function Pharmacy() {
     },
   ];
 
+const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    // Clear error for the field being edited
+    setErrors({ ...errors, [name]: '' });
+  };
+
+  const handleNumberChange = (name, value) => {
+    setForm({ ...form, [name]: value });
+    // Clear error for the field being edited
+    setErrors({ ...errors, [name]: '' });
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!form.medName.trim()) {
+      newErrors.medName = 'Medicine name is required';
+    }
+    if (!form.quantity || form.quantity <= 0) {
+      newErrors.quantity = 'Quantity must be greater than 0';
+    }
+    if (!form.price || form.price < 0) {
+      newErrors.price = 'Price must be non-negative';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleOk = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      let doctorId
+      if(user.role = 'receptionist') {
+        doctorId= user.createdBy
+      }
+       doctorId = user.userId; // Replace with actual doctor ID from auth context
+      await apiPost('pharmacy/addMedInventory', {
+        ...form,
+        doctorId: doctorId // Replace with actual doctor ID from auth context
+      });
+      console.log(apiPost)
+      setForm({ medName: '', quantity: '', price: '' });
+      setErrors({});
+      setIsModalVisible(false);
+      Modal.success({
+        title: 'Success',
+        content: 'Medicine added to inventory successfully',
+      });
+    } catch (error) {
+      console.error('Error adding medicine:', error);
+      Modal.error({
+        title: 'Error',
+        content: 'Failed to add medicine to inventory',
+      });
+    }
+  };
+
+  const handleCancel = () => {
+    setForm({ medName: '', quantity: '', price: '' });
+    setErrors({});
+    setIsModalVisible(false);
+  };
+
+  console.log("User Data:", user);
   return (
     <div>
-      <style>{styles}</style>
+     
       <Layout className="pharmacy-layout">
         <Header className="pharmacy-header">
           <div className="pharmacy-logo">
@@ -604,7 +334,77 @@ export default function Pharmacy() {
               </Card>
             </Col>
           </Row>
+{/* here add add inventory button, when i click on the button display popup to display to add inventory, medname, quantity, price */}
+ {/* Add Inventory Button */}
+          <div style={{ marginBottom: '24px', textAlign: 'right' }}>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={showModal}
+            >
+              Add Inventory
+            </Button>
+          </div>
 
+           {/* Add Inventory Modal */}
+          <Modal
+            title="Add Medicine to Inventory"
+            open={isModalVisible}
+            onOk={handleOk}
+            onCancel={handleCancel}
+            okText="Add"
+            cancelText="Cancel"
+          >
+            <div style={{ padding: '16px 0' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px' }}>Medicine Name</label>
+                <Input
+                  name="medName"
+                  value={form.medName}
+                  onChange={handleInputChange}
+                  placeholder="Enter medicine name"
+                />
+                {errors.medName && (
+                  <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
+                    {errors.medName}
+                  </div>
+                )}
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px' }}>Quantity</label>
+                <InputNumber
+                  name="quantity"
+                  value={form.quantity}
+                  onChange={(value) => handleNumberChange('quantity', value)}
+                  min={1}
+                  placeholder="Enter quantity"
+                  style={{ width: '100%' }}
+                />
+                {errors.quantity && (
+                  <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
+                    {errors.quantity}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px' }}>Price (₹)</label>
+                <InputNumber
+                  name="price"
+                  value={form.price}
+                  onChange={(value) => handleNumberChange('price', value)}
+                  min={0}
+                  step={0.01}
+                  placeholder="Enter price"
+                  style={{ width: '100%' }}
+                />
+                {errors.price && (
+                  <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
+                    {errors.price}
+                  </div>
+                )}
+              </div>
+            </div>
+          </Modal>
           {/* Patient Management Table */}
           <Card className="main-card">
             <Tabs 
