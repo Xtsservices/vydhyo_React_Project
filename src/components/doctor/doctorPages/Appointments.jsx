@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -35,6 +35,7 @@ import {
 import moment from "moment";
 import "../../../components/stylings/Appointments.css";
 import { apiGet, apiPost } from "../../api";
+import PrescriptionForm from "../../Models/PrescriptionForm";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -58,12 +59,7 @@ const Appointment = () => {
   const [newTime, setNewTime] = useState(null);
   const [searchText, setSearchText] = useState("");
 
-  // Patient Profile Modal States
-  const [medicineName, setMedicineName] = useState("");
-  const [medicineQuantity, setMedicineQuantity] = useState("");
-  const [medicines, setMedicines] = useState([]);
-  const [testName, setTestName] = useState("");
-  const [tests, setTests] = useState([]);
+
 
   const [filters, setFilters] = useState({
     clinic: "all",
@@ -94,136 +90,17 @@ const Appointment = () => {
       lastVisit: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
       department: appointment.appointmentDepartment,
       status: appointment.appointmentStatus,
+      userId: appointment.userId || "N/A",
     };
     
     setSelectedPatient(patientData);
     setSelectedAppointment(appointment);
     setIsPatientProfileModalVisible(true);
     
-    // Reset medicine and test states
-    setMedicines([]);
-    setTests([]);
-    setMedicineName("");
-    setMedicineQuantity("");
-    setTestName("");
+
   };
 
-  const handleAddMedicine = () => {
-    if (!medicineName.trim() || !medicineQuantity.trim()) {
-      message.error("Please enter both medicine name and quantity");
-      return;
-    }
 
-    const newMedicine = {
-      id: Date.now(),
-      name: medicineName,
-      quantity: medicineQuantity,
-    };
-
-    setMedicines([...medicines, newMedicine]);
-    setMedicineName("");
-    setMedicineQuantity("");
-    message.success("Medicine added successfully");
-  };
-
-  const handleRemoveMedicine = (id) => {
-    setMedicines(medicines.filter(medicine => medicine.id !== id));
-    message.success("Medicine removed successfully");
-  };
-
-  const handleAddTest = () => {
-    if (!testName.trim()) {
-      message.error("Please enter test name");
-      return;
-    }
-
-    const newTest = {
-      id: Date.now(),
-      name: testName,
-    };
-
-    setTests([...tests, newTest]);
-    setTestName("");
-    message.success("Test added successfully");
-  };
-
-  const handleRemoveTest = (id) => {
-    setTests(tests.filter(test => test.id !== id));
-    message.success("Test removed successfully");
-  };
-
-  const handleSubmitPatientProfile = async () => {
-    try {
-      const prescriptionData = {
-        appointmentId: selectedAppointment.appointmentId,
-        patientId: selectedPatient.id,
-        medicines: medicines,
-        tests: tests,
-        notes: "Prescription generated from appointment",
-      };
-
-      // You can replace this with your actual API call
-      console.log("Prescription data:", prescriptionData);
-      
-      message.success("Prescription submitted successfully");
-      setIsPatientProfileModalVisible(false);
-      
-      // Reset states
-      setMedicines([]);
-      setTests([]);
-      setSelectedPatient(null);
-      setSelectedAppointment(null);
-      
-    } catch (error) {
-      console.error("Error submitting prescription:", error);
-      message.error("Failed to submit prescription");
-    }
-  };
-
-  const medicineColumns = [
-    {
-      title: "Medicine Name",
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: "Quantity",
-      dataIndex: "quantity",
-      key: "quantity",
-    },
-    {
-      title: "Action",
-      key: "action",
-      render: (_, record) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleRemoveMedicine(record.id)}
-        />
-      ),
-    },
-  ];
-
-  const testColumns = [
-    {
-      title: "Test Name",
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: "Action",
-      key: "action",
-      render: (_, record) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleRemoveTest(record.id)}
-        />
-      ),
-    },
-  ];
 
   const handleReschedule = (appointment) => {
     setSelectedAppointment(appointment);
@@ -699,121 +576,15 @@ const Appointment = () => {
       </Spin>
 
       {/* Patient Profile Modal */}
-      <Modal
-        title="Patient Profile"
-        open={isPatientProfileModalVisible}
-        onCancel={() => setIsPatientProfileModalVisible(false)}
-        width={800}
-        footer={[
-          <Button key="cancel" onClick={() => setIsPatientProfileModalVisible(false)}>
-            Cancel
-          </Button>,
-          <Button key="submit" type="primary" onClick={handleSubmitPatientProfile}>
-            Submit
-          </Button>,
-        ]}
-      >
-        {selectedPatient && (
-          <div style={{ padding: '20px 0' }}>
-            {/* Patient Information */}
-            <div style={{ marginBottom: '30px' }}>
-              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
-                Patient Information
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <strong>Patient ID:</strong> {selectedPatient.id}
-                </div>
-                <div>
-                  <strong>Name:</strong> {selectedPatient.name}
-                </div>
-                <div>
-                  <strong>Gender:</strong> {selectedPatient.gender}
-                </div>
-                <div>
-                  <strong>Age:</strong> {selectedPatient.age}
-                </div>
-                <div>
-                  <strong>Phone:</strong> {selectedPatient.phone}
-                </div>
-                <div>
-                  <strong>Last Visit:</strong> {selectedPatient.lastVisit}
-                </div>
-                <div>
-                  <strong>Department:</strong> {selectedPatient.department}
-                </div>
-                <div>
-                  <strong>Status:</strong> {selectedPatient.status}
-                </div>
-              </div>
-            </div>
+      
+{isPatientProfileModalVisible && (
 
-            {/* Add Medicine Section */}
-            <div style={{ marginBottom: '30px' }}>
-              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
-                Add Medicine
-              </h3>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
-                <Input
-                  placeholder="Medicine Name"
-                  value={medicineName}
-                  onChange={(e) => setMedicineName(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <Input
-                  placeholder="Quantity"
-                  value={medicineQuantity}
-                  onChange={(e) => setMedicineQuantity(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMedicine}>
-                  Add
-                </Button>
-              </div>
-              
-              {medicines.length > 0 && (
-                <Table
-                  dataSource={medicines}
-                  columns={medicineColumns}
-                  rowKey="id"
-                  pagination={false}
-                  size="small"
-                  style={{ marginTop: '16px' }}
-                />
-              )}
-            </div>
-
-            {/* Add Test Section */}
-            <div style={{ marginBottom: '20px' }}>
-              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
-                Add Test
-              </h3>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
-                <Input
-                  placeholder="Test Name"
-                  value={testName}
-                  onChange={(e) => setTestName(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddTest}>
-                  Add
-                </Button>
-              </div>
-              
-              {tests.length > 0 && (
-                <Table
-                  dataSource={tests}
-                  columns={testColumns}
-                  rowKey="id"
-                  pagination={false}
-                  size="small"
-                  style={{ marginTop: '16px' }}
-                />
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
+  <PrescriptionForm 
+  selectedPatient={selectedPatient}
+  isVisible={isPatientProfileModalVisible}
+  onClose={() => setIsPatientProfileModalVisible(false)}
+  />
+)}
 
       {/* Reschedule Modal */}
       <Modal
