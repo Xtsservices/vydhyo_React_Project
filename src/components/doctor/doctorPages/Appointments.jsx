@@ -80,6 +80,7 @@ const Appointment = () => {
   };
 
   const handleViewPatientProfile = (appointment) => {
+    console.log("appointment========",appointment)
     // Convert appointment data to patient format
     const patientData = {
       id: appointment.patientId || appointment.appointmentId,
@@ -399,13 +400,18 @@ const Appointment = () => {
     {
       title: "Action",
       key: "action",
-      render: (_, record) => (
+      render: (_, record) => {
+        console.log(record,"record===========")
+        return(
         <Dropdown overlay={renderActionMenu(record)} trigger={["click"]}>
           <Button type="text" icon={<MoreOutlined />} />
         </Dropdown>
-      ),
+    )}
+      ,
     },
   ];
+
+  console.log("filteredData",filteredData)
 
   return (
     <div style={{ padding: "24px" }}>
