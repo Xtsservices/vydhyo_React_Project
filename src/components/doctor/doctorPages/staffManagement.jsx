@@ -3,7 +3,6 @@ import {
   Grid,
   Row,
   Col,
-  Card,
   Table,
   Button,
   Space,
@@ -16,38 +15,54 @@ import {
   Spin,
   message,
   Typography,
-  Menu,
-  Dropdown,
-  Statistic,
   Avatar,
-  Tag,
   Radio,
 } from "antd";
 import {
   PlusOutlined,
-  UserOutlined,
-  TeamOutlined,
-  EditOutlined,
-  EyeOutlined,
-  DeleteOutlined,
-  MoreOutlined,
   SearchOutlined,
   UserAddOutlined,
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import dayjs from "dayjs";
 import "../../../components/stylings/StaffManagement.css";
-import { apiGet, apiPost } from "../../api";
+import { apiGet, apiPost, apiPut } from "../../api";
 import { useSelector } from "react-redux";
 
 const { Option } = Select;
-const { TextArea } = Input;
 const { useBreakpoint } = Grid;
 
-// Add Staff Modal Component
-const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
+// Staff Modal Component (handles both Add and Edit)
+const StaffModal = ({
+  isOpen,
+  onCancel,
+  onSubmit,
+  loading,
+  modalMode,
+  initialData,
+}) => {
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (modalMode === "edit" && initialData) {
+      form.setFieldsValue({
+        firstName: initialData.name?.split(" ")[0] || "",
+        lastName: initialData.name?.split(" ")[1] || "",
+        DOB: initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY") : null,
+        gender: initialData.gender,
+        mobile: initialData.phone,
+        email: initialData.email,
+        role: initialData.type,
+        access: initialData.access || [],
+      });
+    } else {
+      form.resetFields();
+    }
+  }, [modalMode, initialData, form]);
 
   const handleOk = async () => {
     try {
@@ -62,12 +77,27 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
         role: values.role,
         access: values.access,
       };
-      await onSubmit(staffData);
+      await onSubmit(staffData, modalMode);
       form.resetFields();
     } catch (error) {
       console.error("Validation failed:", error);
+      notification.error({
+        message: "Validation Error",
+        description: "Please check all required fields.",
+        duration: 3,
+      });
     }
   };
+
+  const accessOptions = [
+    { value: "my-patientsAccess", label: "My Patients" },
+    { value: "appointmentsAccess", label: "Appointments" },
+    { value: "labsAccess", label: "Labs" },
+    { value: "dashboardAccess", label: "Dashboard" },
+    { value: "pharmacyAccess", label: "Pharmacy" },
+    { value: "availabilityAccess", label: "Availability" },
+    { value: "accountsAccess", label: "Accounts" },
+  ];
 
   return (
     <Modal
@@ -83,11 +113,14 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
         <div>
           <h2 style={{ marginBottom: 0 }}>
             <UserAddOutlined style={{ marginRight: 8 }} />
-            Add New Staff Member
+            {modalMode === "edit"
+              ? "Edit Staff Member"
+              : "Add New Staff Member"}
           </h2>
           <p style={{ margin: 0, color: "#888" }}>
-            Fill in the details below to add a new staff member to your
-            organization
+            {modalMode === "edit"
+              ? "Update the details below to modify staff member information"
+              : "Fill in the details below to add a new staff member to your organization"}
           </p>
         </div>
       }
@@ -189,10 +222,10 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
                 rules={[{ required: true, message: "Please select role" }]}
               >
                 <Select placeholder="Select role">
-                  <Option value="admin">Lab Assistant</Option>
-                  <Option value="doctor">pharmacy Assistant</Option>
+                  <Option value="lab-Assistant">Lab Assistant</Option>
+                  <Option value="pharmacy-Assistant">Pharmacy Assistant</Option>
                   <Option value="receptionist">Receptionist</Option>
-                  <Option value="receptionist">Assistent</Option>
+                  <Option value="assistent">Assistant</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -211,15 +244,8 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
                   mode="multiple"
                   placeholder="Select access permissions"
                   allowClear
-                >
-                  <Option value="viewPatients">My Patients</Option>
-                  <Option value="editAppointments"> Appointments</Option>
-                  <Option value="manageBilling">Labs</Option>
-                  <Option value="dashboardAccess">Dashboard</Option>
-                  <Option value="dashboardAccess">Pharmacy</Option>
-                  <Option value="dashboardAccess">Availability</Option>
-                  <Option value="dashboardAccess">Accounts</Option>
-                </Select>
+                  options={accessOptions}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -230,7 +256,7 @@ const AddStaffModal = ({ isOpen, onCancel, onSubmit, loading }) => {
             </Col>
             <Col>
               <Button type="primary" onClick={handleOk}>
-                Add Staff
+                {modalMode === "edit" ? "Update Staff" : "Add Staff"}
               </Button>
             </Col>
           </Row>
@@ -247,12 +273,12 @@ const StaffManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [staffData, setStaffData] = useState([]);
+  const [originalStaffData, setOriginalStaffData] = useState([]); // Store original data for filtering
   const [fetchLoading, setFetchLoading] = useState(false);
-  const [SearchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterRole, setFilterRole] = useState("all");
-  const [modalMode, setModalMode] = useState("view"); // or 'edit', 'delete'
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState("add"); // 'add', 'edit', 'view', 'delete'
   const [modalData, setModalData] = useState(null);
   const user = useSelector((state) => state.currentUserData);
 
@@ -261,33 +287,27 @@ const StaffManagement = () => {
   };
 
   const handleQuickAdd = () => {
+    setModalMode("add");
+    setModalData(null);
     setIsModalOpen(true);
   };
 
   const handleModalCancel = () => {
     setIsModalOpen(false);
+    setModalData(null);
   };
 
-  const handleAddStaff = async (staffData) => {
+  const handleStaffOperation = async (staffData, mode) => {
     try {
       setLoading(true);
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : "";
-
-      if (selectedStaffType === "receptionist") {
-        console.log("Sending receptionist data as object:", staffData);
-        const response = await apiPost("/doctor/createReceptionist", staffData);
-
-        console.log("Receptionist created:", response.data);
-        notification.success({
-          message: "Receptionist Added Successfully",
-          description: "Receptionist has been added to the staff list.",
-          duration: 3,
+      console.log(
+        "modalData================---------------------------",
+        staffData
+      );
+      if (mode === "add") {
+        const response = await apiPost("/doctor/createReceptionist", {
+          ...staffData,
         });
-      } else {
-        console.log("Other staff type data as object:", staffData);
         notification.success({
           message: `${
             selectedStaffType.charAt(0).toUpperCase() +
@@ -299,13 +319,39 @@ const StaffManagement = () => {
           } has been added to the staff list.`,
           duration: 3,
         });
+      } else if (mode === "edit") {
+        const body = {
+          ...staffData,
+          stafftype: staffData.role,
+          userId: modalData.userId,
+        };
+
+        console.log("body", body);
+        const resposne = await apiPut("/doctor/editReceptionist", body);
+
+        // await axios.put(`/doctor/editReceptionist`, {
+        //   ...staffData,
+        //   name: `${staffData.firstname} ${staffData.lastname}`,
+        //   stafftype: staffData.role,
+        //   phone: staffData.mobile,
+        // });
+        notification.success({
+          message: "Staff Updated Successfully",
+          description: "Staff member details have been updated.",
+          duration: 3,
+        });
       }
 
       setIsModalOpen(false);
+      fetchStaff();
     } catch (error) {
-      console.error("Error creating staff:", error);
-
-      let errorMessage = "An unexpected error occurred";
+      console.error(
+        `Error ${mode === "add" ? "adding" : "updating"} staff:`,
+        error
+      );
+      let errorMessage = `An unexpected error occurred while ${
+        mode === "add" ? "adding" : "updating"
+      } staff`;
 
       if (error.response) {
         errorMessage =
@@ -321,12 +367,13 @@ const StaffManagement = () => {
       }
 
       notification.error({
-        message: "Error Adding Staff",
+        message: `Error ${mode === "add" ? "Adding" : "Updating"} Staff`,
         description: errorMessage,
         duration: 5,
       });
     } finally {
       setLoading(false);
+      setIsModalOpen(false);
     }
   };
 
@@ -351,19 +398,17 @@ const StaffManagement = () => {
       title: "Role",
       dataIndex: "type",
       key: "role",
-      // render: (type) => <Tag color="blue">{type}</Tag>,
     },
     {
       title: "Login Status",
       dataIndex: "isLoggedIn",
-      key: "Login Status",
+      key: "loginStatus",
     },
     {
       title: "Last Login",
       dataIndex: "lastLogout",
-      key: "Last Login",
+      key: "lastLogin",
     },
-
     {
       title: "Actions",
       key: "actions",
@@ -387,22 +432,22 @@ const StaffManagement = () => {
   ];
 
   const handleView = (record) => {
-    console.log("View record:", record);
     setModalMode("view");
     setModalData(record);
-    setModalVisible(true);
+    setIsModalOpen(true);
   };
 
   const handleEdit = (record) => {
+    console.log("handleEdit", record);
     setModalMode("edit");
     setModalData(record);
-    setModalVisible(true);
+    setIsModalOpen(true);
   };
 
   const handleDelete = (record) => {
     setModalMode("delete");
     setModalData(record);
-    setModalVisible(true);
+    setIsModalOpen(true);
   };
 
   const fetchStaff = async () => {
@@ -411,8 +456,8 @@ const StaffManagement = () => {
       const userid = user.userId;
       const response = await apiGet(`/doctor/getStaffByCreator/${userid}`);
       const formattedData = response.data.data.map((staff, index) => ({
-        id: index + 1,
         name: staff.name,
+        userId: staff.userId,
         type: staff.stafftype,
         email: staff.email,
         phone: staff.mobile,
@@ -422,8 +467,13 @@ const StaffManagement = () => {
           ? dayjs(staff.lastLogout).format("YYYY-MM-DD HH:mm:ss")
           : "N/A",
         isLoggedIn: staff.isLoggedIn ? "Online" : "Offline",
+        gender: staff.gender,
+        DOB: staff.DOB,
+        access: staff.access || [],
       }));
+      console.log("formattedData", formattedData);
       setStaffData(formattedData);
+      setOriginalStaffData(formattedData); // Store original data for filtering
     } catch (error) {
       console.error("Error fetching staff:", error);
       let errorMessage = "Failed to fetch staff data";
@@ -441,23 +491,12 @@ const StaffManagement = () => {
     }
   };
 
-  const handleUpdate = async (data) => {
-    try {
-      await axios.put(`/api/updateStaff`, data);
-      message.success("Updated successfully");
-      setModalVisible(false);
-      fetchStaffData();
-    } catch (err) {
-      message.error("Update failed");
-    }
-  };
-
   const confirmDelete = async (userId) => {
     try {
-      await axios.get(`/deleteMyAccount?userId=${userId}`);
+      const res = await apiGet(`/users/deleteMyAccount?userId=${userId}`)
       message.success("Deleted successfully");
-      setModalVisible(false);
-      fetchStaffData();
+      setIsModalOpen(false);
+      fetchStaff();
     } catch (err) {
       message.error("Delete failed");
     }
@@ -466,19 +505,84 @@ const StaffManagement = () => {
   const handleSearch = (e) => {
     const value = e.target.value.toLowerCase();
     setSearchText(value);
+    let filtered = [...originalStaffData];
 
-    const filtered = staffData.filter((staff) =>
-      staff.name.toLowerCase().includes(value)
-    );
+    if (value) {
+      filtered = filtered.filter((staff) =>
+        staff.name.toLowerCase().includes(value)
+      );
+    }
+
+    if (filterStatus !== "all") {
+      filtered = filtered.filter((staff) =>
+        filterStatus === "paid"
+          ? staff.status === "Active"
+          : staff.status === "InActive"
+      );
+    }
+
+    if (filterRole !== "all") {
+      filtered = filtered.filter((staff) => staff.type === filterRole);
+    }
+
     setStaffData(filtered);
   };
+
+  const handleFilterStatus = (value) => {
+    setFilterStatus(value);
+    let filtered = [...originalStaffData];
+
+    if (searchText) {
+      filtered = filtered.filter((staff) =>
+        staff.name.toLowerCase().includes(searchText)
+      );
+    }
+
+    if (value !== "all") {
+      filtered = filtered.filter((staff) =>
+        value === "paid"
+          ? staff.status === "Active"
+          : staff.status === "InActive"
+      );
+    }
+
+    if (filterRole !== "all") {
+      filtered = filtered.filter((staff) => staff.type === filterRole);
+    }
+
+    setStaffData(filtered);
+  };
+
+  const handleFilterRole = (value) => {
+    setFilterRole(value);
+    let filtered = [...originalStaffData];
+
+    if (searchText) {
+      filtered = filtered.filter((staff) =>
+        staff.name.toLowerCase().includes(searchText)
+      );
+    }
+
+    if (filterStatus !== "all") {
+      filtered = filtered.filter((staff) =>
+        filterStatus === "paid"
+          ? staff.status === "Active"
+          : staff.status === "InActive"
+      );
+    }
+
+    if (value !== "all") {
+      filtered = filtered.filter((staff) => staff.type === value);
+    }
+
+    setStaffData(filtered);
+  };
+
   useEffect(() => {
-    console.log("start=========");
     if (user) {
       fetchStaff();
     }
   }, [user]);
-  console.log("user======", user);
 
   return (
     <div>
@@ -503,7 +607,7 @@ const StaffManagement = () => {
       </Row>
 
       <Row gutter={[16, 16]}>
-        <div className="filters-container">
+        <div className="filters-container" style={{ width: "100%" }}>
           <Row justify="space-between" align="middle">
             <Col>
               <Input
@@ -511,6 +615,7 @@ const StaffManagement = () => {
                 prefix={<SearchOutlined />}
                 onChange={handleSearch}
                 className="filters-input"
+                value={searchText}
               />
             </Col>
             <Col>
@@ -518,7 +623,8 @@ const StaffManagement = () => {
                 <Select
                   className="filters-select"
                   defaultValue="all"
-                  onChange={setFilterStatus}
+                  onChange={handleFilterStatus}
+                  value={filterStatus}
                 >
                   <Option value="all">All Status</Option>
                   <Option value="paid">Active</Option>
@@ -527,13 +633,14 @@ const StaffManagement = () => {
                 <Select
                   className="filters-select"
                   defaultValue="all"
-                  onChange={setFilterStatus}
+                  onChange={handleFilterRole}
+                  value={filterRole}
                 >
                   <Option value="all">All Roles</Option>
-                  <Option value="paid">Lab Assistent</Option>
-                  <Option value="pending">Pharmacy Assistent</Option>
-                  <Option value="refunded">Receptionist</Option>
-                  <Option value="refunded">Assistent</Option>
+                  <Option value="lab-Assistant">Lab Assistant</Option>
+                  <Option value="pharmacy-Assistant">Pharmacy Assistant</Option>
+                  <Option value="receptionist">Receptionist</Option>
+                  <Option value="assistent">Assistant</Option>
                 </Select>
               </div>
             </Col>
@@ -552,7 +659,6 @@ const StaffManagement = () => {
               itemRender: (_, type, originalElement) => {
                 if (type === "prev") return <a>Previous</a>;
                 if (type === "next") return <a>Next</a>;
-
                 return null;
               },
             }}
@@ -562,46 +668,24 @@ const StaffManagement = () => {
         </Col>
       </Row>
 
-      <AddStaffModal
-        isOpen={isModalOpen}
+      <StaffModal
+        isOpen={isModalOpen && (modalMode === "add" || modalMode === "edit")}
         onCancel={handleModalCancel}
-        onSubmit={handleAddStaff}
-        staffType={selectedStaffType}
+        onSubmit={handleStaffOperation}
         loading={loading}
+        modalMode={modalMode}
+        initialData={modalData}
       />
+
       <Modal
-        title={
-          modalMode === "view"
-            ? "View Staff Details"
-            : modalMode === "edit"
-            ? "Edit Staff"
-            : "Confirm Delete"
-        }
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        onOk={() => {
-          if (modalMode === "edit") {
-            handleUpdate(modalData); // send updated data
-          } else if (modalMode === "delete") {
-            confirmDelete(modalData.userId);
-          } else {
-            setModalVisible(false);
-          }
-        }}
-        okText={
-          modalMode === "delete"
-            ? "Delete"
-            : modalMode === "edit"
-            ? "Save"
-            : "OK"
-        }
-        okButtonProps={
-          modalMode === "delete"
-            ? { danger: true }
-            : modalMode === "view"
-            ? { style: { display: "none" } }
-            : {}
-        }
+        title="View Staff Details"
+        open={modalMode === "view" && isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setIsModalOpen(false)}>
+            Close
+          </Button>,
+        ]}
       >
         {modalMode === "view" && (
           <>
@@ -620,38 +704,27 @@ const StaffManagement = () => {
             <p>
               <strong>Status:</strong> {modalData?.status}
             </p>
+            <p>
+              <strong>DOB:</strong> {modalData?.DOB}
+            </p>
+            <p>
+              <strong>Gender:</strong> {modalData?.gender}
+            </p>
+            <p>
+              <strong>Access:</strong> {modalData?.access?.join(", ") || "None"}
+            </p>
           </>
         )}
+      </Modal>
 
-        {modalMode === "edit" && (
-          <Form layout="vertical">
-            <Form.Item label="Name">
-              <Input
-                value={modalData?.name}
-                onChange={(e) =>
-                  setModalData({ ...modalData, name: e.target.value })
-                }
-              />
-            </Form.Item>
-            <Form.Item label="Email">
-              <Input
-                value={modalData?.email}
-                onChange={(e) =>
-                  setModalData({ ...modalData, email: e.target.value })
-                }
-              />
-            </Form.Item>
-            <Form.Item label="Phone">
-              <Input
-                value={modalData?.phone}
-                onChange={(e) =>
-                  setModalData({ ...modalData, phone: e.target.value })
-                }
-              />
-            </Form.Item>
-          </Form>
-        )}
-
+      <Modal
+        title="Confirm Delete"
+        open={modalMode === "delete" && isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => confirmDelete(modalData?.userId)}
+        okText="Delete"
+        okButtonProps={{ danger: true }}
+      >
         {modalMode === "delete" && (
           <>
             <p>Are you sure you want to delete this staff member?</p>
