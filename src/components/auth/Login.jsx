@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Illustration from "./Illustration";
 import LoginForm from "./LoginForm";
 import "../../components/stylings/Login.css";
@@ -46,13 +48,14 @@ const Login = () => {
     if (role === "superadmin") return "/SuperAdmin/dashboard";
     if (role === "doctor") return "/Doctor/dashboard";
     // return '/SuperAdmin/dashboard';
-    return "/SuperAdmin/dashboard";
+    return "/Doctor/dashboard";
     return "/Admin/app/dashboard"; // Default route if role is unknown
   };
 
   const handleSendOTP = async () => {
     if (!validatePhone(phone)) {
       message.error("Please enter a valid 10-digit mobile number");
+      toast.error("Please enter a valid 10-digit mobile number");
       return;
     }
     setIsLoading(true);
@@ -63,15 +66,17 @@ const Login = () => {
       });
       if (data.data.userId || data.data.success !== false) {
         setUserId(data.data.userId || `temp-${Date.now()}`);
-        setCurrentUserType(data.data.role || ""); // Store role from API response
+        setCurrentUserType(data.data.role || "");
         setOtpSent(true);
         setOtpTimer(60);
         message.success(data.data.message || "OTP sent successfully!");
+        toast.success(data.data.message || "OTP sent successfully!");
       } else {
         message.error(data.data.message || "Failed to send OTP.");
+        toast.error(data.data.message || "Failed to send OTP.");
       }
     } catch (error) {
-      message.error(
+      const errorMsg =
         error.response?.status === 401
           ? "Authentication failed."
           : error.message?.includes("Network Error")
@@ -80,8 +85,9 @@ const Login = () => {
           ? "Invalid request."
           : error.response?.status === 500
           ? "Server error."
-          : "Failed to send OTP."
-      );
+          : "Failed to send OTP.";
+      message.error(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -90,10 +96,12 @@ const Login = () => {
   const handleOTPVerification = async () => {
     if (!otp || otp.length !== 6) {
       message.error("Please enter the complete 6-digit OTP");
+      toast.error("Please enter the complete 6-digit OTP");
       return;
     }
     if (!userId) {
       message.error("Session expired. Please request OTP again.");
+      toast.error("Session expired. Please request OTP again.");
       resetPhoneLogin();
       return;
     }
@@ -105,12 +113,6 @@ const Login = () => {
         mobile: phone,
       });
 
-      console.log("logindatadata:", data);
-      console.log("logindatadata:", data.data.userData.role);
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("userID");
-      localStorage.removeItem("role");
-
       if (data.data.accessToken) {
         localStorage.setItem("accessToken", data.data.accessToken);
         localStorage.setItem("userID", userId);
@@ -118,7 +120,6 @@ const Login = () => {
           "role",
           data.data.userData.role || currentUserType
         );
-
         const redirectRoute = getRouteFromUserType(
           data.data.userData.role || currentUserType
         );
@@ -127,16 +128,22 @@ const Login = () => {
             data.data.role || currentUserType
           } dashboard...`
         );
+        toast.success(
+          `Login successful! Redirecting to ${
+            data.data.role || currentUserType
+          } dashboard...`
+        );
         setTimeout(() => navigate(redirectRoute), 1500);
       }
     } catch (error) {
-      message.error(
+      const errorMsg =
         error.response?.status === 401
           ? "Invalid OTP."
           : error.message?.includes("Network Error")
           ? "Network Error: Unable to connect to server."
-          : "Verification failed."
-      );
+          : "Verification failed.";
+      message.error(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -223,6 +230,16 @@ const Login = () => {
           onReset={resetPhoneLogin}
         />
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

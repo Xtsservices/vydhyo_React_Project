@@ -6,7 +6,9 @@ import {
   Autocomplete,
   Marker,
 } from "@react-google-maps/api";
-import { apiPost } from "../../api";
+import { apiGet, apiPost } from "../../api";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const libraries = ["places", "geocoding"];
 const googleAPI = "AIzaSyCrmF3351j82RVuTZbVBJ-X3ufndylJsvo";
@@ -19,6 +21,9 @@ export default function ClinicManagement() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [clinics, setClinics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     type: "Clinic",
     clinicName: "",
@@ -39,59 +44,29 @@ export default function ClinicManagement() {
   const autocompleteRef = useRef(null);
   const mapRef = useRef(null);
 
-  const clinics = [
-    {
-      addressId: "CLN001",
-      clinicName: "Apollo Clinic",
-      type: "Clinic",
-      address: "123 Main Street",
-      placeName: "Apollo Medical Center",
-      city: "Hyderabad",
-      state: "Telangana",
-      country: "India",
-      mobile: "",
-      pincode: "500001",
-      status: "Active",
-      startTime: "09:00",
-      endTime: "17:00",
-      latitude: 17.385044,
-      longitude: 78.486671,
-    },
-    {
-      addressId: "CLN002",
-      clinicName: "MedLife Center",
-      type: "Hospital",
-      address: "456 Health Road",
-      placeName: "MedLife Diagnostic",
-      city: "Bangalore",
-      state: "Karnataka",
-      country: "India",
-      mobile: "",
-      pincode: "560001",
-      status: "Pending",
-      startTime: "08:00",
-      endTime: "16:00",
-      latitude: 12.971599,
-      longitude: 77.594566,
-    },
-    {
-      addressId: "CLN003",
-      clinicName: "City Health Hub",
-      type: "Clinic",
-      address: "789 Wellness Avenue",
-      placeName: "City Specialty Clinic",
-      city: "Chennai",
-      state: "Tamil Nadu",
-      country: "India",
-      mobile: "",
-      pincode: "600001",
-      status: "Inactive",
-      startTime: "10:00",
-      endTime: "18:00",
-      latitude: 13.08268,
-      longitude: 80.270718,
-    },
-  ];
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await apiGet("/users/getClinicAddress", {});
+
+        if (response.status === 200 && response.data?.status === "success") {
+          setClinics(response.data.data || []);
+        } else {
+          throw new Error(response.data?.message || "Failed to fetch clinics");
+        }
+      } catch (err) {
+        console.error("Error fetching clinics:", err);
+        setError(err.message);
+        setClinics([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClinics();
+  }, []);
 
   const getStatusStyle = (status) => {
     switch (status) {
@@ -244,7 +219,6 @@ export default function ClinicManagement() {
         },
         (error) => {
           console.error("Geolocation error:", error);
-          // Fallback to default India center
           setMapCenter({ lat: 20.5937, lng: 78.9629 });
           setMarkerPosition(null);
         }
@@ -259,7 +233,7 @@ export default function ClinicManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
-    if (["Clinic", "Hospital"].includes(formData.type)) { 
+    if (["Clinic", "Hospital"].includes(formData.type)) {
       if (!formData.startTime || !formData.endTime) {
         alert(
           "Both start time and end time are required for Clinic or Hospital type"
@@ -283,32 +257,65 @@ export default function ClinicManagement() {
       }
     }
 
-    //here make api call for add clinical address
+    try {
+      const response = await apiPost("/users/addAddress", formData);
 
-    console.log("Form submitted:", formData);
-    const response = await apiPost("/users/addAddress", formData)
-    if(response.status !== 200) {
-      // display success message
+      if (response.status === 200) {
+        // Refresh the clinics list after successful addition
+        const refreshResponse = await apiPost("/users/getClinicAddress", {});
+        if (
+          refreshResponse.status === 200 &&
+          refreshResponse.data?.status === "success"
+        ) {
+          setClinics(refreshResponse.data.data || []);
+        }
+
+        // Reset form and close modal
+        setShowModal(false);
+        setFormData({
+          type: "Clinic",
+          clinicName: "",
+          address: "",
+          city: "",
+          state: "",
+          country: "India",
+          mobile: "",
+          pincode: "",
+          startTime: "",
+          endTime: "",
+          latitude: "",
+          longitude: "",
+        });
+      } else {
+        throw new Error(response.data?.message || "Failed to add clinic");
+      }
+    } catch (err) {
+      console.error("Error adding clinic:", err);
+      alert(err.message || "Failed to add clinic. Please try again.");
     }
-    console.log("Form submitted:response", response);
-    
-    setShowModal(false);
-    setFormData({
-      mobile: "",
-      type: "Clinic",
-      clinicName: "",
-      address: "",
-      city: "",
-      state: "",
-      country: "",
-      pincode: "",
-      startTime: "",
-      endTime: "",
-      latitude: "",
-      longitude: "",
-    });
-    setMapCenter({ lat: 20.5937, lng: 78.9629 });
-    setMarkerPosition(null);
+  };
+
+  const handleDeleteClinic = async (addressId) => {
+    if (!window.confirm("Are you sure you want to delete this clinic?")) return;
+
+    try {
+      const response = await apiPost("/users/deleteClinicAddress", {
+        addressId,
+      });
+
+      if (response.status === 200) {
+        // Refresh the clinics list after successful deletion
+        const refreshResponse = await apiPost("/users/getClinicAddress", {});
+        if (refreshResponse.status === 200) {
+          setClinics(refreshResponse.data.data || []);
+        }
+      } else {
+        throw new Error(response.data?.message || "Failed to delete clinic");
+      }
+    } catch (err) {
+      console.error("Error deleting clinic:", err);
+      alert(err.message || "Failed to delete clinic. Please try again.");
+    }
   };
 
   const handleCancel = () => {
@@ -333,8 +340,8 @@ export default function ClinicManagement() {
 
   const filteredClinics = clinics.filter(
     (clinic) =>
-      clinic.clinicName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      clinic.addressId.toLowerCase().includes(searchTerm.toLowerCase())
+      clinic.clinicName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      clinic.addressId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const containerStyle = {
@@ -626,7 +633,6 @@ export default function ClinicManagement() {
     return <div>Loading...</div>;
   }
 
-  console.log("Clinics:", formData);
   return (
     <div style={containerStyle}>
       <div style={mainStyle}>
@@ -694,77 +700,101 @@ export default function ClinicManagement() {
               </tr>
             </thead>
             <tbody>
-              {filteredClinics.map((clinic) => (
-                <tr
-                  key={clinic.addressId}
-                  style={trStyle}
-                  onMouseEnter={(e) =>
-                    (e.target.style.backgroundColor = "#f9fafb")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.target.style.backgroundColor = "transparent")
-                  }
-                >
-                  <td
-                    style={{ ...tdStyle, fontWeight: "500", color: "#111827" }}
+              {filteredClinics.length > 0 ? (
+                filteredClinics.map((clinic) => (
+                  <tr
+                    key={clinic._id} // Using _id from MongoDB as key
+                    style={trStyle}
+                    onMouseEnter={(e) =>
+                      (e.target.style.backgroundColor = "#f9fafb")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.backgroundColor = "transparent")
+                    }
                   >
-                    {clinic.addressId}
-                  </td>
-                  <td style={{ ...tdStyle, color: "#111827" }}>
-                    {clinic.clinicName}
-                  </td>
-                  <td style={tdStyle}>{clinic.type}</td>
-                  <td style={tdStyle}>
-                    {clinic.address}, {clinic.city}, {clinic.state},{" "}
-                    {clinic.country} {clinic.pincode}
-                  </td>
-                  <td style={tdStyle}>{clinic.mobile}</td>
-                  <td style={tdStyle}>
-                    {clinic.startTime} - {clinic.endTime}
-                  </td>
-                  <td style={tdStyle}>
-                    <span
+                    <td
                       style={{
-                        ...statusBadgeStyle,
-                        ...getStatusStyle(clinic.status),
+                        ...tdStyle,
+                        fontWeight: "500",
+                        color: "#111827",
                       }}
                     >
-                      {clinic.status}
-                    </span>
-                  </td>
-                  <td style={tdStyle}>
-                    <div style={actionButtonsStyle}>
-                      <button
-                        style={{ ...iconButtonStyle, color: "#2563eb" }}
-                        onMouseEnter={(e) => (e.target.style.color = "#1d4ed8")}
-                        onMouseLeave={(e) => (e.target.style.color = "#2563eb")}
-                        title="Edit"
+                      {clinic.addressId}
+                    </td>
+                    <td style={{ ...tdStyle, color: "#111827" }}>
+                      {clinic.clinicName}
+                    </td>
+                    <td style={tdStyle}>{clinic.type}</td>
+                    <td style={tdStyle}>
+                      {clinic.address}, {clinic.city}, {clinic.state},{" "}
+                      {clinic.country} {clinic.pincode}
+                    </td>
+                    <td style={tdStyle}>{clinic.mobile}</td>
+                    <td style={tdStyle}>
+                      {clinic.startTime} - {clinic.endTime}
+                    </td>
+                    <td style={tdStyle}>
+                      <span
+                        style={{
+                          ...statusBadgeStyle,
+                          ...getStatusStyle(clinic.status),
+                        }}
                       >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        style={{ ...iconButtonStyle, color: "#6b7280" }}
-                        onMouseEnter={(e) => (e.target.style.color = "#374151")}
-                        onMouseLeave={(e) => (e.target.style.color = "#6b7280")}
-                        title="View"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        style={{ ...iconButtonStyle, color: "#dc2626" }}
-                        onMouseEnter={(e) => (e.target.style.color = "#b91c1c")}
-                        onMouseLeave={(e) => (e.target.style.color = "#dc2626")}
-                        title="Delete"
-                        onClick={() =>
-                          console.log("Delete clinic:", clinic.addressId)
-                        }
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                        {clinic.status}
+                      </span>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={actionButtonsStyle}>
+                        <button
+                          style={{ ...iconButtonStyle, color: "#2563eb" }}
+                          onMouseEnter={(e) =>
+                            (e.target.style.color = "#1d4ed8")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.target.style.color = "#2563eb")
+                          }
+                          title="Edit"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          style={{ ...iconButtonStyle, color: "#6b7280" }}
+                          onMouseEnter={(e) =>
+                            (e.target.style.color = "#374151")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.target.style.color = "#6b7280")
+                          }
+                          title="View"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          style={{ ...iconButtonStyle, color: "#dc2626" }}
+                          onMouseEnter={(e) =>
+                            (e.target.style.color = "#b91c1c")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.target.style.color = "#dc2626")
+                          }
+                          title="Delete"
+                          onClick={() => handleDeleteClinic(clinic.addressId)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" style={{ ...tdStyle, textAlign: "center" }}>
+                    {clinics.length === 0
+                      ? "No clinics found"
+                      : "No matching clinics found"}
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -1063,6 +1093,7 @@ export default function ClinicManagement() {
             </div>
           </div>
         )}
+        <ToastContainer />
       </div>
     </div>
   );
