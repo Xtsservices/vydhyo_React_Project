@@ -44,59 +44,6 @@ export default function ClinicManagement() {
   const autocompleteRef = useRef(null);
   const mapRef = useRef(null);
 
-  // const clinics = [
-  //   {
-  //     addressId: "CLN001",
-  //     clinicName: "Apollo Clinic",
-  //     type: "Clinic",
-  //     address: "123 Main Street",
-  //     placeName: "Apollo Medical Center",
-  //     city: "Hyderabad",
-  //     state: "Telangana",
-  //     country: "India",
-  //     mobile: "",
-  //     pincode: "500001",
-  //     status: "Active",
-  //     startTime: "09:00",
-  //     endTime: "17:00",
-  //     latitude: 17.385044,
-  //     longitude: 78.486671,
-  //   },
-  //   {
-  //     addressId: "CLN002",
-  //     clinicName: "MedLife Center",
-  //     type: "Hospital",
-  //     address: "456 Health Road",
-  //     placeName: "MedLife Diagnostic",
-  //     city: "Bangalore",
-  //     state: "Karnataka",
-  //     country: "India",
-  //     mobile: "",
-  //     pincode: "560001",
-  //     status: "Pending",
-  //     startTime: "08:00",
-  //     endTime: "16:00",
-  //     latitude: 12.971599,
-  //     longitude: 77.594566,
-  //   },
-  //   {
-  //     addressId: "CLN003",
-  //     clinicName: "City Health Hub",
-  //     type: "Clinic",
-  //     address: "789 Wellness Avenue",
-  //     placeName: "City Specialty Clinic",
-  //     city: "Chennai",
-  //     state: "Tamil Nadu",
-  //     country: "India",
-  //     mobile: "",
-  //     pincode: "600001",
-  //     status: "Inactive",
-  //     startTime: "10:00",
-  //     endTime: "18:00",
-  //     latitude: 13.08268,
-  //     longitude: 80.270718,
-  //   },
-  // ];
   useEffect(() => {
     const fetchClinics = async () => {
       try {
@@ -686,7 +633,6 @@ export default function ClinicManagement() {
     return <div>Loading...</div>;
   }
 
-  console.log("Clinics:", formData);
   return (
     <div style={containerStyle}>
       <div style={mainStyle}>
