@@ -34,6 +34,9 @@ import {
   CalendarFilled,
   ClockCircleFilled,
   ArrowUpOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  EyeOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
@@ -43,19 +46,36 @@ const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 const Appointment = () => {
   const navigate = useNavigate();
-  const screens = useBreakpoint();
-  const [activeKey, setActiveKey] = useState("1");
-  const [appointments, setAppointments] = useState({
-    totalAppointmentsCount: 0,
-    totalAppointments: [],
-  });
-  const [isRescheduleModalVisible, setIsRescheduleModalVisible] =
-    useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsCount, setAppointmentsCount] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  const [isRescheduleModalVisible, setIsRescheduleModalVisible] = useState(false);
+  const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
+  const [isPatientProfileModalVisible, setIsPatientProfileModalVisible] = useState(false);
+  
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [newDate, setNewDate] = useState(null);
   const [newTime, setNewTime] = useState(null);
   const [searchText, setSearchText] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+
+  // Patient Profile Modal States
+  const [medicineName, setMedicineName] = useState("");
+  const [medicineQuantity, setMedicineQuantity] = useState("");
+  const [medicines, setMedicines] = useState([]);
+  const [testName, setTestName] = useState("");
+  const [tests, setTests] = useState([]);
+
+  const [filters, setFilters] = useState({
+    clinic: "all",
+    type: "all",
+    status: "all",
+    date: null,
+  });
 
   const getStatusTag = (status) => {
     const statusConfig = {
@@ -68,9 +88,209 @@ const Appointment = () => {
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
+  const handleViewPatientProfile = (appointment) => {
+    // Convert appointment data to patient format
+    const patientData = {
+      id: appointment.patientId || appointment.appointmentId,
+      name: appointment.patientName,
+      gender: appointment.patientGender || "N/A",
+      age: appointment.patientAge || "N/A",
+      phone: appointment.patientPhone || "N/A",
+      lastVisit: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
+      department: appointment.appointmentDepartment,
+      status: appointment.appointmentStatus,
+    };
+    
+    setSelectedPatient(patientData);
+    setSelectedAppointment(appointment);
+    setIsPatientProfileModalVisible(true);
+    
+    // Reset medicine and test states
+    setMedicines([]);
+    setTests([]);
+    setMedicineName("");
+    setMedicineQuantity("");
+    setTestName("");
+  };
+
+  const handleAddMedicine = () => {
+    if (!medicineName.trim() || !medicineQuantity.trim()) {
+      message.error("Please enter both medicine name and quantity");
+      return;
+    }
+
+    const newMedicine = {
+      id: Date.now(),
+      name: medicineName,
+      quantity: medicineQuantity,
+    };
+
+    setMedicines([...medicines, newMedicine]);
+    setMedicineName("");
+    setMedicineQuantity("");
+    message.success("Medicine added successfully");
+  };
+
+  const handleRemoveMedicine = (id) => {
+    setMedicines(medicines.filter(medicine => medicine.id !== id));
+    message.success("Medicine removed successfully");
+  };
+
+  const handleAddTest = () => {
+    if (!testName.trim()) {
+      message.error("Please enter test name");
+      return;
+    }
+
+    const newTest = {
+      id: Date.now(),
+      name: testName,
+    };
+
+    setTests([...tests, newTest]);
+    setTestName("");
+    message.success("Test added successfully");
+  };
+
+  const handleRemoveTest = (id) => {
+    setTests(tests.filter(test => test.id !== id));
+    message.success("Test removed successfully");
+  };
+
+  const handleSubmitPatientProfile = async () => {
+    try {
+      const prescriptionData = {
+        appointmentId: selectedAppointment.appointmentId,
+        patientId: selectedPatient.id,
+        medicines: medicines,
+        tests: tests,
+        notes: "Prescription generated from appointment",
+      };
+
+      // You can replace this with your actual API call
+      console.log("Prescription data:", prescriptionData);
+      
+      message.success("Prescription submitted successfully");
+      setIsPatientProfileModalVisible(false);
+      
+      // Reset states
+      setMedicines([]);
+      setTests([]);
+      setSelectedPatient(null);
+      setSelectedAppointment(null);
+      
+    } catch (error) {
+      console.error("Error submitting prescription:", error);
+      message.error("Failed to submit prescription");
+    }
+  };
+
+  const medicineColumns = [
+    {
+      title: "Medicine Name",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, record) => (
+        <Button
+          type="text"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleRemoveMedicine(record.id)}
+        />
+      ),
+    },
+  ];
+
+  const testColumns = [
+    {
+      title: "Test Name",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, record) => (
+        <Button
+          type="text"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleRemoveTest(record.id)}
+        />
+      ),
+    },
+  ];
+
   const handleReschedule = (appointment) => {
     setSelectedAppointment(appointment);
     setIsRescheduleModalVisible(true);
+    setNewDate(moment(appointment.appointmentDate));
+    setNewTime(moment(appointment.appointmentTime, "HH:mm"));
+  };
+
+  const handleCancelAppointment = (appointment) => {
+    setSelectedAppointment(appointment);
+    setIsCancelModalVisible(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!selectedAppointment) return;
+
+    setCancelLoading(true);
+    try {
+      const response = await apiPost("/appointment/cancelAppointment", {
+        appointmentId: selectedAppointment.appointmentId,
+        reason: "Patient requested cancellation",
+      });
+
+      if (response.status === 200) {
+        message.success(
+          response.data.message || "Appointment cancelled successfully"
+        );
+        setIsCancelModalVisible(false);
+        await getAppointments();
+      } else {
+        message.error(response.data?.message || "Failed to cancel appointment");
+      }
+    } catch (error) {
+      console.error("Cancellation error:", error);
+      message.error(
+        error.response?.data?.message ||
+        "Failed to cancel appointment. Please try again."
+      );
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const handleCompleteAppointment = async (appointmentId) => {
+    try {
+      const res = await apiPost("/appointment/completeAppointment", {
+        appointmentId,
+        appointmentNotes: "Appointment completed successfully",
+      });
+
+      if (res.status === 200) {
+        message.success("Appointment marked as completed");
+        await getAppointments();
+      } else {
+        message.error(res.data?.message || "Failed to complete appointment");
+      }
+    } catch (err) {
+      console.error("Complete error:", err);
+      message.error(
+        err.response?.data?.message || "Failed to complete appointment"
+      );
+    }
   };
 
   const handleRescheduleSubmit = async () => {
@@ -79,48 +299,29 @@ const Appointment = () => {
       return;
     }
 
+    setRescheduleLoading(true);
     try {
-      const storedAppointments = JSON.parse(
-        localStorage.getItem("appointments") ||
-          '{"totalAppointmentsCount": 0, "totalAppointments": []}'
-      );
-
-      const updatedAppointments = storedAppointments.totalAppointments.map(
-        (appt) =>
-          appt.appointmentId === selectedAppointment.appointmentId
-            ? {
-                ...appt,
-                appointmentDate: newDate.format("YYYY-MM-DD"),
-                appointmentTime: newTime.format("HH:mm"),
-                appointmentStatus: "rescheduled",
-                updatedAt: new Date().toISOString(),
-              }
-            : appt
-      );
-
-      updatedAppointments.sort((a, b) => {
-        const updatedA = a.updatedAt
-          ? new Date(a.updatedAt).getTime()
-          : new Date(`${a.appointmentDate}T${a.appointmentTime}`).getTime();
-        const updatedB = b.updatedAt
-          ? new Date(b.updatedAt).getTime()
-          : new Date(`${b.appointmentDate}T${b.appointmentTime}`).getTime();
-        return updatedB - updatedA;
+      const response = await apiPost("/appointment/rescheduleAppointment", {
+        appointmentId: selectedAppointment.appointmentId,
+        newDate: newDate.format("YYYY-MM-DD"),
+        newTime: newTime.format("HH:mm"),
+        reason: "Patient requested reschedule",
       });
-
-      const updatedData = {
-        totalAppointmentsCount: updatedAppointments.length,
-        totalAppointments: updatedAppointments,
-      };
-
-      localStorage.setItem("appointments", JSON.stringify(updatedData));
-      setAppointments(updatedData);
-
-      message.success("Appointment rescheduled successfully");
-      setIsRescheduleModalVisible(false);
-      setNewDate(null);
-      setNewTime(null);
-      setSelectedAppointment(null);
+      
+      if (response.status == 200) {
+        message.success(
+          response.data.message || "Appointment rescheduled successfully"
+        );
+        setIsRescheduleModalVisible(false);
+        setNewDate(null);
+        setNewTime(null);
+        await getAppointments();
+        setSelectedAppointment(null);
+      } else {
+        message.error(
+          response.data?.message || "Failed to reschedule appointment"
+        );
+      }
     } catch (error) {
       console.error("Error rescheduling appointment:", error);
       message.error("Failed to reschedule appointment");
@@ -246,6 +447,50 @@ const Appointment = () => {
   ];
 
   const API_BASE_URL = "http://192.168.1.44:3000";
+      console.error("Reschedule error:", error);
+      message.error(
+        error.response?.data?.message ||
+        "Failed to reschedule appointment. Please try again."
+      );
+    } finally {
+      setRescheduleLoading(false);
+    }
+  };
+
+  const applyFilters = (data) => {
+    return data.filter((appointment) => {
+      const matchesSearch =
+        searchText === "" ||
+        appointment.patientName
+          .toLowerCase()
+          .includes(searchText.toLowerCase()) ||
+        appointment.appointmentId.toString().includes(searchText);
+
+      const matchesClinic =
+        filters.clinic === "all" ||
+        appointment.appointmentDepartment === filters.clinic;
+
+      const matchesType =
+        filters.type === "all" || appointment.appointmentType === filters.type;
+
+      const matchesStatus =
+        filters.status === "all" ||
+        appointment.appointmentStatus === filters.status;
+
+      const matchesDate =
+        !filters.date ||
+        moment(appointment.appointmentDate).isSame(filters.date, "day");
+
+      return (
+        matchesSearch &&
+        matchesClinic &&
+        matchesType &&
+        matchesStatus &&
+        matchesDate
+      );
+    });
+  };
+
   const getAppointments = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -281,8 +526,51 @@ const Appointment = () => {
     }
   };
 
+  const getAppointmentsCount = async () => {
+    setLoading(true);
+    try {
+      const response = await apiGet(
+        "/appointment/getAppointmentsCountByDoctorID"
+      );
+
+      if (response.status === 200) {
+        const updatedAppointments = response.data.data;
+        setAppointmentsCount(updatedAppointments);
+      } else {
+        message.error("Failed to fetch appointments");
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      message.error("Error fetching appointments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAppointmentsCount = async () => {
+    setLoading(true);
+    try {
+      const response = await apiGet(
+        "/appointment/getAppointmentsCountByDoctorID"
+      );
+
+      if (response.status === 200) {
+        const updatedAppointments = response.data.data;
+        setAppointmentsCount(updatedAppointments);
+      } else {
+        message.error("Failed to fetch appointments");
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      message.error("Error fetching appointments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     getAppointments();
+    getAppointmentsCount();
   }, []);
   console.log(appointments);
 
@@ -291,10 +579,54 @@ const Appointment = () => {
     setSearchText(value);
   };
 
-  const [calendarVisible, setCalendarVisible] = useState(false);
-  const handleFilterChange = (value) => {
-    setFilterStatus(value);
-  };
+  const renderActionMenu = (record) => (
+    <Menu>
+      <Menu.Item
+        key="view-profile"
+        onClick={() => handleViewPatientProfile(record)}
+        icon={<EyeOutlined />}
+      >
+        Prescription
+      </Menu.Item>
+      
+      <Menu.Item
+        key="complete"
+        onClick={() => handleCompleteAppointment(record.appointmentId)}
+        disabled={
+          record.appointmentStatus === "completed" ||
+          record.appointmentStatus === "canceled"
+        }
+        icon={<CheckOutlined />}
+      >
+        Mark as Completed
+      </Menu.Item>
+
+      <Menu.Item
+        key="reschedule"
+        onClick={() => handleReschedule(record)}
+        disabled={
+          record.appointmentStatus === "completed" ||
+          record.appointmentStatus === "canceled"
+        }
+        icon={<CalendarOutlined />}
+      >
+        Reschedule
+      </Menu.Item>
+      
+      <Menu.Item
+        key="cancel"
+        onClick={() => handleCancelAppointment(record)}
+        disabled={
+          record.appointmentStatus === "completed" ||
+          record.appointmentStatus === "canceled"
+        }
+        icon={<UserOutlined />}
+        danger
+      >
+        Cancel
+      </Menu.Item>
+    </Menu>
+  );
 
   const columns = [
     {
@@ -392,154 +724,86 @@ const Appointment = () => {
             </Col>
           </Row>
 
-          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="appointments-card">
-                <Statistic
-                  title="Total Appointments"
-                  value={
-                    appointments.totalAppointments.filter(
-                      (appt) => appt.appointmentStatus === "completed"
-                    ).length
-                  }
-                  valueRender={(value) => (
-                    <div className="statistic-value-row">
-                      <span className="statistic-value">{value}</span>
-                      <CalendarFilled className="calendar-icon" />
-                    </div>
-                  )}
-                  suffix={
-                    <Text type="success" className="statistic-suffix">
-                      <ArrowUpOutlined /> +8% from Last month
-                    </Text>
-                  }
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="appointments-card , upcomming-card">
-                <Statistic
-                  title="Upcomming"
-                  value={
-                    appointments.totalAppointments.filter(
-                      (appt) => appt.appointmentStatus === "scheduled"
-                    ).length
-                  }
-                  valueRender={(value) => (
-                    <div className="statistic-value-row">
-                      <span className="statistic-value">{value}</span>
-                      <ClockCircleFilled
-                        className="calendar-icon"
-                        style={{ color: "#75c34e " }}
-                      />
-                    </div>
-                  )}
-                  suffix={
-                    <Text type="success" style={{ fontSize: "12px" }}></Text>
-                  }
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="appointments-card, completed-card">
-                <Statistic
-                  title="Completed"
-                  value={
-                    appointments.totalAppointments.filter(
-                      (appt) => appt.appointmentStatus === "rescheduled"
-                    ).length
-                  }
-                  valueRender={(value) => (
-                    <div className="statistic-value-row">
-                      <span className="statistic-value">{value}</span>
-                      <CheckOutlined className="right-mark-icon" />
-                    </div>
-                  )}
-                  suffix={
-                    <Text type="success" style={{ fontSize: "12px" }}></Text>
-                  }
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="appointments-card, cancled-card">
-                <Space direction="vertical">
-                  <Text type="secondary" style={{ fontSize: "14px" }}>
-                    Cancelled
-                  </Text>
-                  <Text strong style={{ fontSize: "16px" }}>
-                    {appointments.totalAppointments.find(
-                      (appt) => appt.appointmentStatus === "canceled"
-                    )?.patientName || "No recent cancellations"}
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: "12px" }}>
-                    {appointments.totalAppointments.find(
-                      (appt) => appt.appointmentStatus === "canceled"
-                    )
-                      ? new Date(
-                          appointments.totalAppointments.find(
-                            (appt) => appt.appointmentStatus === "canceled"
-                          ).appointmentDate
-                        ).toLocaleDateString() +
-                        " " +
-                        appointments.totalAppointments.find(
-                          (appt) => appt.appointmentStatus === "canceled"
-                        ).appointmentTime
-                      : "N/A"}
-                  </Text>
-                </Space>
-              </Card>
-            </Col>
-          </Row>
-
-          <Col span={24}>
-            {/* <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 24 }}>
-<Col>
-              <Input
-                placeholder="Search by Patient ID or Name"
-                prefix={<SearchOutlined />}
-                value={searchText}
-                onChange={handleSearch}
-                style={{ width: screens.xs ? 200 : 300 }}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={4}>
-            <Select
-              style={{ width: "100%" }}
-              defaultValue="all"
-              onChange={setFilterStatus}
-            >
-              <Option value="all">All clinics</Option>
-              <Option value="paid">b</Option>
-              <Option value="pending">c</Option>
-              <Option value="refunded">d</Option>
-            </Select>
-          </Col>
-          <Col xs={24} sm={12} md={4}>
-            <Select
-              style={{ width: "100%" }}
-              defaultValue="all"
-              onChange={setFilterStatus}
-            >
-              <Option value="all">All Types</Option>
-              <Option value="paid">b</Option>
-              <Option value="pending">c</Option>
-              <Option value="refunded">d</Option>
-            </Select>
-          </Col>
-          <Col xs={24} sm={12} md={4}>
-            <Select
-              style={{ width: "100%" }}
-              defaultValue="all"
-              onChange={setFilterStatus}
-            >
-              <Option value="all">All Status</Option>
-              <Option value="paid">b</Option>
-              <Option value="pending">c</Option>
-              <Option value="refunded">d</Option>
-            </Select>
-          </Col>
-          </Row> */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+              <Col xs={24} sm={12} lg={6}>
+                <Card className="appointments-card">
+                  <Statistic
+                    title="Total Appointments"
+                    value={appointmentsCount.length}
+                    valueRender={(value) => (
+                      <div className="statistic-value-row">
+                        <span className="statistic-value">{value}</span>
+                        <CalendarFilled className="calendar-icon" />
+                      </div>
+                    )}
+                    suffix={
+                      <Text type="success" className="statistic-suffix">
+                        <ArrowUpOutlined /> +8% from Last month
+                      </Text>
+                    }
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card className="appointments-card upcomming-card">
+                  <Statistic
+                    title="Upcoming"
+                    value={
+                      appointmentsCount.filter(
+                        (appt) => appt.appointmentStatus === "scheduled" || appt.appointmentStatus === "rescheduled"
+                      ).length
+                    }
+                    valueRender={(value) => (
+                      <div className="statistic-value-row">
+                        <span className="statistic-value">{value}</span>
+                        <ClockCircleFilled
+                          className="calendar-icon"
+                          style={{ color: "#75c34e" }}
+                        />
+                      </div>
+                    )}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card className="appointments-card completed-card">
+                  <Statistic
+                    title="Completed"
+                    value={
+                      appointmentsCount.filter(
+                        (appt) => appt.appointmentStatus === "completed"
+                      ).length
+                    }
+                    valueRender={(value) => (
+                      <div className="statistic-value-row">
+                        <span className="statistic-value">{value}</span>
+                        <CheckOutlined className="right-mark-icon" />
+                      </div>
+                    )}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card className="appointments-card cancled-card">
+                  <Statistic
+                    title="Cancelled"
+                    value={
+                      appointmentsCount.filter(
+                        (appt) => appt.appointmentStatus === "canceled"
+                      ).length
+                    }
+                    valueRender={(value) => (
+                      <div className="statistic-value-row">
+                        <span className="statistic-value">{value}</span>
+                        <Tag color="red" style={{ marginLeft: 8 }}>
+                          Cancelled
+                        </Tag>
+                      </div>
+                    )}
+                  />
+                </Card>
+              </Col>
+            </Row>
 
             <Row gutter={[16, 16]} align="middle" className="filters-row">
               {/* Search Input */}
@@ -631,12 +895,203 @@ const Appointment = () => {
         </Col>
       </Row>
 
-      <Table
-        columns={columns}
-        dataSource={tableData}
-        pagination={{ pageSize: 5 }}
-        scroll={{ x: screens.xs ? 1000 : undefined }}
-      />
+            <Table
+              columns={columns}
+              dataSource={filteredData}
+              rowKey="appointmentId"
+              pagination={{ pageSize: 5 }}
+            />
+          </Col>
+        </Row>
+      </Spin>
+
+      {/* Patient Profile Modal */}
+      <Modal
+        title="Patient Profile"
+        open={isPatientProfileModalVisible}
+        onCancel={() => setIsPatientProfileModalVisible(false)}
+        width={800}
+        footer={[
+          <Button key="cancel" onClick={() => setIsPatientProfileModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleSubmitPatientProfile}>
+            Submit
+          </Button>,
+        ]}
+      >
+        {selectedPatient && (
+          <div style={{ padding: '20px 0' }}>
+            {/* Patient Information */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                Patient Information
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <strong>Patient ID:</strong> {selectedPatient.id}
+                </div>
+                <div>
+                  <strong>Name:</strong> {selectedPatient.name}
+                </div>
+                <div>
+                  <strong>Gender:</strong> {selectedPatient.gender}
+                </div>
+                <div>
+                  <strong>Age:</strong> {selectedPatient.age}
+                </div>
+                <div>
+                  <strong>Phone:</strong> {selectedPatient.phone}
+                </div>
+                <div>
+                  <strong>Last Visit:</strong> {selectedPatient.lastVisit}
+                </div>
+                <div>
+                  <strong>Department:</strong> {selectedPatient.department}
+                </div>
+                <div>
+                  <strong>Status:</strong> {selectedPatient.status}
+                </div>
+              </div>
+            </div>
+
+            {/* Add Medicine Section */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                Add Medicine
+              </h3>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
+                <Input
+                  placeholder="Medicine Name"
+                  value={medicineName}
+                  onChange={(e) => setMedicineName(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <Input
+                  placeholder="Quantity"
+                  value={medicineQuantity}
+                  onChange={(e) => setMedicineQuantity(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMedicine}>
+                  Add
+                </Button>
+              </div>
+              
+              {medicines.length > 0 && (
+                <Table
+                  dataSource={medicines}
+                  columns={medicineColumns}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  style={{ marginTop: '16px' }}
+                />
+              )}
+            </div>
+
+            {/* Add Test Section */}
+            <div style={{ marginBottom: '20px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                Add Test
+              </h3>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
+                <Input
+                  placeholder="Test Name"
+                  value={testName}
+                  onChange={(e) => setTestName(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddTest}>
+                  Add
+                </Button>
+              </div>
+              
+              {tests.length > 0 && (
+                <Table
+                  dataSource={tests}
+                  columns={testColumns}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  style={{ marginTop: '16px' }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Reschedule Modal */}
+      <Modal
+        title="Reschedule Appointment"
+        visible={isRescheduleModalVisible}
+        onOk={handleRescheduleSubmit}
+        onCancel={() => {
+          setIsRescheduleModalVisible(false);
+          setNewDate(null);
+          setNewTime(null);
+        }}
+        okText="Reschedule"
+        cancelText="Cancel"
+        confirmLoading={rescheduleLoading}
+      >
+        {selectedAppointment && (
+          <div>
+            <p>
+              Rescheduling appointment for{" "}
+              <strong>{selectedAppointment.patientName}</strong>
+            </p>
+            <p>
+              Current date/time:{" "}
+              {moment(selectedAppointment.appointmentDate).format("YYYY-MM-DD")}{" "}
+              {selectedAppointment.appointmentTime}
+            </p>
+            <div style={{ margin: "16px 0" }}>
+              <DatePicker
+                style={{ width: "100%", marginBottom: 16 }}
+                value={newDate}
+                onChange={(date) => setNewDate(date)}
+                disabledDate={(current) =>
+                  current && current < moment().startOf("day")
+                }
+              />
+              <TimePicker
+                style={{ width: "100%" }}
+                value={newTime}
+                onChange={(time) => setNewTime(time)}
+                format="HH:mm"
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Cancel Modal */}
+      <Modal
+        title="Cancel Appointment"
+        visible={isCancelModalVisible}
+        onOk={handleCancelConfirm}
+        onCancel={() => setIsCancelModalVisible(false)}
+        okText="Confirm Cancel"
+        cancelText="Close"
+        okButtonProps={{ danger: true }}
+        confirmLoading={cancelLoading}
+      >
+        {selectedAppointment && (
+          <div>
+            <p>
+              Are you sure you want to cancel the appointment for{" "}
+              <strong>{selectedAppointment.patientName}</strong>?
+            </p>
+            <p>
+              Appointment Date:{" "}
+              {moment(selectedAppointment.appointmentDate).format("YYYY-MM-DD")}{" "}
+              {selectedAppointment.appointmentTime}
+            </p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

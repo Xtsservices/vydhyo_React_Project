@@ -48,7 +48,7 @@ const Login = () => {
     if (role === "superadmin") return "/SuperAdmin/dashboard";
     if (role === "doctor") return "/Doctor/dashboard";
     // return '/SuperAdmin/dashboard';
-    return "/Doctor/dashboard";
+    return "/SuperAdmin/dashboard";
     return "/Admin/app/dashboard"; // Default route if role is unknown
   };
 
@@ -78,6 +78,9 @@ const Login = () => {
     } catch (error) {
       const errorMsg =
         error.response?.status === 401
+          ? "Authentication failed."
+          : error.message?.includes("Network Error")
+          ? "Network Error: Unable to connect to server."
           ? "Authentication failed."
           : error.message?.includes("Network Error")
           ? "Network Error: Unable to connect to server."
@@ -112,6 +115,12 @@ const Login = () => {
         OTP: otp,
         mobile: phone,
       });
+
+      console.log("logindatadata:", data);
+      console.log("logindatadata:", data.data.userData.role);
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userID");
+      localStorage.removeItem("role");
 
       if (data.data.accessToken) {
         localStorage.setItem("accessToken", data.data.accessToken);

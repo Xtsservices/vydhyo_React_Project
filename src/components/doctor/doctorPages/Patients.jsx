@@ -1,32 +1,41 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, Download, MoreVertical } from "lucide-react";
-import { message, Modal, Select, Button } from "antd";
+import { Search, Filter, Download, MoreVertical, Plus, Trash2 } from "lucide-react";
+import { message, Modal, Select, Button, Input, Table } from "antd";
+import moment from "moment";
+import { apiGet } from "../../api";
+import styles from "../../stylings/MyPatientsStyles";
 
 const { Option } = Select;
-import moment from "moment";
 
 const MyPatients = () => {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
+  const [searchField, setSearchField] = useState("all"); // New state for search field selection
   const [sortBy, setSortBy] = useState("Name");
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [totalPatients, setTotalPatients] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterAppointmentStatus, setFilterAppointmentStatus] = useState(""); // New state for appointmentStatus
   const [filterDepartment, setFilterDepartment] = useState("");
+  
+  // Patient Profile Modal States
+  const [isPatientProfileModalVisible, setIsPatientProfileModalVisible] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [medicines, setMedicines] = useState([]);
+  const [tests, setTests] = useState([]);
+  const [medicineName, setMedicineName] = useState("");
+  const [medicineQuantity, setMedicineQuantity] = useState("");
+  const [testName, setTestName] = useState("");
+  
   const pageSize = 10;
 
-  // API base URL
-  const API_BASE_URL = "http://192.168.1.44:3000";
-
-  // Calculate age from DOB (if available)
   const calculateAge = (dob) => {
     if (!dob) return "N/A";
-    return moment().diff(moment(dob, "DD-MM-YYYY"), "years");
+    return moment().diff(moment(dob, "DD-MM-YYYY"), "years").toString();
   };
 
   const fetchPatients = useCallback(async () => {
@@ -38,185 +47,159 @@ const MyPatients = () => {
         return;
       }
 
-      const doctorId = localStorage.getItem("doctorId") || "patients";
-      const response = await fetch(
-        `${API_BASE_URL}/appointment/getAppointmentsByDoctorID/${"patients"}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await apiGet(
+        "/appointment/getAppointmentsByDoctorID/patients"
       );
-      console.log("response===============", response);
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          message.error("Session expired. Please login again.");
-          navigate("/login");
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
       let patientsData = [];
 
-      if (data.status === "success" && data.data) {
-        const appointmentsData = Array.isArray(data.data) ? data.data : [data.data];
-        
+      if (response.status === 200 && data.data) {
+        const appointmentsData = Array.isArray(data.data)
+          ? data.data
+          : [data.data];
         const patientMap = new Map();
-        
+
         appointmentsData.forEach((appointment) => {
-          const uniqueKey = `${appointment.userId || 'unknown'}_${appointment.patientName?.toLowerCase().replace(/\s+/g, '') || 'unnamed'}`;
-          
+          const uniqueKey = `${appointment.userId || "unknown"}_${
+            appointment.patientName?.toLowerCase().replace(/\s+/g, "") ||
+            "unnamed"
+          }`;
+
           if (!patientMap.has(uniqueKey)) {
             patientMap.set(uniqueKey, {
-              id: appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`,
+              id:
+                appointment.userId ||
+                `P-${Math.random().toString(36).substr(2, 6)}`,
               name: appointment.patientName || "N/A",
-              gender: "N/A", 
-              age: "N/A", 
-              phone: "N/A", 
+              gender: "N/A",
+              age: "N/A",
+              phone: "N/A",
               lastVisit: appointment.appointmentDate
                 ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
                 : "N/A",
               appointmentType: appointment.appointmentType || "N/A",
-              status: appointment.appointmentType === "New-Walkin" || appointment.appointmentType === "new-walkin" 
-                ? "New Patient" : "Follow-up",
+              status:
+                appointment.appointmentType === "New-Walkin" ||
+                appointment.appointmentType === "new-walkin"
+                  ? "New Patient"
+                  : "Follow-up",
               department: appointment.appointmentDepartment || "N/A",
               appointmentTime: appointment.appointmentTime || "N/A",
               appointmentStatus: appointment.appointmentStatus || "N/A",
               appointmentReason: appointment.appointmentReason || "N/A",
               appointmentCount: 1,
-              allAppointments: [appointment]
+              allAppointments: [appointment],
             });
           } else {
             const existingPatient = patientMap.get(uniqueKey);
             const currentAppointmentDate = moment(appointment.appointmentDate);
-            const existingAppointmentDate = moment(existingPatient.lastVisit, "DD MMMM YYYY");
-            
+            const existingAppointmentDate = moment(
+              existingPatient.lastVisit,
+              "DD MMMM YYYY"
+            );
+
             existingPatient.appointmentCount += 1;
             existingPatient.allAppointments.push(appointment);
-            
+
             if (currentAppointmentDate.isAfter(existingAppointmentDate)) {
-              existingPatient.lastVisit = currentAppointmentDate.format("DD MMMM YYYY");
-              existingPatient.appointmentType = appointment.appointmentType || "N/A";
-              existingPatient.appointmentTime = appointment.appointmentTime || "N/A";
-              existingPatient.appointmentStatus = appointment.appointmentStatus || "N/A";
-              existingPatient.appointmentReason = appointment.appointmentReason || "N/A";
-              existingPatient.department = appointment.appointmentDepartment || "N/A";
+              existingPatient.lastVisit =
+                currentAppointmentDate.format("DD MMMM YYYY");
+              existingPatient.appointmentType =
+                appointment.appointmentType || "N/A";
+              existingPatient.appointmentTime =
+                appointment.appointmentTime || "N/A";
+              existingPatient.appointmentStatus =
+                appointment.appointmentStatus || "N/A";
+              existingPatient.appointmentReason =
+                appointment.appointmentReason || "N/A";
+              existingPatient.department =
+                appointment.appointmentDepartment || "N/A";
             }
           }
         });
-        
+
         patientsData = Array.from(patientMap.values());
-        
-        console.log("Processed patients:", patientsData);
-        console.log("Total unique patients:", patientsData.length);
-      } else {
-        patientsData = [];
       }
 
       setPatients(patientsData);
       setFilteredPatients(patientsData);
-      setTotalPatients(patientsData.length);
     } catch (error) {
       console.error("Error fetching patients:", error);
       message.error("Failed to fetch patients data. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, []);
+
+  
 
   useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
 
-  // Handle search
   const handleSearch = useCallback(
     (e) => {
       const value = e.target.value.toLowerCase();
       setSearchText(value);
       setCurrentPage(1);
       setFilteredPatients(
-        patients.filter(
-          (patient) =>
-            patient.name.toLowerCase().includes(value) ||
-            patient.id.toLowerCase().includes(value) ||
-            patient.phone.includes(value) ||
-            patient.department.toLowerCase().includes(value)
-        )
+        patients.filter((patient) => {
+          if (searchField === "all") {
+            return (
+              patient.name.toLowerCase().includes(value) ||
+              patient.id.toLowerCase().includes(value) ||
+              patient.department.toLowerCase().includes(value) ||
+              patient.phone.includes(value)
+            );
+          } else if (searchField === "name") {
+            return patient.name.toLowerCase().includes(value);
+          } else if (searchField === "id") {
+            return patient.id.toLowerCase().includes(value);
+          } else if (searchField === "department") {
+            return patient.department.toLowerCase().includes(value);
+          }
+          return true;
+        })
       );
     },
-    [patients]
+    [patients, searchField]
   );
 
-  // Handle sorting
-  const handleSort = useCallback(
-    (value) => {
-      setSortBy(value);
-      setCurrentPage(1);
-      const sortedPatients = [...filteredPatients].sort((a, b) => {
-        if (value === "Name") {
-          return a.name.localeCompare(b.name);
-        } else if (value === "Date") {
+  const handleSort = useCallback((value) => {
+    setSortBy(value);
+    setCurrentPage(1);
+    setFilteredPatients((prev) =>
+      [...prev].sort((a, b) => {
+        if (value === "Name") return a.name.localeCompare(b.name);
+        if (value === "Date") {
           const dateA = moment(a.lastVisit, "DD MMMM YYYY");
           const dateB = moment(b.lastVisit, "DD MMMM YYYY");
           return dateB.isBefore(dateA) ? -1 : dateB.isAfter(dateA) ? 1 : 0;
-        } else if (value === "ID") {
-          return a.id.localeCompare(b.id);
         }
+        if (value === "ID") return a.id.localeCompare(b.id);
         return 0;
-      });
-      setFilteredPatients(sortedPatients);
-    },
-    [filteredPatients]
-  );
+      })
+    );
+  }, []);
 
-  // Handle filter
-  const showFilterModal = () => {
-    setIsFilterModalVisible(true);
-  };
-
-  const handleFilterOk = () => {
-    setCurrentPage(1);
-    let filtered = [...patients];
-
-    if (filterStatus) {
-      filtered = filtered.filter((patient) => patient.status === filterStatus);
-    }
-
-    if (filterDepartment) {
-      filtered = filtered.filter((patient) =>
-        patient.department.toLowerCase().includes(filterDepartment.toLowerCase())
-      );
-    }
-
-    setFilteredPatients(filtered);
-    setIsFilterModalVisible(false);
-  };
-
-  const handleFilterCancel = () => {
-    setIsFilterModalVisible(false);
-  };
-
-  const resetFilters = () => {
-    setFilterStatus("");
-    setFilterDepartment("");
-    setFilteredPatients(patients);
-    setIsFilterModalVisible(false);
-  };
-
-  // Handle export
-  const handleExport = () => {
-    if (filteredPatients.length === 0) {
+  const handleExport = useCallback(() => {
+    if (!patients.length) {
       message.warning("No data to export");
       return;
     }
 
-    const csvHeaders = ["Patient ID", "Name", "Gender", "Age", "Phone", "Last Visit", "Status", "Department"];
-    const csvRows = filteredPatients.map((patient) => [
+    const csvHeaders = [
+      "Patient ID",
+      "Name",
+      "Gender",
+      "Age",
+      "Phone",
+      "Last Visit",
+      "Status",
+      "Department",
+      "Appointment Status",
+    ];
+    const csvRows = patients.map((patient) => [
       patient.id,
       patient.name,
       patient.gender,
@@ -225,339 +208,185 @@ const MyPatients = () => {
       patient.lastVisit,
       patient.status,
       patient.department,
+      patient.appointmentStatus,
     ]);
 
     const csvContent = [
       csvHeaders.join(","),
       ...csvRows.map((row) => row.join(",")),
     ].join("\n");
-
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `patients_export_${moment().format("YYYYMMDD")}.csv`);
-    link.style.visibility = "hidden";
+    link.href = URL.createObjectURL(blob);
+    link.download = `patients_export_${moment().format("YYYYMMDD")}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     message.success("Patients data exported successfully");
-  };
+  }, [patients]);
 
-  // Handle view patient profile
   const handleViewProfile = useCallback(
-    (patientId) => {
-      navigate(`/SuperAdmin/patientView?id=${patientId}`);
+    (patient) => {
+      setSelectedPatient(patient);
+      setMedicines([]);
+      setTests([]);
+      setMedicineName("");
+      setMedicineQuantity("");
+      setTestName("");
+      setIsPatientProfileModalVisible(true);
     },
-    [navigate]
+    []
   );
 
-  // Status badge rendering
+  const handleAddMedicine = () => {
+    if (!medicineName.trim() || !medicineQuantity.trim()) {
+      message.error("Please enter medicine name and quantity");
+      return;
+    }
+    
+    const newMedicine = {
+      id: Date.now(),
+      name: medicineName.trim(),
+      quantity: medicineQuantity.trim(),
+    };
+    
+    setMedicines([...medicines, newMedicine]);
+    setMedicineName("");
+    setMedicineQuantity("");
+    message.success("Medicine added successfully");
+  };
+
+  const handleRemoveMedicine = (id) => {
+    setMedicines(medicines.filter(medicine => medicine.id !== id));
+  };
+
+  const handleAddTest = () => {
+    if (!testName.trim()) {
+      message.error("Please enter test name");
+      return;
+    }
+    
+    const newTest = {
+      id: Date.now(),
+      name: testName.trim(),
+    };
+    
+    setTests([...tests, newTest]);
+    setTestName("");
+    message.success("Test added successfully");
+  };
+
+  const handleRemoveTest = (id) => {
+    setTests(tests.filter(test => test.id !== id));
+  };
+
+  const handleSubmitPatientProfile = () => {
+    // Here you can implement the API call to save medicines and tests
+    console.log("Patient:", selectedPatient);
+    console.log("Medicines:", medicines);
+    console.log("Tests:", tests);
+    
+    message.success("Patient profile updated successfully");
+    setIsPatientProfileModalVisible(false);
+  };
+
   const getStatusBadge = (status) => {
-    if (status === "New Patient") {
-      return <span style={styles.statusBadgeGreen}>New Patient</span>;
-    }
-    if (status === "Follow-up") {
-      return <span style={styles.statusBadgeOrange}>Follow-up</span>;
-    }
-    return null;
+    const badgeStyle =
+      status === "New Patient"
+        ? styles.statusBadgeGreen
+        : styles.statusBadgeOrange;
+    return <span style={badgeStyle}>{status}</span>;
   };
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredPatients.length / pageSize);
-  const paginatedPatients = filteredPatients.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+  const uniqueDepartments = useMemo(
+    () => [...new Set(patients.map((patient) => patient.department))],
+    [patients]
   );
 
-  // Styles
-  const styles = {
-    container: {
-      minHeight: "100vh",
-      backgroundColor: "#f8fafc",
-      padding: "clamp(16px, 3vw, 24px)",
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    },
-    header: {
-      marginBottom: "clamp(24px, 4vw, 32px)",
-    },
-    title: {
-      fontSize: "clamp(24px, 4vw, 28px)",
-      fontWeight: "700",
-      color: "#1e293b",
-      marginBottom: "8px",
-    },
-    subtitle: {
-      fontSize: "clamp(14px, 2vw, 16px)",
-      color: "#64748b",
-    },
-    controls: {
-      marginBottom: "clamp(16px, 3vw, 24px)",
-      display: "flex",
-      flexDirection: "column",
-      gap: "16px",
-    },
-    controlsRow: {
-      display: "flex",
-      gap: "12px",
-      alignItems: "center",
-      justifyContent: "space-between",
-      flexWrap: "wrap",
-    },
-    leftControls: {
-      display: "flex",
-      gap: "12px",
-      alignItems: "center",
-      flex: "1",
-    },
-    searchContainer: {
-      position: "relative",
-      flex: "1",
-      maxWidth: "clamp(300px, 50vw, 400px)",
-    },
-    searchInput: {
-      width: "100%",
-      padding: "12px 12px 12px 40px",
-      border: "1px solid #d1d5db",
-      borderRadius: "8px",
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      outline: "none",
-      transition: "all 0.2s",
-      backgroundColor: "white",
-    },
-    searchIcon: {
-      position: "absolute",
-      left: "12px",
-      top: "50%",
-      transform: "translateY(-50%)",
-      color: "#9ca3af",
-      width: "16px",
-      height: "16px",
-    },
-    filterButton: {
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      padding: "12px 16px",
-      border: "1px solid #d1d5db",
-      borderRadius: "8px",
-      backgroundColor: "white",
-      cursor: "pointer",
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      color: "#374151",
-      transition: "all 0.2s",
-    },
-    sortSelect: {
-      padding: "12px 32px 12px 16px",
-      border: "1px solid #d1d5db",
-      borderRadius: "8px",
-      backgroundColor: "white",
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      color: "#374151",
-      outline: "none",
-      cursor: "pointer",
-      appearance: "none",
-      backgroundImage:
-        'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
-      backgroundPosition: "right 12px center",
-      backgroundRepeat: "no-repeat",
-      backgroundSize: "16px",
-    },
-    exportButton: {
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      padding: "12px 20px",
-      backgroundColor: "#16a34a",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      fontWeight: "500",
-      cursor: "pointer",
-      transition: "all 0.2s",
-    },
-    tableContainer: {
-      backgroundColor: "white",
-      borderRadius: "12px",
-      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-      border: "1px solid #e2e8f0",
-      overflow: "hidden",
-      overflowX: "auto",
-    },
-    tableHeader: {
-      display: "grid",
-      gridTemplateColumns:
-        "minmax(100px, 120px) minmax(200px, 2fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",
-      gap: "16px",
-      padding: "16px",
-      backgroundColor: "#f8fafc",
-      borderBottom: "1px solid #e2e8f0",
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      fontWeight: "600",
-      color: "#475569",
-      minWidth: "800px",
-    },
-    tableBody: {
-      borderTop: "1px solid #e2e8f0",
-      minWidth: "800px",
-    },
-    tableRow: {
-      display: "grid",
-      gridTemplateColumns:
-        "minmax(100px, 120px) minmax(200px, 2fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",
-      gap: "16px",
-      padding: "16px",
-      alignItems: "center",
-      borderBottom: "1px solid #f1f5f9",
-      transition: "all 0.2s",
-    },
-    patientId: {
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      fontWeight: "600",
-      color: "#1e293b",
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-    },
-    patientInfo: {
-      display: "flex",
-      alignItems: "center",
-      gap: "12px",
-    },
-    patientDetails: {
-      display: "flex",
-      flexDirection: "column",
-      gap: "4px",
-      minWidth: 0,
-    },
-    patientName: {
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      fontWeight: "600",
-      color: "#1e293b",
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-    },
-    appointmentType: {
-      fontSize: "clamp(10px, 1.5vw, 12px)",
-      color: "#64748b",
-      fontWeight: "500",
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-    },
-    statusBadgeGreen: {
-      display: "inline-flex",
-      alignItems: "center",
-      padding: "4px 8px",
-      borderRadius: "20px",
-      fontSize: "clamp(10px, 1.5vw, 12px)",
-      fontWeight: "500",
-      backgroundColor: "#dcfce7",
-      color: "#166534",
-    },
-    statusBadgeOrange: {
-      display: "inline-flex",
-      alignItems: "center",
-      padding: "4px 8px",
-      borderRadius: "20px",
-      fontSize: "clamp(10px, 1.5vw, 12px)",
-      fontWeight: "500",
-      backgroundColor: "#fed7aa",
-      color: "#9a3412",
-    },
-    tableCell: {
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      color: "#64748b",
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-    },
-    actionButton: {
-      padding: "8px",
-      border: "none",
-      backgroundColor: "transparent",
-      cursor: "pointer",
-      borderRadius: "4px",
-      transition: "all 0.2s",
-    },
-    pagination: {
-      marginTop: "clamp(16px, 3vw, 24px)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      flexWrap: "wrap",
-      gap: "16px",
-    },
-    paginationInfo: {
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      color: "#64748b",
-    },
-    paginationControls: {
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    paginationButton: {
-      padding: "8px 12px",
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      border: "none",
-      backgroundColor: "transparent",
-      color: "#64748b",
-      cursor: "pointer",
-      borderRadius: "6px",
-      transition: "all 0.2s",
-    },
-    paginationButtonActive: {
-      padding: "8px 12px",
-      fontSize: "clamp(12px, 1.8vw, 14px)",
-      border: "none",
-      backgroundColor: "#3b82f6",
-      color: "white",
-      cursor: "pointer",
-      borderRadius: "6px",
-      fontWeight: "500",
-    },
-    filterModalContent: {
-      display: "flex",
-      flexDirection: "column",
-      gap: "16px",
-      padding: "16px",
-    },
-    filterField: {
-      display: "flex",
-      flexDirection: "column",
-      gap: "8px",
-    },
-    filterLabel: {
-      fontSize: "14px",
-      fontWeight: "500",
-      color: "#374151",
-    },
-  };
+  const uniqueAppointmentStatuses = useMemo(
+    () => [...new Set(patients.map((patient) => patient.appointmentStatus))],
+    [patients]
+  );
 
-  // Get unique departments for filter dropdown
-  const uniqueDepartments = [...new Set(patients.map((patient) => patient.department))];
+  const totalPages = Math.ceil(filteredPatients.length / pageSize);
+  const paginatedPatients = useMemo(
+    () =>
+      filteredPatients.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+      ),
+    [filteredPatients, currentPage]
+  );
+
+  const medicineColumns = [
+    {
+      title: 'Medicine Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Quantity',
+      dataIndex: 'quantity',
+      key: 'quantity',
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      render: (_, record) => (
+        <Button
+          type="link"
+          danger
+          icon={<Trash2 size={16} />}
+          onClick={() => handleRemoveMedicine(record.id)}
+        >
+          Remove
+        </Button>
+      ),
+    },
+  ];
+
+  const testColumns = [
+    {
+      title: 'Test Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      render: (_, record) => (
+        <Button
+          type="link"
+          danger
+          icon={<Trash2 size={16} />}
+          onClick={() => handleRemoveTest(record.id)}
+        >
+          Remove
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.title}>My Patients</h1>
         <p style={styles.subtitle}>Manage and view all registered patients</p>
       </div>
 
-      {/* Controls */}
       <div style={styles.controls}>
         <div style={styles.controlsRow}>
           <div style={styles.leftControls}>
-            {/* Search */}
             <div style={styles.searchContainer}>
               <Search style={styles.searchIcon} />
+
               <input
                 type="text"
-                placeholder="Search by Patient ID, Name or Department"
+                placeholder={`Search by ${
+                  searchField === "all"
+                    ? "Patient ID, Name or Department"
+                    : searchField
+                }`}
                 value={searchText}
                 onChange={handleSearch}
                 style={styles.searchInput}
@@ -566,10 +395,9 @@ const MyPatients = () => {
               />
             </div>
 
-            {/* Filter */}
             <button
               style={styles.filterButton}
-              onClick={showFilterModal}
+              onClick={() => setIsFilterModalVisible(true)}
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#f9fafb")}
               onMouseLeave={(e) => (e.target.style.backgroundColor = "white")}
             >
@@ -577,7 +405,6 @@ const MyPatients = () => {
               Filter
             </button>
 
-            {/* Sort */}
             <select
               value={sortBy}
               onChange={(e) => handleSort(e.target.value)}
@@ -589,33 +416,112 @@ const MyPatients = () => {
             </select>
           </div>
 
-          {/* Export */}
-          <button
-            style={styles.exportButton}
-            onClick={handleExport}
-            onMouseEnter={(e) => (e.target.style.backgroundColor = "#15803d")}
-            onMouseLeave={(e) => (e.target.style.backgroundColor = "#16a34a")}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
           >
-            <Download style={{ width: "16px", height: "16px" }} />
-            Export
-          </button>
+            <button
+              style={{
+                ...styles.exportButton,
+                marginRight: "8px",
+                backgroundColor: "#6b7280",
+              }}
+              onClick={() => {
+                setSearchText("");
+                setSearchField("all");
+                setFilterStatus("");
+                setFilterAppointmentStatus("");
+                setFilterDepartment("");
+                setSortBy("Name");
+                setCurrentPage(1);
+                setFilteredPatients(patients);
+              }}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#4b5563")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "#6b7280")}
+            >
+              Reset
+            </button>
+            <button
+              style={styles.exportButton}
+              onClick={handleExport}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#15803d")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "#16a34a")}
+            >
+              <Download style={{ width: "16px", height: "16px" }} />
+              Export
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Filter Modal */}
       <Modal
         title="Filter Patients"
-        visible={isFilterModalVisible}
-        onOk={handleFilterOk}
-        onCancel={handleFilterCancel}
+        open={isFilterModalVisible}
+        onOk={() => {
+          setCurrentPage(1);
+          let filtered = [...patients];
+          if (filterStatus)
+            filtered = filtered.filter(
+              (patient) => patient.status === filterStatus
+            );
+          if (filterAppointmentStatus)
+            filtered = filtered.filter(
+              (patient) => patient.appointmentStatus === filterAppointmentStatus
+            );
+          if (filterDepartment)
+            filtered = filtered.filter((patient) =>
+              patient.department
+                .toLowerCase()
+                .includes(filterDepartment.toLowerCase())
+            );
+          setFilteredPatients(filtered);
+          setIsFilterModalVisible(false);
+        }}
+        onCancel={() => setIsFilterModalVisible(false)}
         footer={[
-          <Button key="reset" onClick={resetFilters}>
+          <Button
+            key="reset"
+            onClick={() => {
+              setFilterStatus("");
+              setFilterAppointmentStatus("");
+              setFilterDepartment("");
+              setFilteredPatients(patients);
+              setIsFilterModalVisible(false);
+            }}
+          >
             Reset
           </Button>,
-          <Button key="cancel" onClick={handleFilterCancel}>
+          <Button key="cancel" onClick={() => setIsFilterModalVisible(false)}>
             Cancel
           </Button>,
-          <Button key="submit" type="primary" onClick={handleFilterOk}>
+          <Button
+            key="submit"
+            type="primary"
+            onClick={() => {
+              setCurrentPage(1);
+              let filtered = [...patients];
+              if (filterStatus)
+                filtered = filtered.filter(
+                  (patient) => patient.status === filterStatus
+                );
+              if (filterAppointmentStatus)
+                filtered = filtered.filter(
+                  (patient) =>
+                    patient.appointmentStatus === filterAppointmentStatus
+                );
+              if (filterDepartment)
+                filtered = filtered.filter((patient) =>
+                  patient.department
+                    .toLowerCase()
+                    .includes(filterDepartment.toLowerCase())
+                );
+              setFilteredPatients(filtered);
+              setIsFilterModalVisible(false);
+            }}
+          >
             Apply Filters
           </Button>,
         ]}
@@ -632,6 +538,22 @@ const MyPatients = () => {
             >
               <Option value="New Patient">New Patient</Option>
               <Option value="Follow-up">Follow-up</Option>
+            </Select>
+          </div>
+          <div style={styles.filterField}>
+            <label style={styles.filterLabel}>Appointment Status</label>
+            <Select
+              value={filterAppointmentStatus}
+              onChange={(value) => setFilterAppointmentStatus(value)}
+              style={{ width: "100%" }}
+              placeholder="Select appointment status"
+              allowClear
+            >
+              {uniqueAppointmentStatuses.map((status) => (
+                <Option key={status} value={status}>
+                  {status}
+                </Option>
+              ))}
             </Select>
           </div>
           <div style={styles.filterField}>
@@ -653,9 +575,124 @@ const MyPatients = () => {
         </div>
       </Modal>
 
-      {/* Table */}
+      {/* Patient Profile Modal */}
+      <Modal
+        title="Patient Profile"
+        open={isPatientProfileModalVisible}
+        onCancel={() => setIsPatientProfileModalVisible(false)}
+        width={800}
+        footer={[
+          <Button key="cancel" onClick={() => setIsPatientProfileModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleSubmitPatientProfile}>
+            Submit
+          </Button>,
+        ]}
+      >
+        {selectedPatient && (
+          <div style={{ padding: '20px 0' }}>
+            {/* Patient Information */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                Patient Information
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <strong>Patient ID:</strong> {selectedPatient.id}
+                </div>
+                <div>
+                  <strong>Name:</strong> {selectedPatient.name}
+                </div>
+                <div>
+                  <strong>Gender:</strong> {selectedPatient.gender}
+                </div>
+                <div>
+                  <strong>Age:</strong> {selectedPatient.age}
+                </div>
+                <div>
+                  <strong>Phone:</strong> {selectedPatient.phone}
+                </div>
+                <div>
+                  <strong>Last Visit:</strong> {selectedPatient.lastVisit}
+                </div>
+                <div>
+                  <strong>Department:</strong> {selectedPatient.department}
+                </div>
+                <div>
+                  <strong>Status:</strong> {selectedPatient.status}
+                </div>
+              </div>
+            </div>
+
+            {/* Add Medicine Section */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                Add Medicine
+              </h3>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
+                <Input
+                  placeholder="Medicine Name"
+                  value={medicineName}
+                  onChange={(e) => setMedicineName(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <Input
+                  placeholder="Quantity"
+                  value={medicineQuantity}
+                  onChange={(e) => setMedicineQuantity(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <Button type="primary" icon={<Plus size={16} />} onClick={handleAddMedicine}>
+                  Add
+                </Button>
+              </div>
+              
+              {medicines.length > 0 && (
+                <Table
+                  dataSource={medicines}
+                  columns={medicineColumns}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  style={{ marginTop: '16px' }}
+                />
+              )}
+            </div>
+
+            {/* Add Test Section */}
+            <div style={{ marginBottom: '20px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                Add Test
+              </h3>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
+                <Input
+                  placeholder="Test Name"
+                  value={testName}
+                  onChange={(e) => setTestName(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <Button type="primary" icon={<Plus size={16} />} onClick={handleAddTest}>
+                  Add
+                </Button>
+              </div>
+              
+              {tests.length > 0 && (
+                <Table
+                  dataSource={tests}
+                  columns={testColumns}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  style={{ marginTop: '16px' }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
       <div style={styles.tableContainer}>
-        {/* Table Header */}
         <div style={styles.tableHeader}>
           <div>Patient ID</div>
           <div>Patient</div>
@@ -666,7 +703,6 @@ const MyPatients = () => {
           <div>Action</div>
         </div>
 
-        {/* Table Body */}
         <div style={styles.tableBody}>
           {loading ? (
             <div style={{ textAlign: "center", padding: "24px" }}>
@@ -681,11 +717,12 @@ const MyPatients = () => {
               <div
                 key={patient.id}
                 style={styles.tableRow}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = "#f8fafc")}
+                onMouseEnter={(e) =>
+                  (e.target.style.backgroundColor = "#f8fafc")
+                }
                 onMouseLeave={(e) => (e.target.style.backgroundColor = "white")}
               >
                 <div style={styles.patientId}>{patient.id}</div>
-
                 <div style={styles.patientInfo}>
                   <div style={styles.patientDetails}>
                     <div style={styles.patientName}>{patient.name}</div>
@@ -699,16 +736,14 @@ const MyPatients = () => {
                     )}
                   </div>
                 </div>
-
                 <div style={styles.tableCell}>{patient.gender}</div>
                 <div style={styles.tableCell}>{patient.age}</div>
                 <div style={styles.tableCell}>{patient.phone}</div>
                 <div style={styles.tableCell}>{patient.lastVisit}</div>
-
                 <div>
                   <button
                     style={styles.actionButton}
-                    onClick={() => handleViewProfile(patient.id)}
+                    onClick={() => handleViewProfile(patient)}
                     onMouseEnter={(e) =>
                       (e.target.style.backgroundColor = "#f3f4f6")
                     }
@@ -717,7 +752,11 @@ const MyPatients = () => {
                     }
                   >
                     <MoreVertical
-                      style={{ width: "16px", height: "16px", color: "#9ca3af" }}
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        color: "#9ca3af",
+                      }}
                     />
                   </button>
                 </div>
@@ -727,12 +766,11 @@ const MyPatients = () => {
         </div>
       </div>
 
-      {/* Pagination */}
       <div style={styles.pagination}>
         <div style={styles.paginationInfo}>
           Showing {(currentPage - 1) * pageSize + 1} to{" "}
-          {Math.min(currentPage * pageSize, filteredPatients.length)} of {filteredPatients.length}{" "}
-          results
+          {Math.min(currentPage * pageSize, filteredPatients.length)} of{" "}
+          {filteredPatients.length} results
         </div>
 
         <div style={styles.paginationControls}>
