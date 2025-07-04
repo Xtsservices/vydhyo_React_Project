@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -32,8 +32,10 @@ import {
 import moment from "moment";
 import "../../../components/stylings/Appointments.css";
 import { apiGet, apiPost } from "../../api";
+
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import PrescriptionForm from "../../Models/PrescriptionForm";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -54,6 +56,7 @@ const Appointment = () => {
   const [newTime, setNewTime] = useState(null);
   const [searchText, setSearchText] = useState("");
 
+
   const [filters, setFilters] = useState({
     clinic: "all",
     type: "all",
@@ -71,6 +74,31 @@ const Appointment = () => {
     const config = statusConfig[status] || { color: "default", text: status };
     return <Tag color={config.color}>{config.text}</Tag>;
   };
+
+
+  const handleViewPatientProfile = (appointment) => {
+    // Convert appointment data to patient format
+    const patientData = {
+      id: appointment.patientId || appointment.appointmentId,
+      name: appointment.patientName,
+      gender: appointment.patientGender || "N/A",
+      age: appointment.patientAge || "N/A",
+      phone: appointment.patientPhone || "N/A",
+      lastVisit: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
+      department: appointment.appointmentDepartment,
+      status: appointment.appointmentStatus,
+      userId: appointment.userId || "N/A",
+    };
+    
+    setSelectedPatient(patientData);
+    setSelectedAppointment(appointment);
+    setIsPatientProfileModalVisible(true);
+    
+
+  };
+
+
+
 
   const handleReschedule = (appointment) => {
     setSelectedAppointment(appointment);
@@ -528,6 +556,19 @@ const Appointment = () => {
           </Col>
         </Row>
       </Spin>
+
+
+      {/* Patient Profile Modal */}
+      
+{isPatientProfileModalVisible && (
+
+  <PrescriptionForm 
+  selectedPatient={selectedPatient}
+  isVisible={isPatientProfileModalVisible}
+  onClose={() => setIsPatientProfileModalVisible(false)}
+  />
+)}
+
 
       {/* Reschedule Modal */}
       <Modal
