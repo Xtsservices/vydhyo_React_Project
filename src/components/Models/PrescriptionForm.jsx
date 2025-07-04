@@ -108,7 +108,7 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
     }
     try {
       const prescriptionData = {
-        patientId: selectedPatient.id,
+        patientId: selectedPatient.userId,
         medicines,
         tests,
         notes: 'Prescription generated from appointment',
