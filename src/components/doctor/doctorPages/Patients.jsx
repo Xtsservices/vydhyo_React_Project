@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, Download, MoreVertical } from "lucide-react";
-import { message, Modal, Select, Button } from "antd";
+import { Search, Filter, Download, MoreVertical, Plus, Trash2 } from "lucide-react";
+import { message, Modal, Select, Button, Input, Table } from "antd";
 import moment from "moment";
 import { apiGet } from "../../api";
 import styles from "../../stylings/MyPatientsStyles";
@@ -21,6 +21,16 @@ const MyPatients = () => {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterAppointmentStatus, setFilterAppointmentStatus] = useState(""); // New state for appointmentStatus
   const [filterDepartment, setFilterDepartment] = useState("");
+  
+  // Patient Profile Modal States
+  const [isPatientProfileModalVisible, setIsPatientProfileModalVisible] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [medicines, setMedicines] = useState([]);
+  const [tests, setTests] = useState([]);
+  const [medicineName, setMedicineName] = useState("");
+  const [medicineQuantity, setMedicineQuantity] = useState("");
+  const [testName, setTestName] = useState("");
+  
   const pageSize = 10;
 
   const calculateAge = (dob) => {
@@ -121,6 +131,8 @@ const MyPatients = () => {
     }
   }, []);
 
+  
+
   useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
@@ -214,9 +226,69 @@ const MyPatients = () => {
   }, [patients]);
 
   const handleViewProfile = useCallback(
-    (patientId) => navigate(`/SuperAdmin/patientView?id=${patientId}`),
-    [navigate]
+    (patient) => {
+      setSelectedPatient(patient);
+      setMedicines([]);
+      setTests([]);
+      setMedicineName("");
+      setMedicineQuantity("");
+      setTestName("");
+      setIsPatientProfileModalVisible(true);
+    },
+    []
   );
+
+  const handleAddMedicine = () => {
+    if (!medicineName.trim() || !medicineQuantity.trim()) {
+      message.error("Please enter medicine name and quantity");
+      return;
+    }
+    
+    const newMedicine = {
+      id: Date.now(),
+      name: medicineName.trim(),
+      quantity: medicineQuantity.trim(),
+    };
+    
+    setMedicines([...medicines, newMedicine]);
+    setMedicineName("");
+    setMedicineQuantity("");
+    message.success("Medicine added successfully");
+  };
+
+  const handleRemoveMedicine = (id) => {
+    setMedicines(medicines.filter(medicine => medicine.id !== id));
+  };
+
+  const handleAddTest = () => {
+    if (!testName.trim()) {
+      message.error("Please enter test name");
+      return;
+    }
+    
+    const newTest = {
+      id: Date.now(),
+      name: testName.trim(),
+    };
+    
+    setTests([...tests, newTest]);
+    setTestName("");
+    message.success("Test added successfully");
+  };
+
+  const handleRemoveTest = (id) => {
+    setTests(tests.filter(test => test.id !== id));
+  };
+
+  const handleSubmitPatientProfile = () => {
+    // Here you can implement the API call to save medicines and tests
+    console.log("Patient:", selectedPatient);
+    console.log("Medicines:", medicines);
+    console.log("Tests:", tests);
+    
+    message.success("Patient profile updated successfully");
+    setIsPatientProfileModalVisible(false);
+  };
 
   const getStatusBadge = (status) => {
     const badgeStyle =
@@ -245,6 +317,55 @@ const MyPatients = () => {
       ),
     [filteredPatients, currentPage]
   );
+
+  const medicineColumns = [
+    {
+      title: 'Medicine Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Quantity',
+      dataIndex: 'quantity',
+      key: 'quantity',
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      render: (_, record) => (
+        <Button
+          type="link"
+          danger
+          icon={<Trash2 size={16} />}
+          onClick={() => handleRemoveMedicine(record.id)}
+        >
+          Remove
+        </Button>
+      ),
+    },
+  ];
+
+  const testColumns = [
+    {
+      title: 'Test Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      render: (_, record) => (
+        <Button
+          type="link"
+          danger
+          icon={<Trash2 size={16} />}
+          onClick={() => handleRemoveTest(record.id)}
+        >
+          Remove
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div style={styles.container}>
@@ -454,6 +575,123 @@ const MyPatients = () => {
         </div>
       </Modal>
 
+      {/* Patient Profile Modal */}
+      <Modal
+        title="Patient Profile"
+        open={isPatientProfileModalVisible}
+        onCancel={() => setIsPatientProfileModalVisible(false)}
+        width={800}
+        footer={[
+          <Button key="cancel" onClick={() => setIsPatientProfileModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleSubmitPatientProfile}>
+            Submit
+          </Button>,
+        ]}
+      >
+        {selectedPatient && (
+          <div style={{ padding: '20px 0' }}>
+            {/* Patient Information */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                Patient Information
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <strong>Patient ID:</strong> {selectedPatient.id}
+                </div>
+                <div>
+                  <strong>Name:</strong> {selectedPatient.name}
+                </div>
+                <div>
+                  <strong>Gender:</strong> {selectedPatient.gender}
+                </div>
+                <div>
+                  <strong>Age:</strong> {selectedPatient.age}
+                </div>
+                <div>
+                  <strong>Phone:</strong> {selectedPatient.phone}
+                </div>
+                <div>
+                  <strong>Last Visit:</strong> {selectedPatient.lastVisit}
+                </div>
+                <div>
+                  <strong>Department:</strong> {selectedPatient.department}
+                </div>
+                <div>
+                  <strong>Status:</strong> {selectedPatient.status}
+                </div>
+              </div>
+            </div>
+
+            {/* Add Medicine Section */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                Add Medicine
+              </h3>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
+                <Input
+                  placeholder="Medicine Name"
+                  value={medicineName}
+                  onChange={(e) => setMedicineName(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <Input
+                  placeholder="Quantity"
+                  value={medicineQuantity}
+                  onChange={(e) => setMedicineQuantity(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <Button type="primary" icon={<Plus size={16} />} onClick={handleAddMedicine}>
+                  Add
+                </Button>
+              </div>
+              
+              {medicines.length > 0 && (
+                <Table
+                  dataSource={medicines}
+                  columns={medicineColumns}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  style={{ marginTop: '16px' }}
+                />
+              )}
+            </div>
+
+            {/* Add Test Section */}
+            <div style={{ marginBottom: '20px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                Add Test
+              </h3>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
+                <Input
+                  placeholder="Test Name"
+                  value={testName}
+                  onChange={(e) => setTestName(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <Button type="primary" icon={<Plus size={16} />} onClick={handleAddTest}>
+                  Add
+                </Button>
+              </div>
+              
+              {tests.length > 0 && (
+                <Table
+                  dataSource={tests}
+                  columns={testColumns}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  style={{ marginTop: '16px' }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
       <div style={styles.tableContainer}>
         <div style={styles.tableHeader}>
           <div>Patient ID</div>
@@ -505,7 +743,7 @@ const MyPatients = () => {
                 <div>
                   <button
                     style={styles.actionButton}
-                    onClick={() => handleViewProfile(patient.id)}
+                    onClick={() => handleViewProfile(patient)}
                     onMouseEnter={(e) =>
                       (e.target.style.backgroundColor = "#f3f4f6")
                     }
