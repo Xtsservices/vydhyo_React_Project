@@ -47,19 +47,19 @@ const DoctorProfileView = () => {
     try {
       const response = await apiGet("/users/getUser");
       const userData = response.data?.data;
-      
+
       if (userData) {
-        const specializations = userData.specialization 
-          ? Array.isArray(userData.specialization) 
-            ? userData.specialization 
+        const specializations = userData.specialization
+          ? Array.isArray(userData.specialization)
+            ? userData.specialization
             : [userData.specialization]
           : [];
 
-        const certifications = specializations.map(spec => ({
+        const certifications = specializations.map((spec) => ({
           name: spec.name || "Specialization",
           registrationNo: spec.id || "N/A",
           image: spec.specializationCertificate || null,
-          degreeCertificate: spec.drgreeCertificate || null
+          degreeCertificate: spec.drgreeCertificate || null,
         }));
 
         setDoctorData({
@@ -71,7 +71,8 @@ const DoctorProfileView = () => {
           email: userData.email || "N/A",
           mobile: userData.mobile || "N/A",
           status: userData.status || "pending",
-          medicalRegistrationNumber: userData.medicalRegistrationNumber || "N/A",
+          medicalRegistrationNumber:
+            userData.medicalRegistrationNumber || "N/A",
           userId: userData.userId || "N/A",
           createdAt: userData.createdAt,
           consultationModeFee: Array.isArray(userData.consultationModeFee)
@@ -85,11 +86,11 @@ const DoctorProfileView = () => {
           bloodgroup: userData.bloodgroup || "N/A",
           maritalStatus: userData.maritalStatus || "N/A",
           workingLocations: Array.isArray(userData.addresses)
-            ? userData.addresses.map(addr => ({
+            ? userData.addresses.map((addr) => ({
                 name: addr.clinicName || "Clinic",
                 address: `${addr.address}, ${addr.city}, ${addr.state}, ${addr.country} - ${addr.pincode}`,
                 startTime: addr.startTime,
-                endTime: addr.endTime
+                endTime: addr.endTime,
               }))
             : [],
           bankDetails: userData.bankDetails || {},
@@ -97,10 +98,10 @@ const DoctorProfileView = () => {
             panNumber: userData.kycDetails?.pan?.number || "N/A",
             panImage: userData.kycDetails?.pan?.attachmentUrl || null,
             voterId: userData.kycDetails?.voter?.number || "N/A",
-            voterIdImage: userData.kycDetails?.voter?.attachmentUrl || null
+            voterIdImage: userData.kycDetails?.voter?.attachmentUrl || null,
           },
           certifications: certifications,
-          profilepic: null
+          profilepic: null,
         });
       }
     } catch (error) {
@@ -150,7 +151,9 @@ const DoctorProfileView = () => {
             <Card
               title={
                 <div className="profile-card-header">
-                  <UserOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
+                  <UserOutlined
+                    style={{ marginRight: "8px", color: "#3b82f6" }}
+                  />
                   Personal Information
                 </div>
               }
@@ -162,7 +165,9 @@ const DoctorProfileView = () => {
                   src={getImageSrc(doctorData.profilepic)}
                   className="doctor-avatar"
                 >
-                  {`${doctorData.firstname?.[0] ?? ""}${doctorData.lastname?.[0] ?? ""}`}
+                  {`${doctorData.firstname?.[0] ?? ""}${
+                    doctorData.lastname?.[0] ?? ""
+                  }`}
                 </Avatar>
                 <Title level={4} className="doctor-name">
                   Dr. {doctorData.firstname} {doctorData.lastname}
@@ -229,14 +234,25 @@ const DoctorProfileView = () => {
             <Card
               title={
                 <div className="profile-card-header">
-                  <MedicineBoxOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
+                  <MedicineBoxOutlined
+                    style={{ marginRight: "8px", color: "#3b82f6" }}
+                  />
                   Professional Summary
                 </div>
               }
               className="profile-card"
             >
               <div style={{ marginBottom: "20px" }}>
-                <Text strong style={{ fontSize: "14px", color: "#166534", display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                <Text
+                  strong
+                  style={{
+                    fontSize: "14px",
+                    color: "#166534",
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: "600",
+                  }}
+                >
                   Specializations
                 </Text>
                 <div>
@@ -247,13 +263,19 @@ const DoctorProfileView = () => {
                       </Tag>
                     ))
                   ) : (
-                    <Text style={{ color: "#6b7280" }}>No specializations added</Text>
+                    <Text style={{ color: "#6b7280" }}>
+                      No specializations added
+                    </Text>
                   )}
                 </div>
               </div>
 
               <div style={{ marginBottom: "20px" }}>
-                <Text strong className="info-text" style={{ display: "block", marginBottom: "8px" }}>
+                <Text
+                  strong
+                  className="info-text"
+                  style={{ display: "block", marginBottom: "8px" }}
+                >
                   Work Experience
                 </Text>
                 <div className="experience-container">
@@ -264,7 +286,11 @@ const DoctorProfileView = () => {
               </div>
 
               <div>
-                <Text strong className="info-text" style={{ display: "block", marginBottom: "12px" }}>
+                <Text
+                  strong
+                  className="info-text"
+                  style={{ display: "block", marginBottom: "12px" }}
+                >
                   Certifications
                 </Text>
                 {doctorData.certifications.length > 0 ? (
@@ -276,11 +302,21 @@ const DoctorProfileView = () => {
                         justifyContent: "space-between",
                         alignItems: "center",
                         padding: "12px 0",
-                        borderBottom: index < doctorData.certifications.length - 1 ? "1px solid #e5e7eb" : "none",
+                        borderBottom:
+                          index < doctorData.certifications.length - 1
+                            ? "1px solid #e5e7eb"
+                            : "none",
                       }}
                     >
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: "500", fontSize: "14px", color: "#374151", marginBottom: "2px" }}>
+                        <div
+                          style={{
+                            fontWeight: "500",
+                            fontSize: "14px",
+                            color: "#374151",
+                            marginBottom: "2px",
+                          }}
+                        >
                           {cert.name || "N/A"}
                         </div>
                         <Text style={{ fontSize: "12px", color: "#6b7280" }}>
@@ -290,27 +326,39 @@ const DoctorProfileView = () => {
                       <Space>
                         {cert.image && (
                           <Button
-                            type="link"
+                            className="view-button"
                             size="small"
-                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
-                            onClick={() => showModal({ type: "Specialization Certificate", data: cert.image })}
-                            style={{ padding: "4px 8px" }}
-                          />
+                            onClick={() =>
+                              showModal({
+                                type: "Specialization Certificate",
+                                data: cert.image,
+                              })
+                            }
+                          >
+                            View Certificate
+                          </Button>
                         )}
                         {cert.degreeCertificate && (
                           <Button
-                            type="link"
+                            className="view-button"
                             size="small"
-                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
-                            onClick={() => showModal({ type: "Degree Certificate", data: cert.degreeCertificate })}
-                            style={{ padding: "4px 8px" }}
-                          />
+                            onClick={() =>
+                              showModal({
+                                type: "Degree Certificate",
+                                data: cert.degreeCertificate,
+                              })
+                            }
+                          >
+                            View Degree
+                          </Button>
                         )}
                       </Space>
                     </div>
                   ))
                 ) : (
-                  <Text style={{ color: "#6b7280" }}>No certifications added</Text>
+                  <Text style={{ color: "#6b7280" }}>
+                    No certifications added
+                  </Text>
                 )}
               </div>
             </Card>
@@ -321,7 +369,9 @@ const DoctorProfileView = () => {
             <Card
               title={
                 <div className="profile-card-header">
-                  <EnvironmentOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
+                  <EnvironmentOutlined
+                    style={{ marginRight: "8px", color: "#3b82f6" }}
+                  />
                   Working Locations
                 </div>
               }
@@ -332,14 +382,19 @@ const DoctorProfileView = () => {
                   <div style={{ display: "flex", alignItems: "flex-start" }}>
                     <EnvironmentOutlined className="location-icon" />
                     <div style={{ flex: 1 }}>
-                      <Text strong className="info-text" style={{ display: "block", marginBottom: "4px" }}>
+                      <Text
+                        strong
+                        className="info-text"
+                        style={{ display: "block", marginBottom: "4px" }}
+                      >
                         {location.name || "N/A"}
                       </Text>
                       <Text style={{ fontSize: "12px", color: "#6b7280" }}>
                         {location.address || "N/A"}
                       </Text>
                       <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                        <strong>Timings:</strong> {location.startTime} - {location.endTime}
+                        <strong>Timings:</strong> {location.startTime} -{" "}
+                        {location.endTime}
                       </Text>
                     </div>
                   </div>
@@ -353,13 +408,22 @@ const DoctorProfileView = () => {
             <Card
               title={
                 <div className="profile-card-header">
-                  <IdcardOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
+                  <IdcardOutlined
+                    style={{ marginRight: "8px", color: "#3b82f6" }}
+                  />
                   KYC Details
                 </div>
               }
               className="profile-card"
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "16px",
+                }}
+              >
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <IdcardOutlined className="info-icon" />
                   <div>
@@ -376,13 +440,24 @@ const DoctorProfileView = () => {
                     type="link"
                     size="small"
                     // icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
-                    onClick={() => showModal({ type: "pan", data: doctorData.kycDetails.panImage })}
+                    onClick={() =>
+                      showModal({
+                        type: "pan",
+                        data: doctorData.kycDetails.panImage,
+                      })
+                    }
                     style={{ padding: "4px 8px" }}
                   />
                 )}
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <IdcardOutlined className="info-icon" />
                   <div>
@@ -399,7 +474,12 @@ const DoctorProfileView = () => {
                     type="link"
                     size="small"
                     // icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
-                    onClick={() => showModal({ type: "voterId", data: doctorData.kycDetails.voterIdImage })}
+                    onClick={() =>
+                      showModal({
+                        type: "voterId",
+                        data: doctorData.kycDetails.voterIdImage,
+                      })
+                    }
                     style={{ padding: "4px 8px" }}
                   />
                 )}
@@ -412,7 +492,9 @@ const DoctorProfileView = () => {
             <Card
               title={
                 <div className="profile-card-header">
-                  <DollarOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
+                  <DollarOutlined
+                    style={{ marginRight: "8px", color: "#3b82f6" }}
+                  />
                   Consultation Charges
                 </div>
               }
@@ -422,22 +504,38 @@ const DoctorProfileView = () => {
                 <div
                   key={index}
                   className={`consultation-card ${
-                    mode.type === "In-Person" ? "consultation-in-person" :
-                    mode.type === "Video" ? "consultation-video" : "consultation-home"
+                    mode.type === "In-Person"
+                      ? "consultation-in-person"
+                      : mode.type === "Video"
+                      ? "consultation-video"
+                      : "consultation-home"
                   }`}
                 >
                   <div style={{ display: "flex", alignItems: "center" }}>
                     {mode.type === "In-Person" && (
-                      <UserOutlined className="consultation-icon" style={{ color: "#3b82f6" }} />
+                      <UserOutlined
+                        className="consultation-icon"
+                        style={{ color: "#3b82f6" }}
+                      />
                     )}
                     {mode.type === "Video" && (
-                      <VideoCameraOutlined className="consultation-icon" style={{ color: "#16a34a" }} />
+                      <VideoCameraOutlined
+                        className="consultation-icon"
+                        style={{ color: "#16a34a" }}
+                      />
                     )}
                     {mode.type === "Home Visit" && (
-                      <CarOutlined className="consultation-icon" style={{ color: "#9333ea" }} />
+                      <CarOutlined
+                        className="consultation-icon"
+                        style={{ color: "#9333ea" }}
+                      />
                     )}
                     <div>
-                      <Text strong className="info-text" style={{ display: "block" }}>
+                      <Text
+                        strong
+                        className="info-text"
+                        style={{ display: "block" }}
+                      >
                         {mode.type}
                       </Text>
                       <Text style={{ fontSize: "12px", color: "#6b7280" }}>
@@ -459,7 +557,9 @@ const DoctorProfileView = () => {
             <Card
               title={
                 <div className="profile-card-header">
-                  <BankOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
+                  <BankOutlined
+                    style={{ marginRight: "8px", color: "#3b82f6" }}
+                  />
                   Bank Details
                 </div>
               }
@@ -492,12 +592,21 @@ const DoctorProfileView = () => {
                 </Col>
                 <Col xs={24} md={12}>
                   <div style={{ marginBottom: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
                       <div>
                         <Text strong className="info-text">
                           Account Number:
                         </Text>
-                        <Text className="info-text" style={{ marginLeft: "8px" }}>
+                        <Text
+                          className="info-text"
+                          style={{ marginLeft: "8px" }}
+                        >
                           {doctorData.bankDetails.accountNumber || "N/A"}
                         </Text>
                       </div>
@@ -506,7 +615,12 @@ const DoctorProfileView = () => {
                           type="link"
                           size="small"
                           icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
-                          onClick={() => showModal({ type: "accountProof", data: doctorData.bankDetails.accountProof })}
+                          onClick={() =>
+                            showModal({
+                              type: "accountProof",
+                              data: doctorData.bankDetails.accountProof,
+                            })
+                          }
                           style={{ padding: "4px 8px" }}
                         />
                       )}
