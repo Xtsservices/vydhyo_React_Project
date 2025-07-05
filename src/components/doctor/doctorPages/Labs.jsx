@@ -1,13 +1,41 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Input, Tabs, Card, Avatar, Space, Typography, Row, Col } from "antd";
 import { SearchOutlined, UserOutlined, TeamOutlined } from "@ant-design/icons";
 import TestManagement from "./TestManagement";
 import LabPatientManagement from "./LabPatientManagement";
+import { useSelector } from "react-redux";
+import { apiGet } from "../../api";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
 const Labs = () => {
+  const user = useSelector((state) => state.currentUserData);
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  const [cardsData, setCardsData] = useState();
+
+  async function fetchRevenueCount() {
+    const response = await apiGet(
+      "/finance/getDoctorTodayAndThisMonthRevenue/lab"
+    );
+    console.log("getDoctorTodayAndThisMonthRevenue", response);
+
+    if (response.status === 200 && response?.data?.data) {
+      console.log("getDoctorTodayAndThisMonthRevenue", response.data.data);
+      setCardsData(response.data.data);
+    }
+  }
+
+  useEffect(() => {
+    if ((user, doctorId)) {
+      fetchRevenueCount();
+    }
+  }, [user, doctorId]);
+
+  function updateCount() {
+    fetchRevenueCount();
+  }
+
   return (
     <div
       style={{
@@ -94,10 +122,10 @@ const Labs = () => {
                     margin: "8px 0",
                   }}
                 >
-                  ₹1,200
+                  ₹ {cardsData?.today?.revenue}
                 </div>
                 <Text style={{ color: "#2563EB", fontSize: "14px" }}>
-                  Patient : 12
+                  Patient : {cardsData?.today?.patients}
                 </Text>
               </div>
               <div
@@ -146,10 +174,10 @@ const Labs = () => {
                     margin: "8px 0",
                   }}
                 >
-                  ₹19,000
+                  ₹ {cardsData?.month?.revenue}
                 </div>
                 <Text style={{ color: "#16A34A", fontSize: "14px" }}>
-                  Patients : 120
+                  Patients : {cardsData?.month?.patients}
                 </Text>
               </div>
               <div
@@ -173,7 +201,7 @@ const Labs = () => {
         style={{ marginBottom: "24px" }}
       >
         <TabPane tab="Patients" key="patients">
-          <LabPatientManagement status={"pending"}/>
+          <LabPatientManagement status={"pending"} updateCount={updateCount} />
         </TabPane>
 
         <TabPane tab="Tests" key="tests">
@@ -181,7 +209,10 @@ const Labs = () => {
         </TabPane>
 
         <TabPane tab="Completed Patients" key="completedPatients">
-         <LabPatientManagement status={"completed"} />
+          <LabPatientManagement
+            status={"completed"}
+            updateCount={updateCount}
+          />
         </TabPane>
       </Tabs>
     </div>
