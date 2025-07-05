@@ -90,13 +90,17 @@ const StaffModal = ({
   };
 
   const accessOptions = [
-    { value: "my-patientsAccess", label: "My Patients" },
-    { value: "appointmentsAccess", label: "Appointments" },
-    { value: "labsAccess", label: "Labs" },
-    { value: "dashboardAccess", label: "Dashboard" },
-    { value: "pharmacyAccess", label: "Pharmacy" },
-    { value: "availabilityAccess", label: "Availability" },
-    { value: "accountsAccess", label: "Accounts" },
+    { value: "my-patients", label: "My Patients" },
+    { value: "appointments", label: "Appointments" },
+    { value: "labs", label: "Labs" },
+    { value: "dashboard", label: "Dashboard" },
+    { value: "pharmacy", label: "Pharmacy" },
+    { value: "availability", label: "Availability" },
+    { value: "accounts", label: "Accounts" },
+    { value: "staff-management", label: "Staff Management" },
+    { value: "clinic-management", label: "Clinic Management" },
+    { value: "Tax-Invoice", label: "Tax Invoice" },
+    { value: "reviews", label: "Reviews" },
   ];
 
   return (
@@ -493,7 +497,7 @@ const StaffManagement = () => {
 
   const confirmDelete = async (userId) => {
     try {
-      const res = await apiGet(`/users/deleteMyAccount?userId=${userId}`)
+      const res = await apiGet(`/users/deleteMyAccount?userId=${userId}`);
       message.success("Deleted successfully");
       setIsModalOpen(false);
       fetchStaff();

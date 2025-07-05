@@ -1,0 +1,459 @@
+/* DoctorProfileView.css */
+
+/* Layout and General Styles */
+.doctor-profile-container {
+  padding: 24px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+/* Card Styles */
+.profile-card {
+  height: 100%;
+  border: 1px solid #e1e5eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background: white;
+  overflow: hidden;
+}
+
+.profile-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.profile-card-header {
+  background-color: #ffffff;
+  border: none;
+  border-bottom: 1px solid #f0f2f5;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1f36;
+  display: flex;
+  align-items: center;
+}
+
+.profile-card-header .anticon {
+  font-size: 18px;
+  margin-right: 12px;
+  color: #4f46e5;
+}
+
+.profile-card-body {
+  padding: 24px;
+}
+
+/* Avatar Section */
+.avatar-container {
+  text-align: center;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.doctor-avatar {
+  background-color: #4f46e5;
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0 auto 16px;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+  transition: all 0.3s ease;
+}
+
+.doctor-avatar:hover {
+  transform: scale(1.05);
+}
+
+.doctor-name {
+  margin: 12px 0 4px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1f36;
+  line-height: 1.4;
+}
+
+.doctor-meta {
+  color: #6b7280;
+  font-size: 14px;
+  display: block;
+  line-height: 1.5;
+}
+
+.doctor-meta + .doctor-meta {
+  margin-top: 4px;
+}
+
+/* Information Sections */
+.info-section {
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.info-icon {
+  margin-right: 12px;
+  color: #6b7280;
+  font-size: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.info-text {
+  font-size: 15px;
+  color: #1a1f36;
+  line-height: 1.5;
+}
+
+.info-text strong {
+  font-weight: 500;
+  color: #374151;
+  margin-right: 6px;
+}
+
+/* Tags and Badges */
+.language-tag {
+  margin-bottom: 8px;
+  margin-right: 8px;
+  background-color: #e0e7ff;
+  color: #4f46e5;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.specialization-tag {
+  margin-bottom: 8px;
+  margin-right: 8px;
+  background-color: #d1fae5;
+  color: #065f46;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Experience Section */
+.experience-container {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  border: none;
+  margin: 16px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.experience-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+  transform: rotate(30deg);
+}
+
+.experience-years {
+  margin: 0;
+  color: #0369a1;
+  font-size: 36px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+}
+
+.experience-label {
+  font-size: 14px;
+  color: #0369a1;
+  font-weight: 500;
+  margin-top: 4px;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+/* Working Locations */
+.location-card {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.location-card:hover {
+  border-color: #c7d2fe;
+  transform: translateX(2px);
+}
+
+.location-icon {
+  color: #4f46e5;
+  font-size: 18px;
+  margin-right: 12px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.location-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1f36;
+  margin-bottom: 6px;
+}
+
+.location-address {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.location-timing {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.location-timing strong {
+  color: #4b5563;
+}
+
+/* Consultation Charges */
+.consultation-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.consultation-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.consultation-in-person {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border-color: #c7d2fe;
+}
+
+.consultation-video {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #a7f3d0;
+}
+
+.consultation-home {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  border-color: #ddd6fe;
+}
+
+.consultation-icon {
+  font-size: 22px;
+  margin-right: 14px;
+  width: 24px;
+  text-align: center;
+}
+
+.consultation-in-person .consultation-icon {
+  color: #4f46e5;
+}
+
+.consultation-video .consultation-icon {
+  color: #059669;
+}
+
+.consultation-home .consultation-icon {
+  color: #7c3aed;
+}
+
+.consultation-info {
+  flex: 1;
+}
+
+.consultation-type {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1f36;
+  margin-bottom: 4px;
+}
+
+.consultation-desc {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.consultation-price {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1f36;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Document Modal */
+.document-modal {
+  max-width: 800px !important;
+}
+
+.document-modal .ant-modal-header {
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.document-modal .ant-modal-title {
+  font-weight: 600;
+  color: #1a1f36;
+}
+
+.document-modal-image {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: block;
+  margin: 0 auto;
+}
+
+/* Certifications Section */
+.certification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f2f5;
+  transition: all 0.2s ease;
+}
+
+.certification-item:hover {
+  background-color: #f9fafb;
+}
+
+.certification-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1f36;
+  margin-bottom: 2px;
+}
+
+.certification-id {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.view-doc-btn {
+  color: #4f46e5;
+  border-color: #e0e7ff;
+  background: #e0e7ff;
+  font-size: 13px;
+  font-weight: 500;
+  height: 32px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+}
+
+.view-doc-btn:hover {
+  background: #c7d2fe;
+  color: #4f46e5;
+}
+
+.view-doc-btn .anticon {
+  margin-right: 6px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .profile-card {
+    margin-bottom: 24px;
+  }
+  
+  .profile-card-header {
+    padding: 14px 20px;
+  }
+  
+  .profile-card-body {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .doctor-profile-container {
+    padding: 16px;
+  }
+  
+  .consultation-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+  }
+  
+  .consultation-price {
+    margin-top: 12px;
+    align-self: flex-end;
+  }
+  
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .info-icon {
+    margin-bottom: 4px;
+  }
+}
+
+@media (max-width: 576px) {
+  .profile-card-header {
+    font-size: 15px;
+    padding: 12px 16px;
+  }
+  
+  .profile-card-body {
+    padding: 16px;
+  }
+  
+  .doctor-name {
+    font-size: 18px;
+  }
+  
+  .experience-years {
+    font-size: 32px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.profile-card {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.profile-card:nth-child(1) { animation-delay: 0.1s; }
+.profile-card:nth-child(2) { animation-delay: 0.2s; }
+.profile-card:nth-child(3) { animation-delay: 0.3s; }
+.profile-card:nth-child(4) { animation-delay: 0.4s; }
+.profile-card:nth-child(5) { animation-delay: 0.5s; }
+.profile-card:nth-child(6) { animation-delay: 0.6s; }

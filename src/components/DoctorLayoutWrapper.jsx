@@ -22,7 +22,7 @@ import {
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
-import logo from "../assets/logooo.png"; // Adjust path relative to your component
+import logo from "../assets/logooo.png"; 
 import { apiPost } from "./api";
 
 const { Header, Sider, Content, Footer } = Layout;
@@ -60,9 +60,9 @@ const DoctorLayoutWrapper = () => {
     try {
       try {
         const response = await apiPost("/auth/logout");
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('userID');
-        localStorage.removeItem('role');
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userID");
+        localStorage.removeItem("role");
         console.log("Logout successful:", response.data.message);
       } catch (error) {
         console.error(
@@ -76,6 +76,10 @@ const DoctorLayoutWrapper = () => {
     }
   };
 
+  const handleProfileClick = () => {
+    navigate("/doctor/doctorPages/DoctorProfileView");
+  };
+
   const getProfileImage = (user) => {
     if (user?.profilepic?.data && user?.profilepic?.mimeType) {
       return `data:${user.profilepic.mimeType};base64,${user.profilepic.data}`;
@@ -85,9 +89,11 @@ const DoctorLayoutWrapper = () => {
 
   const profileImageSrc = getProfileImage(user);
 
-  const menuItems = [
+  // All available menu items with their access keys
+  const allMenuItems = [
     {
       key: "dashboard",
+      accessKey: "dashboard",
       label: <Link to="/doctor/Dashboard">Dashboard</Link>,
       icon: (
         <FontAwesomeIcon
@@ -98,6 +104,7 @@ const DoctorLayoutWrapper = () => {
     },
     {
       key: "appointments",
+      accessKey: "appointments",
       label: <Link to="/doctor/doctorPages/Appointments">Appointments</Link>,
       icon: (
         <FontAwesomeIcon
@@ -108,6 +115,7 @@ const DoctorLayoutWrapper = () => {
     },
     {
       key: "my-patients",
+      accessKey: "my-patients",
       label: <Link to="/doctor/doctorPages/Patients">My Patients</Link>,
       icon: (
         <FontAwesomeIcon
@@ -118,6 +126,7 @@ const DoctorLayoutWrapper = () => {
     },
     {
       key: "labs",
+      accessKey: "labs",
       label: <Link to="/doctor/doctorPages/Labs">Labs</Link>,
       icon: (
         <FontAwesomeIcon
@@ -128,6 +137,7 @@ const DoctorLayoutWrapper = () => {
     },
     {
       key: "pharmacy",
+      accessKey: "pharmacy",
       label: <Link to="/doctor/doctorPages/Pharmacy">Pharmacy</Link>,
       icon: (
         <FontAwesomeIcon
@@ -138,6 +148,7 @@ const DoctorLayoutWrapper = () => {
     },
     {
       key: "staff-management",
+      accessKey: "staff-management",
       label: (
         <Link to="/doctor/doctorPages/staffManagement">Staff Management</Link>
       ),
@@ -149,7 +160,8 @@ const DoctorLayoutWrapper = () => {
       ),
     },
     {
-      key: "clinic management",
+      key: "clinic-management",
+      accessKey: "clinic-management",
       label: (
         <Link to="/doctor/doctorPages/ClinicManagement">Clinic Management</Link>
       ),
@@ -162,6 +174,7 @@ const DoctorLayoutWrapper = () => {
     },
     {
       key: "availability",
+      accessKey: "availability",
       label: <Link to="/doctor/doctorPages/Availability">Availability</Link>,
       icon: (
         <FontAwesomeIcon
@@ -171,7 +184,19 @@ const DoctorLayoutWrapper = () => {
       ),
     },
     {
+      key: "Tax-Invoice",
+      accessKey: "Tax-Invoice",
+      label: <Link to="/doctor/doctorPages/TaxInvoice">Tax Invoice</Link>,
+      icon: (
+        <FontAwesomeIcon
+          icon={faFileInvoice}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
+      ),
+    },
+    {
       key: "accounts",
+      accessKey: "accounts",
       label: <Link to="/doctor/doctorPages/Accounts">Accounts</Link>,
       icon: (
         <FontAwesomeIcon
@@ -182,6 +207,7 @@ const DoctorLayoutWrapper = () => {
     },
     {
       key: "reviews",
+      accessKey: "reviews",
       label: <Link to="/doctor/doctorPages/Reviews">Reviews</Link>,
       icon: (
         <FontAwesomeIcon
@@ -190,15 +216,38 @@ const DoctorLayoutWrapper = () => {
         />
       ),
     },
-
-    // {
-    //   key: "logout",
-    //   label: <span onClick={handleLogout}>Logout</span>,
-    //   icon: (
-    //     <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#ffffff", fontSize: "16px" }} />
-    //   ),
-    // },
   ];
+
+  // Filter menu items based on user access - only for receptionists
+  const getFilteredMenuItems = () => {
+    // If user is not available, return empty array
+    if (!user) {
+      return [];
+    }
+
+    // If user is a doctor, show all menu items
+    if (user.role === 'doctor' || user.role === 'Doctor') {
+      return allMenuItems;
+    }
+
+    // If user is a receptionist, filter based on access
+    if (user.role === 'receptionist' || user.role === 'Receptionist') {
+      // If user.access is not available, return empty array
+      if (!user.access || !Array.isArray(user.access)) {
+        return [];
+      }
+      
+      // Filter menu items based on user access
+      return allMenuItems.filter(item => 
+        user.access.includes(item.accessKey)
+      );
+    }
+
+    // For other roles, return all menu items by default
+    return allMenuItems;
+  };
+
+  const menuItems = getFilteredMenuItems();
 
   // Dropdown menu for profile
   const profileMenu = (
@@ -208,6 +257,10 @@ const DoctorLayoutWrapper = () => {
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
       }}
     >
+      <Menu.Item key="profile" onClick={handleProfileClick}>
+        <FontAwesomeIcon icon={faUser} style={{ marginRight: 8 }} />
+        Profile
+      </Menu.Item>
       <Menu.Item key="logout" onClick={handleLogout}>
         <FontAwesomeIcon icon={faSignOutAlt} style={{ marginRight: 8 }} />
         Logout
@@ -407,6 +460,21 @@ const DoctorLayoutWrapper = () => {
                   </span>
                 </Menu.Item>
               ))}
+
+              {/* Show message if no menu items are available for receptionist */}
+              {menuItems.length === 0 && user?.role === 'receptionist' && (
+                <div
+                  style={{
+                    color: "#ffffff",
+                    padding: "20px 24px",
+                    textAlign: "center",
+                    fontSize: "14px",
+                    opacity: 0.7,
+                  }}
+                >
+                  No menu items available
+                </div>
+              )}
             </Menu>
           </motion.div>
         </Sider>
