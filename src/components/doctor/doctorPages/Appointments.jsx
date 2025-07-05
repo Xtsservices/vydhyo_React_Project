@@ -100,9 +100,6 @@ const Appointment = () => {
     
 
   };
-
-
-
   const handleReschedule = (appointment) => {
     setSelectedAppointment(appointment);
     setIsRescheduleModalVisible(true);

@@ -316,37 +316,62 @@ const DoctorProfileView = () => {
             </Card>
           </Col>
 
-          {/* Working Locations */}
-          <Col xs={24} lg={12}>
-            <Card
-              title={
-                <div className="profile-card-header">
-                  <EnvironmentOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
-                  Working Locations
-                </div>
-              }
-              className="profile-card"
-            >
-              {doctorData.workingLocations.map((location, index) => (
-                <div key={index} className="location-card">
-                  <div style={{ display: "flex", alignItems: "flex-start" }}>
-                    <EnvironmentOutlined className="location-icon" />
-                    <div style={{ flex: 1 }}>
-                      <Text strong className="info-text" style={{ display: "block", marginBottom: "4px" }}>
-                        {location.name || "N/A"}
-                      </Text>
-                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                        {location.address || "N/A"}
-                      </Text>
-                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                        <strong>Timings:</strong> {location.startTime} - {location.endTime}
-                      </Text>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </Card>
-          </Col>
+         {/* Working Locations */}
+<Col xs={24} lg={12}>
+  <Card
+    title={
+      <div className="profile-card-header">
+        <EnvironmentOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
+        Working Locations
+      </div>
+    }
+    className="profile-card"
+  >
+    {doctorData.workingLocations.length > 1 ? (
+      <div style={{ marginBottom: "16px" }}>
+        <select 
+          className="location-dropdown"
+          onChange={(e) => {
+            const selectedIndex = e.target.value;
+            setDoctorData(prev => ({
+              ...prev,
+              selectedLocation: selectedIndex !== "" ? 
+                doctorData.workingLocations[selectedIndex] : null
+            }));
+          }}
+        >
+          <option value="">Select a location</option>
+          {doctorData.workingLocations.map((location, index) => (
+            <option key={index} value={index}>
+              {location.name || "N/A"}
+            </option>
+          ))}
+        </select>
+      </div>
+    ) : null}
+
+    {(doctorData.selectedLocation || doctorData.workingLocations[0]) && (
+      <div className="location-card">
+        <div style={{ display: "flex", alignItems: "flex-start" }}>
+          <EnvironmentOutlined className="location-icon" />
+          <div style={{ flex: 1 }}>
+            <Text strong className="info-text" style={{ display: "block", marginBottom: "4px" }}>
+              {(doctorData.selectedLocation || doctorData.workingLocations[0]).name || "N/A"}
+            </Text>
+            <Text style={{ fontSize: "12px", color: "#6b7280" }}>
+              {(doctorData.selectedLocation || doctorData.workingLocations[0]).address || "N/A"}
+            </Text>
+            <Text style={{ fontSize: "12px", color: "#6b7280" }}>
+              <strong>Timings:</strong>{" "}
+              {(doctorData.selectedLocation || doctorData.workingLocations[0]).startTime || "N/A"} -{" "}
+              {(doctorData.selectedLocation || doctorData.workingLocations[0]).endTime || "N/A"}
+            </Text>
+          </div>
+        </div>
+      </div>
+    )}
+  </Card>
+</Col>
 
           {/* KYC Details */}
           <Col xs={24} lg={12}>
