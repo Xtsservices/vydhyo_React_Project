@@ -116,8 +116,8 @@ export default function Pharmacy() {
   const tabItems = [
     {
       key: '1',
-      label: 'Patients',
-      children: <PatientsTab />,
+      label: 'Pending Patients',
+      children: <PatientsTab status ={"pending"}/>,
     },
     {
       key: '2',
@@ -126,8 +126,8 @@ export default function Pharmacy() {
     },
     {
       key: '3',
-      label: 'Completed',
-      children: <CompletedTab />,
+      label: 'Completed Patients',
+      children: <PatientsTab status ={"completed"} />,
     },
   ];
 

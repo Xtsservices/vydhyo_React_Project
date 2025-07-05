@@ -8,9 +8,13 @@ import {
   Input,
   InputNumber,
   Space,
-  message
+  message,
+  Spin,
+  Empty
 } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useSelector } from 'react-redux';
+import { apiGet } from "../../api";
 
 const { Text } = Typography;
 
@@ -21,74 +25,83 @@ const MedicinesTab = () => {
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState(null);
+  const [totalMedicines, setTotalMedicines] = useState(0);
   const [form, setForm] = useState({
     medName: '',
     quantity: '',
     price: ''
   });
 
-  // Sample medicine data - replace with actual API call
-  const sampleMedicines = [
-    {
-      key: '1',
-      id: 'MED-001',
-      medName: 'Paracetamol',
-      quantity: 100,
-      price: 5.50,
-      category: 'Pain Relief',
-      expiryDate: '2025-12-31',
-      manufacturer: 'PharmaCorp'
-    },
-    {
-      key: '2',
-      id: 'MED-002',
-      medName: 'Amoxicillin',
-      quantity: 50,
-      price: 12.75,
-      category: 'Antibiotic',
-      expiryDate: '2025-10-15',
-      manufacturer: 'MediLabs'
-    },
-    {
-      key: '3',
-      id: 'MED-003',
-      medName: 'Ibuprofen',
-      quantity: 75,
-      price: 8.25,
-      category: 'Pain Relief',
-      expiryDate: '2025-11-20',
-      manufacturer: 'HealthCare Inc'
-    },
-    {
-      key: '4',
-      id: 'MED-004',
-      medName: 'Cetirizine',
-      quantity: 30,
-      price: 15.00,
-      category: 'Antihistamine',
-      expiryDate: '2025-09-30',
-      manufacturer: 'AllergyFree'
-    },
-    {
-      key: '5',
-      id: 'MED-005',
-      medName: 'Metformin',
-      quantity: 25,
-      price: 18.50,
-      category: 'Diabetes',
-      expiryDate: '2025-08-25',
-      manufacturer: 'DiabetesControl'
+  const user = useSelector((state) => state.currentUserData);
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
+  const fetchMedicines = async () => {
+    try {
+      setLoading(true);
+      const response = await apiGet('/pharmacy/getAllMedicinesByDoctorID', {
+        params: { doctorId: doctorId }
+      });
+      
+      console.log('API Response:', response);
+      console.log('Response data:', response.data);
+      console.log('Response dataaaa:', response.data.data);
+
+      let dataArray = [];
+      console.log(response.data, "medicines API response");
+      
+      if (response?.data.success && response?.data?.data) {
+        if (Array.isArray(response.data.data)) {
+          dataArray = response.data.data;
+        }
+      }
+
+      console.log('Processed medicines data array:', dataArray);
+      
+      if (dataArray.length > 0) {
+        const formattedData = dataArray.map((medicine, index) => {
+          console.log('Processing medicine:', medicine);
+          
+          return {
+            key: medicine._id || `medicine-${index}`,
+            id: medicine._id || `MED-${index}`,
+            medName: medicine.medName || 'Unknown Medicine',
+            quantity: medicine.quantity || 0,
+            price: parseFloat(medicine.price) || 0,
+            category: medicine.category || 'N/A',
+            expiryDate: medicine.expiryDate || 'N/A',
+            manufacturer: medicine.manufacturer || 'N/A',
+            doctorId: medicine.doctorId || 'N/A',
+            createdAt: medicine.createdAt || 'N/A',
+            originalData: medicine
+          };
+        });
+        
+        console.log('Formatted Medicines Data:', formattedData);
+        
+        setMedicines(formattedData);
+        setTotalMedicines(formattedData.length);
+      } else {
+        console.log('No medicines found or empty data array');
+        setMedicines([]);
+        setTotalMedicines(0);
+      }
+    } catch (error) {
+      console.error('Error fetching medicines:', error);
+      message.error(error.response?.data?.message || 'Error fetching medicines');
+      setMedicines([]);
+      setTotalMedicines(0);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   useEffect(() => {
-    // Simulate API call
-    setLoading(true);
-    setTimeout(() => {
-      setMedicines(sampleMedicines);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    if (doctorId) {
+      fetchMedicines();
+    } else {
+      console.log('No doctorId found, user:', user);
+    }
+  }, [doctorId]);
 
   const handleEdit = (record) => {
     setEditingMedicine(record);
@@ -107,8 +120,9 @@ const MedicinesTab = () => {
       okText: 'Yes',
       cancelText: 'No',
       onOk: () => {
-        // Add delete logic here
+        // Add delete logic here - you might want to call a delete API
         setMedicines(medicines.filter(med => med.key !== record.key));
+        setTotalMedicines(prev => prev - 1);
         message.success('Medicine deleted successfully');
       }
     });
@@ -120,6 +134,7 @@ const MedicinesTab = () => {
       return;
     }
 
+    // Add update API call here if needed
     const updatedMedicines = medicines.map(med => 
       med.key === editingMedicine.key 
         ? { ...med, medName: form.medName, quantity: form.quantity, price: form.price }
@@ -173,7 +188,13 @@ const MedicinesTab = () => {
         </span>
       ),
     },
-    
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      width: 80,
+      render: (price) => `₹${price.toFixed(2)}`,
+    },
     {
       title: 'Action',
       key: 'action',
@@ -202,46 +223,49 @@ const MedicinesTab = () => {
     setCurrentPage(page);
   };
 
-  const paginatedData = medicines.slice(
+  // Calculate current page data
+  const currentPageData = medicines.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  if (medicines.length === 0 && !loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '40px' }}>
-        <Text type="secondary">No medicines in inventory</Text>
-      </div>
-    );
-  }
+  const startIndex = totalMedicines > 0 ? ((currentPage - 1) * pageSize) + 1 : 0;
+  const endIndex = Math.min(currentPage * pageSize, totalMedicines);
 
   return (
-    <>
-      <Table 
-        columns={columns} 
-        dataSource={paginatedData}
-        pagination={false}
-        size="middle"
-        showHeader={true}
-        loading={loading}
-      />
-      
-      {medicines.length > 0 && (
-        <div className="pagination-container">
-          <span className="pagination-info">
-            Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, medicines.length)} of {medicines.length} results
+    <div style={{ padding: '20px' }}>
+      <Spin spinning={loading}>
+        <Table 
+          columns={columns} 
+          dataSource={currentPageData}
+          pagination={false}
+          size="middle"
+          showHeader={true}
+          scroll={{ x: 'max-content' }}
+          locale={{
+            emptyText: <Empty description={loading ? 'Loading...' : 'No medicines in inventory'} />
+          }}
+        />
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+          <span style={{ lineHeight: '32px' }}>
+            {totalMedicines > 0 
+              ? `Showing ${startIndex} to ${endIndex} of ${totalMedicines} results`
+              : 'No results found'
+            }
           </span>
-          <Pagination 
-            current={currentPage}
-            total={medicines.length}
-            pageSize={pageSize}
-            showSizeChanger={false}
-            showQuickJumper={false}
-            simple={false}
-            onChange={handlePageChange}
-          />
+          {totalMedicines > pageSize && (
+            <Pagination 
+              current={currentPage}
+              total={totalMedicines}
+              pageSize={pageSize}
+              showSizeChanger={false}
+              showQuickJumper={false}
+              onChange={handlePageChange}
+            />
+          )}
         </div>
-      )}
+      </Spin>
 
       {/* Edit Medicine Modal */}
       <Modal
@@ -305,7 +329,7 @@ const MedicinesTab = () => {
           color: #595959;
         }
       `}</style>
-    </>
+    </div>
   );
 };
 
