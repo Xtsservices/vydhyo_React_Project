@@ -493,7 +493,7 @@ const Appointment = () => {
                   <Statistic
                     title="Cancelled"
                     value={
-                      appointmentsCount.filter(
+                      appointments.filter(
                         (appt) => appt.appointmentStatus === "cancelled"
                       ).length
                     }
