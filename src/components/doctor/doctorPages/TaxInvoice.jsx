@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { apiGet } from "../../api";
+import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
 import DownloadTaxInvoice from "../../Models/DownloadTaxInvoice";
 
@@ -32,6 +32,8 @@ const BillingSystem = () => {
             bloodgroup: patient.bloodgroup || "Not Specified",
             tests: patient.tests.map((test, idx) => ({
               id: `T${index}${idx}`, // Kept for internal use, not displayed
+              testId: test.testId, // MongoDB _id
+              labTestID: test.labTestID,
               name: test.testName,
               price: test.price || 0,
               status: test.status.charAt(0).toUpperCase() + test.status.slice(1),
@@ -39,6 +41,8 @@ const BillingSystem = () => {
             })),
             medicines: patient.medicines.map((med, idx) => ({
               id: `M${index}${idx}`, // Kept for internal use, not displayed
+              medicineId: med.medicineId, // MongoDB _id
+              pharmacyMedID: med.pharmacyMedID,
               name: med.medName,
               quantity: med.quantity || 1,
               price: med.price || 0,
@@ -106,20 +110,25 @@ const BillingSystem = () => {
     patientId: patient.patientId,
     doctorId: doctorId,
     tests: pendingTests.map((test) => ({
+       testId: test.testId, // MongoDB _id
+        labTestID: test.labTestID,
       testName: test.name,
       status: "pending", 
       price: test.price,
+      createdAt: test.createdAt,// Convert to ISO
     })),
     medicines: pendingMedicines.map((med) => ({
+       medicineId: med.medicineId, // MongoDB _id
+        pharmacyMedID: med.pharmacyMedID,
       medName: med.name,
       quantity: med.quantity,
       status: "pending",
       price: med.price,
+      createdAt: med.createdAt,// Fallback to current time
     })),
   };
 
-  console.log("payload",payload)
-  return
+  console.log("payload----", payload)
   try {
     // Send POST request to the API
     const response = await apiPost("/receptionist/totalBillPayFromReception", payload);
