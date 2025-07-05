@@ -1,5 +1,3 @@
-/* DoctorProfileView.css */
-
 /* Layout and General Styles */
 .doctor-profile-container {
   padding: 24px;
@@ -39,10 +37,6 @@
   font-size: 18px;
   margin-right: 12px;
   color: #4f46e5;
-}
-
-.profile-card-body {
-  padding: 24px;
 }
 
 /* Avatar Section */
@@ -112,12 +106,13 @@
   font-size: 15px;
   color: #1a1f36;
   line-height: 1.5;
+  width: 100%;
 }
 
 .info-text strong {
   font-weight: 500;
   color: #374151;
-  margin-right: 6px;
+  margin-right: 16px;
 }
 
 /* Tags and Badges */
@@ -179,14 +174,34 @@
   z-index: 1;
 }
 
-.experience-label {
+/* Location Dropdown */
+.location-dropdown {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: white;
   font-size: 14px;
-  color: #0369a1;
-  font-weight: 500;
-  margin-top: 4px;
-  display: block;
-  position: relative;
-  z-index: 1;
+  color: #374151;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.location-dropdown:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.location-dropdown option {
+  padding: 8px;
+}
+.selected-location-details {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #f9fafb;
 }
 
 /* Working Locations */
@@ -210,29 +225,6 @@
   margin-right: 12px;
   margin-top: 2px;
   flex-shrink: 0;
-}
-
-.location-name {
-  font-size: 15px;
-  font-weight: 500;
-  color: #1a1f36;
-  margin-bottom: 6px;
-}
-
-.location-address {
-  font-size: 13px;
-  color: #6b7280;
-  line-height: 1.5;
-}
-
-.location-timing {
-  font-size: 13px;
-  color: #6b7280;
-  margin-top: 4px;
-}
-
-.location-timing strong {
-  color: #4b5563;
 }
 
 /* Consultation Charges */
@@ -274,111 +266,12 @@
   text-align: center;
 }
 
-.consultation-in-person .consultation-icon {
-  color: #4f46e5;
-}
-
-.consultation-video .consultation-icon {
-  color: #059669;
-}
-
-.consultation-home .consultation-icon {
-  color: #7c3aed;
-}
-
-.consultation-info {
-  flex: 1;
-}
-
-.consultation-type {
-  font-size: 15px;
-  font-weight: 500;
-  color: #1a1f36;
-  margin-bottom: 4px;
-}
-
-.consultation-desc {
-  font-size: 13px;
-  color: #6b7280;
-}
-
 .consultation-price {
   font-size: 22px;
   font-weight: 700;
   color: #1a1f36;
   min-width: 80px;
   text-align: right;
-}
-
-/* Document Modal */
-.document-modal {
-  max-width: 800px !important;
-}
-
-.document-modal .ant-modal-header {
-  border-bottom: 1px solid #f0f2f5;
-}
-
-.document-modal .ant-modal-title {
-  font-weight: 600;
-  color: #1a1f36;
-}
-
-.document-modal-image {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  display: block;
-  margin: 0 auto;
-}
-
-/* Certifications Section */
-.certification-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 0;
-  border-bottom: 1px solid #f0f2f5;
-  transition: all 0.2s ease;
-}
-
-.certification-item:hover {
-  background-color: #f9fafb;
-}
-
-.certification-name {
-  font-size: 15px;
-  font-weight: 500;
-  color: #1a1f36;
-  margin-bottom: 2px;
-}
-
-.certification-id {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.view-doc-btn {
-  color: #4f46e5;
-  border-color: #e0e7ff;
-  background: #e0e7ff;
-  font-size: 13px;
-  font-weight: 500;
-  height: 32px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-}
-
-.view-doc-btn:hover {
-  background: #c7d2fe;
-  color: #4f46e5;
-}
-
-.view-doc-btn .anticon {
-  margin-right: 6px;
 }
 
 /* Responsive Adjustments */
@@ -389,10 +282,6 @@
   
   .profile-card-header {
     padding: 14px 20px;
-  }
-  
-  .profile-card-body {
-    padding: 20px;
   }
 }
 
@@ -426,10 +315,6 @@
   .profile-card-header {
     font-size: 15px;
     padding: 12px 16px;
-  }
-  
-  .profile-card-body {
-    padding: 16px;
   }
   
   .doctor-name {

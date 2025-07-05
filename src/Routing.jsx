@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+
 import LayoutWrapper from "./components/LayoutWrapper";
 import DoctorLayoutWrapper from "./components/DoctorLayoutWrapper"; // Import DoctorLayoutWrapper
 import SuperAdminDashboard from "./components/superAdmin/superAdminDashboard/SuperAdminDashboard";

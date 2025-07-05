@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Table,
@@ -25,7 +25,7 @@ import {
   ClockCircleOutlined,
   SyncOutlined,
 } from "@ant-design/icons";
-
+import {apiGet} from "../../../components/api"; // Adjust the import path as necessary
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -67,16 +67,35 @@ const AccountsPage = () => {
   ];
 
   // Mock data for account summary matching the image
-  const accountSummary = {
-    totalReceived: 1500000,
-    totalExpenditure: 35000,
-    pendingTransactions: 12,
-    recentTransactions: [
-      { name: "John Doe", amount: 500 },
-      { name: "Anita Rao", amount: 1500 },
-      { name: "Mike Johnson", amount: 750 },
-    ],
+  const [accountSummary, setAccountSummary] = useState({
+    totalReceived: 0,
+    totalExpenditure: 0,
+    pendingTransactions: 0,
+    recentTransactions: [],
+  });
+
+  useEffect(() => {
+  const fetchRevenueData = async () => {
+    try {
+        const response = await apiGet("/finance/getDoctorRevenue");
+        console.log("Revenue Data:", response.data);
+      const apiData = response.data.data;
+
+      setAccountSummary((prev) => ({
+        ...prev,
+        totalReceived: apiData.totalRevenue,
+        recentTransactions: apiData.lastThreeTransactions.map((txn) => ({
+          name: txn.username,
+          amount: txn.finalAmount,
+        })),
+      }));
+    } catch (error) {
+      console.error("Failed to fetch revenue data:", error);
+    }
   };
+
+  fetchRevenueData();
+}, []);
 
   const columns = [
     {
