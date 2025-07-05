@@ -173,11 +173,15 @@ const Labs = () => {
         style={{ marginBottom: "24px" }}
       >
         <TabPane tab="Patients" key="patients">
-          <LabPatientManagement />
+          <LabPatientManagement status={"pending"}/>
         </TabPane>
 
         <TabPane tab="Tests" key="tests">
           <TestManagement />
+        </TabPane>
+
+        <TabPane tab="Completed Patients" key="completedPatients">
+         <LabPatientManagement status={"completed"} />
         </TabPane>
       </Tabs>
     </div>
