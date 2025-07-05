@@ -36,12 +36,17 @@ import moment from "moment";
 import "../../../components/stylings/Appointments.css";
 import { apiGet, apiPost } from "../../api";
 import PrescriptionForm from "../../Models/PrescriptionForm";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const Appointment = () => {
   const navigate = useNavigate();
+  const user = useSelector((state) => state.currentUserData);
+
+    const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
   const [appointments, setAppointments] = useState([]);
   const [appointmentsCount, setAppointmentsCount] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -249,7 +254,7 @@ const Appointment = () => {
     setLoading(true);
     try {
       const response = await apiGet(
-        "/appointment/getAppointmentsByDoctorID/appointment"
+        `/appointment/getAppointmentsByDoctorID/appointment?doctorId=${doctorId}`
       );
 
       if (response.status === 200) {
@@ -271,7 +276,7 @@ const Appointment = () => {
     setLoading(true);
     try {
       const response = await apiGet(
-        "/appointment/getAppointmentsCountByDoctorID"
+        `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}`
       );
 
       if (response.status === 200) {
@@ -289,9 +294,12 @@ const Appointment = () => {
   };
 
   useEffect(() => {
-    getAppointments();
-    getAppointmentsCount();
-  }, []);
+    if(user && doctorId){
+
+      getAppointments();
+      getAppointmentsCount();
+    }
+  }, [user, doctorId]);
 
   useEffect(() => {
     setFilteredData(applyFilters(appointments));
@@ -441,11 +449,11 @@ const Appointment = () => {
                         <CalendarFilled className="calendar-icon" />
                       </div>
                     )}
-                    suffix={
-                      <Text type="success" className="statistic-suffix">
-                        <ArrowUpOutlined /> +8% from Last month
-                      </Text>
-                    }
+                    // suffix={
+                    //   <Text type="success" className="statistic-suffix">
+                    //     <ArrowUpOutlined /> +8% from Last month
+                    //   </Text>
+                    // }
                   />
                 </Card>
               </Col>
@@ -494,7 +502,7 @@ const Appointment = () => {
                     title="Cancelled"
                     value={
                       appointmentsCount.filter(
-                        (appt) => appt.appointmentStatus === "canceled"
+                        (appt) => appt.appointmentStatus === "cancelled"
                       ).length
                     }
                     valueRender={(value) => (

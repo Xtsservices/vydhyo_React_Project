@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { apiGet } from "../../api";
+import { Users } from "lucide-react";
 
 const { Title, Text } = Typography;
 
@@ -1122,6 +1123,7 @@ const RevenueSummary = ({ revenueSummaryData }) => (
 const DoctorDashboard = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.currentUserData);
+    const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [dashboardData, setDashboardData] = useState({
     success: true,
     totalAmount: { today: 0, week: 0, month: 0, total: 0 },
@@ -1196,7 +1198,7 @@ const DoctorDashboard = () => {
       setIsLoadingAppointments(true);
       const formattedDate = date || moment().format("YYYY-MM-DD");
       const response = await apiGet(
-        `/appointment/getAppointmentsByDoctorID/appointment?date=${formattedDate}`
+        `/appointment/getAppointmentsByDoctorID/appointment?date=${formattedDate}&doctorId=${doctorId}`
       );
 
       if (
@@ -1229,7 +1231,7 @@ const DoctorDashboard = () => {
 
   const getTodayAppointmentCount = async () => {
     try {
-      const response = await apiGet("/appointment/getTodayAppointmentCount");
+      const response = await apiGet(`/appointment/getTodayAppointmentCount?doctorId=${doctorId}`);
       if (response.data.status === "success") {
         setDashboardData((prev) => ({
           ...prev,
@@ -1358,11 +1360,14 @@ const DoctorDashboard = () => {
   };
 
   useEffect(() => {
-    getAppointments();
+    if(user && doctorId){
+  getAppointments();
     getTodayAppointmentCount();
+    }
+  
     getTodayRevenue();
     getRevenueSummary();
-  }, []);
+  }, [Users, doctorId]);
 
   console.log("userrrrr:", user);
   // console.log("roleeeee:",user.role)
