@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -28,6 +28,9 @@ import {
   CalendarFilled,
   ClockCircleFilled,
   ArrowUpOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
 import "../../../components/stylings/Appointments.css";
@@ -35,7 +38,7 @@ import { apiGet, apiPost } from "../../api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector } from "react-redux";
-
+import PrescriptionForm from "../../Models/PrescriptionForm";
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -43,7 +46,9 @@ const Appointment = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.currentUserData);
 
-    const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
+  const [appointmentsCount, setAppointmentsCount] = useState([]);
 
   const [appointments, setAppointments] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -58,6 +63,10 @@ const Appointment = () => {
   const [newDate, setNewDate] = useState(null);
   const [newTime, setNewTime] = useState(null);
   const [searchText, setSearchText] = useState("");
+
+  const [isPatientProfileModalVisible, setIsPatientProfileModalVisible] =
+    useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   const [filters, setFilters] = useState({
     clinic: "all",
@@ -77,9 +86,8 @@ const Appointment = () => {
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
-
   const handleViewPatientProfile = (appointment) => {
-    console.log("appointment========",appointment)
+    console.log("appointment========", appointment);
     // Convert appointment data to patient format
     const patientData = {
       id: appointment.patientId || appointment.appointmentId,
@@ -92,12 +100,10 @@ const Appointment = () => {
       status: appointment.appointmentStatus,
       userId: appointment.userId || "N/A",
     };
-    
+
     setSelectedPatient(patientData);
     setSelectedAppointment(appointment);
     setIsPatientProfileModalVisible(true);
-    
-
   };
   const handleReschedule = (appointment) => {
     setSelectedAppointment(appointment);
@@ -301,8 +307,7 @@ const Appointment = () => {
   };
 
   useEffect(() => {
-    if(user && doctorId){
-
+    if (user && doctorId) {
       getAppointments();
       getAppointmentsCount();
     }
@@ -328,6 +333,14 @@ const Appointment = () => {
 
   const renderActionMenu = (record) => (
     <Menu>
+      <Menu.Item
+        key="view-profile"
+        onClick={() => handleViewPatientProfile(record)}
+        icon={<EyeOutlined />}
+      >
+        Prescription
+      </Menu.Item>
+
       <Menu.Item
         key="complete"
         onClick={() => handleCompleteAppointment(record.appointmentId)}
@@ -625,6 +638,16 @@ const Appointment = () => {
           </div>
         )}
       </Modal>
+
+      {/* Patient Profile Modal */}
+
+      {isPatientProfileModalVisible && (
+        <PrescriptionForm
+          selectedPatient={selectedPatient}
+          isVisible={isPatientProfileModalVisible}
+          onClose={() => setIsPatientProfileModalVisible(false)}
+        />
+      )}
 
       {/* Cancel Modal */}
       <Modal
