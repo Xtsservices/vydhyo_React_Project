@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -28,14 +28,12 @@ import {
   CalendarFilled,
   ClockCircleFilled,
   ArrowUpOutlined,
-  PlusOutlined,
-  DeleteOutlined,
-  EyeOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
 import "../../../components/stylings/Appointments.css";
 import { apiGet, apiPost } from "../../api";
-import PrescriptionForm from "../../Models/PrescriptionForm";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
@@ -48,23 +46,18 @@ const Appointment = () => {
     const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
   const [appointments, setAppointments] = useState([]);
-  const [appointmentsCount, setAppointmentsCount] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
-  const [isRescheduleModalVisible, setIsRescheduleModalVisible] = useState(false);
+  const [isRescheduleModalVisible, setIsRescheduleModalVisible] =
+    useState(false);
   const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
-  const [isPatientProfileModalVisible, setIsPatientProfileModalVisible] = useState(false);
-  
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [selectedPatient, setSelectedPatient] = useState(null);
   const [newDate, setNewDate] = useState(null);
   const [newTime, setNewTime] = useState(null);
   const [searchText, setSearchText] = useState("");
-
-
 
   const [filters, setFilters] = useState({
     clinic: "all",
@@ -83,6 +76,7 @@ const Appointment = () => {
     const config = statusConfig[status] || { color: "default", text: status };
     return <Tag color={config.color}>{config.text}</Tag>;
   };
+
 
   const handleViewPatientProfile = (appointment) => {
     console.log("appointment========",appointment)
@@ -131,17 +125,22 @@ const Appointment = () => {
         message.success(
           response.data.message || "Appointment cancelled successfully"
         );
+        toast.success(
+          response.data.message || "Appointment cancelled successfully"
+        );
         setIsCancelModalVisible(false);
         await getAppointments();
       } else {
         message.error(response.data?.message || "Failed to cancel appointment");
+        toast.error(response.data?.message || "Failed to cancel appointment");
       }
     } catch (error) {
       console.error("Cancellation error:", error);
-      message.error(
+      const errorMsg =
         error.response?.data?.message ||
-        "Failed to cancel appointment. Please try again."
-      );
+        "Failed to cancel appointment. Please try again.";
+      message.error(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setCancelLoading(false);
     }
@@ -156,26 +155,31 @@ const Appointment = () => {
 
       if (res.status === 200) {
         message.success("Appointment marked as completed");
+        toast.success("Appointment marked as completed");
         await getAppointments();
       } else {
         message.error(res.data?.message || "Failed to complete appointment");
+        toast.error(res.data?.message || "Failed to complete appointment");
       }
     } catch (err) {
       console.error("Complete error:", err);
-      message.error(
-        err.response?.data?.message || "Failed to complete appointment"
-      );
+      const errorMsg =
+        err.response?.data?.message || "Failed to complete appointment";
+      message.error(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
   const handleRescheduleSubmit = async () => {
     if (!selectedAppointment) {
       message.error("No appointment selected");
+      toast.error("No appointment selected");
       return;
     }
 
     if (!newDate || !newTime) {
       message.error("Please select both date and time");
+      toast.error("Please select both date and time");
       return;
     }
 
@@ -187,9 +191,11 @@ const Appointment = () => {
         newTime: newTime.format("HH:mm"),
         reason: "Patient requested reschedule",
       });
-      
       if (response.status == 200) {
         message.success(
+          response.data.message || "Appointment rescheduled successfully"
+        );
+        toast.success(
           response.data.message || "Appointment rescheduled successfully"
         );
         setIsRescheduleModalVisible(false);
@@ -201,13 +207,17 @@ const Appointment = () => {
         message.error(
           response.data?.message || "Failed to reschedule appointment"
         );
+        toast.error(
+          response.data?.message || "Failed to reschedule appointment"
+        );
       }
     } catch (error) {
       console.error("Reschedule error:", error);
-      message.error(
+      const errorMsg =
         error.response?.data?.message ||
-        "Failed to reschedule appointment. Please try again."
-      );
+        "Failed to reschedule appointment. Please try again.";
+      message.error(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setRescheduleLoading(false);
     }
@@ -319,14 +329,6 @@ const Appointment = () => {
   const renderActionMenu = (record) => (
     <Menu>
       <Menu.Item
-        key="view-profile"
-        onClick={() => handleViewPatientProfile(record)}
-        icon={<EyeOutlined />}
-      >
-        Prescription
-      </Menu.Item>
-      
-      <Menu.Item
         key="complete"
         onClick={() => handleCompleteAppointment(record.appointmentId)}
         disabled={
@@ -337,7 +339,6 @@ const Appointment = () => {
       >
         Mark as Completed
       </Menu.Item>
-
       <Menu.Item
         key="reschedule"
         onClick={() => handleReschedule(record)}
@@ -349,7 +350,6 @@ const Appointment = () => {
       >
         Reschedule
       </Menu.Item>
-      
       <Menu.Item
         key="cancel"
         onClick={() => handleCancelAppointment(record)}
@@ -405,18 +405,13 @@ const Appointment = () => {
     {
       title: "Action",
       key: "action",
-      render: (_, record) => {
-        console.log(record,"record===========")
-        return(
+      render: (_, record) => (
         <Dropdown overlay={renderActionMenu(record)} trigger={["click"]}>
           <Button type="text" icon={<MoreOutlined />} />
         </Dropdown>
-    )}
-      ,
+      ),
     },
   ];
-
-  console.log("filteredData",filteredData)
 
   return (
     <div style={{ padding: "24px" }}>
@@ -439,7 +434,7 @@ const Appointment = () => {
                 <Card className="appointments-card">
                   <Statistic
                     title="Total Appointments"
-                    value={appointmentsCount.length}
+                    value={appointments.length}
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
@@ -459,8 +454,8 @@ const Appointment = () => {
                   <Statistic
                     title="Upcoming"
                     value={
-                      appointmentsCount.filter(
-                        (appt) => appt.appointmentStatus === "scheduled" || appt.appointmentStatus === "rescheduled"
+                      appointments.filter(
+                        (appt) => appt.appointmentStatus === "scheduled"
                       ).length
                     }
                     valueRender={(value) => (
@@ -480,7 +475,7 @@ const Appointment = () => {
                   <Statistic
                     title="Completed"
                     value={
-                      appointmentsCount.filter(
+                      appointments.filter(
                         (appt) => appt.appointmentStatus === "completed"
                       ).length
                     }
@@ -586,17 +581,6 @@ const Appointment = () => {
         </Row>
       </Spin>
 
-      {/* Patient Profile Modal */}
-      
-{isPatientProfileModalVisible && (
-
-  <PrescriptionForm 
-  selectedPatient={selectedPatient}
-  isVisible={isPatientProfileModalVisible}
-  onClose={() => setIsPatientProfileModalVisible(false)}
-  />
-)}
-
       {/* Reschedule Modal */}
       <Modal
         title="Reschedule Appointment"
@@ -667,6 +651,17 @@ const Appointment = () => {
           </div>
         )}
       </Modal>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

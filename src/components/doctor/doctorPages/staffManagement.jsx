@@ -32,6 +32,8 @@ import dayjs from "dayjs";
 import "../../../components/stylings/StaffManagement.css";
 import { apiGet, apiPost, apiPut } from "../../api";
 import { useSelector } from "react-redux";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const { Option } = Select;
 const { useBreakpoint } = Grid;
@@ -304,10 +306,7 @@ const StaffManagement = () => {
   const handleStaffOperation = async (staffData, mode) => {
     try {
       setLoading(true);
-      console.log(
-        "modalData================---------------------------",
-        staffData
-      );
+
       if (mode === "add") {
         const response = await apiPost("/doctor/createReceptionist", {
           ...staffData,
@@ -323,6 +322,11 @@ const StaffManagement = () => {
           } has been added to the staff list.`,
           duration: 3,
         });
+        toast.success(
+          response.data?.message ||
+            response?.message ||
+            "Staff added successfully"
+        );
       } else if (mode === "edit") {
         const body = {
           ...staffData,
@@ -330,20 +334,18 @@ const StaffManagement = () => {
           userId: modalData.userId,
         };
 
-        console.log("body", body);
         const resposne = await apiPut("/doctor/editReceptionist", body);
 
-        // await axios.put(`/doctor/editReceptionist`, {
-        //   ...staffData,
-        //   name: `${staffData.firstname} ${staffData.lastname}`,
-        //   stafftype: staffData.role,
-        //   phone: staffData.mobile,
-        // });
         notification.success({
           message: "Staff Updated Successfully",
           description: "Staff member details have been updated.",
           duration: 3,
         });
+        toast.success(
+          resposne.data?.message ||
+            response?.message ||
+            "Staff updated successfully"
+        );
       }
 
       setIsModalOpen(false);
@@ -360,6 +362,7 @@ const StaffManagement = () => {
       if (error.response) {
         errorMessage =
           error.response.data?.message ||
+          error.response?.message ||
           `Server error: ${error.response.status}`;
         if (error.response.status === 401) {
           errorMessage = "Authentication failed. Please login again.";
@@ -375,6 +378,7 @@ const StaffManagement = () => {
         description: errorMessage,
         duration: 5,
       });
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
       setIsModalOpen(false);
@@ -391,10 +395,13 @@ const StaffManagement = () => {
           <Avatar style={{ marginRight: 8 }}>
             {record.name ? record.name.charAt(0) : "?"}
           </Avatar>
-          {record.name || "N/A"}
-          <span style={{ color: "#595959", marginLeft: 32 }}>
-            {record.email || "No email"}
-          </span>
+          <div>
+            <span style={{ fontWeight: 600 }}>{record.name || "N/A"}</span>
+            <br />
+            <span style={{ color: "#595959", fontSize: 12 }}>
+              {record.email || "No email"}
+            </span>
+          </div>
         </div>
       ),
     },
@@ -442,7 +449,6 @@ const StaffManagement = () => {
   };
 
   const handleEdit = (record) => {
-    console.log("handleEdit", record);
     setModalMode("edit");
     setModalData(record);
     setIsModalOpen(true);
@@ -467,15 +473,24 @@ const StaffManagement = () => {
         phone: staff.mobile,
         joinDate: dayjs(staff.joinDate).format("YYYY-MM-DD"),
         status: staff.status.charAt(0).toUpperCase() + staff.status.slice(1),
-        lastLogout: staff.lastLogout
-          ? dayjs(staff.lastLogout).format("YYYY-MM-DD HH:mm:ss")
-          : "N/A",
+        lastLogout:
+          staff.lastLogout && staff.lastLogout !== "N/A"
+            ? dayjs(staff.lastLogout).isValid()
+              ? dayjs(staff.lastLogout).format("YYYY-MM-DD HH:mm:ss")
+              : staff.lastLogout
+            : "-",
+        lastLogin:
+          staff.lastLogin && staff.lastLogin !== "N/A"
+            ? dayjs(staff.lastLogin).isValid()
+              ? dayjs(staff.lastLogin).format("YYYY-MM-DD HH:mm:ss")
+              : staff.lastLogin
+            : "-",
         isLoggedIn: staff.isLoggedIn ? "Online" : "Offline",
         gender: staff.gender,
         DOB: staff.DOB,
         access: staff.access || [],
       }));
-      console.log("formattedData", formattedData);
+
       setStaffData(formattedData);
       setOriginalStaffData(formattedData); // Store original data for filtering
     } catch (error) {
@@ -499,10 +514,12 @@ const StaffManagement = () => {
     try {
       const res = await apiGet(`/users/deleteMyAccount?userId=${userId}`);
       message.success("Deleted successfully");
+      toast.success("Deleted successfully");
       setIsModalOpen(false);
       fetchStaff();
     } catch (err) {
       message.error("Delete failed");
+      toast.error("Delete failed");
     }
   };
 
@@ -741,6 +758,17 @@ const StaffManagement = () => {
           </>
         )}
       </Modal>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };
