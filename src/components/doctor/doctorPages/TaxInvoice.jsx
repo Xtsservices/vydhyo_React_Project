@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
 import DownloadTaxInvoice from "../../Models/DownloadTaxInvoice";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const BillingSystem = () => {
   const [patients, setPatients] = useState([]);
@@ -16,7 +18,9 @@ const BillingSystem = () => {
   useEffect(() => {
     const fetchPatients = async () => {
       try {
-        const response = await apiGet(`/receptionist/fetchMyDoctorPatients/${doctorId}`);
+        const response = await apiGet(
+          `/receptionist/fetchMyDoctorPatients/${doctorId}`
+        );
         if (response.status === 200 && response?.data?.data) {
           const result = response.data.data;
           // Transform API data to match component structure
@@ -36,7 +40,8 @@ const BillingSystem = () => {
               labTestID: test.labTestID,
               name: test.testName,
               price: test.price || 0,
-              status: test.status.charAt(0).toUpperCase() + test.status.slice(1),
+              status:
+                test.status.charAt(0).toUpperCase() + test.status.slice(1),
               createdDate: new Date(test.createdAt).toLocaleDateString(),
             })),
             medicines: patient.medicines.map((med, idx) => ({
@@ -73,7 +78,9 @@ const BillingSystem = () => {
 
   const calculateTotals = (patient) => {
     const medicineTotal = patient.medicines.reduce(
-      (sum, med) => sum + (med.status === "Pending" && med.price ? med.quantity * med.price : 0),
+      (sum, med) =>
+        sum +
+        (med.status === "Pending" && med.price ? med.quantity * med.price : 0),
       0
     );
     // const testTotal = patient.tests.reduce(
@@ -81,9 +88,10 @@ const BillingSystem = () => {
     //   0
     // );
     const testTotal = patient.tests.reduce(
-    (sum, test) => sum + (test.status === "Pending" && test.price ? test.price : 0),
-    0
-  );
+      (sum, test) =>
+        sum + (test.status === "Pending" && test.price ? test.price : 0),
+      0
+    );
     const grandTotal = medicineTotal + testTotal;
     return { medicineTotal, testTotal, grandTotal };
   };
@@ -92,78 +100,98 @@ const BillingSystem = () => {
   //   setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
   // };
 
- const handleMarkAsPaid = async (patientId) => {
-  const patient = patients.find((p) => p.id === patientId);
-  if (!patient) return;
+  const handleMarkAsPaid = async (patientId) => {
+    const patient = patients.find((p) => p.id === patientId);
+    if (!patient) return;
 
-  // Check if there are any Pending tests or medicines
-  const pendingTests = patient.tests.filter((test) => test.status === "Pending");
-  const pendingMedicines = patient.medicines.filter((med) => med.status === "Pending");
-  
-  if (pendingTests.length === 0 && pendingMedicines.length === 0) {
-    setError("No pending tests or medicines to pay for.");
-    return;
-  }
+    // Check if there are any Pending tests or medicines
+    const pendingTests = patient.tests.filter(
+      (test) => test.status === "Pending"
+    );
+    const pendingMedicines = patient.medicines.filter(
+      (med) => med.status === "Pending"
+    );
 
-  // Construct the payload
-  const payload = {
-    patientId: patient.patientId,
-    doctorId: doctorId,
-    tests: pendingTests.map((test) => ({
-       testId: test.testId, // MongoDB _id
-        labTestID: test.labTestID,
-      testName: test.name,
-      status: "pending", 
-      price: test.price,
-      createdAt: test.createdAt,// Convert to ISO
-    })),
-    medicines: pendingMedicines.map((med) => ({
-       medicineId: med.medicineId, // MongoDB _id
+    if (pendingTests.length === 0 && pendingMedicines.length === 0) {
+      setError("No pending tests or medicines to pay for.");
+      return;
+    }
+
+    // Construct the payload
+    const payload = {
+      patientId: patient.patientId,
+      doctorId: doctorId,
+      tests: pendingTests
+        .filter((test) => test.price > 0) // ✅ Only include tests with price > 0
+        .map((test) => ({
+          testId: test.testId, // MongoDB _id
+          labTestID: test.labTestID,
+          status: "pending",
+          price: test.price,
+        })),
+      medicines: pendingMedicines.map((med) => ({
+        medicineId: med.medicineId, // MongoDB _id
         pharmacyMedID: med.pharmacyMedID,
-      medName: med.name,
-      quantity: med.quantity,
-      status: "pending",
-      price: med.price,
-      createdAt: med.createdAt,// Fallback to current time
-    })),
+        quantity: med.quantity,
+        status: "pending",
+        price: med.price,
+      })),
+    };
+    //validate atleast one test or one medicine
+    if (payload?.medicines?.length === 0 && payload?.tests?.length === 0) {
+      toast.error("at least one of tests or medicines is provided");
+    }
+    console.log("payload----", payload);
+    try {
+      // Send POST request to the API
+      const response = await apiPost(
+        "/receptionist/totalBillPayFromReception",
+        payload
+      );
+      if (response.status === 200) {
+        // Update patient data to mark Pending items as Completed
+        setPatients((prevPatients) =>
+          prevPatients.map((p) =>
+            p.id === patientId
+              ? {
+                  ...p,
+                  tests: p.tests.map((test) =>
+                    test.status === "Pending"
+                      ? { ...test, status: "Completed" }
+                      : test
+                  ),
+                  medicines: p.medicines.map((med) =>
+                    med.status === "Pending"
+                      ? { ...med, status: "Completed" }
+                      : med
+                  ),
+                }
+              : p
+          )
+        );
+        // Mark billing as completed
+        setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
+      } else {
+        throw new Error("Failed to process payment");
+      }
+    } catch (err) {
+      console.error("Error processing payment:", err);
+      setError("Failed to process payment. Please try again.");
+    }
   };
 
-  console.log("payload----", payload)
-  try {
-    // Send POST request to the API
-    const response = await apiPost("/receptionist/totalBillPayFromReception", payload);
-    if (response.status === 200) {
-      // Update patient data to mark Pending items as Completed
-      setPatients((prevPatients) =>
-        prevPatients.map((p) =>
-          p.id === patientId
-            ? {
-                ...p,
-                tests: p.tests.map((test) =>
-                  test.status === "Pending" ? { ...test, status: "Completed" } : test
-                ),
-                medicines: p.medicines.map((med) =>
-                  med.status === "Pending" ? { ...med, status: "Completed" } : med
-                ),
-              }
-            : p
-        )
-      );
-      // Mark billing as completed
-      setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
-    } else {
-      throw new Error("Failed to process payment");
-    }
-  } catch (err) {
-    console.error("Error processing payment:", err);
-    setError("Failed to process payment. Please try again.");
-  }
-};
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
+    );
+  if (error)
+    return (
+      <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
+        {error}
+      </div>
+    );
 
-  if (loading) return <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>;
-  if (error) return <div style={{ textAlign: "center", padding: "20px", color: "red" }}>{error}</div>;
-
-  console.log("patients====",patients)
+  console.log("patients====", patients);
   return (
     <div
       style={{
@@ -280,7 +308,9 @@ const BillingSystem = () => {
                 <tr
                   style={{
                     borderBottom: "1px solid #eee",
-                    backgroundColor: expandedPatients[patient.id] ? "#f0f8ff" : "white",
+                    backgroundColor: expandedPatients[patient.id]
+                      ? "#f0f8ff"
+                      : "white",
                   }}
                 >
                   <td style={{ padding: "12px 15px" }}>
@@ -492,7 +522,9 @@ const BillingSystem = () => {
                                         textAlign: "right",
                                       }}
                                     >
-                                      {medicine.price ? medicine.price.toFixed(2) : "N/A"}
+                                      {medicine.price
+                                        ? medicine.price.toFixed(2)
+                                        : "N/A"}
                                     </td>
                                     <td
                                       style={{
@@ -528,16 +560,23 @@ const BillingSystem = () => {
                                       }}
                                     >
                                       {medicine.price
-                                        ? (medicine.quantity * medicine.price).toFixed(2)
+                                        ? (
+                                            medicine.quantity * medicine.price
+                                          ).toFixed(2)
                                         : "N/A"}
                                     </td>
                                   </tr>
                                 ))}
                               </tbody>
                             </table>
-                            <div style={{ textAlign: "right", marginTop: "10px" }}>
+                            <div
+                              style={{ textAlign: "right", marginTop: "10px" }}
+                            >
                               <strong>
-                                Medicine Total: ₹{calculateTotals(patient).medicineTotal.toFixed(2)}
+                                Medicine Total: ₹
+                                {calculateTotals(patient).medicineTotal.toFixed(
+                                  2
+                                )}
                               </strong>
                             </div>
                           </div>
@@ -621,7 +660,9 @@ const BillingSystem = () => {
                                         textAlign: "right",
                                       }}
                                     >
-                                      {test.price ? test.price.toFixed(2) : "N/A"}
+                                      {test.price
+                                        ? test.price.toFixed(2)
+                                        : "N/A"}
                                     </td>
                                     <td
                                       style={{
@@ -665,16 +706,25 @@ const BillingSystem = () => {
                                 ))
                               ) : (
                                 <tr>
-                                  <td colSpan="4" style={{ padding: "10px", textAlign: "center" }}>
+                                  <td
+                                    colSpan="4"
+                                    style={{
+                                      padding: "10px",
+                                      textAlign: "center",
+                                    }}
+                                  >
                                     No tests conducted
                                   </td>
                                 </tr>
                               )}
                             </tbody>
                           </table>
-                          <div style={{ textAlign: "right", marginTop: "10px" }}>
+                          <div
+                            style={{ textAlign: "right", marginTop: "10px" }}
+                          >
                             <strong>
-                              Test Total: ₹{calculateTotals(patient).testTotal.toFixed(2)}
+                              Test Total: ₹
+                              {calculateTotals(patient).testTotal.toFixed(2)}
                             </strong>
                           </div>
                         </div>
@@ -696,13 +746,13 @@ const BillingSystem = () => {
                               color: "#333",
                             }}
                           >
-                            Grand Total: ₹{calculateTotals(patient).grandTotal.toFixed(2)}
+                            Grand Total: ₹
+                            {calculateTotals(patient).grandTotal.toFixed(2)}
                           </div>
                           <div>
                             <DownloadTaxInvoice
                               patient={patient}
-                              calculateTotals={calculateTotals}
-                              disabled={!billingCompleted[patient.id]}
+                              // disabled={!billingCompleted[patient.id]}
                             />
                             <button
                               onClick={() => handleMarkAsPaid(patient.id)}
@@ -718,7 +768,7 @@ const BillingSystem = () => {
                                 marginLeft: "10px",
                               }}
                             >
-                              💳 Pay
+                              Pay
                             </button>
                           </div>
                         </div>

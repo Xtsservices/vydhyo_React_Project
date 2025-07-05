@@ -19,7 +19,7 @@ import { useSelector } from "react-redux";
 const { Title } = Typography;
 const { Panel } = Collapse;
 
-const LabPatientManagement = ({ status ,updateCount}) => {
+const LabPatientManagement = ({ status, updateCount }) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   console.log(status, "status");
@@ -112,23 +112,25 @@ const LabPatientManagement = ({ status ,updateCount}) => {
     );
   };
 
-  const handlePriceSave = async (patientId, testId) => {
+  const handlePriceSave = async (patientId, testId, testName) => {
     try {
       setSaving((prev) => ({ ...prev, [testId]: true }));
       const patient = patients.find((p) => p.patientId === patientId);
       const test = patient.tests.find((t) => t._id === testId);
+      const timmeredtestName = testName.trim();
       const price = test.price;
 
       if (price === null || price === undefined) {
         message.error("Please enter a valid price");
         return;
       }
-
+    
       await apiPost(`/lab/updatePatientTestPrice`, {
         testId,
         patientId,
         price,
         doctorId,
+        testName:timmeredtestName,
       });
 
       message.success("Price updated successfully");
@@ -162,12 +164,12 @@ const LabPatientManagement = ({ status ,updateCount}) => {
         tests: patient.tests.map((test) => ({
           testId: test._id,
           price: test.price,
-          labTestID:test.labTestID,
+          labTestID: test.labTestID,
         })),
       });
 
       if (response.status === 200) {
-        updateCount()
+        updateCount();
         message.success("Payment processed successfully");
         await getAllTestsPatientsByDoctorID();
       }
@@ -253,7 +255,9 @@ const LabPatientManagement = ({ status ,updateCount}) => {
             <Button
               type="primary"
               icon={<CheckOutlined />}
-              onClick={() => handlePriceSave(patientId, test._id)}
+              onClick={() =>
+                handlePriceSave(patientId, test._id, test.testName)
+              }
               disabled={
                 test.price === null ||
                 test.price === undefined ||
@@ -389,19 +393,7 @@ const LabPatientManagement = ({ status ,updateCount}) => {
                         description={
                           <div style={{ textAlign: "center" }}>
                             <Typography.Text>
-                              Scan to pay ₹{totalAmount.toFixed(2)}
-                            </Typography.Text>
-                            <div style={{ margin: "12px auto" }}>
-                              <QRCode
-                                value={`upi://pay?pa=clinicupi@bank&pn=Clinic&am=${totalAmount.toFixed(
-                                  2
-                                )}&cu=INR`}
-                                size={128}
-                                bordered
-                              />
-                            </div>
-                            <Typography.Text type="secondary">
-                              UPI ID: <strong>clinicupi@bank</strong>
+                              Cash ₹{totalAmount.toFixed(2)}
                             </Typography.Text>
                           </div>
                         }

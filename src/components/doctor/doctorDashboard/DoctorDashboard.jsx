@@ -1147,9 +1147,18 @@ const DoctorDashboard = () => {
 
   const [appointments, setAppointments] = useState([]);
   const [currentClinicIndex, setCurrentClinicIndex] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  // const [selectedDate, setSelectedDate] = useState(
+  //   new Date().toISOString().split("T")[0]
+  // );
+  const today = new Date();
+const year = today.getFullYear();
+const month = String(today.getMonth() + 1).padStart(2, "0");
+const day = String(today.getDate()).padStart(2, "0");
+
+const formattedDate = `${year}-${month}-${day}`;
+const [selectedDate, setSelectedDate] = useState(formattedDate);
+
+
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [revenueSummaryData, setRevenueSummaryData] = useState([
     { label: "Appointment", value: 0, color: "#4285f4" },

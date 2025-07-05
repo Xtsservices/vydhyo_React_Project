@@ -101,7 +101,7 @@ const StaffModal = ({
     { value: "accounts", label: "Accounts" },
     { value: "staff-management", label: "Staff Management" },
     { value: "clinic-management", label: "Clinic Management" },
-    { value: "Tax-Invoice", label: "Tax Invoice" },
+    { value: "Billing", label: "Billing" },
     { value: "reviews", label: "Reviews" },
   ];
 
@@ -308,8 +308,9 @@ const StaffManagement = () => {
       setLoading(true);
 
       if (mode === "add") {
-        const response = await apiPost("/doctor/createReceptionist", {
-          ...staffData,
+        const userid = user.createdBy
+        const response = await apiPost(`/doctor/createReceptionist/${userid}`, {
+          ...staffData
         });
         notification.success({
           message: `${
@@ -463,9 +464,13 @@ const StaffManagement = () => {
   const fetchStaff = async () => {
     try {
       setFetchLoading(true);
-      const userid = user.userId;
+      const userid = user.createdBy;
+      console.log("user",user)
       const response = await apiGet(`/doctor/getStaffByCreator/${userid}`);
-      const formattedData = response.data.data.map((staff, index) => ({
+
+      const filterData = response.data.data.filter((each)=> each.userId !== user.createdBy)
+    console.log("filterData",filterData)
+      const formattedData = filterData.map((staff, index) => ({
         name: staff.name,
         userId: staff.userId,
         type: staff.stafftype,

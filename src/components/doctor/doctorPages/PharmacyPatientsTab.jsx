@@ -489,19 +489,7 @@ async function filterPatientsDAta(data) {
                           description={
                             <div style={{ textAlign: "center" }}>
                               <Typography.Text>
-                                Scan to pay ₹{totalAmount.toFixed(2)}
-                              </Typography.Text>
-                              <div style={{ margin: "12px auto" }}>
-                                <QRCode
-                                  value={`upi://pay?pa=clinicupi@bank&pn=Clinic&am=${totalAmount.toFixed(
-                                    2
-                                  )}&cu=INR`}
-                                  size={128}
-                                  bordered
-                                />
-                              </div>
-                              <Typography.Text type="secondary">
-                                UPI ID: <strong>clinicupi@bank</strong>
+                                Cash ₹{totalAmount.toFixed(2)}
                               </Typography.Text>
                             </div>
                           }

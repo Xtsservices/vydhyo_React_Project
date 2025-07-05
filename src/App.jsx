@@ -3,11 +3,12 @@ import "./App.css";
 import { useEffect, useRef } from "react";
 import { apiGet } from "./components/api";
 import { useDispatch, useSelector } from "react-redux";
-
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 const App = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.currentUserData);
-  const hasFetchedUser = useRef(false); 
+  const hasFetchedUser = useRef(false);
 
   const getCurrentUserData = async () => {
     try {
@@ -29,9 +30,23 @@ const App = () => {
       hasFetchedUser.current = true; // ✅ Prevent future fetch attempts
       getCurrentUserData();
     }
-  }, [user]); 
+  }, [user]);
 
-  return <AppRoutes />;
+  return (
+    <>
+      <AppRoutes />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+    </>
+  );
 };
 
 export default App;
