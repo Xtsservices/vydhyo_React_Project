@@ -20,8 +20,10 @@ import Pharmacy from "./components/doctor/doctorPages/Pharmacy";
 import Labs from "./components/doctor/doctorPages/Labs";
 import ClinicManagement from "./components/doctor/doctorPages/ClinicManagement"
 import NotFound from "./components/NotFound ";
-
+import TaxInvoice from "./components/doctor/doctorPages/TaxInvoice";
 import Header from "./components/landingPage/Header";
+import DoctorProfileView from "./components/doctor/doctorPages/DoctorProfileView";
+
 // import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingDoctorsPage";
 import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage"; 
 
@@ -210,6 +212,15 @@ const AppRoutes = () => {
         />
 
         <Route
+          path="/doctor/doctorPages/DoctorProfileView"
+          element={
+            <ProtectedRoute>
+              <DoctorProfileView />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/doctor/doctorPages/Pharmacy"
           element={
             <ProtectedRoute>
@@ -234,6 +245,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <StaffManagement />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/doctor/doctorPages/TaxInvoice"
+          element={
+            <ProtectedRoute>
+              <TaxInvoice />
             </ProtectedRoute>
           }
         />
