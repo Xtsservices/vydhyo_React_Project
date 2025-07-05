@@ -19,7 +19,7 @@ import { useSelector } from "react-redux";
 const { Title } = Typography;
 const { Panel } = Collapse;
 
-const LabPatientManagement = ({ status }) => {
+const LabPatientManagement = ({ status ,updateCount}) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   console.log(status, "status");
@@ -167,6 +167,7 @@ const LabPatientManagement = ({ status }) => {
       });
 
       if (response.status === 200) {
+        updateCount()
         message.success("Payment processed successfully");
         await getAllTestsPatientsByDoctorID();
       }

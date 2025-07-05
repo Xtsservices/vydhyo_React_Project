@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Table, 
+import React, { useEffect, useState } from "react";
+import {
+  Table,
   Typography,
   Spin,
   message,
@@ -15,16 +15,16 @@ import {
   Popconfirm,
   QRCode,
   Empty,
-  Pagination
-} from 'antd';
+  Pagination,
+} from "antd";
 import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
-import { useSelector } from 'react-redux';
+import { useSelector } from "react-redux";
 import { apiGet, apiPost } from "../../api";
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
-const PatientsTab = ({status}) => {
+const PatientsTab = ({ status, updateCount }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(4);
   const [loading, setLoading] = useState(false);
@@ -34,92 +34,85 @@ const PatientsTab = ({status}) => {
   const [editablePrices, setEditablePrices] = useState([]);
   const [saving, setSaving] = useState({});
   const [paying, setPaying] = useState({});
-  
+
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-  async function filterPatientsDAta(data) {
-    console.log(data,"filter")
-    if (status === "pending") {
-      const filtered = data
-        .map((patient) => {
-          const pendingMed = patient.medicines.filter(
-            (med) => med.status === "pending"
-          );
-          if (pendingMed.length > 0) {
-            return {
-              ...patient,
-              meds: pendingMed,
-            };
-          }
-          return null;
-        })
-        .filter(Boolean); // remove null entries (patients with no pending tests)
+async function filterPatientsDAta(data) {
+  console.log(data, "filter");
+  console.log(status, "filter");
 
-      return filtered;
-    } else {
-      const filtered = data
-        .map((patient) => {
-          const pendingMed = patient.medicines.filter(
-            (med) => med.status !== "pending"
-          );
-          if (pendingMed.length > 0) {
-            return {
-              ...patient,
-              meds: pendingMed,
-            };
-          }
-          return null;
-        })
-        .filter(Boolean); // remove null entries (patients with no pending tests)
+  const isPending = status === "pending";
 
-      return filtered;
-    }
-  }
+  const filtered = data
+    .map((patient) => {
+      const filteredMeds = patient.medicines.filter((med) =>
+        isPending ? med.status === "pending" : med.status !== "pending"
+      );
 
+      if (filteredMeds.length > 0) {
+        const { medicines, ...rest } = patient; // remove 'medicines'
+        return {
+          ...rest,
+          medicines: filteredMeds,
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean); // Remove null entries
+
+  console.log(`${isPending ? "pending" : "completed"} filtered`, filtered);
+
+  return filtered;
+}
 
   const fetchPharmacyPatients = async () => {
     try {
       setLoading(true);
-      const response = await apiGet('/pharmacy/getAllPharmacyPatientsByDoctorID', {
+      const response = await apiGet(
+        "/pharmacy/getAllPharmacyPatientsByDoctorID",
+        {
+          params: { doctorId: doctorId },
+        }
+      );
 
-        params: { doctorId: doctorId }
-      });
-      
-      console.log("dataArraystart",response)
+      console.log("dataArraystart", response);
 
       let dataArray = [];
       if (response?.status === 200 && response?.data?.data) {
         dataArray = await filterPatientsDAta(response.data.data);
-       
       }
 
-      console.log("dataArray",dataArray)
-      
+      console.log("dataArray", dataArray);
+
       if (dataArray.length > 0) {
         const formattedData = dataArray.map((patient, index) => {
-          const totalAmount = patient.medicines?.reduce((sum, med) => {
-            const price = parseFloat(med.price) || 0;
-            const quantity = parseInt(med.quantity) || 0;
-            return sum + (price * quantity);
-          }, 0) || 0;
-          
-          const hasPending = patient.medicines?.some(med => med.status === 'pending');
-          const status = hasPending ? 'pending' : 'completed';
-          
+          const totalAmount =
+            patient.medicines?.reduce((sum, med) => {
+              const price = parseFloat(med.price) || 0;
+              const quantity = parseInt(med.quantity) || 0;
+              return sum + price * quantity;
+            }, 0) || 0;
+
+          const hasPending = patient.medicines?.some(
+            (med) => med.status === "pending"
+          );
+          const status = hasPending ? "pending" : "completed";
+
           return {
             key: patient.patientId || `patient-${index}`,
             patientId: patient.patientId || `PAT-${index}`,
-            doctorId: patient.doctorId || 'N/A',
-            name: patient.patientName || 'Unknown Patient',
+            doctorId: patient.doctorId || "N/A",
+            name: patient.patientName || "Unknown Patient",
             medicines: patient.medicines || [],
             totalMedicines: patient.medicines?.length || 0,
             totalAmount: totalAmount,
             status: status,
-            originalData: patient
+            originalData: patient,
           };
         });
-        
+
         setPatientData(formattedData);
         setTotalPatients(formattedData.length);
       } else {
@@ -127,8 +120,10 @@ const PatientsTab = ({status}) => {
         setTotalPatients(0);
       }
     } catch (error) {
-      console.error('Error fetching pharmacy patients:', error);
-      message.error(error.response?.data?.message || 'Error fetching pharmacy patients');
+      console.error("Error fetching pharmacy patients:", error);
+      message.error(
+        error.response?.data?.message || "Error fetching pharmacy patients"
+      );
       setPatientData([]);
       setTotalPatients(0);
     } finally {
@@ -191,7 +186,7 @@ const PatientsTab = ({status}) => {
       console.error("Error updating medicine price:", error);
       message.error(error.response?.data?.message || "Failed to update price");
     } finally {
-      setSaving((prev) => ({ ...prev, [medicineId]: false}));
+      setSaving((prev) => ({ ...prev, [medicineId]: false }));
     }
   };
 
@@ -200,7 +195,7 @@ const PatientsTab = ({status}) => {
       setPaying((prev) => ({ ...prev, [patientId]: true }));
       const patient = patientData.find((p) => p.patientId === patientId);
       const totalAmount = patient.medicines.reduce(
-        (sum, med) => sum + ((med.price || 0) * (med.quantity || 1)),
+        (sum, med) => sum + (med.price || 0) * (med.quantity || 1),
         0
       );
 
@@ -216,11 +211,10 @@ const PatientsTab = ({status}) => {
           medicineId: med._id,
           price: med.price,
           quantity: med.quantity,
-          pharmacyMedID:med.pharmacyMedID || null
-
+          pharmacyMedID: med.pharmacyMedID || null,
         })),
-      }
-      console.log("bodyyyyyyy:",data)
+      };
+      console.log("bodyyyyyyy:", data);
 
       const response = await apiPost(`/pharmacy/pharmacyPayment`, {
         patientId,
@@ -230,47 +224,50 @@ const PatientsTab = ({status}) => {
           medicineId: med._id,
           price: med.price,
           quantity: med.quantity,
-          pharmacyMedID:med.pharmacyMedID || null
-
+          pharmacyMedID: med.pharmacyMedID || null,
         })),
       });
 
+      updateCount();
       if (response.status === 200) {
         message.success("Payment processed successfully");
         await fetchPharmacyPatients();
       }
     } catch (error) {
       console.error("Error processing payment:", error);
-      message.error(error.response?.data?.message || "Failed to process payment");
+      message.error(
+        error.response?.data?.message || "Failed to process payment"
+      );
     } finally {
-      setPaying((prev) => ({ ...prev, [patientId]: false}));
+      setPaying((prev) => ({ ...prev, [patientId]: false }));
     }
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const medicineColumns = [
     {
-      title: 'Medicine Name',
-      dataIndex: 'medName',
-      key: 'medName',
-      render: (name) => <Text strong>{name}</Text>
+      title: "Medicine Name",
+      dataIndex: "medName",
+      key: "medName",
+      render: (name) => <Text strong>{name}</Text>,
     },
     {
-      title: 'Price',
-      key: 'price',
+      title: "Price",
+      key: "price",
       render: (_, medicine, index, patientId) => {
         const isEditable = editablePrices.includes(medicine._id);
-        const isPriceInitiallyNull = medicine.price === null || medicine.price === undefined;
+        const isPriceInitiallyNull =
+          medicine.price === null || medicine.price === undefined;
         return (
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <InputNumber
@@ -306,70 +303,72 @@ const PatientsTab = ({status}) => {
       },
     },
     {
-      title: 'Quantity',
-      dataIndex: 'quantity',
-      key: 'quantity',
-      render: (quantity) => `${quantity} units`
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
+      render: (quantity) => `${quantity} units`,
     },
     {
-      title: 'Total',
-      key: 'total',
+      title: "Total",
+      key: "total",
       render: (_, record) => {
         const price = parseFloat(record.price) || 0;
         const quantity = parseInt(record.quantity) || 0;
-        return price > 0 ? `₹${(price * quantity).toFixed(2)}` : 'N/A';
-      }
+        return price > 0 ? `₹${(price * quantity).toFixed(2)}` : "N/A";
+      },
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
       render: (status) => (
-        <Tag color={status === 'pending' ? 'orange' : 'green'}>
+        <Tag color={status === "pending" ? "orange" : "green"}>
           {status?.charAt(0).toUpperCase() + status?.slice(1)}
         </Tag>
-      )
+      ),
     },
   ];
 
   const columns = [
     {
-      title: 'Patient ID',
-      dataIndex: 'patientId',
-      key: 'patientId',
+      title: "Patient ID",
+      dataIndex: "patientId",
+      key: "patientId",
       width: 120,
     },
     {
-      title: 'Patient',
-      key: 'patient',
+      title: "Patient",
+      key: "patient",
       width: 200,
       render: (_, record) => (
-        <div className="patient-info" style={{ display: 'flex', alignItems: 'center' }}>
+        <div
+          className="patient-info"
+          style={{ display: "flex", alignItems: "center" }}
+        >
           <span className="patient-name">{record.name}</span>
         </div>
       ),
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
       width: 100,
       render: (status) => (
-        <Tag color={status === 'pending' ? 'orange' : 'green'}>
+        <Tag color={status === "pending" ? "orange" : "green"}>
           {status.charAt(0).toUpperCase() + status.slice(1)}
         </Tag>
       ),
     },
     {
-      title: 'Action',
-      key: 'action',
+      title: "Action",
+      key: "action",
       width: 120,
       render: (_, record) => (
-        <Button 
-          type="link"
-          onClick={() => toggleCollapse(record.patientId)}
-        >
-          {expandedKeys.includes(record.patientId) ? "Hide Medicines" : "View Medicines"}
+        <Button type="link" onClick={() => toggleCollapse(record.patientId)}>
+          {expandedKeys.includes(record.patientId)
+            ? "Hide Medicines"
+            : "View Medicines"}
         </Button>
       ),
     },
@@ -382,13 +381,13 @@ const PatientsTab = ({status}) => {
   }, [doctorId]);
 
   const currentPageData = patientData.slice(
-    (currentPage - 1) * pageSize, 
+    (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  const startIndex = totalPatients > 0 ? ((currentPage - 1) * pageSize) + 1 : 0;
+  const startIndex = totalPatients > 0 ? (currentPage - 1) * pageSize + 1 : 0;
   const endIndex = Math.min(currentPage * pageSize, totalPatients);
-  
+
   return (
     <Card
       style={{
@@ -397,7 +396,11 @@ const PatientsTab = ({status}) => {
         boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
       }}
     >
-      <Row justify="space-between" align="middle" style={{ marginBottom: "16px" }}>
+      <Row
+        justify="space-between"
+        align="middle"
+        style={{ marginBottom: "16px" }}
+      >
         <Col>
           <Title level={4} style={{ margin: 0, color: "#1A3C6A" }}>
             Pharmacy Patients
@@ -406,25 +409,31 @@ const PatientsTab = ({status}) => {
       </Row>
 
       <Spin spinning={loading}>
-        <Table 
-          columns={columns} 
+        <Table
+          columns={columns}
           dataSource={currentPageData}
           pagination={false}
           size="middle"
           showHeader={true}
-          scroll={{ x: 'max-content' }}
+          scroll={{ x: "max-content" }}
           locale={{
-            emptyText: <Empty description={loading ? 'Loading...' : 'No patients found'} />
+            emptyText: (
+              <Empty
+                description={loading ? "Loading..." : "No patients found"}
+              />
+            ),
           }}
           expandable={{
             expandedRowKeys: expandedKeys,
             onExpand: (_, record) => toggleCollapse(record.patientId),
             expandedRowRender: (record) => {
               const totalAmount = record.medicines.reduce(
-                (sum, med) => sum + ((med.price || 0) * (med.quantity || 1)),
+                (sum, med) => sum + (med.price || 0) * (med.quantity || 1),
                 0
               );
-              const hasPending = record.medicines.some(med => med.status === 'pending');
+              const hasPending = record.medicines.some(
+                (med) => med.status === "pending"
+              );
 
               return (
                 <Collapse
@@ -449,7 +458,12 @@ const PatientsTab = ({status}) => {
                         ...col,
                         render: (text, medicine, index) =>
                           col.render
-                            ? col.render(text, medicine, index, record.patientId)
+                            ? col.render(
+                                text,
+                                medicine,
+                                index,
+                                record.patientId
+                              )
                             : text,
                       }))}
                       dataSource={record.medicines}
@@ -522,16 +536,21 @@ const PatientsTab = ({status}) => {
             },
           }}
         />
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
-          <span style={{ lineHeight: '32px' }}>
-            {totalPatients > 0 
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: 16,
+          }}
+        >
+          <span style={{ lineHeight: "32px" }}>
+            {totalPatients > 0
               ? `Showing ${startIndex} to ${endIndex} of ${totalPatients} results`
-              : 'No results found'
-            }
+              : "No results found"}
           </span>
           {totalPatients > pageSize && (
-            <Pagination 
+            <Pagination
               current={currentPage}
               total={totalPatients}
               pageSize={pageSize}
