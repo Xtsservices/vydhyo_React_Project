@@ -34,12 +34,17 @@ import "../../../components/stylings/Appointments.css";
 import { apiGet, apiPost } from "../../api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const Appointment = () => {
   const navigate = useNavigate();
+  const user = useSelector((state) => state.currentUserData);
+
+    const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
   const [appointments, setAppointments] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -234,7 +239,7 @@ const Appointment = () => {
     setLoading(true);
     try {
       const response = await apiGet(
-        "/appointment/getAppointmentsByDoctorID/appointment"
+        `/appointment/getAppointmentsByDoctorID/appointment?doctorId=${doctorId}`
       );
 
       if (response.status === 200) {
@@ -252,9 +257,34 @@ const Appointment = () => {
     }
   };
 
+  const getAppointmentsCount = async () => {
+    setLoading(true);
+    try {
+      const response = await apiGet(
+        `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}`
+      );
+
+      if (response.status === 200) {
+        const updatedAppointments = response.data.data;
+        setAppointmentsCount(updatedAppointments);
+      } else {
+        message.error("Failed to fetch appointments");
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      message.error("Error fetching appointments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    getAppointments();
-  }, []);
+    if(user && doctorId){
+
+      getAppointments();
+      getAppointmentsCount();
+    }
+  }, [user, doctorId]);
 
   useEffect(() => {
     setFilteredData(applyFilters(appointments));
@@ -388,12 +418,12 @@ const Appointment = () => {
                         <span className="statistic-value">{value}</span>
                         <CalendarFilled className="calendar-icon" />
                       </div>
-                    )}   
-                    suffix={
-                      <Text type="success" className="statistic-suffix">
-                        {/* <ArrowUpOutlined /> +8% from Last month */}
-                      </Text>
-                    }
+                    )}
+                    // suffix={
+                    //   <Text type="success" className="statistic-suffix">
+                    //     <ArrowUpOutlined /> +8% from Last month
+                    //   </Text>
+                    // }
                   />
                 </Card>
               </Col>
@@ -441,8 +471,8 @@ const Appointment = () => {
                   <Statistic
                     title="Cancelled"
                     value={
-                      appointments.filter(
-                        (appt) => appt.appointmentStatus === "canceled"
+                      appointmentsCount.filter(
+                        (appt) => appt.appointmentStatus === "cancelled"
                       ).length
                     }
                     valueRender={(value) => (

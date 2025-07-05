@@ -326,31 +326,31 @@ const DoctorProfileView = () => {
                       <Space>
                         {cert.image && (
                           <Button
-                            type="link"
+                            className="view-button"
                             size="small"
-                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
                             onClick={() =>
                               showModal({
                                 type: "Specialization Certificate",
                                 data: cert.image,
                               })
                             }
-                            style={{ padding: "4px 8px" }}
-                          />
+                          >
+                            View Certificate
+                          </Button>
                         )}
                         {cert.degreeCertificate && (
                           <Button
-                            type="link"
+                            className="view-button"
                             size="small"
-                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
                             onClick={() =>
                               showModal({
                                 type: "Degree Certificate",
                                 data: cert.degreeCertificate,
                               })
                             }
-                            style={{ padding: "4px 8px" }}
-                          />
+                          >
+                            View Degree
+                          </Button>
                         )}
                       </Space>
                     </div>

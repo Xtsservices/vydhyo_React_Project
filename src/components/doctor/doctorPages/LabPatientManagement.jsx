@@ -10,6 +10,7 @@ import {
   Collapse,
   message,
   Popconfirm,
+  QRCode,
 } from "antd";
 import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
 import { apiGet, apiPost } from "../../api";
@@ -18,10 +19,10 @@ import { useSelector } from "react-redux";
 const { Title } = Typography;
 const { Panel } = Collapse;
 
-const LabPatientManagement = () => {
+const LabPatientManagement = ({ status }) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-
+  console.log(status, "status");
   const [patients, setPatients] = useState([]);
   const [saving, setSaving] = useState({});
   const [editablePrices, setEditablePrices] = useState([]);
@@ -30,14 +31,56 @@ const LabPatientManagement = () => {
   const [loadingPatients, setLoadingPatients] = useState(false);
 
   // Fetch data
+
+  async function filterPatientsDAta(data) {
+    if (status === "pending") {
+      const filtered = data
+        .map((patient) => {
+          const pendingTests = patient.tests.filter(
+            (test) => test.status === "pending"
+          );
+          if (pendingTests.length > 0) {
+            return {
+              ...patient,
+              tests: pendingTests,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean); // remove null entries (patients with no pending tests)
+
+      return filtered;
+    } else {
+      const filtered = data
+        .map((patient) => {
+          const pendingTests = patient.tests.filter(
+            (test) => test.status !== "pending"
+          );
+          if (pendingTests.length > 0) {
+            return {
+              ...patient,
+              tests: pendingTests,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean); // remove null entries (patients with no pending tests)
+
+      return filtered;
+    }
+  }
+
   async function getAllTestsPatientsByDoctorID() {
     try {
       setLoadingPatients(true);
       const response = await apiGet(
         `/lab/getAllTestsPatientsByDoctorID/${doctorId}`
       );
-      if (response.status === 200) {
-        setPatients(response.data.data);
+
+      console.log("getAllTestsPatientsByDoctorID", response);
+      if (response.status === 200 && response?.data?.data) {
+        const pendingData = await filterPatientsDAta(response.data.data);
+        setPatients(pendingData);
         message.success("Patients data loaded successfully");
       }
     } catch (error) {
@@ -111,7 +154,7 @@ const LabPatientManagement = () => {
         message.error("No valid prices set for payment");
         return;
       }
-
+      console.log("totalAmount", totalAmount);
       const response = await apiPost(`/lab/processPayment`, {
         patientId,
         doctorId,
@@ -138,7 +181,7 @@ const LabPatientManagement = () => {
     if (doctorId && user) {
       getAllTestsPatientsByDoctorID();
     }
-  }, [user, doctorId]);
+  }, [user, doctorId, status]);
 
   const toggleCollapse = (patientId) => {
     setExpandedKeys((prev) =>
@@ -225,17 +268,19 @@ const LabPatientManagement = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <Typography.Text
-          style={{
-            color: status === "pending" ? "#faad14" : "#52c41a",
-            textTransform: "capitalize",
-          }}
-        >
-          {status}
-        </Typography.Text>
-      ),
+      render: (status) => {
+        let color = "#faad14"; // default: pending
+        if (status === "completed") color = "#52c41a";
+        else if (status === "cancelled") color = "#ff4d4f";
+
+        return (
+          <Typography.Text style={{ color, textTransform: "capitalize" }}>
+            {status}
+          </Typography.Text>
+        );
+      },
     },
+
     {
       title: "Created Date",
       dataIndex: "createdAt",
@@ -336,14 +381,31 @@ const LabPatientManagement = () => {
                       <Typography.Text strong style={{ marginRight: "16px" }}>
                         Total Amount: ₹ {totalAmount.toFixed(2)}
                       </Typography.Text>
+
                       <Popconfirm
                         title="Confirm Payment"
-                        description={`Are you sure you want to process a payment of ₹${totalAmount.toFixed(
-                          2
-                        )}?`}
+                        description={
+                          <div style={{ textAlign: "center" }}>
+                            <Typography.Text>
+                              Scan to pay ₹{totalAmount.toFixed(2)}
+                            </Typography.Text>
+                            <div style={{ margin: "12px auto" }}>
+                              <QRCode
+                                value={`upi://pay?pa=clinicupi@bank&pn=Clinic&am=${totalAmount.toFixed(
+                                  2
+                                )}&cu=INR`}
+                                size={128}
+                                bordered
+                              />
+                            </div>
+                            <Typography.Text type="secondary">
+                              UPI ID: <strong>clinicupi@bank</strong>
+                            </Typography.Text>
+                          </div>
+                        }
                         onConfirm={() => handlePayment(record.patientId)}
-                        okText="Yes"
-                        cancelText="No"
+                        okText="Payment Done"
+                        cancelText="Cancel"
                       >
                         <Button
                           type="primary"
@@ -358,6 +420,7 @@ const LabPatientManagement = () => {
                             background: "#1A3C6A",
                             borderColor: "#1A3C6A",
                             color: "white",
+                            marginTop: 8,
                           }}
                         >
                           {hasPendingTests ? "Process Payment" : "Paid"}
