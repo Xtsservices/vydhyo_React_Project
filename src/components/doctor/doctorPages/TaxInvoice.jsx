@@ -107,19 +107,19 @@ const BillingSystem = () => {
     doctorId: doctorId,
     tests: pendingTests.map((test) => ({
       testName: test.name,
-      status: "pending", // API expects lowercase
+      status: "pending", 
       price: test.price,
-      createdAt: new Date(test.createdDate + "T00:00:00.000Z").toISOString(), // Convert to ISO
     })),
     medicines: pendingMedicines.map((med) => ({
       medName: med.name,
       quantity: med.quantity,
-      status: "pending", // API expects lowercase
+      status: "pending",
       price: med.price,
-      createdAt: new Date(med.createdAt || Date.now()).toISOString(), // Fallback to current time
     })),
   };
 
+  console.log("payload",payload)
+  return
   try {
     // Send POST request to the API
     const response = await apiPost("/receptionist/totalBillPayFromReception", payload);
