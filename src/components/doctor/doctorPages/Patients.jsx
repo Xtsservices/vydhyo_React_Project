@@ -576,7 +576,7 @@ const MyPatients = () => {
       </Modal>
 
       {/* Patient Profile Modal */}
-      <Modal
+      {/* <Modal
         title="Patient Profile"
         open={isPatientProfileModalVisible}
         onCancel={() => setIsPatientProfileModalVisible(false)}
@@ -592,7 +592,7 @@ const MyPatients = () => {
       >
         {selectedPatient && (
           <div style={{ padding: '20px 0' }}>
-            {/* Patient Information */}
+          
             <div style={{ marginBottom: '30px' }}>
               <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
                 Patient Information
@@ -625,7 +625,7 @@ const MyPatients = () => {
               </div>
             </div>
 
-            {/* Add Medicine Section */}
+  
             <div style={{ marginBottom: '30px' }}>
               <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
                 Add Medicine
@@ -660,7 +660,7 @@ const MyPatients = () => {
               )}
             </div>
 
-            {/* Add Test Section */}
+          
             <div style={{ marginBottom: '20px' }}>
               <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
                 Add Test
@@ -690,7 +690,7 @@ const MyPatients = () => {
             </div>
           </div>
         )}
-      </Modal>
+      </Modal> */}
 
       <div style={styles.tableContainer}>
         <div style={styles.tableHeader}>
@@ -700,7 +700,7 @@ const MyPatients = () => {
           <div>Age</div>
           <div>Phone</div>
           <div>Last Visit</div>
-          <div>Action</div>
+          {/* <div>Action</div> */}
         </div>
 
         <div style={styles.tableBody}>

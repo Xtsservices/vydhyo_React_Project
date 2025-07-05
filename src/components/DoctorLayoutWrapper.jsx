@@ -24,15 +24,18 @@ import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import logo from "../assets/logooo.png"; 
 import { apiPost } from "./api";
+import { useLocation } from "react-router-dom";
+
 
 const { Header, Sider, Content, Footer } = Layout;
 
 const DoctorLayoutWrapper = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [selectedKey, setSelectedKey] = useState("dashboard");
+  const [selectedKey, setSelectedKey] = useState(accessKey => accessKey || "dashboard");
   const user = useSelector((state) => state.currentUserData);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleResize = () => {
@@ -44,6 +47,15 @@ const DoctorLayoutWrapper = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    const currentItem = allMenuItems.find((item) =>
+      location.pathname.toLowerCase().includes(item.key.toLowerCase())
+    );
+    if (currentItem) {
+      setSelectedKey(currentItem.key);
+    }
+  }, [location.pathname]);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -105,6 +117,7 @@ const DoctorLayoutWrapper = () => {
     {
       key: "appointments",
       accessKey: "appointments",
+      path: "/doctor/doctorPages/Appointments",
       label: <Link to="/doctor/doctorPages/Appointments">Appointments</Link>,
       icon: (
         <FontAwesomeIcon
@@ -116,6 +129,7 @@ const DoctorLayoutWrapper = () => {
     {
       key: "my-patients",
       accessKey: "my-patients",
+      path: "/doctor/doctorPages/Patients",
       label: <Link to="/doctor/doctorPages/Patients">My Patients</Link>,
       icon: (
         <FontAwesomeIcon
@@ -162,9 +176,7 @@ const DoctorLayoutWrapper = () => {
     {
       key: "clinic-management",
       accessKey: "clinic-management",
-      label: (
-        <Link to="/doctor/doctorPages/ClinicManagement">Clinic Management</Link>
-      ),
+      label: <Link to="/doctor/doctorPages/ClinicManagement">Clinic Management</Link>,
       icon: (
         <FontAwesomeIcon
           icon={faStar}
@@ -184,9 +196,9 @@ const DoctorLayoutWrapper = () => {
       ),
     },
     {
-      key: "Tax-Invoice",
-      accessKey: "Tax-Invoice",
-      label: <Link to="/doctor/doctorPages/TaxInvoice">Tax Invoice</Link>,
+      key: "Billing",
+      accessKey: "Billing",
+      label: <Link to="/doctor/doctorPages/TaxInvoice">Billing</Link>,
       icon: (
         <FontAwesomeIcon
           icon={faFileInvoice}
@@ -293,7 +305,7 @@ const DoctorLayoutWrapper = () => {
             className="toggle-button"
             onClick={toggleSidebar}
             style={{
-              marginRight: 24,
+              marginRight: 10,
               color: "#64748b",
               cursor: "pointer",
               fontSize: "16px",

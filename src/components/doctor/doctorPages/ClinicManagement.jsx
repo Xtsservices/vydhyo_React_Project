@@ -235,7 +235,10 @@ export default function ClinicManagement() {
     const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
     if (["Clinic", "Hospital"].includes(formData.type)) {
       if (!formData.startTime || !formData.endTime) {
-        alert(
+        // alert(
+        //   "Both start time and end time are required for Clinic or Hospital type"
+        // );
+        toast.error(
           "Both start time and end time are required for Clinic or Hospital type"
         );
         return;
@@ -244,7 +247,8 @@ export default function ClinicManagement() {
         !timeRegex.test(formData.startTime) ||
         !timeRegex.test(formData.endTime)
       ) {
-        alert("Invalid time format. Use HH:MM (24-hour format)");
+        // alert("Invalid time format. Use HH:MM (24-hour format)");
+        toast.error("Invalid time format. Use HH:MM (24-hour format)");
         return;
       }
       const toMinutes = (t) => {
@@ -252,7 +256,8 @@ export default function ClinicManagement() {
         return h * 60 + m;
       };
       if (toMinutes(formData.startTime) >= toMinutes(formData.endTime)) {
-        alert("Start time must be before end time");
+        // alert("Start time must be before end time");
+        toast.error("Start time must be before end time");
         return;
       }
     }
@@ -261,6 +266,7 @@ export default function ClinicManagement() {
       const response = await apiPost("/users/addAddress", formData);
 
       if (response.status === 200) {
+        toast.success(response.data?.message || "Clinic added successfully");
         // Refresh the clinics list after successful addition
         const refreshResponse = await apiPost("/users/getClinicAddress", {});
         if (
@@ -287,11 +293,13 @@ export default function ClinicManagement() {
           longitude: "",
         });
       } else {
+        toast.error(response.data?.message || "Failed to add clinic");
         throw new Error(response.data?.message || "Failed to add clinic");
       }
     } catch (err) {
-      console.error("Error adding clinic:", err);
-      alert(err.message || "Failed to add clinic. Please try again.");
+      // console.error("Error adding clinic:", err);
+      // alert(err.message || "Failed to add clinic. Please try again.");
+      toast.error(err.message || "Failed to add clinic. Please try again.");
     }
   };
 
@@ -304,17 +312,20 @@ export default function ClinicManagement() {
       });
 
       if (response.status === 200) {
+        toast.success(response.data?.message || "Clinic deleted successfully");
         // Refresh the clinics list after successful deletion
         const refreshResponse = await apiPost("/users/getClinicAddress", {});
         if (refreshResponse.status === 200) {
           setClinics(refreshResponse.data.data || []);
         }
       } else {
+        toast.error(response.data?.message || "Failed to delete clinic");
         throw new Error(response.data?.message || "Failed to delete clinic");
       }
     } catch (err) {
-      console.error("Error deleting clinic:", err);
-      alert(err.message || "Failed to delete clinic. Please try again.");
+      // console.error("Error deleting clinic:", err);
+      // alert(err.message || "Failed to delete clinic. Please try again.");
+      toast.error(err.message || "Failed to delete clinic. Please try again.");
     }
   };
 
@@ -689,14 +700,14 @@ export default function ClinicManagement() {
           <table style={tableStyle}>
             <thead style={theadStyle}>
               <tr>
-                <th style={thStyle}>Address ID</th>
+                {/* <th style={thStyle}>Address ID</th> */}
                 <th style={thStyle}>Clinic Name</th>
                 <th style={thStyle}>Type</th>
                 <th style={thStyle}>Address</th>
                 <th style={thStyle}>Contact</th>
                 <th style={thStyle}>Operating Hours</th>
                 <th style={thStyle}>Status</th>
-                <th style={thStyle}>Action</th>
+                {/* <th style={thStyle}>Action</th> */}
               </tr>
             </thead>
             <tbody>
@@ -712,7 +723,7 @@ export default function ClinicManagement() {
                       (e.target.style.backgroundColor = "transparent")
                     }
                   >
-                    <td
+                    {/* <td
                       style={{
                         ...tdStyle,
                         fontWeight: "500",
@@ -720,7 +731,7 @@ export default function ClinicManagement() {
                       }}
                     >
                       {clinic.addressId}
-                    </td>
+                    </td> */}
                     <td style={{ ...tdStyle, color: "#111827" }}>
                       {clinic.clinicName}
                     </td>
@@ -743,7 +754,7 @@ export default function ClinicManagement() {
                         {clinic.status}
                       </span>
                     </td>
-                    <td style={tdStyle}>
+                    {/* <td style={tdStyle}>
                       <div style={actionButtonsStyle}>
                         <button
                           style={{ ...iconButtonStyle, color: "#2563eb" }}
@@ -783,7 +794,7 @@ export default function ClinicManagement() {
                           <Trash2 size={16} />
                         </button>
                       </div>
-                    </td>
+                    </td> */}
                   </tr>
                 ))
               ) : (

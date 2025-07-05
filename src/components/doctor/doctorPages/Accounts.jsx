@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Table,
@@ -25,7 +25,7 @@ import {
   ClockCircleOutlined,
   SyncOutlined,
 } from "@ant-design/icons";
-
+import {apiGet} from "../../../components/api"; // Adjust the import path as necessary
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -67,16 +67,35 @@ const AccountsPage = () => {
   ];
 
   // Mock data for account summary matching the image
-  const accountSummary = {
-    totalReceived: 1500000,
-    totalExpenditure: 35000,
-    pendingTransactions: 12,
-    recentTransactions: [
-      { name: "John Doe", amount: 500 },
-      { name: "Anita Rao", amount: 1500 },
-      { name: "Mike Johnson", amount: 750 },
-    ],
+  const [accountSummary, setAccountSummary] = useState({
+    totalReceived: 0,
+    totalExpenditure: 0,
+    pendingTransactions: 0,
+    recentTransactions: [],
+  });
+
+  useEffect(() => {
+  const fetchRevenueData = async () => {
+    try {
+        const response = await apiGet("/finance/getDoctorRevenue");
+        console.log("Revenue Data:", response.data);
+      const apiData = response.data.data;
+
+      setAccountSummary((prev) => ({
+        ...prev,
+        totalReceived: apiData.totalRevenue,
+        recentTransactions: apiData.lastThreeTransactions.map((txn) => ({
+          name: txn.username,
+          amount: txn.finalAmount,
+        })),
+      }));
+    } catch (error) {
+      console.error("Failed to fetch revenue data:", error);
+    }
   };
+
+  fetchRevenueData();
+}, []);
 
   const columns = [
     {
@@ -113,55 +132,59 @@ const AccountsPage = () => {
       sorter: (a, b) => a.amount - b.amount,
     },
     {
-  title: "Status",
-  dataIndex: "status",
-  key: "status",
-  width: 100,
-  render: (status) => {
-    let backgroundColor = "";
-    let textColor = "";
-    let borderColor = "";
-    
-    switch (status) {
-      case "paid":
-        backgroundColor = "#DCFCE7"; // light green background
-        textColor = "#15803D"; // dark green text
-        borderColor = "#BBF7D0"; // border color
-        break;
-      case "pending":
-        backgroundColor = "#FFEDD5"; // light orange background
-        textColor = "#9A3412"; // dark orange text
-        borderColor = "#FDBA74"; // border color
-        break;
-      case "refunded":
-        backgroundColor = "#FEE2E2"; // light red background
-        textColor = "#B91C1C"; // dark red text
-        borderColor = "#FCA5A5"; // border color
-        break;
-      default:
-        backgroundColor = "#F3F4F6"; // light gray background
-        textColor = "#6B7280"; // dark gray text
-        borderColor = "#D1D5DB"; // border color
-    }
-    
-    return (
-      <Tag 
-        style={{
-          backgroundColor: backgroundColor,
-          color: textColor,
-          borderColor: borderColor,
-          borderRadius: '12px',
-          padding: '0 8px',
-          fontWeight: 500,
-          borderWidth: '1px',
-          borderStyle: 'solid'
-        }}
-      >
-        {status === "paid" ? "Paid" : status === "pending" ? "Pending" : "Refunded"}
-      </Tag>
-    );
-  },
-},
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 100,
+      render: (status) => {
+        let backgroundColor = "";
+        let textColor = "";
+        let borderColor = "";
+
+        switch (status) {
+          case "paid":
+            backgroundColor = "#DCFCE7"; // light green background
+            textColor = "#15803D"; // dark green text
+            borderColor = "#BBF7D0"; // border color
+            break;
+          case "pending":
+            backgroundColor = "#FFEDD5"; // light orange background
+            textColor = "#9A3412"; // dark orange text
+            borderColor = "#FDBA74"; // border color
+            break;
+          case "refunded":
+            backgroundColor = "#FEE2E2"; // light red background
+            textColor = "#B91C1C"; // dark red text
+            borderColor = "#FCA5A5"; // border color
+            break;
+          default:
+            backgroundColor = "#F3F4F6"; // light gray background
+            textColor = "#6B7280"; // dark gray text
+            borderColor = "#D1D5DB"; // border color
+        }
+
+        return (
+          <Tag
+            style={{
+              backgroundColor: backgroundColor,
+              color: textColor,
+              borderColor: borderColor,
+              borderRadius: "12px",
+              padding: "0 8px",
+              fontWeight: 500,
+              borderWidth: "1px",
+              borderStyle: "solid",
+            }}
+          >
+            {status === "paid"
+              ? "Paid"
+              : status === "pending"
+              ? "Pending"
+              : "Refunded"}
+          </Tag>
+        );
+      },
+    },
     {
       title: "Payment Method",
       dataIndex: "paymentMethod",
@@ -206,7 +229,13 @@ const AccountsPage = () => {
   });
 
   return (
-    <div style={{ padding: "24px", backgroundColor: "#F3FFFD", minHeight: "100vh" }}>
+    <div
+      style={{
+        padding: "24px",
+        backgroundColor: "#F3FFFD",
+        minHeight: "100vh",
+      }}
+    >
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Title level={2} style={{ margin: 0, fontWeight: 600 }}>
@@ -222,32 +251,46 @@ const AccountsPage = () => {
         {/* Summary Cards */}
         <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
           <Col xs={24} sm={12} md={6}>
-            <Card 
-              style={{ 
-                borderRadius: "8px", 
+            <Card
+              style={{
+                borderRadius: "8px",
                 border: "1px solid #e8e8e8",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
-                <div style={{ 
-                  width: "32px", 
-                  height: "32px", 
-                  backgroundColor: "#52c41a", 
-                  borderRadius: "4px",
+              <div
+                style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: "12px"
-                }}>
-                  <CreditCardOutlined style={{ color: "white", fontSize: "16px" }} />
+                  marginBottom: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    backgroundColor: "#52c41a",
+                    borderRadius: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: "12px",
+                  }}
+                >
+                  <CreditCardOutlined
+                    style={{ color: "white", fontSize: "16px" }}
+                  />
                 </div>
               </div>
               <div>
-                <Text style={{ fontSize: "24px", fontWeight: "600", color: "#000" }}>
+                <Text
+                  style={{ fontSize: "24px", fontWeight: "600", color: "#000" }}
+                >
                   ₹{accountSummary.totalReceived.toLocaleString()}
                 </Text>
-                <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                <div
+                  style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
+                >
                   Total Amount Received
                 </div>
               </div>
@@ -255,32 +298,46 @@ const AccountsPage = () => {
           </Col>
 
           <Col xs={24} sm={12} md={6}>
-            <Card 
-              style={{ 
-                borderRadius: "8px", 
+            <Card
+              style={{
+                borderRadius: "8px",
                 border: "1px solid #e8e8e8",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
-                <div style={{ 
-                  width: "32px", 
-                  height: "32px", 
-                  backgroundColor: "#ff4d4f", 
-                  borderRadius: "4px",
+              <div
+                style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: "12px"
-                }}>
-                  <CreditCardOutlined style={{ color: "white", fontSize: "16px" }} />
+                  marginBottom: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    backgroundColor: "#ff4d4f",
+                    borderRadius: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: "12px",
+                  }}
+                >
+                  <CreditCardOutlined
+                    style={{ color: "white", fontSize: "16px" }}
+                  />
                 </div>
               </div>
               <div>
-                <Text style={{ fontSize: "24px", fontWeight: "600", color: "#000" }}>
+                <Text
+                  style={{ fontSize: "24px", fontWeight: "600", color: "#000" }}
+                >
                   ₹{accountSummary.totalExpenditure.toLocaleString()}
                 </Text>
-                <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                <div
+                  style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
+                >
                   Total Expenditure
                 </div>
               </div>
@@ -288,32 +345,46 @@ const AccountsPage = () => {
           </Col>
 
           <Col xs={24} sm={12} md={6}>
-            <Card 
-              style={{ 
-                borderRadius: "8px", 
+            <Card
+              style={{
+                borderRadius: "8px",
                 border: "1px solid #e8e8e8",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
-                <div style={{ 
-                  width: "32px", 
-                  height: "32px", 
-                  backgroundColor: "#faad14", 
-                  borderRadius: "4px",
+              <div
+                style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: "12px"
-                }}>
-                  <ClockCircleOutlined style={{ color: "white", fontSize: "16px" }} />
+                  marginBottom: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    backgroundColor: "#faad14",
+                    borderRadius: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: "12px",
+                  }}
+                >
+                  <ClockCircleOutlined
+                    style={{ color: "white", fontSize: "16px" }}
+                  />
                 </div>
               </div>
               <div>
-                <Text style={{ fontSize: "24px", fontWeight: "600", color: "#000" }}>
+                <Text
+                  style={{ fontSize: "24px", fontWeight: "600", color: "#000" }}
+                >
                   {accountSummary.pendingTransactions}
                 </Text>
-                <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                <div
+                  style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
+                >
                   Pending Transactions
                 </div>
               </div>
@@ -321,48 +392,63 @@ const AccountsPage = () => {
           </Col>
 
           <Col xs={24} sm={12} md={6}>
-            <Card 
-              style={{ 
-                borderRadius: "8px", 
+            <Card
+              style={{
+                borderRadius: "8px",
                 border: "1px solid #e8e8e8",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
-                <div style={{ 
-                  width: "32px", 
-                  height: "32px", 
-                  backgroundColor: "#1890ff", 
-                  borderRadius: "4px",
+              <div
+                style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: "12px"
-                }}>
+                  marginBottom: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    backgroundColor: "#1890ff",
+                    borderRadius: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: "12px",
+                  }}
+                >
                   <SyncOutlined style={{ color: "white", fontSize: "16px" }} />
                 </div>
               </div>
               <div>
-                <Text style={{ fontSize: "14px", fontWeight: "600", color: "#000" }}>
+                <Text
+                  style={{ fontSize: "14px", fontWeight: "600", color: "#000" }}
+                >
                   Recent Transactions
                 </Text>
                 <div style={{ marginTop: "8px" }}>
-                  {accountSummary.recentTransactions.map((transaction, index) => (
-                    <div key={index} style={{ 
-                      display: "flex", 
-                      justifyContent: "space-between", 
-                      alignItems: "center",
-                      fontSize: "12px",
-                      marginBottom: "4px"
-                    }}>
-                      <Text style={{ fontSize: "12px", color: "#666" }}>
-                        {transaction.name}
-                      </Text>
-                      <Text style={{ fontSize: "12px", fontWeight: "500" }}>
-                        ₹{transaction.amount}
-                      </Text>
-                    </div>
-                  ))}
+                  {accountSummary.recentTransactions.map(
+                    (transaction, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          fontSize: "12px",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        <Text style={{ fontSize: "12px", color: "#666" }}>
+                          {transaction.name}
+                        </Text>
+                        <Text style={{ fontSize: "12px", fontWeight: "500" }}>
+                          ₹{transaction.amount}
+                        </Text>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             </Card>
@@ -371,10 +457,10 @@ const AccountsPage = () => {
 
         {/* Transaction History */}
         <Card
-          style={{ 
-            borderRadius: "8px", 
+          style={{
+            borderRadius: "8px",
             border: "1px solid #e8e8e8",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
           }}
         >
           <div style={{ marginBottom: "24px" }}>
@@ -384,40 +470,45 @@ const AccountsPage = () => {
           </div>
 
           {/* Search and Filter Bar */}
-          <div style={{ 
-            backgroundColor: "#f8f9fa",
-            padding: "16px",
-            borderRadius: "8px",
-            marginBottom: "24px"
-          }}>
+          <div
+            style={{
+              backgroundColor: "#f8f9fa",
+              padding: "16px",
+              borderRadius: "8px",
+              marginBottom: "24px",
+            }}
+          >
             <Row gutter={16} align="middle">
               <Col flex="1" style={{ minWidth: "280px" }}>
                 <Input
                   placeholder="Search by Patient Name or Transaction ID"
                   prefix={<SearchOutlined style={{ color: "#8c8c8c" }} />}
                   onChange={(e) => setSearchText(e.target.value)}
-                  style={{ 
+                  style={{
                     borderRadius: "6px",
                     border: "1px solid #d9d9d9",
-                    backgroundColor: "white"
+                    backgroundColor: "white",
                   }}
                 />
               </Col>
               <Col>
-                <DatePicker 
-                  placeholder="mm/dd/yyyy" 
-                  style={{ 
-                    width: "140px", 
+                <RangePicker
+                  placeholder={["Start Date", "End Date"]}
+                  style={{
+                    width: "220px",
                     borderRadius: "6px",
-                    border: "1px solid #d9d9d9"
+                    border: "1px solid #d9d9d9",
                   }}
+                  onChange={(dates) => setFilterDate(dates)}
+                  value={filterDate}
+                  allowClear
                 />
               </Col>
               <Col>
                 <Select
-                  style={{ 
-                    width: "140px", 
-                    borderRadius: "6px"
+                  style={{
+                    width: "140px",
+                    borderRadius: "6px",
                   }}
                   defaultValue="all"
                   onChange={setFilterStatus}
@@ -430,9 +521,9 @@ const AccountsPage = () => {
               </Col>
               <Col>
                 <Select
-                  style={{ 
-                    width: "120px", 
-                    borderRadius: "16px"
+                  style={{
+                    width: "120px",
+                    borderRadius: "16px",
                   }}
                   defaultValue="all"
                 >
@@ -443,14 +534,14 @@ const AccountsPage = () => {
                 </Select>
               </Col>
               <Col>
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   icon={<DownloadOutlined />}
-                  style={{ 
+                  style={{
                     backgroundColor: "#52c41a",
                     borderColor: "#52c41a",
                     borderRadius: "6px",
-                    boxShadow: "none"
+                    boxShadow: "none",
                   }}
                 >
                   Export
@@ -463,24 +554,26 @@ const AccountsPage = () => {
             columns={columns}
             dataSource={filteredTransactions}
             rowKey="id"
-            pagination={{ 
+            pagination={{
               pageSize: 10,
               showSizeChanger: false,
               showQuickJumper: false,
-              style: { marginTop: "16px" }
+              style: { marginTop: "16px" },
             }}
-            style={{ 
+            style={{
               backgroundColor: "white",
-              borderRadius: "8px"
+              borderRadius: "8px",
             }}
           />
-          
-          <div style={{ 
-            marginTop: "16px", 
-            fontSize: "12px", 
-            color: "#666",
-            textAlign: "left"
-          }}>
+
+          <div
+            style={{
+              marginTop: "16px",
+              fontSize: "12px",
+              color: "#666",
+              textAlign: "left",
+            }}
+          >
             Showing 1 to 3 of 97 results
           </div>
         </Card>

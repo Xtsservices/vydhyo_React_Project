@@ -9,6 +9,7 @@ import Illustration from "./Illustration";
 import LoginForm from "./LoginForm";
 import "../../components/stylings/Login.css";
 import { apiPostWithoutToken } from "../api";
+import { useDispatch } from "react-redux";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const Login = () => {
   const [otp, setOtp] = useState("");
   const [userId, setUserId] = useState("");
   const [currentUserType, setCurrentUserType] = useState("");
-
+  const dispatch = useDispatch();
   useEffect(() => {
     message.config({
       top: 20,
@@ -48,7 +49,7 @@ const Login = () => {
     if (role === "superadmin") return "/SuperAdmin/dashboard";
     if (role === "doctor") return "/Doctor/dashboard";
     if (role === "reception") return "/Doctor/dashboard";
-    return '/Doctor/dashboard';
+    return "/Doctor/dashboard";
     return "/SuperAdmin/dashboard";
     return "/Admin/app/dashboard"; // Default route if role is unknown
   };
@@ -115,6 +116,13 @@ const Login = () => {
       });
 
       if (data.data.accessToken) {
+        const userData = data.data.userData || {};
+        if (userData) {
+          dispatch({
+            type: "currentUserData",
+            payload: userData,
+          });
+        }
         localStorage.setItem("accessToken", data.data.accessToken);
         localStorage.setItem("userID", userId);
         localStorage.setItem(
