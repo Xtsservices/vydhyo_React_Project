@@ -162,6 +162,7 @@ const LabPatientManagement = ({ status }) => {
         tests: patient.tests.map((test) => ({
           testId: test._id,
           price: test.price,
+          labTestID:test.labTestID,
         })),
       });
 

@@ -77,6 +77,28 @@ const Appointment = () => {
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
+
+  const handleViewPatientProfile = (appointment) => {
+    console.log("appointment========",appointment)
+    // Convert appointment data to patient format
+    const patientData = {
+      id: appointment.patientId || appointment.appointmentId,
+      name: appointment.patientName,
+      gender: appointment.patientGender || "N/A",
+      age: appointment.patientAge || "N/A",
+      phone: appointment.patientPhone || "N/A",
+      lastVisit: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
+      department: appointment.appointmentDepartment,
+      status: appointment.appointmentStatus,
+      userId: appointment.userId || "N/A",
+    };
+    
+    setSelectedPatient(patientData);
+    setSelectedAppointment(appointment);
+    setIsPatientProfileModalVisible(true);
+    
+
+  };
   const handleReschedule = (appointment) => {
     setSelectedAppointment(appointment);
     setIsRescheduleModalVisible(true);

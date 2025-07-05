@@ -879,14 +879,14 @@ const AddWalkInPatient = () => {
                 Paid
               </Button>
             </Col>
-            <Col>
+            {/* <Col>
               <Button
                 type={paymentStatus === "pending" ? "primary" : "default"}
                 onClick={() => setPaymentStatus("pending")}
               >
                 Pending
               </Button>
-            </Col>
+            </Col> */}
           </Row>
         </Col>
       </Row>
