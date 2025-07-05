@@ -72,21 +72,89 @@ const BillingSystem = () => {
       (sum, med) => sum + (med.status === "Pending" && med.price ? med.quantity * med.price : 0),
       0
     );
+    // const testTotal = patient.tests.reduce(
+    //   (sum, test) => sum + (test.status === "Completed" && test.price ? test.price : 0),
+    //   0
+    // );
     const testTotal = patient.tests.reduce(
-      (sum, test) => sum + (test.status === "Completed" && test.price ? test.price : 0),
-      0
-    );
+    (sum, test) => sum + (test.status === "Pending" && test.price ? test.price : 0),
+    0
+  );
     const grandTotal = medicineTotal + testTotal;
     return { medicineTotal, testTotal, grandTotal };
   };
 
-  const handleMarkAsPaid = (patientId) => {
-    setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
+  // const handleMarkAsPaid = (patientId) => {
+  //   setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
+  // };
+
+ const handleMarkAsPaid = async (patientId) => {
+  const patient = patients.find((p) => p.id === patientId);
+  if (!patient) return;
+
+  // Check if there are any Pending tests or medicines
+  const pendingTests = patient.tests.filter((test) => test.status === "Pending");
+  const pendingMedicines = patient.medicines.filter((med) => med.status === "Pending");
+  
+  if (pendingTests.length === 0 && pendingMedicines.length === 0) {
+    setError("No pending tests or medicines to pay for.");
+    return;
+  }
+
+  // Construct the payload
+  const payload = {
+    patientId: patient.patientId,
+    doctorId: doctorId,
+    tests: pendingTests.map((test) => ({
+      testName: test.name,
+      status: "pending", // API expects lowercase
+      price: test.price,
+      createdAt: new Date(test.createdDate + "T00:00:00.000Z").toISOString(), // Convert to ISO
+    })),
+    medicines: pendingMedicines.map((med) => ({
+      medName: med.name,
+      quantity: med.quantity,
+      status: "pending", // API expects lowercase
+      price: med.price,
+      createdAt: new Date(med.createdAt || Date.now()).toISOString(), // Fallback to current time
+    })),
   };
+
+  try {
+    // Send POST request to the API
+    const response = await apiPost("/receptionist/totalBillPayFromReception", payload);
+    if (response.status === 200) {
+      // Update patient data to mark Pending items as Completed
+      setPatients((prevPatients) =>
+        prevPatients.map((p) =>
+          p.id === patientId
+            ? {
+                ...p,
+                tests: p.tests.map((test) =>
+                  test.status === "Pending" ? { ...test, status: "Completed" } : test
+                ),
+                medicines: p.medicines.map((med) =>
+                  med.status === "Pending" ? { ...med, status: "Completed" } : med
+                ),
+              }
+            : p
+        )
+      );
+      // Mark billing as completed
+      setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
+    } else {
+      throw new Error("Failed to process payment");
+    }
+  } catch (err) {
+    console.error("Error processing payment:", err);
+    setError("Failed to process payment. Please try again.");
+  }
+};
 
   if (loading) return <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>;
   if (error) return <div style={{ textAlign: "center", padding: "20px", color: "red" }}>{error}</div>;
 
+  console.log("patients====",patients)
   return (
     <div
       style={{
@@ -641,7 +709,7 @@ const BillingSystem = () => {
                                 marginLeft: "10px",
                               }}
                             >
-                              💳 Mark as Paid
+                              💳 Pay
                             </button>
                           </div>
                         </div>

@@ -1198,7 +1198,7 @@ const DoctorDashboard = () => {
       setIsLoadingAppointments(true);
       const formattedDate = date || moment().format("YYYY-MM-DD");
       const response = await apiGet(
-        `/appointment/getAppointmentsByDoctorID/appointment?date=${formattedDate}&doctorId=${doctorId}`
+        `/appointment/getAppointmentsByDoctorID/dashboardAppointment?date=${formattedDate}&doctorId=${doctorId}`
       );
 
       if (
