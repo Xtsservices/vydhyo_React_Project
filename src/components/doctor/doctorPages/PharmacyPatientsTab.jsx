@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Table, 
   Button, 
@@ -128,7 +128,7 @@ const PatientsTab = () => {
 
   useEffect(() => {
       if (doctorId && user) {
-        getAllTestsPatientsByDoctorID();
+        // getAllTestsPatientsByDoctorID();
       }
     }, [user, doctorId]);
 
