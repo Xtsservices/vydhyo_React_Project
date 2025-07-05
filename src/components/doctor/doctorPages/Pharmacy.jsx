@@ -2,18 +2,13 @@ import React, { useState } from 'react';
 import { 
   Layout, 
   Card, 
-  Table, 
   Tabs, 
   Input, 
   Button, 
-  Avatar, 
-  Space,
   Row,
   Col,
-  Statistic,
   Typography,
-  Pagination,
-   Modal,
+  Modal,
   InputNumber
 } from 'antd';
 import { 
@@ -21,18 +16,21 @@ import {
   UserOutlined, 
   UsergroupAddOutlined,
   EditOutlined,
-  CheckOutlined,
-  CloseOutlined,
   PlusOutlined,
   MedicineBoxOutlined
 } from '@ant-design/icons';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
-import  '../../stylings/pharmacy.css'; // Import the CSS file for styling
+
+// Import the tab components
+import PatientsTab from './PharmacyPatientsTab';
+import MedicinesTab from './PharmacyMedicinesTab';
+import CompletedTab from './PharmacyCompletedTab';
+
+import '../../stylings/pharmacy.css'; // Import the CSS file for styling
 import { apiPost } from '../../api';
 import { useSelector } from 'react-redux';
-
 
 export default function Pharmacy() {
   const user = useSelector((state) => state.currentUserData);
@@ -47,171 +45,7 @@ export default function Pharmacy() {
   });
   const [errors, setErrors] = useState({});   
 
-  const patientData = [
-    {
-      key: '1',
-      patientId: 'P-234512',
-      name: 'John Doe',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      gender: 'Male',
-      phone: '+91 98765XXXXX',
-      date: '28 June 2025',
-      time: '09:00 Am',
-      amount: 500,
-      status: 'pending'
-    },
-    {
-      key: '2',
-      patientId: 'P-234513',
-      name: 'Sarah Wilson',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b647?w=150&h=150&fit=crop&crop=face',
-      gender: 'Female',
-      phone: '+91 98765XXXXY',
-      date: '25 June 2025',
-      time: '10:00 Am',
-      amount: 500,
-      status: 'pending'
-    },
-    {
-      key: '3',
-      patientId: 'P-234514',
-      name: 'Michael Chen',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      gender: 'Male',
-      phone: '+91 98765XXXXZ',
-      date: '20 June 2025',
-      time: '11:30 Pm',
-      amount: 500,
-      status: 'pending'
-    },
-    {
-      key: '4',
-      patientId: 'P-234513',
-      name: 'Sarah Wilson',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b647?w=150&h=150&fit=crop&crop=face',
-      gender: 'Female',
-      phone: '+91 98765XXXXY',
-      date: '25 June 2025',
-      time: '04:30 Pm',
-      amount: 500,
-      status: 'pending'
-    }
-  ];
-
-  const columns = [
-    {
-      title: 'Patient ID',
-      dataIndex: 'patientId',
-      key: 'patientId',
-      width: 120,
-    },
-    {
-      title: 'Patient',
-      key: 'patient',
-      width: 200,
-      render: (_, record) => (
-        <div className="patient-info">
-          <img 
-            src={record.avatar} 
-            alt={record.name}
-            className="patient-avatar"
-          />
-          <span className="patient-name">{record.name}</span>
-        </div>
-      ),
-    },
-    {
-      title: 'Gender',
-      dataIndex: 'gender',
-      key: 'gender',
-      width: 100,
-    },
-    {
-      title: 'Phone',
-      dataIndex: 'phone',
-      key: 'phone',
-      width: 150,
-    },
-    {
-      title: 'Date & Time',
-      key: 'dateTime',
-      width: 150,
-      render: (_, record) => (
-        <div className="date-time-cell">
-          <div className="date">{record.date}</div>
-          <div className="time">{record.time}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Amount',
-      dataIndex: 'amount',
-      key: 'amount',
-      width: 100,
-      render: (amount) => <span className="amount-cell">₹ {amount}</span>,
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      width: 200,
-      render: () => (
-        <div className="action-buttons">
-          <Button className="accept-btn">Accept</Button>
-          <Button className="reject-btn">Reject</Button>
-          <Button className="edit-btn">Edit</Button>
-        </div>
-      ),
-    },
-  ];
-
-  const tabItems = [
-    {
-      key: '1',
-      label: 'Pending',
-      children: (
-        <>
-          <Table 
-            columns={columns} 
-            dataSource={patientData}
-            pagination={false}
-            size="middle"
-            showHeader={true}
-          />
-          <div className="pagination-container">
-            <span className="pagination-info">Showing 1 to 4 of 97 results</span>
-            <Pagination 
-              current={1}
-              total={97}
-              pageSize={4}
-              showSizeChanger={false}
-              showQuickJumper={false}
-              simple={false}
-            />
-          </div>
-        </>
-      ),
-    },
-    {
-      key: '2',
-      label: 'Processing',
-      children: (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <Text type="secondary">No processing patients</Text>
-        </div>
-      ),
-    },
-    {
-      key: '3',
-      label: 'completed',
-      children: (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <Text type="secondary">No completed patients</Text>
-        </div>
-      ),
-    },
-  ];
-
-const showModal = () => {
+  const showModal = () => {
     setIsModalVisible(true);
   };
 
@@ -249,11 +83,9 @@ const showModal = () => {
     }
 
     try {
-      let doctorId
-      if(user.role = 'receptionist') {
-        doctorId= user.createdBy
-      }
-       doctorId = user.userId; // Replace with actual doctor ID from auth context
+      const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
+      form.quantity = 100
       await apiPost('pharmacy/addMedInventory', {
         ...form,
         doctorId: doctorId // Replace with actual doctor ID from auth context
@@ -281,10 +113,28 @@ const showModal = () => {
     setIsModalVisible(false);
   };
 
+  const tabItems = [
+    {
+      key: '1',
+      label: 'Patients',
+      children: <PatientsTab />,
+    },
+    {
+      key: '2',
+      label: 'Medicines',
+      children: <MedicinesTab />,
+    },
+    {
+      key: '3',
+      label: 'Completed',
+      children: <CompletedTab />,
+    },
+  ];
+
   console.log("User Data:", user);
+  
   return (
     <div>
-     
       <Layout className="pharmacy-layout">
         <Header className="pharmacy-header">
           <div className="pharmacy-logo">
@@ -334,8 +184,8 @@ const showModal = () => {
               </Card>
             </Col>
           </Row>
-{/* here add add inventory button, when i click on the button display popup to display to add inventory, medname, quantity, price */}
- {/* Add Inventory Button */}
+
+          {/* Add Inventory Button */}
           <div style={{ marginBottom: '24px', textAlign: 'right' }}>
             <Button 
               type="primary" 
@@ -346,7 +196,7 @@ const showModal = () => {
             </Button>
           </div>
 
-           {/* Add Inventory Modal */}
+          {/* Add Inventory Modal */}
           <Modal
             title="Add Medicine to Inventory"
             open={isModalVisible}
@@ -370,22 +220,6 @@ const showModal = () => {
                   </div>
                 )}
               </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px' }}>Quantity</label>
-                <InputNumber
-                  name="quantity"
-                  value={form.quantity}
-                  onChange={(value) => handleNumberChange('quantity', value)}
-                  min={1}
-                  placeholder="Enter quantity"
-                  style={{ width: '100%' }}
-                />
-                {errors.quantity && (
-                  <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
-                    {errors.quantity}
-                  </div>
-                )}
-              </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px' }}>Price (₹)</label>
                 <InputNumber
@@ -405,7 +239,8 @@ const showModal = () => {
               </div>
             </div>
           </Modal>
-          {/* Patient Management Table */}
+
+          {/* Patient Management Table with Tabs */}
           <Card className="main-card">
             <Tabs 
               activeKey={activeTab} 
