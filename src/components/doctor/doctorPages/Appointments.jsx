@@ -35,7 +35,7 @@ import {
 import moment from "moment";
 import "../../../components/stylings/Appointments.css";
 import { apiGet, apiPost } from "../../api";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector } from "react-redux";
 import PrescriptionForm from "../../Models/PrescriptionForm";
@@ -426,6 +426,7 @@ const Appointment = () => {
     },
   ];
 
+  console.log("appointments",appointments)
   return (
     <div style={{ padding: "24px" }}>
       <Spin spinning={loading}>
@@ -488,7 +489,7 @@ const Appointment = () => {
                   <Statistic
                     title="Completed"
                     value={
-                      appointments.filter(
+                      appointmentsCount.filter(
                         (appt) => appt.appointmentStatus === "completed"
                       ).length
                     }
@@ -675,16 +676,7 @@ const Appointment = () => {
         )}
       </Modal>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+     
     </div>
   );
 };

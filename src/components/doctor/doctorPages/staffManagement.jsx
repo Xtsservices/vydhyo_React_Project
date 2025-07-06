@@ -32,7 +32,7 @@ import dayjs from "dayjs";
 import "../../../components/stylings/StaffManagement.css";
 import { apiGet, apiPost, apiPut } from "../../api";
 import { useSelector } from "react-redux";
-import { ToastContainer, toast } from "react-toastify";
+import {  toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const { Option } = Select;
@@ -764,16 +764,7 @@ const StaffManagement = () => {
         )}
       </Modal>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+     
     </div>
   );
 };

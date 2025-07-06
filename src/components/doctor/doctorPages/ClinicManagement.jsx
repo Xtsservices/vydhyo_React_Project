@@ -7,7 +7,7 @@ import {
   Marker,
 } from "@react-google-maps/api";
 import { apiGet, apiPost } from "../../api";
-import { ToastContainer, toast } from "react-toastify";
+import {  toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const libraries = ["places", "geocoding"];
@@ -1104,7 +1104,6 @@ export default function ClinicManagement() {
             </div>
           </div>
         )}
-        <ToastContainer />
       </div>
     </div>
   );
