@@ -351,6 +351,7 @@ const DoctorLayoutWrapper = () => {
             />
           </Badge>
 
+
           {/* User Profile Section with Dropdown */}
           <Dropdown overlay={profileMenu} trigger={["click"]}>
             <div

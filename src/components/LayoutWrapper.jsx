@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Layout, Menu, Avatar, Badge } from "antd";
+import { Layout, Menu, Avatar, Badge, Dropdown } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
@@ -18,7 +18,7 @@ import {
   faBell,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import logo from "../assets/logooo.png";
 import { useSelector } from "react-redux";
@@ -26,6 +26,7 @@ import { useSelector } from "react-redux";
 const { Header, Sider, Content, Footer } = Layout;
 
 const LayoutWrapper = () => {
+  const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const user = useSelector((state) => state.currentUserData);
@@ -268,6 +269,31 @@ const LayoutWrapper = () => {
     return null;
   };
 
+  const handleLogout = async () => {
+        console.log("Logout successful:", 10);
+    
+      try {
+        const response = await apiPost("/auth/logout");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userID");
+        localStorage.removeItem("role");
+        console.log("Logout successful:", response.data.message);
+      } catch (error) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userID");
+        localStorage.removeItem("role");
+        navigate("/login");
+        console.error(
+          "Logout API failed:",
+          error.response?.statusText || error.message
+        );
+      }
+    finally {
+      localStorage.removeItem("accessToken");
+      navigate("/login");
+    }
+  };
+
   const profileImageSrc = getProfileImage(user);
 
   // const profileMenu = (
@@ -282,7 +308,29 @@ const LayoutWrapper = () => {
   //        Logout
   //      </Menu.Item>
   //    </Menu>
-  //  ); 
+  //  ); // Dropdown menu for profile
+  const profileMenu = (
+    <Menu
+      style={{
+        borderRadius: "8px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+      }}
+    >
+      {/* <Menu.Item key="profile" onClick={handleProfileClick}>
+        <FontAwesomeIcon icon={faUser} style={{ marginRight: 8 }} />
+        Profile
+      </Menu.Item> */}
+      <Menu.Item
+        key="logout"
+        onClick={() => {
+          handleLogout();
+        }}
+      >
+        <FontAwesomeIcon icon={faSignOutAlt} style={{ marginRight: 8 }} />
+        Logout
+      </Menu.Item>
+    </Menu>
+  );
 
   return (
     <>
@@ -333,8 +381,8 @@ const LayoutWrapper = () => {
                 }}
               />
             </div> */}
-            
-            <div
+
+            {/* <div
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -376,7 +424,55 @@ const LayoutWrapper = () => {
                   {user?.role || "Doctor"}
                 </div>
               </div>
-            </div>            
+            </div>             */}
+
+            {/* User Profile Section with Dropdown */}
+            <Dropdown overlay={profileMenu} trigger={["click"]}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  background: "#f8fafc",
+                  cursor: "pointer",
+                  marginLeft: "8px",
+                }}
+              >
+                <Avatar
+                  size={32}
+                  src={profileImageSrc}
+                  icon={!profileImageSrc && <FontAwesomeIcon icon={faUser} />}
+                  style={{
+                    backgroundColor: "#e2e8f0",
+                    color: "#64748b",
+                  }}
+                />
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "#1e293b",
+                      lineHeight: "1.2",
+                    }}
+                  >
+                    Dr. {user?.firstname || "Arvind"}{" "}
+                    {user?.lastname || "Sharma"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#64748b",
+                      lineHeight: "1.2",
+                    }}
+                  >
+                    {user?.role || "Doctor"}
+                  </div>
+                </div>
+              </div>
+            </Dropdown>
           </div>
         </Header>
 
@@ -413,10 +509,12 @@ const LayoutWrapper = () => {
                   <div className="profile-avatar">
                     <img
                       src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                      alt="Profile" 
+                      alt="Profile"
                     />
                   </div>
-                  <h3 className="profile-name">{user?.firstname || "Arvind"} {user?.lastname || "Sharma"}</h3>
+                  <h3 className="profile-name">
+                    {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
+                  </h3>
                 </div>
               )}
 
@@ -488,7 +586,6 @@ const LayoutWrapper = () => {
                 >
                   <Link to="/login">Logout</Link>
                 </Menu.Item>
-
               </Menu>
             </motion.div>
           </Sider>

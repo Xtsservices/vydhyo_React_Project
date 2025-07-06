@@ -32,7 +32,7 @@ import {
   EyeOutlined,
   ManOutlined,
 } from "@ant-design/icons";
-import { apiPut } from "../../api";
+import { apiGet, apiPut } from "../../api";
 
 const { Title, Text } = Typography;
 
@@ -79,17 +79,18 @@ const DoctorProfileView = () => {
         navigate("/login");
         return;
       }
+const response = await apiGet(`users/AllUsers?type=doctor&id=${doctorId}`)
 
-      const response = await fetch(
-        `${API_BASE_URL}/users/AllUsers?type=doctor&id=${doctorId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // const response = await fetch(
+      //   `${API_BASE_URL}/users/AllUsers?type=doctor&id=${doctorId}`,
+      //   {
+      //     method: "GET",
+      //     headers: {
+      //       Authorization: `Bearer ${token}`,
+      //       "Content-Type": "application/json",
+      //     },
+      //   }
+      // );
 
       if (!response.ok) {
         if (response.status === 401) {

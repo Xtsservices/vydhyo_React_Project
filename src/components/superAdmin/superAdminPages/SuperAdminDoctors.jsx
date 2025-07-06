@@ -30,6 +30,7 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
+import { apiGet } from "../../api";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -68,14 +69,14 @@ const DoctorOnboardingDashboard = () => {
         navigate("/login");
         return;
       }
-
-      const response = await fetch(`${API_BASE_URL}/users/AllUsers?type=doctor`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+const response = await apiGet("users/AllUsers?type=doctor")
+      // const response = await fetch(`${API_BASE_URL}/users/AllUsers?type=doctor`, {
+      //   method: "GET",
+      //   headers: {
+      //     Authorization: `Bearer ${token}`,
+      //     "Content-Type": "application/json",
+      //   },
+      // });
 
       if (!response.ok) {
         if (response.status === 401) {
