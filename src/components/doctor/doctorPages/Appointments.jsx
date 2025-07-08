@@ -35,7 +35,7 @@ import {
 import moment from "moment";
 import "../../../components/stylings/Appointments.css";
 import { apiGet, apiPost } from "../../api";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector } from "react-redux";
 import PrescriptionForm from "../../Models/PrescriptionForm";
@@ -233,10 +233,15 @@ const Appointment = () => {
     return data.filter((appointment) => {
       const matchesSearch =
         searchText === "" ||
-        appointment.patientName
-          .toLowerCase()
-          .includes(searchText.toLowerCase()) ||
-        appointment.appointmentId.toString().includes(searchText);
+        (appointment.patientName &&
+          appointment.patientName
+            .toLowerCase()
+            .includes(searchText.toLowerCase())) ||
+        (appointment.appointmentId &&
+          appointment.appointmentId
+            .toString()
+            .toLowerCase()
+            .includes(searchText.toLowerCase()));
 
       const matchesClinic =
         filters.clinic === "all" ||
@@ -269,7 +274,7 @@ const Appointment = () => {
       const response = await apiGet(
         `/appointment/getAppointmentsByDoctorID/appointment?doctorId=${doctorId}`
       );
-
+console.log("response======", response);
       if (response.status === 200) {
         const updatedAppointments = response.data.data;
         setAppointments(updatedAppointments);
@@ -346,7 +351,7 @@ const Appointment = () => {
         onClick={() => handleCompleteAppointment(record.appointmentId)}
         disabled={
           record.appointmentStatus === "completed" ||
-          record.appointmentStatus === "canceled"
+          record.appointmentStatus === "cancelled"
         }
         icon={<CheckOutlined />}
       >
@@ -357,7 +362,7 @@ const Appointment = () => {
         onClick={() => handleReschedule(record)}
         disabled={
           record.appointmentStatus === "completed" ||
-          record.appointmentStatus === "canceled"
+          record.appointmentStatus === "cancelled"
         }
         icon={<CalendarOutlined />}
       >
@@ -368,7 +373,7 @@ const Appointment = () => {
         onClick={() => handleCancelAppointment(record)}
         disabled={
           record.appointmentStatus === "completed" ||
-          record.appointmentStatus === "canceled"
+          record.appointmentStatus === "cancelled"
         }
         icon={<UserOutlined />}
         danger
@@ -426,7 +431,6 @@ const Appointment = () => {
     },
   ];
 
-  console.log("appointments",appointments)
   return (
     <div style={{ padding: "24px" }}>
       <Spin spinning={loading}>
@@ -448,18 +452,13 @@ const Appointment = () => {
                 <Card className="appointments-card">
                   <Statistic
                     title="Total Appointments"
-                    value={appointments.length}
+                    value={appointmentsCount.length}
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
                         <CalendarFilled className="calendar-icon" />
                       </div>
                     )}
-                    // suffix={
-                    //   <Text type="success" className="statistic-suffix">
-                    //     <ArrowUpOutlined /> +8% from Last month
-                    //   </Text>
-                    // }
                   />
                 </Card>
               </Col>
@@ -469,7 +468,9 @@ const Appointment = () => {
                     title="Upcoming"
                     value={
                       appointments.filter(
-                        (appt) => appt.appointmentStatus === "scheduled"
+                        (appt) =>
+                          appt.appointmentStatus === "scheduled" ||
+                          appt.appointmentStatus === "rescheduled"
                       ).length
                     }
                     valueRender={(value) => (
@@ -514,9 +515,16 @@ const Appointment = () => {
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
-                        <Tag color="red" style={{ marginLeft: 8 }}>
-                          Cancelled
-                        </Tag>
+                        {/* Use CloseCircleFilled as the cancel icon */}
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            color: "#ff4d4f",
+                            fontSize: 20,
+                          }}
+                        >
+                          X
+                        </span>
                       </div>
                     )}
                   />
@@ -542,9 +550,10 @@ const Appointment = () => {
                   onChange={(value) => handleFilterChange("clinic", value)}
                 >
                   <Option value="all">All clinics</Option>
-                  <Option value="Cardiology">Cardiology</Option>
-                  <Option value="Neurology">Neurology</Option>
-                  <Option value="Orthopedics">Orthopedics</Option>
+                  <Option value="cardiology">Cardiology</Option>
+                  <Option value="neurology">Neurology</Option>
+                  <Option value="orthopedics">Orthopedics</Option>
+                  <Option value="General Physician">General Physician</Option>
                 </Select>
               </Col>
 
@@ -555,9 +564,11 @@ const Appointment = () => {
                   onChange={(value) => handleFilterChange("type", value)}
                 >
                   <Option value="all">All Types</Option>
-                  <Option value="Consultation">Consultation</Option>
-                  <Option value="Follow-up">Follow-up</Option>
-                  <Option value="Emergency">Emergency</Option>
+                  <Option value="new-walkin">New Walkin</Option>
+                  <Option value="new-homecare">New HomeCare</Option>
+                  <Option value="followup-walkin">Followup Walkin</Option>
+                  <Option value="followup-video">Followup Video</Option>
+                  <Option value="followup-homecare">Followup Homecare</Option>
                 </Select>
               </Col>
 
@@ -569,9 +580,8 @@ const Appointment = () => {
                 >
                   <Option value="all">All Status</Option>
                   <Option value="scheduled">Scheduled</Option>
-                  <Option value="completed">Completed</Option>
                   <Option value="rescheduled">Rescheduled</Option>
-                  <Option value="canceled">Canceled</Option>
+                  <Option value="cancelled">Cancelled</Option>
                 </Select>
               </Col>
 
@@ -676,7 +686,16 @@ const Appointment = () => {
         )}
       </Modal>
 
-     
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };
