@@ -707,7 +707,7 @@ export default function ClinicManagement() {
                 <th style={thStyle}>Contact</th>
                 <th style={thStyle}>Operating Hours</th>
                 <th style={thStyle}>Status</th>
-                {/* <th style={thStyle}>Action</th> */}
+                <th style={thStyle}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -754,7 +754,7 @@ export default function ClinicManagement() {
                         {clinic.status}
                       </span>
                     </td>
-                    {/* <td style={tdStyle}>
+                    <td style={tdStyle}>
                       <div style={actionButtonsStyle}>
                         <button
                           style={{ ...iconButtonStyle, color: "#2563eb" }}
@@ -794,7 +794,7 @@ export default function ClinicManagement() {
                           <Trash2 size={16} />
                         </button>
                       </div>
-                    </td> */}
+                    </td>
                   </tr>
                 ))
               ) : (
