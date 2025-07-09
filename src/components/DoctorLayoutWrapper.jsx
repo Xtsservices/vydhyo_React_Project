@@ -75,6 +75,8 @@ const DoctorLayoutWrapper = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userID");
         localStorage.removeItem("role");
+        localStorage.removeItem("appointments");
+
         console.log("Logout successful:", response.data.message);
       } catch (error) {
         console.error(
@@ -84,6 +86,9 @@ const DoctorLayoutWrapper = () => {
       }
     } finally {
       localStorage.removeItem("accessToken");
+        localStorage.removeItem("userID");
+        localStorage.removeItem("role");
+        localStorage.removeItem("appointments");
       navigate("/login");
     }
   };

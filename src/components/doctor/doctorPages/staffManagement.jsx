@@ -32,7 +32,7 @@ import dayjs from "dayjs";
 import "../../../components/stylings/StaffManagement.css";
 import { apiGet, apiPost, apiPut } from "../../api";
 import { useSelector } from "react-redux";
-import {  toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const { Option } = Select;
@@ -101,7 +101,8 @@ const StaffModal = ({
     { value: "accounts", label: "Accounts" },
     { value: "staff-management", label: "Staff Management" },
     { value: "clinic-management", label: "Clinic Management" },
-    { value: "Billing", label: "Billing" },
+    { value: "e_prescription", label: "E-Prescription" },
+    { value: "billing", label: "Billing" },
     { value: "reviews", label: "Reviews" },
   ];
 
@@ -308,9 +309,9 @@ const StaffManagement = () => {
       setLoading(true);
 
       if (mode === "add") {
-        const userid = user.createdBy
+        const userid = user.createdBy;
         const response = await apiPost(`/doctor/createReceptionist/${userid}`, {
-          ...staffData
+          ...staffData,
         });
         notification.success({
           message: `${
@@ -465,11 +466,13 @@ const StaffManagement = () => {
     try {
       setFetchLoading(true);
       const userid = user.createdBy;
-      console.log("user",user)
+      console.log("user", user);
       const response = await apiGet(`/doctor/getStaffByCreator/${userid}`);
 
-      const filterData = response.data.data.filter((each)=> each.userId !== user.createdBy)
-    console.log("filterData",filterData)
+      const filterData = response.data.data.filter(
+        (each) => each.userId !== user.createdBy
+      );
+      console.log("filterData", filterData);
       const formattedData = filterData.map((staff, index) => ({
         name: staff.name,
         userId: staff.userId,
@@ -763,8 +766,6 @@ const StaffManagement = () => {
           </>
         )}
       </Modal>
-
-     
     </div>
   );
 };
