@@ -12,14 +12,19 @@ import { message, Modal, Select, Button, Input, Table } from "antd";
 import moment from "moment";
 import { apiGet } from "../../api";
 import styles from "../../stylings/MyPatientsStyles";
+import { useSelector } from "react-redux";
 
-const { Option } = Select;
+const { option } = Select;
 
 const MyPatients = () => {
   const navigate = useNavigate();
+  const user = useSelector((state) => state.currentUserData);
+
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
   const [searchText, setSearchText] = useState("");
   const [searchField, setSearchField] = useState("all"); // New state for search field selection
-  const [sortBy, setSortBy] = useState("Name");
+  const [sortBy, setSortBy] = useState("all"); // Default to 'all' so all patients show initially
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -56,9 +61,10 @@ const MyPatients = () => {
       }
 
       const response = await apiGet(
-        "/appointment/getAppointmentsByDoctorID/patients"
+        `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
       );
       const data = response.data;
+
       let patientsData = [];
 
       if (response.status === 200 && data.data) {
@@ -79,9 +85,11 @@ const MyPatients = () => {
                 appointment.userId ||
                 `P-${Math.random().toString(36).substr(2, 6)}`,
               name: appointment.patientName || "N/A",
-              gender: "N/A",
-              age: "N/A",
-              phone: "N/A",
+              gender: appointment.patientDetails?.gender || "N/A",
+              age: appointment.patientDetails?.dob
+                ? calculateAge(appointment.patientDetails.dob)
+                : "N/A",
+              phone: appointment.patientDetails?.mobile || "N/A",
               lastVisit: appointment.appointmentDate
                 ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
                 : "N/A",
@@ -140,8 +148,10 @@ const MyPatients = () => {
   }, []);
 
   useEffect(() => {
-    fetchPatients();
-  }, [fetchPatients]);
+    if (user && doctorId) {
+      fetchPatients();
+    }
+  }, [user, doctorId]);
 
   const handleSearch = useCallback(
     (e) => {
@@ -284,11 +294,6 @@ const MyPatients = () => {
   };
 
   const handleSubmitPatientProfile = () => {
-    // Here you can implement the API call to save medicines and tests
-    console.log("Patient:", selectedPatient);
-    console.log("Medicines:", medicines);
-    console.log("Tests:", tests);
-
     message.success("Patient profile updated successfully");
     setIsPatientProfileModalVisible(false);
   };
@@ -370,6 +375,44 @@ const MyPatients = () => {
     },
   ];
 
+  // Filtering logic for search and dropdown
+  useEffect(() => {
+    let filtered = [...patients];
+    // Search filter
+    if (searchText) {
+      filtered = filtered.filter((patient) => {
+        if (searchField === "all") {
+          return (
+            patient.name.toLowerCase().includes(searchText) ||
+            patient.id.toLowerCase().includes(searchText) ||
+            patient.department.toLowerCase().includes(searchText) ||
+            patient.phone.includes(searchText)
+          );
+        } else if (searchField === "name") {
+          return patient.name.toLowerCase().includes(searchText);
+        } else if (searchField === "id") {
+          return patient.id.toLowerCase().includes(searchText);
+        } else if (searchField === "department") {
+          return patient.department.toLowerCase().includes(searchText);
+        }
+        return true;
+      });
+    }
+    // Dropdown filter for appointmentType (normalize for comparison)
+    if (sortBy && sortBy !== "all") {
+      filtered = filtered.filter(
+        (patient) =>
+          (patient.appointmentType || "")
+            .replace(/\s+/g, "")
+            .replace(/-/g, "")
+            .toLowerCase() ===
+          sortBy.replace(/\s+/g, "").replace(/-/g, "").toLowerCase()
+      );
+    }
+    setFilteredPatients(filtered);
+    setCurrentPage(1);
+  }, [patients, searchText, searchField, sortBy]);
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -386,9 +429,7 @@ const MyPatients = () => {
               <input
                 type="text"
                 placeholder={`Search by ${
-                  searchField === "all"
-                    ? "Patient ID, Name or Department"
-                    : searchField
+                  searchField === "all" ? "Patient ID, Name " : searchField
                 }`}
                 value={searchText}
                 onChange={handleSearch}
@@ -398,7 +439,7 @@ const MyPatients = () => {
               />
             </div>
 
-            <button
+            {/* <button
               style={styles.filterButton}
               onClick={() => setIsFilterModalVisible(true)}
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#f9fafb")}
@@ -406,16 +447,22 @@ const MyPatients = () => {
             >
               <Filter style={{ width: "16px", height: "16px" }} />
               Filter
-            </button>
+            </button> */}
 
             <select
               value={sortBy}
               onChange={(e) => handleSort(e.target.value)}
               style={styles.sortSelect}
             >
-              <option value="Name">Sort by Name</option>
-              <option value="Date">Sort by Date</option>
-              <option value="ID">Sort by ID</option>
+              <option value="all">All Types</option>
+              <option value="new-walkin">New Walkin</option>
+              <option value="new-homecare">New HomeCare</option>
+              <option value="new-patient-walkthrough">
+                New Patient Walkthrough
+              </option>
+              <option value="followup-walkin">Followup Walkin</option>
+              <option value="followup-video">Followup Video</option>
+              <option value="followup-homecare">Followup Homecare</option>
             </select>
           </div>
 
@@ -426,7 +473,7 @@ const MyPatients = () => {
               alignItems: "center",
             }}
           >
-            <button
+            {/* <button
               style={{
                 ...styles.exportButton,
                 marginRight: "8px",
@@ -455,12 +502,12 @@ const MyPatients = () => {
             >
               <Download style={{ width: "16px", height: "16px" }} />
               Export
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
 
-      <Modal
+      {/* <Modal
         title="Filter Patients"
         open={isFilterModalVisible}
         onOk={() => {
@@ -539,8 +586,8 @@ const MyPatients = () => {
               placeholder="Select status"
               allowClear
             >
-              <Option value="New Patient">New Patient</Option>
-              <Option value="Follow-up">Follow-up</Option>
+              <option value="New Patient">New Patient</option>
+              <option value="Follow-up">Follow-up</option>
             </Select>
           </div>
           <div style={styles.filterField}>
@@ -553,9 +600,9 @@ const MyPatients = () => {
               allowClear
             >
               {uniqueAppointmentStatuses.map((status) => (
-                <Option key={status} value={status}>
+                <option key={status} value={status}>
                   {status}
-                </Option>
+                </option>
               ))}
             </Select>
           </div>
@@ -569,14 +616,14 @@ const MyPatients = () => {
               allowClear
             >
               {uniqueDepartments.map((dept) => (
-                <Option key={dept} value={dept}>
+                <option key={dept} value={dept}>
                   {dept}
-                </Option>
+                </option>
               ))}
             </Select>
           </div>
         </div>
-      </Modal>
+      </Modal> */}
 
       {/* Patient Profile Modal */}
       {/* <Modal

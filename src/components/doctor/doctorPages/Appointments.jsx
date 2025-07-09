@@ -87,14 +87,23 @@ const Appointment = () => {
   };
 
   const handleViewPatientProfile = (appointment) => {
-    console.log("appointment========", appointment);
     // Convert appointment data to patient format
+    // Calculate age from dob if available
+    let age = "N/A";
+    const dob = appointment.patientDetails?.dob;
+    if (dob) {
+      const birthDate = moment(dob, ["YYYY-MM-DD", "DD-MM-YYYY", "MM/DD/YYYY"]);
+      if (birthDate.isValid()) {
+        age = moment().diff(birthDate, "years");
+      }
+    }
+
     const patientData = {
       id: appointment.patientId || appointment.appointmentId,
       name: appointment.patientName,
-      gender: appointment.patientGender || "N/A",
-      age: appointment.patientAge || "N/A",
-      phone: appointment.patientPhone || "N/A",
+      gender: appointment.patientDetails?.gender || "N/A",
+      age: age,
+      phone: appointment.patientDetails?.mobile || "N/A",
       lastVisit: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
       department: appointment.appointmentDepartment,
       status: appointment.appointmentStatus,
@@ -274,7 +283,7 @@ const Appointment = () => {
       const response = await apiGet(
         `/appointment/getAppointmentsByDoctorID/appointment?doctorId=${doctorId}`
       );
-console.log("response======", response);
+      console.log("response======", response);
       if (response.status === 200) {
         const updatedAppointments = response.data.data;
         setAppointments(updatedAppointments);

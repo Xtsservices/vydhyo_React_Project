@@ -277,11 +277,15 @@ const LayoutWrapper = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userID");
         localStorage.removeItem("role");
+        localStorage.removeItem("appointments");
+
         console.log("Logout successful:", response.data.message);
       } catch (error) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userID");
         localStorage.removeItem("role");
+        localStorage.removeItem("appointments");
+
         navigate("/login");
         console.error(
           "Logout API failed:",
@@ -290,6 +294,9 @@ const LayoutWrapper = () => {
       }
     finally {
       localStorage.removeItem("accessToken");
+        localStorage.removeItem("userID");
+        localStorage.removeItem("role");
+        localStorage.removeItem("appointments");
       navigate("/login");
     }
   };
