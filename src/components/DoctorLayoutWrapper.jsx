@@ -166,6 +166,17 @@ const DoctorLayoutWrapper = () => {
       ),
     },
     {
+      key: "EPrescription",
+      accessKey: "EPrescription",
+      label: <Link to="/doctor/doctorPages/EPrescription">E-Prescription</Link>,
+      icon: (
+        <FontAwesomeIcon
+          icon={faPills}
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
+      ),
+    },
+    {
       key: "staff-management",
       accessKey: "staff-management",
       label: (

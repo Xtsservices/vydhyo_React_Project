@@ -24,6 +24,7 @@ import NotFound from "./components/NotFound ";
 import TaxInvoice from "./components/doctor/doctorPages/TaxInvoice";
 import Header from "./components/landingPage/Header";
 import DoctorProfileView from "./components/doctor/doctorPages/DoctorProfileView";
+import EPrescription from "./components/doctor/doctorPages/EPrescription";
 
 // import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingDoctorsPage";
 import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage"; 
@@ -190,6 +191,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Labs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/doctor/doctorPages/EPrescription"
+          element={
+            <ProtectedRoute>
+              <EPrescription/>
             </ProtectedRoute>
           }
         />

@@ -423,6 +423,11 @@ const StaffManagement = () => {
       key: "lastLogin",
     },
     {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+    },
+    {
       title: "Actions",
       key: "actions",
       render: (_, record) => (

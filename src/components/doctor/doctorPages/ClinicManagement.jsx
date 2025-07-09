@@ -329,6 +329,8 @@ export default function ClinicManagement() {
     }
   };
 
+  
+    
   const handleCancel = () => {
     setShowModal(false);
     setFormData({
@@ -707,7 +709,7 @@ export default function ClinicManagement() {
                 <th style={thStyle}>Contact</th>
                 <th style={thStyle}>Operating Hours</th>
                 <th style={thStyle}>Status</th>
-                {/* <th style={thStyle}>Action</th> */}
+                <th style={thStyle}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -754,7 +756,7 @@ export default function ClinicManagement() {
                         {clinic.status}
                       </span>
                     </td>
-                    {/* <td style={tdStyle}>
+                    <td style={tdStyle}>
                       <div style={actionButtonsStyle}>
                         <button
                           style={{ ...iconButtonStyle, color: "#2563eb" }}
@@ -768,7 +770,7 @@ export default function ClinicManagement() {
                         >
                           <Edit size={16} />
                         </button>
-                        <button
+                        {/* <button
                           style={{ ...iconButtonStyle, color: "#6b7280" }}
                           onMouseEnter={(e) =>
                             (e.target.style.color = "#374151")
@@ -779,7 +781,7 @@ export default function ClinicManagement() {
                           title="View"
                         >
                           <Eye size={16} />
-                        </button>
+                        </button> */}
                         <button
                           style={{ ...iconButtonStyle, color: "#dc2626" }}
                           onMouseEnter={(e) =>
@@ -794,7 +796,7 @@ export default function ClinicManagement() {
                           <Trash2 size={16} />
                         </button>
                       </div>
-                    </td> */}
+                    </td>
                   </tr>
                 ))
               ) : (
@@ -1107,4 +1109,4 @@ export default function ClinicManagement() {
       </div>
     </div>
   );
-}
+} 
