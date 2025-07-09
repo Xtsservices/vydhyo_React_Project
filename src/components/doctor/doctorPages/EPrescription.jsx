@@ -1,0 +1,123 @@
+import React, { useState } from 'react';
+import { 
+  Home, 
+  Calendar, 
+  Users, 
+  FileText, 
+  Activity, 
+  Pill, 
+  UserCheck, 
+  Building, 
+  CheckCircle, 
+  BarChart3,
+  Star,
+  Menu,
+  X
+} from 'lucide-react';
+
+// Import components
+import DoctorClinicInfo from './DoctorClinicInfo';
+import PatientDetailsHistory from './PatientDetailsHistory';
+import VitalsInvestigation from './VitalsInvestigation';
+import DiagnosisMedication from './DiagnosisMedication';
+import AdviceFollowUp from './AdviceFollowUp';
+import Preview from './Preview';
+import '../../stylings/EPrescription.css';
+
+const EPrescription = () => {
+  const [activeTab, setActiveTab] = useState('doctor-clinic');
+  const [showPreview, setShowPreview] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const tabs = [
+    { id: 'doctor-clinic', label: 'Doctor & Clinic Info', icon: UserCheck },
+    { id: 'patient-details', label: 'Patient Details & History', icon: Users },
+    { id: 'vitals', label: 'Vitals & Investigation', icon: Activity },
+    { id: 'diagnosis', label: 'Diagnosis & Medication', icon: Pill },
+    { id: 'advice', label: 'Advice & Follow Up', icon: Calendar }
+  ];
+
+  const handleConfirm = () => {
+    setShowPreview(true);
+  };
+
+  const handleNext = () => {
+    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    if (currentIndex < tabs.length - 1) {
+      setActiveTab(tabs[currentIndex + 1].id);
+    }
+  };
+
+  const renderActiveComponent = () => {
+    if (showPreview) {
+      return <Preview />;
+    }
+    
+    switch (activeTab) {
+      case 'doctor-clinic':
+        return <DoctorClinicInfo />;
+      case 'patient-details':
+        return <PatientDetailsHistory />;
+      case 'vitals':
+        return <VitalsInvestigation />;
+      case 'diagnosis':
+        return <DiagnosisMedication />;
+      case 'advice':
+        return <AdviceFollowUp />;
+      default:
+        return <DoctorClinicInfo />;
+    }
+  };
+
+  return (
+    <div className="eprescription-container">
+      {/* Main Content */}
+      <div className="eprescription-main">
+        {/* Tab Navigation - Hidden in preview */}
+        {!showPreview && (
+          <div className="eprescription-tabs">
+            <nav style={{ display: 'flex', gap: '8px' }}>
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`eprescription-tab ${activeTab === tab.id ? 'eprescription-tab-active' : 'eprescription-tab-inactive'}`}
+                >
+                  <tab.icon style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        <main className="eprescription-content">
+          {renderActiveComponent()}
+          
+          {/* Action Buttons */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            marginTop: '24px' 
+          }}>
+            <button className="common-button common-cancel-button">
+              Cancel
+            </button>
+            
+            {!showPreview && (
+              <button 
+                onClick={activeTab === 'advice' ? handleConfirm : handleNext}
+                className="common-button common-confirm-button"
+              >
+                {activeTab === 'advice' ? 'Confirm' : 'Next'}
+              </button>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default EPrescription;
