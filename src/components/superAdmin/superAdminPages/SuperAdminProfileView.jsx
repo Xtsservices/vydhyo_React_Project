@@ -59,7 +59,7 @@ const DoctorProfileView = () => {
 
   const { userId, doctorId } = location.state || {};
 
-  console.log("Doctor ID from URL:", doctorId); 
+  console.log("Doctor ID from URL:", doctorId, userId); 
   // Fetch doctor details from API
   const fetchDoctorDetails = async () => {
     console.log("Fetching doctor details for ID:", doctorId);
@@ -91,8 +91,8 @@ const response = await apiGet(`users/AllUsers?type=doctor&id=${doctorId}`)
       //     },
       //   }
       // );
-
-      if (!response.ok) {
+console.log("response123===",response)
+      if (!response.statusText) {
         if (response.status === 401) {
           message.error("Session expired. Please login again.");
           navigate("/login");
@@ -101,7 +101,7 @@ const response = await apiGet(`users/AllUsers?type=doctor&id=${doctorId}`)
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data =  response.data;
       console.log("API Response:", data); // Debug: Log the API response
 
       let doctor = null;

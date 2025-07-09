@@ -56,7 +56,7 @@ const DoctorOnboardingDashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("inactive");
   const { userId, doctorId } = location.state || {};
 
   // Fetch doctors from API
@@ -77,8 +77,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
       //     "Content-Type": "application/json",
       //   },
       // });
-
-      if (!response.ok) {
+      if (!response.status === 'success') {
         if (response.status === 401) {
           message.error("Session expired. Please login again.");
           navigate("/login");
@@ -87,17 +86,16 @@ const response = await apiGet("users/AllUsers?type=doctor")
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = response.data;
+      console.log
       let doctorsData = [];
 
       if (data.status === "success" && data.data) {
-        doctorsData = Array.isArray(data.data) ? data.data : [data.data];
-      } else if (Array.isArray(data)) {
-        doctorsData = data;
-      } else {
-        doctorsData = data.data || [];
+        doctorsData = Array.isArray(data.data) ? data.data.reverse() : [data.data];
       }
-
+     else {
+        doctorsData = data.data.reverse() || [];
+      }
       // Normalize doctor data
       doctorsData = doctorsData.map((doctor) => ({
         ...doctor,
@@ -135,7 +133,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
-    const pending = doctors.filter((doc) => doc.status?.toLowerCase() === "pending").length;
+    const pending = doctors.filter((doc) => doc.status?.toLowerCase() === "inactive").length;
     const rejected = doctors.filter((doc) => doc.status?.toLowerCase() === "rejected").length;
     const approved = doctors.filter(
       (doc) => doc.status?.toLowerCase() === "approved" || doc.status?.toLowerCase() === "active"
@@ -145,19 +143,22 @@ const response = await apiGet("users/AllUsers?type=doctor")
   }, [doctors]);
 
   // Filter doctors based on search and status
-  const filteredDoctors = useMemo(() => {
-    return doctors.filter((doctor) => {
-      const matchesSearch = 
-        doctor.firstname?.toLowerCase().includes(searchText.toLowerCase()) ||
-        doctor.lastname?.toLowerCase().includes(searchText.toLowerCase()) ||
-        doctor.email?.toLowerCase().includes(searchText.toLowerCase());
-      
-      const matchesStatus = statusFilter === "all" || doctor.status?.toLowerCase() === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    });
-  }, [doctors, searchText, statusFilter]);
 
+  const filteredDoctors = useMemo(() => {
+  return doctors.filter((doctor) => {
+    const searchTextLower = searchText.toLowerCase();
+    
+    const matchesSearch =
+      (doctor.firstname?.toLowerCase()?.includes(searchTextLower) || false) ||
+      (doctor.lastname?.toLowerCase()?.includes(searchTextLower) || false) ||
+      (doctor.email?.toLowerCase()?.includes(searchTextLower) || false) ||
+      (doctor.mobile?.toString()?.includes(searchTextLower) || false); // Added mobile number search
+    
+    const matchesStatus = statusFilter === "all" || doctor.status?.toLowerCase() === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+}, [doctors, searchText, statusFilter]);
   // Utility functions
   const getImageSrc = useCallback((profilepic) => {
     if (profilepic?.data && profilepic?.mimeType) {
@@ -172,6 +173,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
   }, []);
 
   const handleViewProfile = (userId, doctorId) => {
+    
     navigate('/SuperAdmin/profileView', { state: { userId, doctorId } });
   };
 
@@ -322,6 +324,11 @@ const response = await apiGet("users/AllUsers?type=doctor")
     [currentPage, pageSize, getImageSrc, handleViewProfile, formatDate]
   );
 
+  const handleCardClick = (status) => {
+    setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
   return (
     <div style={{ padding: "24px", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       {/* Header */}
@@ -341,6 +348,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
               transition: "all 0.3s ease",
             }}
             hoverable
+            onClick={() => handleCardClick("approved")}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
@@ -392,6 +400,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
               transition: "all 0.3s ease",
             }}
             hoverable
+            onClick={() => handleCardClick("inactive")}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
@@ -443,6 +452,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
               transition: "all 0.3s ease",
             }}
             hoverable
+            onClick={() => handleCardClick("rejected")}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
@@ -490,7 +500,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
       <Row style={{ marginBottom: "clamp(16px, 2vw, 24px)" }}>
         <Col xs={24}>
           <Input
-            placeholder="Search doctors..."
+          placeholder="Search by name or mobile number..."
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -532,14 +542,14 @@ const response = await apiGet("users/AllUsers?type=doctor")
           Doctor Requests
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <DatePicker.RangePicker
+          {/* <DatePicker.RangePicker
             value={null}
             placeholder={["Start Date", "End Date"]}
             style={{ borderRadius: "12px", fontSize: "clamp(12px, 1.8vw, 14px)" }}
             suffixIcon={<CalendarOutlined />}
             allowClear
-          />
-          <Select
+          /> */}
+          {/* <Select
             value={statusFilter}
             onChange={setStatusFilter}
             style={{
@@ -552,7 +562,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
             <Option value="approved">Approved</Option>
             <Option value="rejected">Rejected</Option>
             <Option value="all">All</Option>
-          </Select>
+          </Select> */}
             </div>
           </div>
           <Table
