@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, Download, MoreVertical, Plus, Trash2 } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Download,
+  MoreVertical,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { message, Modal, Select, Button, Input, Table } from "antd";
 import moment from "moment";
 import { apiGet } from "../../api";
@@ -21,16 +28,17 @@ const MyPatients = () => {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterAppointmentStatus, setFilterAppointmentStatus] = useState(""); // New state for appointmentStatus
   const [filterDepartment, setFilterDepartment] = useState("");
-  
+
   // Patient Profile Modal States
-  const [isPatientProfileModalVisible, setIsPatientProfileModalVisible] = useState(false);
+  const [isPatientProfileModalVisible, setIsPatientProfileModalVisible] =
+    useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [medicines, setMedicines] = useState([]);
   const [tests, setTests] = useState([]);
   const [medicineName, setMedicineName] = useState("");
   const [medicineQuantity, setMedicineQuantity] = useState("");
   const [testName, setTestName] = useState("");
-  
+
   const pageSize = 10;
 
   const calculateAge = (dob) => {
@@ -131,8 +139,6 @@ const MyPatients = () => {
     }
   }, []);
 
-  
-
   useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
@@ -225,31 +231,28 @@ const MyPatients = () => {
     message.success("Patients data exported successfully");
   }, [patients]);
 
-  const handleViewProfile = useCallback(
-    (patient) => {
-      setSelectedPatient(patient);
-      setMedicines([]);
-      setTests([]);
-      setMedicineName("");
-      setMedicineQuantity("");
-      setTestName("");
-      setIsPatientProfileModalVisible(true);
-    },
-    []
-  );
+  const handleViewProfile = useCallback((patient) => {
+    setSelectedPatient(patient);
+    setMedicines([]);
+    setTests([]);
+    setMedicineName("");
+    setMedicineQuantity("");
+    setTestName("");
+    setIsPatientProfileModalVisible(true);
+  }, []);
 
   const handleAddMedicine = () => {
     if (!medicineName.trim() || !medicineQuantity.trim()) {
       message.error("Please enter medicine name and quantity");
       return;
     }
-    
+
     const newMedicine = {
       id: Date.now(),
       name: medicineName.trim(),
       quantity: medicineQuantity.trim(),
     };
-    
+
     setMedicines([...medicines, newMedicine]);
     setMedicineName("");
     setMedicineQuantity("");
@@ -257,7 +260,7 @@ const MyPatients = () => {
   };
 
   const handleRemoveMedicine = (id) => {
-    setMedicines(medicines.filter(medicine => medicine.id !== id));
+    setMedicines(medicines.filter((medicine) => medicine.id !== id));
   };
 
   const handleAddTest = () => {
@@ -265,19 +268,19 @@ const MyPatients = () => {
       message.error("Please enter test name");
       return;
     }
-    
+
     const newTest = {
       id: Date.now(),
       name: testName.trim(),
     };
-    
+
     setTests([...tests, newTest]);
     setTestName("");
     message.success("Test added successfully");
   };
 
   const handleRemoveTest = (id) => {
-    setTests(tests.filter(test => test.id !== id));
+    setTests(tests.filter((test) => test.id !== id));
   };
 
   const handleSubmitPatientProfile = () => {
@@ -285,7 +288,7 @@ const MyPatients = () => {
     console.log("Patient:", selectedPatient);
     console.log("Medicines:", medicines);
     console.log("Tests:", tests);
-    
+
     message.success("Patient profile updated successfully");
     setIsPatientProfileModalVisible(false);
   };
@@ -320,18 +323,18 @@ const MyPatients = () => {
 
   const medicineColumns = [
     {
-      title: 'Medicine Name',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Medicine Name",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      title: 'Quantity',
-      dataIndex: 'quantity',
-      key: 'quantity',
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
     },
     {
-      title: 'Action',
-      key: 'action',
+      title: "Action",
+      key: "action",
       render: (_, record) => (
         <Button
           type="link"
@@ -347,13 +350,13 @@ const MyPatients = () => {
 
   const testColumns = [
     {
-      title: 'Test Name',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Test Name",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      title: 'Action',
-      key: 'action',
+      title: "Action",
+      key: "action",
       render: (_, record) => (
         <Button
           type="link"
@@ -740,7 +743,7 @@ const MyPatients = () => {
                 <div style={styles.tableCell}>{patient.age}</div>
                 <div style={styles.tableCell}>{patient.phone}</div>
                 <div style={styles.tableCell}>{patient.lastVisit}</div>
-                <div>
+                {/* <div>
                   <button
                     style={styles.actionButton}
                     onClick={() => handleViewProfile(patient)}
@@ -759,7 +762,7 @@ const MyPatients = () => {
                       }}
                     />
                   </button>
-                </div>
+                </div> */}
               </div>
             ))
           )}
