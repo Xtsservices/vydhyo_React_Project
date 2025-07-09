@@ -24,7 +24,7 @@ import {
   PlusOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
-import { apiGet, apiPost, apiDelete } from "../../api";
+import { apiGet, apiPost, apiDelete, apiPut } from "../../api";
 import moment from "moment";
 import { useSelector } from "react-redux";
 
@@ -96,17 +96,19 @@ const AvailabilityScreen = () => {
           slotsData.slots.forEach((slot) => {
             const timeStr = moment(slot.time, "HH:mm").format("hh:mm A");
             if (slot.status === "available") {
-              available.push({ 
-                time: timeStr, 
+              available.push({
+                time: timeStr,
                 available: true,
-                id: slot._id
+                id: slot._id,
+                originalTime: slot.time,
               });
             } else {
-              unavailable.push({ 
-                time: timeStr, 
+              unavailable.push({
+                time: timeStr,
                 available: false,
                 id: slot._id,
-                reason: slot.reason || "Not available"
+                reason: slot.reason || "Not available",
+                originalTime: slot.time,
               });
             }
           });
@@ -125,66 +127,45 @@ const AvailabilityScreen = () => {
     }
   };
 
-  const generateTimeSlots = (
-    startTime,
-    startPeriod,
-    endTime,
-    endPeriod,
-    duration
-  ) => {
-    const slots = [];
-    let startHour = startTime;
-    let endHour = endTime;
+  const handleUpdateSlots = async () => {
+    try {
+      setLoading(true);
 
-    // Convert to 24-hour format
-    if (startPeriod === "PM" && startTime !== 12) {
-      startHour = startTime + 12;
-    } else if (startPeriod === "AM" && startTime === 12) {
-      startHour = 0;
-    }
+      // Prepare all slots data - only include slots that should exist
+      const allSlots = [
+        ...availableSlots.map(slot => ({
+          time: slot.originalTime,
+          status: "available",
+          reason: ""
+        })),
+        ...unavailableSlots.map(slot => ({
+          time: slot.originalTime,
+          status: "unavailable",
+          reason: slot.reason
+        }))
+      ];
 
-    if (endPeriod === "PM" && endTime !== 12) {
-      endHour = endTime + 12;
-    } else if (endPeriod === "AM" && endTime === 12) {
-      endHour = 0;
-    }
+      // Convert to the format expected by the API
+      const timeSlots = allSlots.map(slot => slot.time);
 
-    let currentTime = startHour * 60;
-    const endTimeMinutes = endHour * 60;
-
-    while (currentTime <= endTimeMinutes) {
-      const hour = Math.floor(currentTime / 60);
-      const minute = currentTime % 60;
-      let displayHour = hour;
-      let period = "AM";
-
-      if (hour === 0) {
-        displayHour = 12;
-        period = "AM";
-      } else if (hour < 12) {
-        displayHour = hour;
-        period = "AM";
-      } else if (hour === 12) {
-        displayHour = 12;
-        period = "PM";
-      } else {
-        displayHour = hour - 12;
-        period = "PM";
-      }
-
-      const timeString = `${displayHour.toString().padStart(2, "0")}:${minute
-        .toString()
-        .padStart(2, "0")} ${period}`;
-
-      slots.push({
-        time: timeString,
-        available: true,
+      const response = await apiPut("/appointment/updateDoctorSlots", {
+        doctorId: doctorId,
+        date: selectedDate.format("YYYY-MM-DD"),
+        timeSlots: timeSlots,
       });
 
-      currentTime += duration;
+      if (response.data && response.data.status === "success") {
+        message.success("Slots updated successfully");
+        fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
+      } else {
+        message.error(response.data?.message || "Failed to update slots");
+      }
+    } catch (error) {
+      console.error("Error updating slots:", error);
+      message.error("Failed to update slots");
+    } finally {
+      setLoading(false);
     }
-
-    return slots;
   };
 
   const handleAddAvailableSlots = async () => {
@@ -193,17 +174,25 @@ const AvailabilityScreen = () => {
       const response = await apiPost("/appointment/createSlotsForDoctor", {
         doctorId: doctorId,
         dates: [selectedDate.format("YYYY-MM-DD")],
-        startTime: moment(`${availableStartTime}:00 ${availableStartPeriod}`, "hh:mm A").format("HH:mm"),
-        endTime: moment(`${availableEndTime}:00 ${availableEndPeriod}`, "hh:mm A").format("HH:mm"),
+        startTime: moment(
+          `${availableStartTime}:00 ${availableStartPeriod}`,
+          "hh:mm A"
+        ).format("HH:mm"),
+        endTime: moment(
+          `${availableEndTime}:00 ${availableEndPeriod}`,
+          "hh:mm A"
+        ).format("HH:mm"),
         interval: availableDuration,
-        isAvailable: true
+        isAvailable: true,
       });
 
       if (response.data && response.data.status === "success") {
         message.success("Available slots created successfully");
         fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
       } else {
-        message.error(response.data?.message || "Failed to create available slots");
+        message.error(
+          response.data?.message || "Failed to create available slots"
+        );
       }
     } catch (error) {
       console.error("Error creating available slots:", error);
@@ -216,20 +205,22 @@ const AvailabilityScreen = () => {
   const handleDeleteAllAvailable = async () => {
     try {
       setLoading(true);
-      const slotIds = availableSlots.map(slot => slot.id);
-      
+      const slotIds = availableSlots.map((slot) => slot.id);
+
       if (slotIds.length > 0) {
         const response = await apiDelete("/appointment/deleteSlots", {
           data: {
-            slotIds: slotIds
-          }
+            slotIds: slotIds,
+          },
         });
 
         if (response.data && response.data.status === "success") {
           message.success("Available slots deleted successfully");
           setAvailableSlots([]);
         } else {
-          message.error(response.data?.message || "Failed to delete available slots");
+          message.error(
+            response.data?.message || "Failed to delete available slots"
+          );
         }
       } else {
         message.info("No available slots to delete");
@@ -245,23 +236,75 @@ const AvailabilityScreen = () => {
   const handleAddUnavailableSlots = async () => {
     try {
       setLoading(true);
-      const response = await apiPost("/appointment/createSlotsForDoctor", {
-        doctorId: doctorId,
-        dates: [selectedDate.format("YYYY-MM-DD")],
-        startTime: moment(`${unavailableStartTime}:00 ${unavailableStartPeriod}`, "hh:mm A").format("HH:mm"),
-        endTime: moment(`${unavailableEndTime}:00 ${unavailableEndPeriod}`, "hh:mm A").format("HH:mm"),
-        interval: unavailableDuration,
-        isAvailable: false,
-        reason: unavailableReason || "Not available"
-      });
-
-      if (response.data && response.data.status === "success") {
-        message.success("Unavailable slots created successfully");
-        setUnavailableReason("");
-        fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
-      } else {
-        message.error(response.data?.message || "Failed to create unavailable slots");
+      
+      // Generate the time slots we want to mark as unavailable
+      const startTime = moment(
+        `${unavailableStartTime}:00 ${unavailableStartPeriod}`,
+        "hh:mm A"
+      ).format("HH:mm");
+      
+      const endTime = moment(
+        `${unavailableEndTime}:00 ${unavailableEndPeriod}`,
+        "hh:mm A"
+      ).format("HH:mm");
+      
+      const slotsToMarkUnavailable = generateTimeSlots(
+        startTime,
+        endTime,
+        unavailableDuration
+      );
+      
+      // Filter out any slots that are already unavailable
+      const existingUnavailableTimes = unavailableSlots.map(slot => slot.originalTime);
+      const newSlotsToMark = slotsToMarkUnavailable.filter(time => 
+        !existingUnavailableTimes.includes(time)
+      );
+      
+      if (newSlotsToMark.length === 0) {
+        message.info("All selected slots are already marked as unavailable");
+        return;
       }
+      
+      // Find any existing available slots that overlap with these times
+      const overlappingAvailableSlots = availableSlots.filter(slot => 
+        newSlotsToMark.includes(slot.originalTime)
+      );
+      
+      // Create new unavailable slots for the times that weren't already available
+      const newUnavailableSlots = [
+        ...unavailableSlots,
+        ...newSlotsToMark
+          .filter(time => !availableSlots.some(slot => slot.originalTime === time))
+          .map(time => ({
+            time: moment(time, "HH:mm").format("hh:mm A"),
+            available: false,
+            id: `temp-${Date.now()}-${time}`,
+            reason: unavailableReason || "Not available",
+            originalTime: time
+          }))
+      ];
+      
+      // Remove the overlapping slots from available slots
+      const updatedAvailableSlots = availableSlots.filter(slot => 
+        !newSlotsToMark.includes(slot.originalTime)
+      );
+      
+      // Add the converted slots to unavailable
+      if (overlappingAvailableSlots.length > 0) {
+        overlappingAvailableSlots.forEach(slot => {
+          newUnavailableSlots.push({
+            ...slot,
+            available: false,
+            reason: unavailableReason || "Not available"
+          });
+        });
+      }
+      
+      // Update state
+      setAvailableSlots(updatedAvailableSlots);
+      setUnavailableSlots(newUnavailableSlots);
+      
+      message.success("Slots marked as unavailable successfully");
     } catch (error) {
       console.error("Error creating unavailable slots:", error);
       message.error("Failed to create unavailable slots");
@@ -273,20 +316,22 @@ const AvailabilityScreen = () => {
   const handleDeleteAllUnavailable = async () => {
     try {
       setLoading(true);
-      const slotIds = unavailableSlots.map(slot => slot.id);
-      
+      const slotIds = unavailableSlots.map((slot) => slot.id);
+
       if (slotIds.length > 0) {
         const response = await apiDelete("/appointment/deleteSlots", {
           data: {
-            slotIds: slotIds
-          }
+            slotIds: slotIds,
+          },
         });
 
         if (response.data && response.data.status === "success") {
           message.success("Unavailable slots deleted successfully");
           setUnavailableSlots([]);
         } else {
-          message.error(response.data?.message || "Failed to delete unavailable slots");
+          message.error(
+            response.data?.message || "Failed to delete unavailable slots"
+          );
         }
       } else {
         message.info("No unavailable slots to delete");
@@ -297,6 +342,20 @@ const AvailabilityScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to generate time slots between start and end time with given interval
+  const generateTimeSlots = (startTime, endTime, interval) => {
+    const slots = [];
+    let currentTime = moment(startTime, "HH:mm");
+    const endTimeMoment = moment(endTime, "HH:mm");
+    
+    while (currentTime.isSameOrBefore(endTimeMoment)) {
+      slots.push(currentTime.format("HH:mm"));
+      currentTime.add(interval, 'minutes');
+    }
+    
+    return slots;
   };
 
   const adjustTime = (type, direction, section) => {
@@ -347,56 +406,282 @@ const AvailabilityScreen = () => {
     }
   };
 
-  const handleAddUnavailableDateRange = async () => {
-    if (!unavailableStartDate || !unavailableEndDate) {
-      message.error("Please select both start and end dates");
-      return;
-    }
+  const renderTimeControls = (section) => {
+    const isAvailable = section === "available";
+    const startTime = isAvailable ? availableStartTime : unavailableStartTime;
+    const startPeriod = isAvailable
+      ? availableStartPeriod
+      : unavailableStartPeriod;
+    const endTime = isAvailable ? availableEndTime : unavailableEndTime;
+    const endPeriod = isAvailable ? availableEndPeriod : unavailableEndPeriod;
+    const duration = isAvailable ? availableDuration : unavailableDuration;
+    const addHandler = isAvailable
+      ? handleAddAvailableSlots
+      : handleAddUnavailableSlots;
+    const deleteHandler = isAvailable
+      ? handleDeleteAllAvailable
+      : handleDeleteAllUnavailable;
+    const title = isAvailable
+      ? "Available Time Slots"
+      : "Unavailable Time Slots";
 
-    try {
-      setLoading(true);
-      const response = await apiPost("/appointment/createUnavailableDateRange", {
-        doctorId: doctorId,
-        startDate: unavailableStartDate.format("YYYY-MM-DD"),
-        endDate: unavailableEndDate.format("YYYY-MM-DD"),
-        reason: unavailableReason || "Not available"
-      });
+    return (
+      <>
+        <Title
+          level={4}
+          style={{
+            marginBottom: 16,
+            color: isAvailable ? "#16A34A" : "#FF3B30",
+          }}
+        >
+          {title}
+        </Title>
 
-      if (response.data && response.data.status === "success") {
-        message.success("Unavailable date range set successfully");
-        setUnavailableStartDate(null);
-        setUnavailableEndDate(null);
-        setUnavailableReason("");
-      } else {
-        message.error(response.data?.message || "Failed to set unavailable date range");
-      }
-    } catch (error) {
-      console.error("Error setting unavailable date range:", error);
-      message.error("Failed to set unavailable date range");
-    } finally {
-      setLoading(false);
-    }
+        <Row gutter={[24, 24]} align="middle" style={{ marginBottom: 16 }}>
+          {/* Start Time */}
+          <Col xs={12} sm={6}>
+            <Text strong>Start Time:</Text>
+            <div
+              style={{ display: "flex", alignItems: "center", marginTop: 8 }}
+            >
+              <span
+                style={{
+                  minWidth: 30,
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                }}
+              >
+                {startTime}
+              </span>
+              <div style={{ marginLeft: 8 }}>
+                <Button
+                  size="small"
+                  icon={<UpOutlined />}
+                  onClick={() => adjustTime("start", "up", section)}
+                  style={{
+                    display: "block",
+                    marginBottom: 2,
+                    width: 30,
+                    height: 20,
+                  }}
+                />
+                <Button
+                  size="small"
+                  icon={<DownOutlined />}
+                  onClick={() => adjustTime("start", "down", section)}
+                  style={{ display: "block", width: 30, height: 20 }}
+                />
+              </div>
+              <Button
+                size="small"
+                onClick={() =>
+                  isAvailable
+                    ? setAvailableStartPeriod(
+                        startPeriod === "AM" ? "PM" : "AM"
+                      )
+                    : setUnavailableStartPeriod(
+                        startPeriod === "AM" ? "PM" : "AM"
+                      )
+                }
+                style={{
+                  marginLeft: 8,
+                  backgroundColor: startPeriod === "AM" ? "#fff" : "#ffeaa7",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  minWidth: 35,
+                  height: 24,
+                }}
+              >
+                {startPeriod}
+              </Button>
+            </div>
+          </Col>
+
+          {/* End Time */}
+          <Col xs={12} sm={6}>
+            <Text strong>End Time:</Text>
+            <div
+              style={{ display: "flex", alignItems: "center", marginTop: 8 }}
+            >
+              <span
+                style={{
+                  minWidth: 30,
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                }}
+              >
+                {endTime}
+              </span>
+              <div style={{ marginLeft: 8 }}>
+                <Button
+                  size="small"
+                  icon={<UpOutlined />}
+                  onClick={() => adjustTime("end", "up", section)}
+                  style={{
+                    display: "block",
+                    marginBottom: 2,
+                    width: 30,
+                    height: 20,
+                  }}
+                />
+                <Button
+                  size="small"
+                  icon={<DownOutlined />}
+                  onClick={() => adjustTime("end", "down", section)}
+                  style={{ display: "block", width: 30, height: 20 }}
+                />
+              </div>
+              <Button
+                size="small"
+                onClick={() =>
+                  isAvailable
+                    ? setAvailableEndPeriod(endPeriod === "AM" ? "PM" : "AM")
+                    : setUnavailableEndPeriod(endPeriod === "AM" ? "PM" : "AM")
+                }
+                style={{
+                  marginLeft: 8,
+                  backgroundColor: endPeriod === "AM" ? "#fff" : "#ffeaa7",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  minWidth: 35,
+                  height: 24,
+                }}
+              >
+                {endPeriod}
+              </Button>
+            </div>
+          </Col>
+
+          {/* Duration */}
+          <Col xs={12} sm={6}>
+            <Text strong>Duration (minutes):</Text>
+            <div
+              style={{ display: "flex", alignItems: "center", marginTop: 8 }}
+            >
+              <span
+                style={{
+                  minWidth: 30,
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                }}
+              >
+                {duration}
+              </span>
+              <div style={{ marginLeft: 8 }}>
+                <Button
+                  size="small"
+                  icon={<UpOutlined />}
+                  onClick={() => adjustDuration("up", section)}
+                  style={{
+                    display: "block",
+                    marginBottom: 2,
+                    width: 30,
+                    height: 20,
+                  }}
+                />
+                <Button
+                  size="small"
+                  icon={<DownOutlined />}
+                  onClick={() => adjustDuration("down", section)}
+                  style={{ display: "block", width: 30, height: 20 }}
+                />
+              </div>
+            </div>
+          </Col>
+
+          {/* Action Buttons */}
+          <Col xs={12} sm={6}>
+            <Space>
+              <Button
+                type="primary"
+                onClick={addHandler}
+                icon={<PlusOutlined />}
+                style={{ fontWeight: "bold" }}
+              >
+                Add Slots
+              </Button>
+              <Button
+                danger
+                onClick={deleteHandler}
+                icon={<DeleteOutlined />}
+                style={{ fontWeight: "bold" }}
+              >
+                Clear All
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+
+        {/* Reason Input for Unavailable */}
+        {!isAvailable && (
+          <div style={{ marginBottom: 16 }}>
+            <Text strong>Reason for Unavailability:</Text>
+            <Input
+              placeholder="Enter reason..."
+              value={unavailableReason}
+              onChange={(e) => setUnavailableReason(e.target.value)}
+              style={{ marginTop: 8 }}
+            />
+          </div>
+        )}
+
+        {/* Slots Display */}
+        <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
+          {(isAvailable ? availableSlots : unavailableSlots).map(
+            (slot, index) => (
+              <Col key={index} xs={12} sm={8} md={6} lg={4}>
+                <Button
+                  block
+                  style={{
+                    height: 48,
+                    borderRadius: 8,
+                    border: isAvailable
+                      ? "1px solid #52c41a"
+                      : "1px solid #ff4d4f",
+                    backgroundColor: isAvailable ? "#DCFCE7" : "#FEE2E2",
+                    color: isAvailable ? "#52c41a" : "#ff4d4f",
+                    fontWeight: "bold",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  icon={
+                    isAvailable ? <ClockCircleOutlined /> : <StopOutlined />
+                  }
+                >
+                  {slot.time}
+                </Button>
+              </Col>
+            )
+          )}
+        </Row>
+
+        <Divider />
+      </>
+    );
   };
 
   return (
     <div
-      style={{
-        padding: "24px",
-        backgroundColor: "#F3FFFD",
-        minHeight: "100vh",
-      }}
+      style={{ padding: 24, backgroundColor: "#F3FFFD", minHeight: "100vh" }}
     >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        <Title level={3} style={{ marginBottom: "24px", color: "#1f2937" }}>
-          Available Timings
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <Title level={3} style={{ marginBottom: 24, color: "#1f2937" }}>
+          Availability Management
         </Title>
 
         {/* Clinic Selection */}
-        <Card style={{ marginBottom: "24px", borderRadius: "12px" }}>
+        <Card style={{ marginBottom: 24, borderRadius: 12 }}>
+          <Text strong style={{ marginRight: 16 }}>
+            Select Clinic:
+          </Text>
           <Select
             value={selectedClinic}
             onChange={setSelectedClinic}
-            style={{ width: "250px" }}
+            style={{ width: 250 }}
             suffixIcon={<DownOutlined />}
           >
             <Option value="Clinic 1">Clinic 1</Option>
@@ -405,8 +690,8 @@ const AvailabilityScreen = () => {
           </Select>
         </Card>
 
-        {/* Main Content */}
         <Spin spinning={loading}>
+          {/* Main Card */}
           <Card
             title={
               <div
@@ -416,30 +701,28 @@ const AvailabilityScreen = () => {
                   alignItems: "center",
                 }}
               >
-                <span>Select Available Slots</span>
-                <DatePicker
-                  value={selectedDate}
-                  onChange={setSelectedDate}
-                  format="DD/MM/YYYY"
-                  placeholder="DD/MM/YYYY"
-                  suffixIcon={<CalendarOutlined />}
-                />
+                <Space>
+                  <Text strong>Manage Availability for:</Text>
+                  <DatePicker
+                    style={{ width: 200 }}
+                    value={selectedDate}
+                    onChange={(date) => setSelectedDate(date ? date : moment())}
+                    format="YYYY-MM-DD"
+                    allowClear={false}
+                  />
+                </Space>
               </div>
             }
-            style={{ borderRadius: "12px", marginBottom: "24px" }}
-            bodyStyle={{ padding: "32px" }}
+            style={{ borderRadius: 12, marginBottom: 24 }}
+            bodyStyle={{ padding: 24 }}
           >
             {/* Day Selection */}
-            <div style={{ marginBottom: "32px" }}>
+            <div style={{ marginBottom: 24 }}>
               <Text
                 strong
-                style={{
-                  display: "block",
-                  marginBottom: "16px",
-                  fontSize: "16px",
-                }}
+                style={{ display: "block", marginBottom: 16, fontSize: 16 }}
               >
-                Select Available days
+                Select Day of Week:
               </Text>
               <Row gutter={[8, 8]}>
                 {days.map((day) => (
@@ -447,11 +730,7 @@ const AvailabilityScreen = () => {
                     <Button
                       type={selectedDay === day ? "primary" : "default"}
                       onClick={() => setSelectedDay(day)}
-                      style={{
-                        borderRadius: "20px",
-                        minWidth: "80px",
-                        height: "36px",
-                      }}
+                      style={{ borderRadius: 20, minWidth: 80, height: 36 }}
                     >
                       {day}
                     </Button>
@@ -460,601 +739,82 @@ const AvailabilityScreen = () => {
               </Row>
             </div>
 
-            {/* Time Configuration for Available Slots */}
-            <Row
-              gutter={[24, 24]}
-              align="middle"
-              style={{ marginBottom: "32px" }}
-            >
-              <Col xs={24} sm={6}>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Title level={4} style={{ margin: 0, color: "#1f2937" }}>
-                    {selectedDay}
-                  </Title>
-                  <Text type="secondary">
-                    {selectedDate.format("DD/MM/YYYY")}
-                  </Text>
-                </div>
-              </Col>
+            {/* Available Slots Section */}
+            {renderTimeControls("available")}
 
-              {/* Start Time */}
-              <Col xs={12} sm={4}>
-                <Text strong>Start Time :</Text>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginTop: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      minWidth: "30px",
-                      textAlign: "center",
-                      fontSize: "16px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {availableStartTime}
-                  </span>
-                  <div style={{ marginLeft: "8px" }}>
-                    <Button
-                      size="small"
-                      icon={<UpOutlined />}
-                      onClick={() => adjustTime("start", "up", "available")}
-                      style={{
-                        display: "block",
-                        marginBottom: "2px",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                    <Button
-                      size="small"
-                      icon={<DownOutlined />}
-                      onClick={() => adjustTime("start", "down", "available")}
-                      style={{
-                        display: "block",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                  </div>
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      setAvailableStartPeriod(
-                        availableStartPeriod === "AM" ? "PM" : "AM"
-                      )
-                    }
-                    style={{
-                      marginLeft: "8px",
-                      backgroundColor:
-                        availableStartPeriod === "AM" ? "#fff" : "#ffeaa7",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      minWidth: "35px",
-                      height: "24px",
-                    }}
-                  >
-                    {availableStartPeriod}
-                  </Button>
-                </div>
-              </Col>
+            {/* Unavailable Slots Section */}
+            {renderTimeControls("unavailable")}
 
-              {/* End Time */}
-              <Col xs={12} sm={4}>
-                <Text strong>End Time :</Text>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginTop: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      minWidth: "30px",
-                      textAlign: "center",
-                      fontSize: "16px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {availableEndTime}
-                  </span>
-                  <div style={{ marginLeft: "8px" }}>
-                    <Button
-                      size="small"
-                      icon={<UpOutlined />}
-                      onClick={() => adjustTime("end", "up", "available")}
-                      style={{
-                        display: "block",
-                        marginBottom: "2px",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                    <Button
-                      size="small"
-                      icon={<DownOutlined />}
-                      onClick={() => adjustTime("end", "down", "available")}
-                      style={{
-                        display: "block",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                  </div>
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      setAvailableEndPeriod(
-                        availableEndPeriod === "AM" ? "PM" : "AM"
-                      )
-                    }
-                    style={{
-                      marginLeft: "8px",
-                      backgroundColor:
-                        availableEndPeriod === "AM" ? "#fff" : "#ffeaa7",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      minWidth: "35px",
-                      height: "24px",
-                    }}
-                  >
-                    {availableEndPeriod}
-                  </Button>
-                </div>
-              </Col>
-
-              {/* Duration */}
-              <Col xs={12} sm={4}>
-                <Text strong>Duration :</Text>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginTop: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      minWidth: "30px",
-                      textAlign: "center",
-                      fontSize: "16px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {availableDuration}
-                  </span>
-                  <div style={{ marginLeft: "8px" }}>
-                    <Button
-                      size="small"
-                      icon={<UpOutlined />}
-                      onClick={() => adjustDuration("up", "available")}
-                      style={{
-                        display: "block",
-                        marginBottom: "2px",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                    <Button
-                      size="small"
-                      icon={<DownOutlined />}
-                      onClick={() => adjustDuration("down", "available")}
-                      style={{
-                        display: "block",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                  </div>
-                </div>
-              </Col>
-
-              {/* Action Buttons */}
-              <Col xs={12} sm={6}>
-                <Space>
-                  <Button
-                    type="link"
-                    onClick={handleAddAvailableSlots}
-                    style={{ color: "#1890ff", fontWeight: "bold" }}
-                  >
-                    Add Slots
-                  </Button>
-                  <Button
-                    type="link"
-                    danger
-                    onClick={handleDeleteAllAvailable}
-                    style={{ fontWeight: "bold" }}
-                  >
-                    Delete All
-                  </Button>
-                </Space>
-              </Col>
-            </Row>
-
-            {/* Available Time Slots */}
-            <Row gutter={[12, 12]} style={{ marginBottom: "32px" }}>
-              {availableSlots.map((slot, index) => (
-                <Col key={index} xs={12} sm={8} md={6} lg={4}>
-                  <Button
-                    block
-                    style={{
-                      height: "48px",
-                      borderRadius: "8px",
-                      border: "1px solid #52c41a",
-                      backgroundColor: "#DCFCE7",
-                      color: "#52c41a",
-                      fontWeight: "bold",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                    icon={<ClockCircleOutlined />}
-                  >
-                    {slot.time}
-                  </Button>
-                </Col>
-              ))}
-            </Row>
-          </Card>
-
-          {/* Select Unavailable Slots */}
-          <Card
-            title="Select Unavailable Slots"
-            style={{ borderRadius: "12px", marginBottom: "24px" }}
-            bodyStyle={{ padding: "32px" }}
-          >
-            {/* Time Configuration for Unavailable */}
-            <Row
-              gutter={[24, 24]}
-              align="middle"
-              style={{ marginBottom: "32px" }}
-            >
-              <Col xs={24} sm={6}>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Title level={4} style={{ margin: 0, color: "#1f2937" }}>
-                    {selectedDay}
-                  </Title>
-                  <Text type="secondary">
-                    {selectedDate.format("DD/MM/YYYY")}
-                  </Text>
-                </div>
-              </Col>
-
-              {/* Start Time */}
-              <Col xs={12} sm={4}>
-                <Text strong>Start Time :</Text>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginTop: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      minWidth: "30px",
-                      textAlign: "center",
-                      fontSize: "16px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {unavailableStartTime}
-                  </span>
-                  <div style={{ marginLeft: "8px" }}>
-                    <Button
-                      size="small"
-                      icon={<UpOutlined />}
-                      onClick={() => adjustTime("start", "up", "unavailable")}
-                      style={{
-                        display: "block",
-                        marginBottom: "2px",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                    <Button
-                      size="small"
-                      icon={<DownOutlined />}
-                      onClick={() => adjustTime("start", "down", "unavailable")}
-                      style={{
-                        display: "block",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                  </div>
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      setUnavailableStartPeriod(
-                        unavailableStartPeriod === "AM" ? "PM" : "AM"
-                      )
-                    }
-                    style={{
-                      marginLeft: "8px",
-                      backgroundColor:
-                        unavailableStartPeriod === "AM" ? "#fff" : "#ffeaa7",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      minWidth: "35px",
-                      height: "24px",
-                    }}
-                  >
-                    {unavailableStartPeriod}
-                  </Button>
-                </div>
-              </Col>
-
-              {/* End Time */}
-              <Col xs={12} sm={4}>
-                <Text strong>End Time :</Text>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginTop: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      minWidth: "30px",
-                      textAlign: "center",
-                      fontSize: "16px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {unavailableEndTime}
-                  </span>
-                  <div style={{ marginLeft: "8px" }}>
-                    <Button
-                      size="small"
-                      icon={<UpOutlined />}
-                      onClick={() => adjustTime("end", "up", "unavailable")}
-                      style={{
-                        display: "block",
-                        marginBottom: "2px",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                    <Button
-                      size="small"
-                      icon={<DownOutlined />}
-                      onClick={() => adjustTime("end", "down", "unavailable")}
-                      style={{
-                        display: "block",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                  </div>
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      setUnavailableEndPeriod(
-                        unavailableEndPeriod === "AM" ? "PM" : "AM"
-                      )
-                    }
-                    style={{
-                      marginLeft: "8px",
-                      backgroundColor:
-                        unavailableEndPeriod === "AM" ? "#fff" : "#ffeaa7",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      minWidth: "35px",
-                      height: "24px",
-                    }}
-                  >
-                    {unavailableEndPeriod}
-                  </Button>
-                </div>
-              </Col>
-
-              {/* Duration */}
-              <Col xs={12} sm={4}>
-                <Text strong>Duration :</Text>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginTop: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      minWidth: "30px",
-                      textAlign: "center",
-                      fontSize: "16px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {unavailableDuration}
-                  </span>
-                  <div style={{ marginLeft: "8px" }}>
-                    <Button
-                      size="small"
-                      icon={<UpOutlined />}
-                      onClick={() => adjustDuration("up", "unavailable")}
-                      style={{
-                        display: "block",
-                        marginBottom: "2px",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                    <Button
-                      size="small"
-                      icon={<DownOutlined />}
-                      onClick={() => adjustDuration("down", "unavailable")}
-                      style={{
-                        display: "block",
-                        width: "30px",
-                        height: "20px",
-                      }}
-                    />
-                  </div>
-                </div>
-              </Col>
-
-              {/* Action Buttons */}
-              <Col xs={12} sm={6}>
-                <Space>
-                  <Button
-                    type="link"
-                    // onClick={handleAddUnavailableSlots}
-                    style={{ color: "#1890ff", fontWeight: "bold" }}
-                  >
-                    Add Slots
-                  </Button>
-                  <Button
-                    type="link"
-                    danger
-                    onClick={handleDeleteAllUnavailable}
-                    style={{ fontWeight: "bold" }}
-                  >
-                    Delete All
-                  </Button>
-                </Space>
-              </Col>
-            </Row>
-
-            {/* Unavailable Time Slots */}
-            <Row gutter={[12, 12]} style={{ marginBottom: "32px" }}>
-              {unavailableSlots.map((slot, index) => (
-                <Col key={index} xs={12} sm={8} md={6} lg={4}>
-                  <Button
-                    block
-                    style={{
-                      height: "48px",
-                      borderRadius: "8px",
-                      border: "1px solid #ff4d4f",
-                      backgroundColor: "#FEE2E2",
-                      color: "#ff4d4f",
-                      fontWeight: "bold",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                    icon={<StopOutlined />}
-                  >
-                    {slot.time}
-                  </Button>
-                </Col>
-              ))}
-            </Row>
-          </Card>
-
-          {/* Available, Unavailable */}
-          <div style={{ marginBottom: "20px", marginLeft: "18px" }}>
-            <Space>
-              <Tag color="#16A34A" icon={<ClockCircleOutlined />}>
-                Availability
-              </Tag>
-              <Tag color="#FF3B30" icon={<StopOutlined />}>
-                Unavailability
-              </Tag>
-            </Space>
-          </div>
-
-          {/* Unavailable Date Section */}
-          <Card style={{ borderRadius: "12px", marginBottom: "0px" }}>
-            <Collapse
-              defaultActiveKey={["1"]}
-              expandIconPosition="right"
-              style={{ border: "none", backgroundColor: "transparent" }}
-            >
+            {/* Unavailable Date Range Section */}
+            <Collapse defaultActiveKey={["1"]} style={{ marginBottom: 24 }}>
               <Panel
-                header={
-                  <Title level={4} style={{ margin: 0 }}>
-                    Unavailable Date
-                  </Title>
-                }
+                header={<Text strong>Set Unavailable Date Range</Text>}
                 key="1"
-                style={{ border: "none", backgroundColor: "transparent" }}
               >
-                <Row
-                  gutter={[24, 24]}
-                  align="middle"
-                  style={{ marginBottom: "24px" }}
-                >
-                  <Col xs={24} sm={8}>
-                    <Text strong>Start Date :</Text>
-                    <div style={{ marginTop: "8px" }}>
-                      <DatePicker
-                        placeholder="DD/MM/YYYY"
-                        suffixIcon={<CalendarOutlined />}
-                        value={unavailableStartDate}
-                        onChange={setUnavailableStartDate}
-                        style={{ width: "100%" }}
-                      />
-                    </div>
+                <Row gutter={24} style={{ marginBottom: 16 }}>
+                  <Col xs={24} sm={12}>
+                    <Text strong>Start Date:</Text>
+                    <DatePicker
+                      style={{ width: "100%", marginTop: 8 }}
+                      value={unavailableStartDate}
+                      onChange={setUnavailableStartDate}
+                      placeholder="Select start date"
+                    />
                   </Col>
-                  <Col xs={24} sm={8}>
-                    <Text strong>End Date :</Text>
-                    <div style={{ marginTop: "8px" }}>
-                      <DatePicker
-                        placeholder="DD/MM/YYYY"
-                        suffixIcon={<CalendarOutlined />}
-                        value={unavailableEndDate}
-                        onChange={setUnavailableEndDate}
-                        style={{ width: "100%" }}
-                      />
-                    </div>
-                  </Col>
-                  <Col xs={24} sm={8}>
-                    <Space>
-                      <Button
-                        type="link"
-                        icon={<PlusOutlined />}
-                        onClick={handleAddUnavailableDateRange}
-                        style={{ color: "#1890ff", fontWeight: "bold" }}
-                      >
-                        Add
-                      </Button>
-                      <Button
-                        type="link"
-                        icon={<DeleteOutlined />}
-                        danger
-                        style={{ fontWeight: "bold" }}
-                      >
-                        Delete
-                      </Button>
-                    </Space>
+                  <Col xs={24} sm={12}>
+                    <Text strong>End Date:</Text>
+                    <DatePicker
+                      style={{ width: "100%", marginTop: 8 }}
+                      value={unavailableEndDate}
+                      onChange={setUnavailableEndDate}
+                      placeholder="Select end date"
+                    />
                   </Col>
                 </Row>
-
-                <div style={{ marginBottom: "24px" }}>
-                  <Text strong>Reason :</Text>
+                <div style={{ marginBottom: 16 }}>
+                  <Text strong>Reason:</Text>
                   <Input.TextArea
                     rows={3}
                     placeholder="Enter reason for unavailability..."
                     value={unavailableReason}
                     onChange={(e) => setUnavailableReason(e.target.value)}
-                    style={{ marginTop: "8px" }}
+                    style={{ marginTop: 8 }}
                   />
                 </div>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  style={{ marginTop: 8 }}
+                >
+                  Add Unavailable Date Range
+                </Button>
               </Panel>
             </Collapse>
+
+            {/* Legend */}
+            <div style={{ marginBottom: 16 }}>
+              <Space>
+                <Tag color="#16A34A" icon={<ClockCircleOutlined />}>
+                  Available Slots
+                </Tag>
+                <Tag color="#FF3B30" icon={<StopOutlined />}>
+                  Unavailable Slots
+                </Tag>
+              </Space>
+            </div>
           </Card>
 
           {/* Action Buttons */}
-          <div style={{ textAlign: "right", marginTop: "20px" }}>
+          <div style={{ textAlign: "right" }}>
             <Space size="large">
-              <Button size="large" style={{ minWidth: "100px" }}>
+              <Button size="large" style={{ minWidth: 100 }}>
                 Cancel
               </Button>
               <Button
                 type="primary"
                 size="large"
-                style={{ minWidth: "120px", borderRadius: "8px" }}
+                style={{ minWidth: 120, borderRadius: 8 }}
+                onClick={handleUpdateSlots}
               >
                 Save Changes
               </Button>
