@@ -71,15 +71,15 @@ const Header = () => {
           <Col>
             <Space align="center">
               <img
-                src="/images/vydh_logo.png" // Updated path (ensure the image exists in public/images/)
+                src="/images/pic1.png" // Updated path (ensure the image exists in public/images/)
                 alt="Logo"
                 style={{
                   // width: screens.xs ? 80 : 180,
                   // height: screens.xs ? 80 : 90,
-                  height: screens.xs ? "100px" : "110px",
-                  marginBottom: screens.xs ? "0px" : "-20px",
+                  height: screens.xs ? "180px" : "167px",
+                  marginBottom: screens.xs ? "-60px" : "-50px",
                   marginRight: screens.xs ? "8px" : "16px" ,
-                  marginTop: screens.xs ? "0px" : "-10px",
+                  marginTop: screens.xs ? "-50px" : "-34px",
                   objectFit: "contain",
                   borderRadius: 12,
                 }}

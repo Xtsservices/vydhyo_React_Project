@@ -49,14 +49,14 @@ const Footer = () => {
                 <ContactInfo 
                   icon={<CustomerServiceOutlined style={{ fontSize: 24 }} />}
                   title="Customer Support"
-                  value="+92 97612 34789"
+                  value="+91 97612 34789"
                 />
               </Col>
               <Col xs={24} sm={12} lg={12}>
                 <ContactInfo 
                   icon={<MessageOutlined style={{ fontSize: 24 }} />}
                   title="Drop Us an Email"
-                  value="info1256@example.com"
+                  value="support@gmail.com"
                 />
               </Col>
             </Row>
@@ -140,9 +140,18 @@ const Footer = () => {
                   Connect With Us
                 </Title>
                 <Space size={12}>
+
+                <a href="https://www.facebook.com/profile.php?id=61577351085015" target="_blank" rel="noopener noreferrer">
                   <SocialIcon icon={<FacebookOutlined />} />
-                  <SocialIcon icon={<TwitterOutlined />} />
-                  <SocialIcon icon={<InstagramOutlined />} />
+                </a>
+
+                  <a href="https://x.com/vydhyo" target="_blank" rel="noopener noreferrer">
+                    <SocialIcon icon={<TwitterOutlined />} />
+                  </a>  
+
+                  <a href="https://www.instagram.com/vydhyo_healthcare/profilecard/?igsh=ZGFzM25temd4bWZ4" target="_blank" rel="noopener noreferrer">              
+                    <SocialIcon icon={<InstagramOutlined />} />
+                  </a>
                   <SocialIcon icon={<LinkedinOutlined />} />
                   <SocialIcon icon={<GithubOutlined />} />
                 </Space>
