@@ -66,14 +66,7 @@ const AdviceFollowUp = () => {
         </div>
       </div>
 
-      <div className="common-button-container">
-        <button className="common-button common-cancel-button" onClick={handleCancel}>
-          Cancel
-        </button>
-        <button className="common-button common-confirm-button" onClick={handleConfirm}>
-          Confirm
-        </button>
-      </div>
+    
     </div>
   );
 };
