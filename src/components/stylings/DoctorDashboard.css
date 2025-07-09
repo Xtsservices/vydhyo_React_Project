@@ -1,9 +1,9 @@
 /* Base styles */
-.doctor-dashboard-container {
+.dashboard-container {
   padding: 24px;
   background-color: #F3FFFD;
   min-height: 100vh;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Header styles */
@@ -19,6 +19,7 @@
   font-weight: 600;
   color: #1a1a1a;
   font-size: 28px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .doctor-name {
@@ -30,6 +31,7 @@
   font-size: 14px;
   margin-top: 4px;
   display: block;
+  font-family: 'Poppins', sans-serif;
 }
 
 .new-appointment-button {
@@ -45,14 +47,27 @@
   padding-left: 20px;
   padding-right: 20px;
   font-size: 14px;
+  font-family: 'Poppins', sans-serif;
 }
 
-/* Top cards layout */
-.dashboard-top-cards {
+/* Main grid layout */
+.dashboard-main-grid {
   display: grid;
   grid-template-columns: 1.9fr 1fr;
   gap: 24px;
   margin-bottom: 24px;
+}
+
+.dashboard-content-grid {
+  display: grid;
+  grid-template-columns: 1.9fr 1fr;
+  gap: 24px;
+}
+
+.dashboard-right-column {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 24px;
 }
 
 /* Appointments card */
@@ -64,42 +79,44 @@
   position: relative;
   overflow: hidden;
   height: 220px;
+  width: 100%;
 }
 
 .appointments-card .ant-card-body {
   padding: 16px;
 }
 
-.appointments-card-header {
+.appointments-main-count {
   text-align: center;
   margin-bottom: 12px;
 }
 
-.appointments-count {
+.appointments-main-number {
   color: white;
   margin: 0;
   font-size: 48px;
   font-weight: 700;
   line-height: 1;
   text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-family: 'Poppins', sans-serif;
 }
 
-.appointments-label {
+.appointments-main-label {
   color: white;
   font-size: 14px;
   font-weight: 500;
   margin-top: 6px;
   display: block;
+  font-family: 'Poppins', sans-serif;
 }
 
-.appointments-stats-container {
+.appointments-stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
-.appointment-stat {
-  background-color: #F0FDF4;
+.appointments-stat-item {
   border-radius: 10px;
   padding: 12px;
   text-align: center;
@@ -114,29 +131,32 @@
   background-color: #EFF6FF;
 }
 
-.appointment-stat-value {
+.appointments-stat-number {
   color: #16A34A;
   margin: 0;
   font-size: 24px;
   font-weight: 700;
+  font-family: 'Poppins', sans-serif;
 }
 
-.follow-ups .appointment-stat-value {
+.follow-ups .appointments-stat-number {
   color: #2563EB;
 }
 
-.appointment-stat-label {
+.appointments-stat-label {
   color: #16A34A;
   font-size: 12px;
   font-weight: 500;
   display: block;
   margin-top: 4px;
+  font-family: 'Poppins', sans-serif;
 }
 
-.follow-ups .appointment-stat-label {
+.follow-ups .appointments-stat-label {
   color: #2563EB;
 }
 
+/* Percentage change indicator */
 .percentage-change-container {
   display: flex;
   align-items: center;
@@ -152,6 +172,7 @@
 .percentage-change-text {
   font-size: 12px;
   font-weight: 600;
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Revenue card */
@@ -171,76 +192,61 @@
   margin-bottom: 8px;
 }
 
-.revenue-title {
+.revenue-card-title {
   margin: 0;
   font-weight: 600;
   color: #1a1a1a;
   font-size: 16px;
+  font-family: 'Poppins', sans-serif;
 }
 
-.revenue-today-container {
+.revenue-item {
   margin-bottom: 12px;
-  background-color: #FAF5FF;
   padding: 12px;
   border-radius: 8px;
   position: relative;
 }
 
-.revenue-today-label {
-  font-size: 12px;
-  color: #9333EA;
-  display: block;
-  margin-bottom: 4px;
+.today-revenue {
+  background-color: #FAF5FF;
 }
 
-.revenue-today-amount {
+.month-revenue {
+  background-color: #FFF7ED;
+}
+
+.revenue-label {
+  font-size: 12px;
+  display: block;
+  margin-bottom: 4px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.today-revenue .revenue-label {
+  color: #9333EA;
+}
+
+.month-revenue .revenue-label {
+  color: #EA580C;
+}
+
+.revenue-amount {
   margin: 0;
   font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+}
+
+.today-revenue .revenue-amount {
   color: #9333EA;
   font-size: 28px;
 }
 
-.revenue-month-container {
-  margin-bottom: 12px;
-  background-color: #FFF7ED;
-  padding: 12px;
-  border-radius: 8px;
-}
-
-.revenue-month-label {
-  font-size: 12px;
-  color: #EA580C;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.revenue-month-amount {
-  margin: 0;
-  font-weight: 700;
+.month-revenue .revenue-amount {
   color: #EA580C;
   font-size: 20px;
 }
 
-/* Bottom section layout */
-.dashboard-bottom-section {
-  display: grid;
-  grid-template-columns: 1.9fr 1fr;
-  gap: 24px;
-}
-
-.dashboard-left-column {
-  display: grid;
-  grid-template-rows: auto auto;
-  gap: 24px;
-}
-
-.dashboard-right-column {
-  display: grid;
-  grid-template-rows: auto auto;
-  gap: 24px;
-}
-
-/* Patient appointments card */
+/* Patient appointments */
 .patient-appointments-card {
   border-radius: 16px;
   border: none;
@@ -266,6 +272,7 @@
   font-weight: 600;
   color: #1a1a1a;
   font-size: 18px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .date-picker {
@@ -287,11 +294,12 @@
   margin-bottom: 16px;
 }
 
-.appointments-table-header-text {
+.appointments-column-header {
   font-weight: 600;
   color: #6c757d;
   font-size: 12px;
   text-transform: uppercase;
+  font-family: 'Poppins', sans-serif;
 }
 
 .appointment-row {
@@ -299,42 +307,51 @@
   grid-template-columns: 2fr 1fr 1fr 1fr;
   padding: 16px 0;
   align-items: center;
-  border-bottom: 1px solid #f8f9fa;
 }
 
-.patient-name {
+.appointment-patient-name {
   font-weight: 500;
   color: #1a1a1a;
   font-size: 14px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .appointment-time {
   color: #6c757d;
   font-size: 14px;
+  font-family: 'Poppins', sans-serif;
 }
 
-.appointment-type-badge {
+.appointment-type {
   padding: 4px 12px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 400;
   text-align: center;
   width: fit-content;
+  font-family: 'Poppins', sans-serif;
 }
 
-.appointment-status-badge {
+.appointment-status {
   padding: 4px 12px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 400;
   text-align: center;
   width: fit-content;
+  font-family: 'Poppins', sans-serif;
 }
 
-.loading-container, .no-appointments-container {
+.appointments-loading,
+.appointments-empty {
   text-align: center;
   padding: 40px 0;
   color: #8c8c8c;
+}
+
+.appointments-loading .ant-typography,
+.appointments-empty .ant-typography {
+  font-family: 'Poppins', sans-serif;
 }
 
 .view-all-container {
@@ -346,46 +363,48 @@
   color: #4285f4;
   font-weight: 500;
   font-size: 14px;
+  font-family: 'Poppins', sans-serif;
 }
 
-/* Patient feedback card */
-.feedback-card {
+/* Patient feedback */
+.patient-feedback-card {
   border-radius: 16px;
   border: none;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   background: white;
 }
 
-.feedback-card .ant-card-body {
+.patient-feedback-card .ant-card-body {
   padding: 24px;
 }
 
-.feedback-header {
+.patient-feedback-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
 }
 
-.feedback-title {
+.patient-feedback-title {
   margin: 0;
   font-weight: 600;
   color: #1a1a1a;
   font-size: 18px;
+  font-family: 'Poppins', sans-serif;
 }
 
-.feedback-arrows {
+.feedback-navigation {
   display: flex;
   gap: 8px;
 }
 
-.feedback-arrow {
+.feedback-nav-icon {
   font-size: 16px;
   color: #bfbfbf;
   cursor: pointer;
 }
 
-.feedback-items-container {
+.feedback-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 32px;
@@ -395,7 +414,7 @@
   margin-bottom: 16px;
 }
 
-.feedback-user-info {
+.feedback-user {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -409,7 +428,7 @@
   background-color: #f3f4f6;
 }
 
-.feedback-user-details {
+.feedback-user-info {
   flex: 1;
 }
 
@@ -418,6 +437,7 @@
   color: #1a1a1a;
   font-size: 16px;
   display: block;
+  font-family: 'Poppins', sans-serif;
 }
 
 .feedback-rating {
@@ -439,14 +459,16 @@
   display: block;
   margin-bottom: 8px;
   font-style: italic;
+  font-family: 'Poppins', sans-serif;
 }
 
 .feedback-date {
   color: #9ca3af;
   font-size: 12px;
+  font-family: 'Poppins', sans-serif;
 }
 
-/* Clinic availability card */
+/* Clinic availability */
 .clinic-availability-card {
   border-radius: 16px;
   border: none;
@@ -454,106 +476,119 @@
   background: white;
   margin-bottom: 24px;
   position: relative;
+  height: 230px;
 }
 
 .clinic-availability-card .ant-card-body {
-  padding: 24px;
+  padding: 16px;
 }
 
 .clinic-availability-content {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .clinic-availability-title {
   margin: 0;
   font-weight: 600;
   color: #1a1a1a;
-  font-size: 18px;
-  margin-bottom: 8px;
+  font-size: 16px;
+  margin-bottom: 4px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .clinic-info {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .clinic-name {
   margin: 0;
   font-weight: 600;
   color: #495057;
-  font-size: 16px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .clinic-date {
-  font-size: 12px;
+  font-size: 11px;
   color: #8c8c8c;
+  font-family: 'Poppins', sans-serif;
 }
 
 .clinic-location {
-  font-size: 12px;
+  font-size: 11px;
   color: #1890ff;
   font-weight: 500;
+  font-family: 'Poppins', sans-serif;
 }
 
-.available-slots-label {
-  font-size: 14px;
+.availability-label {
+  font-size: 13px;
   color: #6c757d;
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   font-weight: 500;
+  font-family: 'Poppins', sans-serif;
 }
 
 .time-slots-container {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .time-slot {
-  padding: 6px 12px;
+  padding: 4px 10px;
   background-color: #f0f8f0;
   color: #16A34A;
-  border-radius: 15px;
-  font-size: 12px;
+  border-radius: 12px;
+  font-size: 11px;
   font-weight: 500;
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.2;
+  height: 24px;
+  display: flex;
+  align-items: center;
 }
 
 .next-availability-container {
-  padding: 16px;
+  padding: 12px;
   background-color: #f0f8f0;
-  border-radius: 12px;
+  border-radius: 10px;
   position: relative;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .next-availability-label {
-  font-size: 14px;
+  font-size: 13px;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   font-weight: 500;
+  font-family: 'Poppins', sans-serif;
 }
 
 .next-availability-time {
   margin: 0;
   font-weight: 500;
   color: #16A34A;
-  font-size: 16px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
 }
 
-.clinic-navigation-buttons {
+.clinic-navigation {
   position: absolute;
-  bottom: 16px;
-  right: 16px;
+  bottom: 42px;
+  right: 1px;
   display: flex;
-  gap: 14rem;
+  gap: 16rem;
 }
 
-.clinic-nav-button {
-  width: 32px;
-  height: 32px;
+.nav-button {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background-color: #9EBEFF;
   display: flex;
@@ -562,12 +597,12 @@
   cursor: pointer;
 }
 
-.clinic-nav-icon {
-  font-size: 14px;
+.nav-icon {
+  font-size: 12px;
   color: white;
 }
 
-/* Revenue summary card */
+/* Revenue summary */
 .revenue-summary-card {
   border-radius: 16px;
   border: none;
@@ -591,13 +626,14 @@
   font-weight: 600;
   color: #1a1a1a;
   font-size: 18px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .revenue-summary-content {
   text-align: center;
 }
 
-/* Pie chart styles */
+/* Pie chart */
 .pie-chart-container {
   display: flex;
   flex-direction: column;
@@ -614,15 +650,21 @@
 }
 
 .pie-chart-no-data-text {
+  x: 100;
+  y: 100;
   text-anchor: middle;
   fill: #6c757d;
-  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14;
 }
 
-.pie-chart-no-data-inner-text {
+.pie-chart-no-data-text-small {
+  x: 100;
+  y: 105;
   text-anchor: middle;
   fill: #6c757d;
-  font-size: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12;
 }
 
 .pie-chart-legend-container {
@@ -649,4 +691,5 @@
   font-size: 14px;
   color: #666;
   font-weight: 500;
+  font-family: 'Poppins', sans-serif;
 }
