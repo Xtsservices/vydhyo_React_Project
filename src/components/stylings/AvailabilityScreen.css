@@ -1,0 +1,203 @@
+.availability-container {
+  padding: 24px;
+  background-color: #F3FFFD;
+  min-height: 100vh;
+}
+
+.availability-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.availability-title {
+  margin-bottom: 24px;
+  color: #1f2937;
+}
+
+.clinic-selection-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+}
+
+.clinic-select {
+  width: 250px;
+}
+
+.main-card,
+.unavailable-card {
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.card-title-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.day-selection-container {
+  margin-bottom: 32px;
+}
+
+.day-selection-title {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.day-button {
+  border-radius: 20px;
+  min-width: 80px;
+  height: 36px;
+}
+
+.time-config-row {
+  margin-bottom: 32px;
+}
+
+.day-date-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.day-title {
+  margin: 0;
+  color: #1f2937;
+}
+
+.date-text {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.time-control-container {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.time-value {
+  min-width: 30px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.time-buttons {
+  margin-left: 8px;
+}
+
+.time-adjust-button {
+  display: block;
+  margin-bottom: 2px;
+  width: 30px;
+  height: 20px;
+}
+
+.period-button {
+  margin-left: 8px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 35px;
+  height: 24px;
+}
+
+.pm-active {
+  background-color: #ffeaa7;
+}
+
+.action-button {
+  color: #1890ff;
+  font-weight: bold;
+}
+
+.slots-row {
+  margin-bottom: 32px;
+}
+
+.available-slot-button {
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid #52c41a;
+  background-color: #DCFCE7;
+  color: #52c41a;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unavailable-slot-button {
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid #ff4d4f;
+  background-color: #FEE2E2;
+  color: #ff4d4f;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.availability-tags-container {
+  margin-bottom: 20px;
+  margin-left: 18px;
+}
+
+.unavailable-date-card {
+  border-radius: 12px;
+  margin-bottom: 0px;
+}
+
+.collapse-container {
+  border: none;
+  background-color: transparent;
+}
+
+.panel-container {
+  border: none;
+  background-color: transparent;
+}
+
+.panel-title {
+  margin: 0;
+}
+
+.date-range-row {
+  margin-bottom: 24px;
+}
+
+.date-picker-container {
+  margin-top: 8px;
+}
+
+.date-picker {
+  width: 100%;
+}
+
+.date-action-button {
+  font-weight: bold;
+}
+
+.reason-container {
+  margin-bottom: 24px;
+}
+
+.reason-textarea {
+  margin-top: 8px;
+}
+
+.action-buttons-container {
+  text-align: right;
+  margin-top: 20px;
+}
+
+.cancel-button {
+  min-width: 100px;
+}
+
+.save-button {
+  min-width: 120px;
+  border-radius: 8px;
+}
