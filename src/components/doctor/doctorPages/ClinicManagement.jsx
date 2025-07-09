@@ -329,6 +329,8 @@ export default function ClinicManagement() {
     }
   };
 
+  
+    
   const handleCancel = () => {
     setShowModal(false);
     setFormData({
@@ -768,7 +770,7 @@ export default function ClinicManagement() {
                         >
                           <Edit size={16} />
                         </button>
-                        <button
+                        {/* <button
                           style={{ ...iconButtonStyle, color: "#6b7280" }}
                           onMouseEnter={(e) =>
                             (e.target.style.color = "#374151")
@@ -779,7 +781,7 @@ export default function ClinicManagement() {
                           title="View"
                         >
                           <Eye size={16} />
-                        </button>
+                        </button> */}
                         <button
                           style={{ ...iconButtonStyle, color: "#dc2626" }}
                           onMouseEnter={(e) =>
@@ -1107,4 +1109,4 @@ export default function ClinicManagement() {
       </div>
     </div>
   );
-}
+} 

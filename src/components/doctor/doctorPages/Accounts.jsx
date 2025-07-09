@@ -32,15 +32,15 @@ const { RangePicker } = DatePicker;
 import dayjs from "dayjs";
 
 const AccountsPage = () => {
-  const [filterDate, setFilterDate] = useState(null);
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [searchText, setSearchText] = useState("");
 
   const [transactions, setTransactions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [filterService, setFilterService] = useState("all");
-  const [filterStatusAPI, setFilterStatusAPI] = useState("all");
+  const [filterService, setFilterService] = useState("");
+  const [filterStatusAPI, setFilterStatusAPI] = useState("");
 
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -313,30 +313,29 @@ useEffect(() => {
     },
   ];
 
-  const filteredTransactions = transactions.filter((transaction) => {
-    if (filterStatus !== "all" && transaction.status !== filterStatus) {
-      return false;
-    }
+  //   if (filterStatus !== "all" && transaction.status !== filterStatus) {
+  //     return false;
+  //   }
 
-    if (
-      searchText &&
-      !transaction.patient.toLowerCase().includes(searchText.toLowerCase())
-    ) {
-      return false;
-    }
+  //   if (
+  //     searchText &&
+  //     !transaction.patient.toLowerCase().includes(searchText.toLowerCase())
+  //   ) {
+  //     return false;
+  //   }
 
-    if (filterDate) {
-      const transactionDate = new Date(transaction.date);
-      const startDate = new Date(filterDate[0]);
-      const endDate = new Date(filterDate[1]);
+  //   if (filterDate) {
+  //     const transactionDate = new Date(transaction.date);
+  //     const startDate = new Date(filterDate[0]);
+  //     const endDate = new Date(filterDate[1]);
 
-      if (transactionDate < startDate || transactionDate > endDate) {
-        return false;
-      }
-    }
+  //     if (transactionDate < startDate || transactionDate > endDate) {
+  //       return false;
+  //     }
+  //   }
 
-    return true;
-  });
+  //   return true;
+  // });
 
   return (
     <div
@@ -612,7 +611,7 @@ useEffect(() => {
                   onChange={(dates) => {
                     setFilterDate(dates);
                     console.log("Selected dates:", dates);
-                  }}
+                    }}
                   value={filterDate}
                   allowClear
                 />
@@ -623,8 +622,8 @@ useEffect(() => {
                   value={filterService}
                   onChange={setFilterService}
                 >
-                  <Option value="all">All Services</Option>
-                  <Option value="appointments">Appointments</Option>
+                  <Option value="">All Services</Option>
+                  <Option value="appointment">Appointments</Option>
                   <Option value="lab">Lab</Option>
                   <Option value="pharmacy">Pharmacy</Option>
                 </Select>
@@ -634,10 +633,11 @@ useEffect(() => {
                   value={filterStatusAPI}
                   onChange={setFilterStatusAPI}
                 >
-                  <Option value="all">All Status</Option>
+                  placeholder="Select Status"
+                  <Option value="">All Status</Option>
                   <Option value="paid">Paid</Option>
                   <Option value="pending">Pending</Option>
-                  <Option value="refunded">Refunded</Option>
+                  <Option value="refund">Refunded</Option>
                 </Select>
               </Col>
               <Col>
@@ -686,82 +686,112 @@ useEffect(() => {
 
         {/* View Transaction Modal */}
         <Modal
-  open={viewModalVisible}
-  title="Transaction Details"
-  onCancel={() => {
-    setViewModalVisible(false);
-    setPatientHistory(null);
-  }}
-  footer={null}
-  width={600}
->
-  {selectedTransaction && (
-    <Descriptions bordered column={1} size="small" style={{ marginBottom: 24 }}>
-      <Descriptions.Item label="Transaction ID">
-        {selectedTransaction.paymentId || selectedTransaction._id}
-      </Descriptions.Item>
-      <Descriptions.Item label="Patient Name">
-        {selectedTransaction.patientName || "-"}
-      </Descriptions.Item>
-      <Descriptions.Item label="Service">
-        {selectedTransaction.paymentFrom}
-      </Descriptions.Item>
-      <Descriptions.Item label="Amount">
-        ₹{selectedTransaction.finalAmount || selectedTransaction.actualAmount}
-      </Descriptions.Item>
-      <Descriptions.Item label="Status">
-        {selectedTransaction.paymentStatus}
-      </Descriptions.Item>
-      <Descriptions.Item label="Payment Method">
-        {selectedTransaction.paymentMethod}
-      </Descriptions.Item>
-      <Descriptions.Item label="Paid At">
-        {selectedTransaction.paidAt
-          ? dayjs(selectedTransaction.paidAt).format("DD-MMM-YYYY")
-          : "-"}
-      </Descriptions.Item>
-      <Descriptions.Item label="Start Date">
-        {selectedTransaction.startDate
-          ? dayjs(selectedTransaction.startDate).format("DD-MMM-YYYY")
-          : "-"}
-      </Descriptions.Item>
-      <Descriptions.Item label="End Date">
-        {selectedTransaction.endDate
-          ? dayjs(selectedTransaction.endDate).format("DD-MMM-YYYY")
-          : "-"}
-      </Descriptions.Item>
-    </Descriptions>
-  )}
+          open={viewModalVisible}
+          title="Transaction Details"
+          onCancel={() => {
+            setViewModalVisible(false);
+            setPatientHistory(null);
+          }}
+          footer={null}
+          width={600}
+        >
+          {selectedTransaction && (
+            <Descriptions bordered column={1} size="small" style={{ marginBottom: 24 }}>
+              <Descriptions.Item label="Transaction ID">
+                {selectedTransaction.paymentId || selectedTransaction._id}
+              </Descriptions.Item>
+              <Descriptions.Item label="Patient Name">
+                {selectedTransaction.patientName || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Service">
+                {selectedTransaction.paymentFrom}
+              </Descriptions.Item>
+              <Descriptions.Item label="Amount">
+                ₹{selectedTransaction.finalAmount || selectedTransaction.actualAmount}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                {selectedTransaction.paymentStatus}
+              </Descriptions.Item>
+              <Descriptions.Item label="Payment Method">
+                {selectedTransaction.paymentMethod}
+              </Descriptions.Item>
+              <Descriptions.Item label="Paid At">
+                {selectedTransaction.paidAt
+                  ? dayjs(selectedTransaction.paidAt).format("DD-MMM-YYYY")
+                  : "-"}
+              </Descriptions.Item>
+              
+            </Descriptions>
+          )}
 
-  <Divider>Patient History</Divider>
+          <Divider>Patient History</Divider>
 
-  {loadingHistory ? (
-    <div style={{ textAlign: "center" }}>
-      <SyncOutlined spin style={{ fontSize: 24 }} />
-    </div>
-  ) : patientHistory ? (
-    <Descriptions column={1} size="small" bordered>
-      <Descriptions.Item label="Age">
-        {patientHistory.age || "N/A"}
-      </Descriptions.Item>
-      <Descriptions.Item label="Gender">
-        {patientHistory.gender || "N/A"}
-      </Descriptions.Item>
-      <Descriptions.Item label="Contact">
-        {patientHistory.contactNumber || "N/A"}
-      </Descriptions.Item>
-      <Descriptions.Item label="History Details">
-        {patientHistory.historyDetails || "N/A"}
-      </Descriptions.Item>
-      {/* Add more fields as per your API response */}
-    </Descriptions>
-  ) : (
-    <div style={{ textAlign: "center", color: "#999" }}>
-      No patient history found.
-    </div>
-  )}
-</Modal>
+          {loadingHistory ? (
+            <div style={{ textAlign: "center" }}>
+              <SyncOutlined spin style={{ fontSize: 24 }} />
+            </div>
+          ) : patientHistory ? (
+            <>
+              <Descriptions column={1} size="small" bordered title="Patient Details">
+                <Descriptions.Item label="Full Name">
+                  {patientHistory.userDetails?.firstname} {patientHistory.userDetails?.lastname}
+                </Descriptions.Item>
+                <Descriptions.Item label="Patien Id">
+                  {patientHistory.userDetails?.patientId || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Gender">
+                  {patientHistory.userDetails?.gender || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Date of Birth">
+                  {patientHistory.userDetails?.DOB || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Contact Number">
+                  {patientHistory.userDetails?.mobile || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Relationship">
+                  {patientHistory.userDetails?.relationship || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Status">
+                  {patientHistory.userDetails?.status || "N/A"}
+                </Descriptions.Item>
+              </Descriptions>
 
+              <Divider />
+
+              <Descriptions column={1} size="small" bordered title="Details">
+                <Descriptions.Item label="Doctor ID">
+                {selectedTransaction.doctorID || selectedTransaction.doctorId || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Pharmacy Med ID">
+                {selectedTransaction.pharmacyMedID || selectedTransaction.pharmacyMedId || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Medicine Name">
+                {selectedTransaction.medName || selectedTransaction.medName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Payment Status">
+                {selectedTransaction.paymentStatus || "N/A"}
+              </Descriptions.Item>
+                <Descriptions.Item label="Department">
+                  {patientHistory.appointmentDetails?.appointmentDepartment || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Type">
+                  {patientHistory.appointmentDetails?.appointmentType || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Date & Time">
+                  {dayjs(patientHistory.appointmentDetails?.appointmentDate).format("DD-MMM-YYYY")} at{" "}
+                  {patientHistory.appointmentDetails?.appointmentTime}
+                </Descriptions.Item>
+                <Descriptions.Item label="Reason">
+                  {patientHistory.appointmentDetails?.appointmentReason || "N/A"}
+                </Descriptions.Item>
+              </Descriptions>
+            </>
+          ) : (
+            <div style={{ textAlign: "center", color: "#999" }}>
+              No patient history found.
+            </div>
+          )}
+        </Modal>
       </div>
     </div>
   );
