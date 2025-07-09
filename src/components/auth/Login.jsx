@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
-import {toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Illustration from "./Illustration";
 import LoginForm from "./LoginForm";
@@ -239,7 +239,6 @@ const Login = () => {
           onReset={resetPhoneLogin}
         />
       </div>
-     
     </div>
   );
 };

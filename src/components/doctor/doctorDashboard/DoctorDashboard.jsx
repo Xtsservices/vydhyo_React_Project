@@ -232,67 +232,83 @@ const PieChart = ({ data }) => {
   );
 };
 
-const Header = ({ user, navigate }) => (
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      marginBottom: "24px",
-    }}
-  >
-    <div>
-      <Title
-        level={2}
-        style={{
-          margin: 0,
-          fontWeight: 600,
-          color: "#1a1a1a",
-          fontSize: "28px",
-          fontFamily: "Poppins, sans-serif",
-        }}
-      >
-        Good Morning{" "}
-        <span style={{ color: "#ff6b6b" }}>
-          Dr. {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
-        </span>
-      </Title>
-      <Text
-        style={{
-          color: "#8c8c8c",
-          fontSize: "14px",
-          marginTop: "4px",
-          display: "block",
-          fontFamily: "Poppins, sans-serif",
-        }}
-      >
-        Have a great day at work
-      </Text>
-    </div>
-    <Button
-      type="primary"
-      onClick={() => navigate("/doctor/doctorPages/Walkin")}
+const Header = ({ user, navigate }) => {
+  // Get current time in IST
+  const now = new Date();
+  // Convert to IST (UTC+5:30)
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const istNow = new Date(utc + 5.5 * 60 * 60 * 1000);
+  const hour = istNow.getHours();
+
+  let greeting = "Good Morning";
+  if (hour >= 12 && hour < 16) {
+    greeting = "Good Afternoon";
+  } else if (hour >= 16) {
+    greeting = "Good Evening";
+  }
+
+  return (
+    <div
       style={{
-        color: "#374151",
-        backgroundColor: "#EFF6FF",
-        borderColor: "#EFF6FF",
-        borderRadius: "15px",
         display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        fontWeight: 500,
-        height: "42px",
-        paddingLeft: "20px",
-        paddingRight: "20px",
-        fontSize: "14px",
-        fontFamily: "Poppins, sans-serif",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: "24px",
       }}
-      icon={<UserOutlined />}
     >
-      + New Appointments
-    </Button>
-  </div>
-);
+      <div>
+        <Title
+          level={2}
+          style={{
+            margin: 0,
+            fontWeight: 600,
+            color: "#1a1a1a",
+            fontSize: "28px",
+            fontFamily: "Poppins, sans-serif",
+          }}
+        >
+          {greeting}{" "}
+          <span style={{ color: "#ff6b6b" }}>
+            Dr. {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
+          </span>
+        </Title>
+        <Text
+          style={{
+            color: "#8c8c8c",
+            fontSize: "14px",
+            marginTop: "4px",
+            display: "block",
+            fontFamily: "Poppins, sans-serif",
+          }}
+        >
+          Have a great day at work
+        </Text>
+      </div>
+      <Button
+        type="primary"
+        onClick={() => navigate("/doctor/doctorPages/Walkin")}
+        style={{
+          color: "#374151",
+          backgroundColor: "#EFF6FF",
+          borderColor: "#EFF6FF",
+          borderRadius: "15px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          fontWeight: 500,
+          height: "42px",
+          paddingLeft: "20px",
+          paddingRight: "20px",
+          fontSize: "14px",
+          fontFamily: "Poppins, sans-serif",
+        }}
+        icon={<UserOutlined />}
+      >
+        + New Appointments
+      </Button>
+    </div>
+  );
+};
 
 const AppointmentsCard = ({ dashboardData }) => (
   <Card
