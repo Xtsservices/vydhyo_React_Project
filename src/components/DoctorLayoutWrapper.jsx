@@ -22,7 +22,7 @@ import {
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
-import logo from "../assets/logooo.png"; 
+import logo from "./../../public/images/pic1.png"; 
 import { apiPost } from "./api";
 import { useLocation } from "react-router-dom";
 
@@ -75,6 +75,8 @@ const DoctorLayoutWrapper = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userID");
         localStorage.removeItem("role");
+        localStorage.removeItem("appointments");
+
         console.log("Logout successful:", response.data.message);
       } catch (error) {
         console.error(
@@ -84,6 +86,9 @@ const DoctorLayoutWrapper = () => {
       }
     } finally {
       localStorage.removeItem("accessToken");
+        localStorage.removeItem("userID");
+        localStorage.removeItem("role");
+        localStorage.removeItem("appointments");
       navigate("/login");
     }
   };
@@ -327,8 +332,9 @@ const DoctorLayoutWrapper = () => {
               src={logo}
               alt="VYDHYO Logo"
               style={{
-                height: "120px",
+                height: "130px",
                 width: "auto",
+                marginTop: "10px",
                 objectFit: "contain",
               }}
             />
