@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { Edit, Eye, Plus, Search, X, Trash2 } from "lucide-react";
+import { Edit, Plus, Search, X, Trash2 } from "lucide-react";
 import {
   GoogleMap,
   useLoadScript,
   Autocomplete,
   Marker,
 } from "@react-google-maps/api";
-import { apiGet, apiPost } from "../../api";
-import {  toast } from "react-toastify";
+import { apiGet, apiPost, apiPut } from "../../api";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const libraries = ["places", "geocoding"];
@@ -30,16 +30,18 @@ export default function ClinicManagement() {
     address: "",
     city: "",
     state: "",
-    country: "",
+    country: "India",
     mobile: "",
     pincode: "",
     startTime: "",
     endTime: "",
     latitude: "",
     longitude: "",
+    addressId: "",
   });
-  const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 }); // Default to India center
+  const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 });
   const [markerPosition, setMarkerPosition] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const autocompleteRef = useRef(null);
   const mapRef = useRef(null);
@@ -48,23 +50,17 @@ export default function ClinicManagement() {
     const fetchClinics = async () => {
       try {
         setLoading(true);
-        setError(null);
         const response = await apiGet("/users/getClinicAddress", {});
-
         if (response.status === 200 && response.data?.status === "success") {
           setClinics(response.data.data || []);
-        } else {
-          throw new Error(response.data?.message || "Failed to fetch clinics");
         }
       } catch (err) {
-        console.error("Error fetching clinics:", err);
+        console.error("Fetch error:", err);
         setError(err.message);
-        setClinics([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchClinics();
   }, []);
 
@@ -209,6 +205,22 @@ export default function ClinicManagement() {
 
   const handleAddClinic = () => {
     setShowModal(true);
+    setIsEditing(false);
+    setFormData({
+      type: "Clinic",
+      clinicName: "",
+      address: "",
+      city: "",
+      state: "",
+      country: "India",
+      mobile: "",
+      pincode: "",
+      startTime: "",
+      endTime: "",
+      latitude: "",
+      longitude: "",
+    });
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -230,24 +242,49 @@ export default function ClinicManagement() {
     }
   };
 
+  const handleEditClinic = (clinic) => {
+    setShowModal(true);
+    setIsEditing(true);
+    setFormData({
+      type: clinic.type,
+      clinicName: clinic.clinicName,
+      address: clinic.address,
+      city: clinic.city,
+      state: clinic.state,
+      country: clinic.country,
+      mobile: clinic.mobile,
+      pincode: clinic.pincode,
+      startTime: clinic.startTime,
+      endTime: clinic.endTime,
+      latitude: clinic.latitude?.toString() || "",
+      longitude: clinic.longitude?.toString() || "",
+      addressId: clinic.addressId,
+    });
+
+    if (clinic.latitude && clinic.longitude) {
+      const lat = parseFloat(clinic.latitude);
+      const lng = parseFloat(clinic.longitude);
+      setMapCenter({ lat, lng });
+      setMarkerPosition({ lat, lng });
+    } else {
+      setMapCenter({ lat: 20.5937, lng: 78.9629 });
+      setMarkerPosition(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
-    if (["Clinic", "Hospital"].includes(formData.type)) {
+    
+    // Only validate time fields when creating a new clinic (not editing)
+    if (!isEditing && ["Clinic", "Hospital"].includes(formData.type)) {
+      const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
       if (!formData.startTime || !formData.endTime) {
-        // alert(
-        //   "Both start time and end time are required for Clinic or Hospital type"
-        // );
         toast.error(
           "Both start time and end time are required for Clinic or Hospital type"
         );
         return;
       }
-      if (
-        !timeRegex.test(formData.startTime) ||
-        !timeRegex.test(formData.endTime)
-      ) {
-        // alert("Invalid time format. Use HH:MM (24-hour format)");
+      if (!timeRegex.test(formData.startTime) || !timeRegex.test(formData.endTime)) {
         toast.error("Invalid time format. Use HH:MM (24-hour format)");
         return;
       }
@@ -256,19 +293,47 @@ export default function ClinicManagement() {
         return h * 60 + m;
       };
       if (toMinutes(formData.startTime) >= toMinutes(formData.endTime)) {
-        // alert("Start time must be before end time");
         toast.error("Start time must be before end time");
         return;
       }
     }
 
     try {
-      const response = await apiPost("/users/addAddress", formData);
+      let response;
+      if (isEditing) {
+        const updateData = {
+          addressId: formData.addressId,
+          clinicName: formData.clinicName,
+          mobile: formData.mobile,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          pincode: formData.pincode,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          location: {
+            type: "Point",
+            coordinates: [
+              parseFloat(formData.longitude),
+              parseFloat(formData.latitude),
+            ],
+          },
+        };
+        response = await apiPut("/users/updateAddress", updateData);
+      } else {
+        response = await apiPost("/users/addAddress", formData);
+      }
 
       if (response.status === 200) {
-        toast.success(response.data?.message || "Clinic added successfully");
-        // Refresh the clinics list after successful addition
-        const refreshResponse = await apiPost("/users/getClinicAddress", {});
+        toast.success(
+          response.data?.message ||
+            (isEditing
+              ? "Clinic updated successfully"
+              : "Clinic added successfully")
+        );
+
+        const refreshResponse = await apiGet("/users/getClinicAddress", {});
         if (
           refreshResponse.status === 200 &&
           refreshResponse.data?.status === "success"
@@ -276,7 +341,6 @@ export default function ClinicManagement() {
           setClinics(refreshResponse.data.data || []);
         }
 
-        // Reset form and close modal
         setShowModal(false);
         setFormData({
           type: "Clinic",
@@ -291,15 +355,20 @@ export default function ClinicManagement() {
           endTime: "",
           latitude: "",
           longitude: "",
+          addressId: "",
         });
       } else {
-        toast.error(response.data?.message || "Failed to add clinic");
-        throw new Error(response.data?.message || "Failed to add clinic");
+        toast.error(
+          response.data?.message ||
+            (isEditing ? "Failed to update clinic" : "Failed to add clinic")
+        );
+        throw new Error(
+          response.data?.message ||
+            (isEditing ? "Failed to update clinic" : "Failed to add clinic")
+        );
       }
     } catch (err) {
-      // console.error("Error adding clinic:", err);
-      // alert(err.message || "Failed to add clinic. Please try again.");
-      toast.error(err.message || "Failed to add clinic. Please try again.");
+      toast.error(err.message || "Failed to save clinic. Please try again.");
     }
   };
 
@@ -307,30 +376,19 @@ export default function ClinicManagement() {
     if (!window.confirm("Are you sure you want to delete this clinic?")) return;
 
     try {
-      const response = await apiPost("/users/deleteClinicAddress", {
-        addressId,
-      });
-
-      if (response.status === 200) {
+      const response = await apiPost("/users/deleteClinicAddress", { addressId });
+      if (response.status === 200 || response.data?.status === "success") {
         toast.success(response.data?.message || "Clinic deleted successfully");
-        // Refresh the clinics list after successful deletion
-        const refreshResponse = await apiPost("/users/getClinicAddress", {});
-        if (refreshResponse.status === 200) {
-          setClinics(refreshResponse.data.data || []);
-        }
+        setClinics(prevClinics => prevClinics.filter(clinic => clinic.addressId !== addressId));
       } else {
         toast.error(response.data?.message || "Failed to delete clinic");
-        throw new Error(response.data?.message || "Failed to delete clinic");
       }
     } catch (err) {
-      // console.error("Error deleting clinic:", err);
-      // alert(err.message || "Failed to delete clinic. Please try again.");
+      console.error("Delete error:", err);
       toast.error(err.message || "Failed to delete clinic. Please try again.");
     }
   };
 
-  
-    
   const handleCancel = () => {
     setShowModal(false);
     setFormData({
@@ -346,6 +404,7 @@ export default function ClinicManagement() {
       endTime: "",
       latitude: "",
       longitude: "",
+      addressId: "",
     });
     setMapCenter({ lat: 20.5937, lng: 78.9629 });
     setMarkerPosition(null);
@@ -357,11 +416,11 @@ export default function ClinicManagement() {
       clinic.addressId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Styles (same as before)
   const containerStyle = {
     minHeight: "100vh",
     backgroundColor: "#f9fafb",
-    fontFamily:
-      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   };
 
   const mainStyle = {
@@ -536,8 +595,7 @@ export default function ClinicManagement() {
     width: "90%",
     maxWidth: "800px",
     position: "relative",
-    boxShadow:
-      "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
     maxHeight: "90vh",
     overflowY: "auto",
     marginTop: "4rem",
@@ -572,18 +630,6 @@ export default function ClinicManagement() {
     outline: "none",
     transition: "border-color 0.2s, box-shadow 0.2s",
     backgroundColor: "#ffffff",
-  };
-
-  const selectStyle = {
-    width: "100%",
-    padding: "12px 16px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "14px",
-    outline: "none",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-    backgroundColor: "#ffffff",
-    appearance: "none",
   };
 
   const formRowStyle = {
@@ -649,7 +695,6 @@ export default function ClinicManagement() {
   return (
     <div style={containerStyle}>
       <div style={mainStyle}>
-        {/* Header */}
         <div style={headerStyle}>
           <div>
             <h1 style={titleStyle}>Clinic Management</h1>
@@ -668,7 +713,6 @@ export default function ClinicManagement() {
           </button>
         </div>
 
-        {/* Search Bar */}
         <div style={searchContainerStyle}>
           <div style={searchInputContainerStyle}>
             <Search style={searchIconStyle} size={16} />
@@ -697,12 +741,10 @@ export default function ClinicManagement() {
           </button>
         </div>
 
-        {/* Table */}
         <div style={tableContainerStyle}>
           <table style={tableStyle}>
             <thead style={theadStyle}>
               <tr>
-                {/* <th style={thStyle}>Address ID</th> */}
                 <th style={thStyle}>Clinic Name</th>
                 <th style={thStyle}>Type</th>
                 <th style={thStyle}>Address</th>
@@ -716,7 +758,7 @@ export default function ClinicManagement() {
               {filteredClinics.length > 0 ? (
                 filteredClinics.map((clinic) => (
                   <tr
-                    key={clinic._id} // Using _id from MongoDB as key
+                    key={clinic._id}
                     style={trStyle}
                     onMouseEnter={(e) =>
                       (e.target.style.backgroundColor = "#f9fafb")
@@ -725,15 +767,6 @@ export default function ClinicManagement() {
                       (e.target.style.backgroundColor = "transparent")
                     }
                   >
-                    {/* <td
-                      style={{
-                        ...tdStyle,
-                        fontWeight: "500",
-                        color: "#111827",
-                      }}
-                    >
-                      {clinic.addressId}
-                    </td> */}
                     <td style={{ ...tdStyle, color: "#111827" }}>
                       {clinic.clinicName}
                     </td>
@@ -767,21 +800,10 @@ export default function ClinicManagement() {
                             (e.target.style.color = "#2563eb")
                           }
                           title="Edit"
+                          onClick={() => handleEditClinic(clinic)}
                         >
                           <Edit size={16} />
                         </button>
-                        {/* <button
-                          style={{ ...iconButtonStyle, color: "#6b7280" }}
-                          onMouseEnter={(e) =>
-                            (e.target.style.color = "#374151")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.target.style.color = "#6b7280")
-                          }
-                          title="View"
-                        >
-                          <Eye size={16} />
-                        </button> */}
                         <button
                           style={{ ...iconButtonStyle, color: "#dc2626" }}
                           onMouseEnter={(e) =>
@@ -812,11 +834,12 @@ export default function ClinicManagement() {
           </table>
         </div>
 
-        {/* Enhanced Modal */}
         {showModal && (
           <div style={modalOverlayStyle} onClick={handleCancel}>
             <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-              <h2 style={modalHeaderStyle}>Add New Clinic Details</h2>
+              <h2 style={modalHeaderStyle}>
+                {isEditing ? "Edit Clinic Details" : "Add New Clinic Details"}
+              </h2>
 
               <div>
                 <div style={formGroupStyle}>
@@ -938,9 +961,9 @@ export default function ClinicManagement() {
                       placeholder="Enter mobile number"
                       style={inputStyle}
                       value={formData.mobile}
-                      maxLength={10} // ✅ limit to 10 characters
+                      maxLength={10}
                       onChange={(e) => {
-                        const onlyDigits = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+                        const onlyDigits = e.target.value.replace(/\D/g, "");
                         if (onlyDigits.length <= 10) {
                           handleInputChange({
                             target: {
@@ -1026,52 +1049,55 @@ export default function ClinicManagement() {
                   </div>
                 </div>
 
-                <div style={formRowStyle}>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>
-                      Start Time (required for Clinic/Hospital)
-                    </label>
-                    <input
-                      type="text"
-                      name="startTime"
-                      placeholder="HH:MM (e.g., 09:00)"
-                      style={inputStyle}
-                      value={formData.startTime}
-                      onChange={handleInputChange}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#3b82f6";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#d1d5db";
-                        e.target.style.boxShadow = "none";
-                      }}
-                    />
+                {/* Only show time fields when creating a new clinic (not editing) */}
+                {!isEditing && (
+                  <div style={formRowStyle}>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>
+                        Start Time (required for Clinic/Hospital)
+                      </label>
+                      <input
+                        type="text"
+                        name="startTime"
+                        placeholder="HH:MM (e.g., 09:00)"
+                        style={inputStyle}
+                        value={formData.startTime}
+                        onChange={handleInputChange}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#3b82f6";
+                          e.target.style.boxShadow =
+                            "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#d1d5db";
+                          e.target.style.boxShadow = "none";
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>
+                        End Time (required for Clinic/Hospital)
+                      </label>
+                      <input
+                        type="text"
+                        name="endTime"
+                        placeholder="HH:MM (e.g., 17:00)"
+                        style={inputStyle}
+                        value={formData.endTime}
+                        onChange={handleInputChange}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#3b82f6";
+                          e.target.style.boxShadow =
+                            "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#d1d5db";
+                          e.target.style.boxShadow = "none";
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>
-                      End Time (required for Clinic/Hospital)
-                    </label>
-                    <input
-                      type="text"
-                      name="endTime"
-                      placeholder="HH:MM (e.g., 17:00)"
-                      style={inputStyle}
-                      value={formData.endTime}
-                      onChange={handleInputChange}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#3b82f6";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#d1d5db";
-                        e.target.style.boxShadow = "none";
-                      }}
-                    />
-                  </div>
-                </div>
+                )}
 
                 <div style={buttonGroupStyle}>
                   <button
@@ -1099,7 +1125,7 @@ export default function ClinicManagement() {
                       (e.target.style.backgroundColor = "#2563eb")
                     }
                   >
-                    Confirm
+                    {isEditing ? "Update" : "Confirm"}
                   </button>
                 </div>
               </div>
@@ -1109,4 +1135,4 @@ export default function ClinicManagement() {
       </div>
     </div>
   );
-} 
+}

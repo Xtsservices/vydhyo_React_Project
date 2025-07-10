@@ -29,7 +29,7 @@
   font-size: 14px;
 }
 
-.add-button {
+.addButton {
   background-color: #2563eb;
   color: white;
   border: none;
@@ -44,23 +44,23 @@
   font-size: 14px;
 }
 
-.add-button:hover {
+.addButton:hover {
   background-color: #1d4ed8;
 }
 
-.search-container {
+.searchContainer {
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.search-input-container {
+.searchInputContainer {
   position: relative;
   flex: 1;
   max-width: 300px;
 }
 
-.search-icon {
+.searchIcon {
   position: absolute;
   left: 10px;
   top: 50%;
@@ -68,7 +68,7 @@
   color: #9ca3af;
 }
 
-.search-input {
+.searchInput {
   width: 100%;
   padding-left: 32px;
   padding-right: 12px;
@@ -81,12 +81,12 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.search-input:focus {
+.searchInput:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.search-button {
+.searchButton {
   background-color: #2563eb;
   color: white;
   border: none;
@@ -98,11 +98,11 @@
   font-size: 13px;
 }
 
-.search-button:hover {
+.searchButton:hover {
   background-color: #1d4ed8;
 }
 
-.table-container {
+.tableContainer {
   background-color: white;
   border-radius: 6px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -147,65 +147,48 @@
   color: #374151;
 }
 
-.td-bold {
-  font-weight: 500;
+.clinicName {
   color: #111827;
 }
 
-.td-dark {
-  color: #111827;
+.noData {
+  padding: 16px;
+  font-size: 13px;
+  text-align: center;
 }
 
-.status-badge {
-  display: inline-flex;
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 400;
-  border-radius: 12px;
-}
-
-.action-buttons {
+.actionButtons {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.icon-button {
+.iconButton {
   padding: 4px;
   cursor: pointer;
+  transition: color 0.2s;
   border: none;
   background-color: transparent;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.icon-button-edit {
   color: #2563eb;
 }
 
-.icon-button-edit:hover {
+.iconButton:hover {
   color: #1d4ed8;
 }
 
-.icon-button-view {
-  color: #6b7280;
-}
-
-.icon-button-view:hover {
-  color: #374151;
-}
-
-.icon-button-delete {
+.deleteButton {
   color: #dc2626;
 }
 
-.icon-button-delete:hover {
+.deleteButton:hover {
   color: #b91c1c;
 }
 
-.modal-overlay {
+.modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -231,7 +214,7 @@
   margin-top: 4rem;
 }
 
-.modal-header {
+.modalHeader {
   font-size: 22px;
   font-weight: 600;
   color: #111827;
@@ -239,7 +222,7 @@
   text-align: left;
 }
 
-.form-group {
+.formGroup {
   margin-bottom: 24px;
 }
 
@@ -251,7 +234,7 @@
   margin-bottom: 8px;
 }
 
-.input, .select {
+.input {
   width: 100%;
   padding: 12px 16px;
   border: 1px solid #d1d5db;
@@ -262,32 +245,35 @@
   background-color: #ffffff;
 }
 
-.select {
-  appearance: none;
-}
-
-.input:focus, .select:focus {
+.input:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.form-row {
+.formRow {
   display: flex;
   gap: 16px;
   margin-bottom: 24px;
 }
 
-.form-row .form-group {
+.formField {
   flex: 1;
 }
 
-.button-group {
+.mapContainer {
+  width: 100%;
+  height: 300px;
+  border-radius: 6px;
+  margin-bottom: 24px;
+}
+
+.buttonGroup {
   display: flex;
   gap: 12px;
   margin-top: 32px;
 }
 
-.cancel-button {
+.cancelButton {
   flex: 1;
   padding: 12px 24px;
   border: 1px solid #d1d5db;
@@ -304,11 +290,11 @@
   gap: 8px;
 }
 
-.cancel-button:hover {
+.cancelButton:hover {
   background-color: #f3f4f6;
 }
 
-.confirm-button {
+.confirmButton {
   flex: 1;
   padding: 12px 24px;
   border: none;
@@ -324,13 +310,6 @@
   justify-content: center;
 }
 
-.confirm-button:hover {
+.confirmButton:hover {
   background-color: #1d4ed8;
-}
-
-.map-container {
-  width: 100%;
-  height: 300px;
-  border-radius: 6px;
-  margin-bottom: 24px;
 }
