@@ -144,12 +144,13 @@ const AdvertisingDoctorsPage = () => {
       }}>
         <div style={{ display: "flex", alignItems: "center" }}>
           <img
-            src="/images/vydh_logo.png"
+            src="/images/pic1.png"
             alt="Vydhyo Logo"
             style={{ 
-              height: screens.xs ? "100px" : "120px",
+              height: screens.xs ? "160px" : "158px",
               marginTop: screens.xs ? "0px" : "10px",
-              marginRight: screens.xs ? "8px" : "16px" 
+              marginRight: screens.xs ? "8px" : "0px",
+              marginLeft: screens.xs ? "-25px" : "6px", 
             }}
           />
         </div>
@@ -159,6 +160,7 @@ const AdvertisingDoctorsPage = () => {
             backgroundColor: "#1A3B34",
             fontWeight: "bold",
             height: 40,
+            marginRight: screens.xs ? -10 : 0,
             fontSize: 14,
             borderRadius: 6
           }}
