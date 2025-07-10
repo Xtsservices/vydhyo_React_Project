@@ -138,7 +138,7 @@ export default function Pharmacy() {
 
   async function fetchRevenueCount() {
     const response = await apiGet(
-      "/finance/getDoctorTodayAndThisMonthRevenue/pharmacy"
+      `/finance/getDoctorTodayAndThisMonthRevenue/pharmacy?doctorId=${doctorId}`
     );
     console.log("getDoctorTodayAndThisMonthRevenue", response);
 

@@ -16,7 +16,7 @@ const Labs = () => {
 
   async function fetchRevenueCount() {
     const response = await apiGet(
-      "/finance/getDoctorTodayAndThisMonthRevenue/lab"
+      `/finance/getDoctorTodayAndThisMonthRevenue/lab?doctorId=${doctorId}`
     );
     console.log("getDoctorTodayAndThisMonthRevenue", response);
 
