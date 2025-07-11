@@ -28,7 +28,7 @@ import {
 } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 
-
+const {Header, Content, Dragger} = Layout
 // Import the tab components
 import PatientsTab from "./PharmacyPatientsTab";
 import MedicinesTab from "./PharmacyMedicinesTab";
