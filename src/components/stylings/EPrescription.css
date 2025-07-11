@@ -976,6 +976,98 @@
   margin-bottom: 12px;
 }
 
+/* Print and WhatsApp Button Container */
+.print-button-container {
+  display: flex;
+  justify-content: flex-end; /* This aligns children to the right */
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 0 20px;
+  width: 100%;
+}
+
+.print-button {
+  background-color: #2c7be5;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.print-button:hover {
+  background-color: #1a68d1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.print-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.whatsapp-button {
+  background-color: #25D366;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.whatsapp-button:hover {
+  background-color: #128C7E;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.whatsapp-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.whatsapp-icon {
+  font-size: 18px;
+}
+
+/* Responsive adjustments */
+@media print {
+  .print-button-container {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .print-button-container {
+    justify-content: center; /* Center buttons on small screens */
+    flex-wrap: wrap;
+  }
+  
+  .print-button,
+  .whatsapp-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
+
+
+
 .investigation-textarea {
   width: 100%;
   padding: 12px;

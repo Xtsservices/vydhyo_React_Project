@@ -225,7 +225,8 @@ export default function ClinicManagement() {
 
   const handleAddClinic = () => {
     setShowModal(true);
-    setIsEditing(false);
+    setEditMode(false);
+    setEditingClinicId(null);
     setFormData({
       type: "Clinic",
       clinicName: "",
@@ -451,7 +452,8 @@ export default function ClinicManagement() {
   const containerStyle = {
     minHeight: "100vh",
     backgroundColor: "#f9fafb",
-    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily:
+      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   };
 
   const mainStyle = {
@@ -626,7 +628,8 @@ export default function ClinicManagement() {
     width: "90%",
     maxWidth: "800px",
     position: "relative",
-    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+    boxShadow:
+      "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
     maxHeight: "90vh",
     overflowY: "auto",
     marginTop: "4rem",
