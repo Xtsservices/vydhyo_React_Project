@@ -38,7 +38,7 @@ import { apiGet, apiPost } from "../../api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector } from "react-redux";
-import PrescriptionForm from "../../Models/PrescriptionForm";
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -49,25 +49,18 @@ const Appointment = () => {
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
   const [appointmentsCount, setAppointmentsCount] = useState([]);
-
   const [appointments, setAppointments] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
-  const [isRescheduleModalVisible, setIsRescheduleModalVisible] =
-    useState(false);
+  const [isRescheduleModalVisible, setIsRescheduleModalVisible] = useState(false);
   const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [newDate, setNewDate] = useState(null);
   const [newTime, setNewTime] = useState(null);
   const [searchText, setSearchText] = useState("");
-
-  const [isPatientProfileModalVisible, setIsPatientProfileModalVisible] =
-    useState(false);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-
   const [filters, setFilters] = useState({
     clinic: "all",
     type: "all",
@@ -86,8 +79,7 @@ const Appointment = () => {
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
-  const handleViewPatientProfile = (appointment) => {
-    // Convert appointment data to patient format
+  const handleEPrescription = (appointment) => {
     // Calculate age from dob if available
     let age = "N/A";
     const dob = appointment.patientDetails?.dob;
@@ -99,21 +91,21 @@ const Appointment = () => {
     }
 
     const patientData = {
-      id: appointment.patientId || appointment.appointmentId,
-      name: appointment.patientName,
+      patientId: appointment.userId || appointment.appointmentId,
+      patientName: appointment.patientName,
       gender: appointment.patientDetails?.gender || "N/A",
       age: age,
-      phone: appointment.patientDetails?.mobile || "N/A",
-      lastVisit: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
-      department: appointment.appointmentDepartment,
-      status: appointment.appointmentStatus,
-      userId: appointment.userId || "N/A",
+      mobileNumber: appointment.patientDetails?.mobile || "N/A",
+      appointmentId: appointment.appointmentId,
+      appointmentDate: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
+      appointmentDepartment: appointment.appointmentDepartment,
+      appointmentStatus: appointment.appointmentStatus,
     };
 
-    setSelectedPatient(patientData);
-    setSelectedAppointment(appointment);
-    setIsPatientProfileModalVisible(true);
+    // Navigate to E-Prescription page with patient data
+    navigate("/doctor/doctorPages/EPrescription", { state: { patientData } });
   };
+
   const handleReschedule = (appointment) => {
     setSelectedAppointment(appointment);
     setIsRescheduleModalVisible(true);
@@ -348,11 +340,11 @@ const Appointment = () => {
   const renderActionMenu = (record) => (
     <Menu>
       <Menu.Item
-        key="view-profile"
-        onClick={() => handleViewPatientProfile(record)}
+        key="e-prescription"
+        onClick={() => handleEPrescription(record)}
         icon={<EyeOutlined />}
       >
-        Prescription
+        E-Prescription
       </Menu.Item>
 
       <Menu.Item
@@ -524,7 +516,6 @@ const Appointment = () => {
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
-                        {/* Use CloseCircleFilled as the cancel icon */}
                         <span
                           style={{
                             marginLeft: 8,
@@ -658,16 +649,6 @@ const Appointment = () => {
           </div>
         )}
       </Modal>
-
-      {/* Patient Profile Modal */}
-
-      {isPatientProfileModalVisible && (
-        <PrescriptionForm
-          selectedPatient={selectedPatient}
-          isVisible={isPatientProfileModalVisible}
-          onClose={() => setIsPatientProfileModalVisible(false)}
-        />
-      )}
 
       {/* Cancel Modal */}
       <Modal

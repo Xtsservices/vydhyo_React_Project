@@ -28,6 +28,13 @@ const EPrescription = () => {
   const [activeTab, setActiveTab] = useState('doctor-clinic');
   const [showPreview, setShowPreview] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    doctorInfo: {},
+    patientInfo: {},
+    vitals: {},
+    diagnosis: {},
+    advice: {}
+  });
 
   const tabs = [
     { id: 'doctor-clinic', label: 'Doctor & Clinic Info', icon: UserCheck },
@@ -38,14 +45,36 @@ const EPrescription = () => {
     { id: 'preview', label: 'Preview', icon: FileText }
   ];
 
+  const updateFormData = (section, data) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: data
+    }));
+  };
+
+  const handlePrescriptionAction = (type) => {
+    if (type === 'print') {
+      window.print();
+    } else if (type === 'whatsapp') {
+      const message = `Here's my medical prescription from VYDHYO MULTISPECIALTY CLINIC` +
+                     `Patient: ${formData.patientInfo?.patientName || 'N/A'}` +
+                     `Doctor: ${formData.doctorInfo?.doctorName || 'N/A'}` +
+                     `Date: ${formData.doctorInfo?.reportDate || 'N/A'}`;
+      const url = "https://wa.me/?text=" + encodeURIComponent(message);
+      window.open(url, '_blank');
+    }
+  };
+
+
   const handleConfirm = () => {
+    console.log('Form dataaaaaaaaaaaaaa:', formData); 
     setActiveTab('preview');
     setShowPreview(true);
   };
 
   const handleNext = () => {
     const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-    if (currentIndex < tabs.length - 2) { // -2 because we don't want to auto-select preview
+    if (currentIndex < tabs.length - 2) {
       setActiveTab(tabs[currentIndex + 1].id);
     }
   };
@@ -61,22 +90,40 @@ const EPrescription = () => {
 
   const renderActiveComponent = () => {
     if (activeTab === 'preview') {
-      return <Preview />;
+      return <Preview formData={formData} handlePrescriptionAction={handlePrescriptionAction} />;
     }
     
     switch (activeTab) {
       case 'doctor-clinic':
-        return <DoctorClinicInfo />;
+        return <DoctorClinicInfo 
+                 formData={formData.doctorInfo} 
+                 updateFormData={(data) => updateFormData('doctorInfo', data)} 
+               />;
       case 'patient-details':
-        return <PatientDetailsHistory />;
+        return <PatientDetailsHistory 
+                 formData={formData.patientInfo} 
+                 updateFormData={(data) => updateFormData('patientInfo', data)} 
+               />;
       case 'vitals':
-        return <VitalsInvestigation />;
+        return <VitalsInvestigation 
+                 formData={formData.vitals} 
+                 updateFormData={(data) => updateFormData('vitals', data)} 
+               />;
       case 'diagnosis':
-        return <DiagnosisMedication />;
+        return <DiagnosisMedication 
+                 formData={formData.diagnosis} 
+                 updateFormData={(data) => updateFormData('diagnosis', data)} 
+               />;
       case 'advice':
-        return <AdviceFollowUp />;
+        return <AdviceFollowUp 
+                 formData={formData.advice} 
+                 updateFormData={(data) => updateFormData('advice', data)} 
+               />;
       default:
-        return <DoctorClinicInfo />;
+        return <DoctorClinicInfo 
+                 formData={formData.doctorInfo} 
+                 updateFormData={(data) => updateFormData('doctorInfo', data)} 
+               />;
     }
   };
 
@@ -84,7 +131,7 @@ const EPrescription = () => {
     <div className="eprescription-container">
       {/* Main Content */}
       <div className="eprescription-main">
-        {/* Tab Navigation - Always visible */}
+        {/* Tab Navigation */}
         <div className="eprescription-tabs">
           <nav style={{ display: 'flex', gap: '8px' }}>
             {tabs.map((tab) => (

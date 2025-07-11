@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity, Stethoscope } from 'lucide-react';
 import '../../stylings/EPrescription.css';
 
-const VitalsInvestigation = () => {
-  const [vitals, setVitals] = useState({
+const VitalsInvestigation = ({ formData, updateFormData }) => {
+  const [localData, setLocalData] = useState({
     bp: '',
     pulseRate: '',
     respiratoryRate: '',
@@ -11,16 +11,32 @@ const VitalsInvestigation = () => {
     spo2: '',
     height: '',
     weight: '',
-    bmi: ''
+    bmi: '',
+    investigationFindings: ''
   });
 
-  const [investigationFindings, setInvestigationFindings] = useState('');
+  useEffect(() => {
+    if (formData && Object.keys(formData).length > 0) {
+      setLocalData(formData);
+    }
+  }, [formData]);
 
   const handleVitalChange = (field, value) => {
-    setVitals(prev => ({
-      ...prev,
+    const updatedData = {
+      ...localData,
       [field]: value
-    }));
+    };
+    
+    // Calculate BMI if weight or height changes
+    if (field === 'weight' || field === 'height') {
+      updatedData.bmi = calculateBMI(
+        field === 'weight' ? value : updatedData.weight,
+        field === 'height' ? value : updatedData.height
+      );
+    }
+    
+    setLocalData(updatedData);
+    updateFormData(updatedData);
   };
 
   const calculateBMI = (weight, height) => {
@@ -32,21 +48,8 @@ const VitalsInvestigation = () => {
     return '';
   };
 
-  const handleWeightOrHeightChange = (field, value) => {
-    const newVitals = { ...vitals, [field]: value };
-    
-    if (field === 'weight' || field === 'height') {
-      newVitals.bmi = calculateBMI(
-        field === 'weight' ? value : vitals.weight,
-        field === 'height' ? value : vitals.height
-      );
-    }
-    
-    setVitals(newVitals);
-  };
-
   const handleCancel = () => {
-    setVitals({
+    const resetData = {
       bp: '',
       pulseRate: '',
       respiratoryRate: '',
@@ -54,14 +57,11 @@ const VitalsInvestigation = () => {
       spo2: '',
       height: '',
       weight: '',
-      bmi: ''
-    });
-    setInvestigationFindings('');
-  };
-
-  const handleNext = () => {
-    console.log('Vitals:', vitals);
-    console.log('Investigation Findings:', investigationFindings);
+      bmi: '',
+      investigationFindings: ''
+    };
+    setLocalData(resetData);
+    updateFormData(resetData);
   };
 
   return (
@@ -82,7 +82,7 @@ const VitalsInvestigation = () => {
             <input
               type="text"
               placeholder=""
-              value={vitals.bp}
+              value={localData.bp}
               onChange={(e) => handleVitalChange('bp', e.target.value)}
               className="vitals-input"
             />
@@ -94,7 +94,7 @@ const VitalsInvestigation = () => {
             <input
               type="number"
               placeholder=""
-              value={vitals.pulseRate}
+              value={localData.pulseRate}
               onChange={(e) => handleVitalChange('pulseRate', e.target.value)}
               className="vitals-input"
             />
@@ -106,7 +106,7 @@ const VitalsInvestigation = () => {
             <input
               type="number"
               placeholder=""
-              value={vitals.respiratoryRate}
+              value={localData.respiratoryRate}
               onChange={(e) => handleVitalChange('respiratoryRate', e.target.value)}
               className="vitals-input"
             />
@@ -119,7 +119,7 @@ const VitalsInvestigation = () => {
               type="number"
               step="0.1"
               placeholder=""
-              value={vitals.temperature}
+              value={localData.temperature}
               onChange={(e) => handleVitalChange('temperature', e.target.value)}
               className="vitals-input"
             />
@@ -131,7 +131,7 @@ const VitalsInvestigation = () => {
             <input
               type="number"
               placeholder=""
-              value={vitals.spo2}
+              value={localData.spo2}
               onChange={(e) => handleVitalChange('spo2', e.target.value)}
               className="vitals-input"
             />
@@ -143,8 +143,8 @@ const VitalsInvestigation = () => {
             <input
               type="number"
               placeholder=""
-              value={vitals.height}
-              onChange={(e) => handleWeightOrHeightChange('height', e.target.value)}
+              value={localData.height}
+              onChange={(e) => handleVitalChange('height', e.target.value)}
               className="vitals-input"
             />
           </div>
@@ -155,8 +155,8 @@ const VitalsInvestigation = () => {
             <input
               type="number"
               placeholder=""
-              value={vitals.weight}
-              onChange={(e) => handleWeightOrHeightChange('weight', e.target.value)}
+              value={localData.weight}
+              onChange={(e) => handleVitalChange('weight', e.target.value)}
               className="vitals-input"
             />
           </div>
@@ -167,7 +167,7 @@ const VitalsInvestigation = () => {
             <input
               type="text"
               placeholder=""
-              value={vitals.bmi}
+              value={localData.bmi}
               readOnly
               className="vitals-input vitals-input-readonly"
             />
@@ -195,27 +195,14 @@ const VitalsInvestigation = () => {
           
           <textarea
             placeholder="Enter findings from clinical examination..."
-            value={investigationFindings}
-            onChange={(e) => setInvestigationFindings(e.target.value)}
+            value={localData.investigationFindings}
+            onChange={(e) => handleVitalChange('investigationFindings', e.target.value)}
             className="investigation-textarea"
           />
         </div>
       </div>
 
-      <div className="vitals-button-container">
-        <button 
-          className="vitals-button vitals-cancel-button" 
-          onClick={handleCancel}
-        >
-          Cancel
-        </button>
-        <button 
-          className="vitals-button vitals-next-button" 
-          onClick={handleNext}
-        >
-          Next
-        </button>
-      </div>
+     
     </div>
   );
 };

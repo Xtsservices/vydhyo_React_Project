@@ -1043,6 +1043,59 @@
 .whatsapp-icon {
   font-size: 18px;
 }
+/* Add these styles to your existing EPrescription.css file */
+
+.note-box {
+  margin-top: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: #f8fafc;
+}
+
+.note-header {
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.note-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  resize: vertical;
+  font-size: 14px;
+}
+
+.note-textarea:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 1px #8b5cf6;
+}
+
+.notes-display {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border-left: 3px solid #8b5cf6;
+}
+
+.notes-label {
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.notes-content {
+  font-size: 14px;
+  color: #4b5563;
+  white-space: pre-wrap;
+}
 
 /* Responsive adjustments */
 @media print {
