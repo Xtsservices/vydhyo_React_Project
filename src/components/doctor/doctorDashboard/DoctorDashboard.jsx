@@ -1066,7 +1066,7 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex }) => {
   >
     <div
       style={{
-        width: "28px", 
+        width: "27px", 
         height: "28px", 
         borderRadius: "50%",
         backgroundColor: "#9EBEFF",
