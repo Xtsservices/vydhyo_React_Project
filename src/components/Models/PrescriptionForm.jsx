@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, AutoComplete, InputNumber, Table, message } from 'antd';
+import { Modal, Button, AutoComplete, InputNumber, Table, Select, Input } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import { apiGet, apiPost } from '../api';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+const { Option } = Select;
 
 const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
+  const navigate = useNavigate();
   const [medicineName, setMedicineName] = useState('');
   const [medicineQuantity, setMedicineQuantity] = useState(null);
+  const [dosage, setDosage] = useState('');
+  const [duration, setDuration] = useState(null);
+  const [timings, setTimings] = useState([]);
+  const [frequency, setFrequency] = useState(null);
   const [medicines, setMedicines] = useState([]);
   const [testName, setTestName] = useState('');
   const [tests, setTests] = useState([]);
   const [medInventory, setMedInventory] = useState([]);
   const [testList, setTestList] = useState([]);
-  ;
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === 'doctor' ? user?.userId : user?.createdBy;
@@ -24,13 +30,13 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
       setMedInventory(response.data.data || []);
     } catch (error) {
       console.error('Error fetching inventory:', error);
-      message.error('Failed to fetch medicine inventory');
+      toast.error('Failed to fetch medicine inventory');
     }
   };
 
   const fetchTests = async () => {
     if (!doctorId) {
-      message.error('Doctor ID not available');
+      toast.error('Doctor ID not available');
       return;
     }
     try {
@@ -38,7 +44,7 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
       setTestList(response.data.data || []);
     } catch (error) {
       console.error('Error fetching tests:', error);
-      message.error('Failed to fetch test list');
+      toast.error('Failed to fetch test list');
     }
   };
 
@@ -53,6 +59,10 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
     if (!isVisible) {
       setMedicineName('');
       setMedicineQuantity(null);
+      setDosage('');
+      setDuration(null);
+      setTimings([]);
+      setFrequency(null);
       setMedicines([]);
       setTestName('');
       setTests([]);
@@ -60,31 +70,59 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
   }, [isVisible]);
 
   const handleAddMedicine = () => {
-    if (!medicineName.trim() || medicineQuantity === null || medicineQuantity <= 0) {
-      message.error('Please enter a valid medicine name and quantity');
+    if (!medicineName.trim()) {
+      toast.error('Please enter a valid medicine name');
       return;
     }
+    if (medicineQuantity === null || medicineQuantity <= 0) {
+      toast.error('Please enter a valid quantity greater than 0');
+      return;
+    }
+    if (!dosage.trim()) {
+      toast.error('Please enter a valid dosage (e.g., 1-0-1)');
+      return;
+    }
+    if (duration === null || duration <= 0) {
+      toast.error('Please enter a valid duration greater than 0 days');
+      return;
+    }
+    if (!frequency || frequency <= 0) {
+      toast.error('Please enter a valid frequency greater than 0');
+      return;
+    }
+    if (timings.length !== frequency) {
+      toast.error(`Please select exactly ${frequency} timing${frequency > 1 ? 's' : ''} to match the frequency`);
+      return;
+    }
+    
     const selectedMedicine = medInventory.find(med => med.medName === medicineName);
     const newMedicine = {
       medName: medicineName,
       quantity: medicineQuantity,
+      dosage,
+      duration,
+      timings: timings.join(', '),
+      frequency,
       medInventoryId: selectedMedicine ? selectedMedicine._id : null,
     };
     setMedicines([...medicines, newMedicine]);
     setMedicineName('');
     setMedicineQuantity(null);
-    message.success('Medicine added successfully');
-    toast.success('Medicine added successfully');
+    setDosage('');
+    setDuration(null);
+    setTimings([]);
+    setFrequency(null);
+    // toast.success('Medicine added successfully');
   };
 
   const handleRemoveMedicine = (id) => {
     setMedicines(medicines.filter((medicine) => medicine.id !== id));
-    message.success('Medicine removed successfully');
+    toast.success('Medicine removed successfully');
   };
 
   const handleAddTest = () => {
     if (!testName.trim()) {
-      message.error('Please enter a valid test name');
+      toast.error('Please enter a valid test name');
       return;
     }
     const selectedTest = testList.find(test => test.testName === testName);
@@ -94,18 +132,17 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
     };
     setTests([...tests, newTest]);
     setTestName('');
-    message.success('Test added successfully');
-    toast.success('Test added successfully');
+    // toast.success('Test added successfully');
   };
 
   const handleRemoveTest = (id) => {
     setTests(tests.filter((test) => test.id !== id));
-    message.success('Test removed successfully');
+    toast.success('Test removed successfully');
   };
 
   const handleSubmitPatientProfile = async () => {
     if (!selectedPatient) {
-      message.error('No patient selected');
+      toast.error('No patient selected');
       return;
     }
     try {
@@ -115,22 +152,21 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
         tests,
         doctorId: doctorId,
       };
-      // console.log("prescriptionData",prescriptionData)
       
       const response = await apiPost('/pharmacy/addPrescription', prescriptionData);
       console.log('Prescription response:', response);
       if (response?.data?.success === true) {
-        message.success(response.data.message || 'Prescription submitted successfully');
         toast.success(response.data.message || 'Prescription submitted successfully');
         setMedicines([]);
         setTests([]);
+        navigate('/doctor/doctorPages/EPrescription')
         onClose();
       } else {
-        message.error(response.data?.message || 'Failed to submit prescription');
+        toast.error(response.data?.message || 'Failed to submit prescription');
       }
     } catch (error) {
       console.error('Error submitting prescription:', error);
-      message.error(error.response?.data?.message || 'Failed to submit prescription');
+      toast.error(error.response?.data?.message || 'Failed to submit prescription');
     }
   };
 
@@ -144,6 +180,26 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
       title: 'Quantity',
       dataIndex: 'quantity',
       key: 'quantity',
+    },
+    {
+      title: 'Dosage',
+      dataIndex: 'dosage',
+      key: 'dosage',
+    },
+    {
+      title: 'Duration (days)',
+      dataIndex: 'duration',
+      key: 'duration',
+    },
+    {
+      title: 'Timings',
+      dataIndex: 'timings',
+      key: 'timings',
+    },
+    {
+      title: 'Frequency',
+      dataIndex: 'frequency',
+      key: 'frequency',
     },
     {
       title: 'Action',
@@ -189,12 +245,22 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
     label: test.testName,
   }));
 
+  const timingOptions = [
+    'Before Breakfast',
+    'After Breakfast',
+    'Before Lunch',
+    'After Lunch',
+    'Before Dinner',
+    'After Dinner',
+    'Bedtime',
+  ];
+
   return (
     <Modal
       title="Patient Profile"
       open={isVisible}
       onCancel={onClose}
-      width={800}
+      width={1000}
       footer={[
         <Button key="cancel" onClick={onClose}>
           Cancel
@@ -242,30 +308,76 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
             <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
               Add Medicine
             </h3>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
-              <AutoComplete
-                options={medicineOptions}
-                style={{ flex: 1 }}
-                onSelect={(value) => setMedicineName(value)}
-                onChange={(value) => setMedicineName(value)}
-                value={medicineName}
-                placeholder="Enter or search medicine name"
-                filterOption={(input, option) =>
-                  option.label?.toLowerCase().includes(input.toLowerCase())
-                }
-                allowClear
-              />
-              <InputNumber
-                placeholder="Quantity"
-                value={medicineQuantity}
-                onChange={(value) => setMedicineQuantity(value)}
-                style={{ flex: 1 }}
-                min={1}
-                parser={(value) => value.replace(/\D/g, '')}
-              />
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMedicine}>
-                Add
-              </Button>
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'center' }}>
+                <AutoComplete
+                  options={medicineOptions}
+                  style={{ width: 200 }}
+                  onSelect={(value) => setMedicineName(value)}
+                  onChange={(value) => setMedicineName(value)}
+                  value={medicineName}
+                  placeholder="Enter medicine name"
+                  filterOption={(input, option) =>
+                    option.label?.toLowerCase().includes(input.toLowerCase())
+                  }
+                  allowClear
+                />
+                <InputNumber
+                  placeholder="Quantity"
+                  value={medicineQuantity}
+                  onChange={(value) => setMedicineQuantity(value)}
+                  style={{ width: 100 }}
+                  min={1}
+                  parser={(value) => value.replace(/\D/g, '')}
+                />
+                <Input
+                  placeholder="Dosage (e.g., 1-0-1)"
+                  value={dosage}
+                  onChange={(e) => setDosage(e.target.value)}
+                  style={{ width: 150 }}
+                  />
+                <InputNumber
+                  placeholder="Duration (days)"
+                  value={duration}
+                  onChange={(value) => setDuration(value)}
+                  style={{ width: 120 }}
+                  min={1}
+                  parser={(value) => value.replace(/\D/g, '')}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <Select
+                  mode="multiple"
+                  placeholder="Select timings"
+                  value={timings}
+                  onChange={(value) => setTimings(value)}
+                  style={{ width: 300 }}
+                  allowClear
+                  maxTagCount={frequency || 3}
+                >
+                  {timingOptions.map((option) => (
+                    <Option key={option} value={option}>
+                      {option}
+                    </Option>
+                  ))}
+                </Select>
+                <InputNumber
+                  placeholder="Frequency"
+                  value={frequency}
+                  onChange={(value) => {
+                    setFrequency(value);
+                    if (value && timings.length > value) {
+                      setTimings(timings.slice(0, value));
+                    }
+                  }}
+                  style={{ width: 100 }}
+                  min={1}
+                  parser={(value) => value.replace(/\D/g, '')}
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMedicine}>
+                  Add
+                </Button>
+              </div>
             </div>
 
             {medicines.length > 0 && (
