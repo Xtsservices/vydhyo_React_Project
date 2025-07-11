@@ -283,7 +283,7 @@ const Appointment = () => {
       const response = await apiGet(
         `/appointment/getAppointmentsByDoctorID/appointment?doctorId=${doctorId}`
       );
-      console.log("response======", response);
+
       if (response.status === 200) {
         const updatedAppointments = response.data.data;
         setAppointments(updatedAppointments);

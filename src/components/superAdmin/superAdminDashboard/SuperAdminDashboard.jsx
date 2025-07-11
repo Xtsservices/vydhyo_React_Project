@@ -1,14 +1,14 @@
-import React from 'react';
-import { Card, Row, Col, Avatar, Typography } from 'antd';
-import { 
-  UserOutlined, 
-  TeamOutlined, 
+import React from "react";
+import { Card, Row, Col, Avatar, Typography } from "antd";
+import {
+  UserOutlined,
+  TeamOutlined,
   MedicineBoxOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  ClockCircleOutlined
-} from '@ant-design/icons';
+  ClockCircleOutlined,
+} from "@ant-design/icons";
 import {
   AreaChart,
   Area,
@@ -20,112 +20,163 @@ import {
   PieChart,
   Pie,
   Cell,
-} from 'recharts';
+} from "recharts";
 
 const { Title, Text } = Typography;
 
 // Mock data matching the image exactly
 const revenueSnapshotData = [
-  { title: 'Today', value: '₹12,000' , bgColor: '#F1C1151A' },
+  { title: "Today", value: "₹12,000", bgColor: "#F1C1151A" },
   // { title: 'This Week', value: '₹84,500', bgColor: '#EFF6FF' },
-  { title: 'This Month', value: '₹3,20,000', bgColor: '#F0FDF4' },
-  { title: 'Total Revenue', value: '₹18,56,000', isHighlight: true, bgColor: '#2E4861',color: '#FFFFFF' },
+  { title: "This Month", value: "₹3,20,000", bgColor: "#F0FDF4" },
+  {
+    title: "Total Revenue",
+    value: "₹18,56,000",
+    isHighlight: true,
+    bgColor: "#2E4861",
+    color: "#FFFFFF",
+  },
 ];
 
 const revenueContributionData = [
-  { title: 'Appointments', value: '₹2,000', icon: '👤', bgColor: '#F0FDF4' },
-  { title: 'Pharmacy', value: '₹2,000', icon: '⚕️', bgColor: '#F1C1151A' },
-  { title: 'Labs', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
-  { title: 'Ambulance', value: '₹2,000', icon: '🚑', bgColor: '#f0f9ff' },
-  { title: 'BloodBank', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
-  { title: 'Labs', value: '₹2,000', icon: '🧪', bgColor: '#EFF6FF' },
-  { title: 'Home Care', value: '₹2,000', icon: '🏠', bgColor: '#EFF6FF'},
-
+  { title: "Appointments", value: "₹2,000", icon: "👤", bgColor: "#F0FDF4" },
+  { title: "Pharmacy", value: "₹2,000", icon: "⚕️", bgColor: "#F1C1151A" },
+  { title: "Labs", value: "₹2,000", icon: "🧪", bgColor: "#EFF6FF" },
+  { title: "Ambulance", value: "₹2,000", icon: "🚑", bgColor: "#f0f9ff" },
+  { title: "BloodBank", value: "₹2,000", icon: "🧪", bgColor: "#EFF6FF" },
+  { title: "Labs", value: "₹2,000", icon: "🧪", bgColor: "#EFF6FF" },
+  { title: "Home Care", value: "₹2,000", icon: "🏠", bgColor: "#EFF6FF" },
 ];
 
 const approvalRequestsData = [
-  { title: 'Pending Approval', value: 23, color: '#fa8c16', bgColor: '#fff7e6', icon: <ClockCircleOutlined /> },
-  { title: 'Approved', value: 76, color: '#52c41a', bgColor: '#f6ffed', icon: <CheckCircleOutlined /> },
-  { title: 'Rejected', value: 12, color: '#ff4d4f', bgColor: '#fff2f0', icon: <CloseCircleOutlined /> },
+  {
+    title: "Pending Approval",
+    value: 23,
+    color: "#fa8c16",
+    bgColor: "#fff7e6",
+    icon: <ClockCircleOutlined />,
+  },
+  {
+    title: "Approved",
+    value: 76,
+    color: "#52c41a",
+    bgColor: "#f6ffed",
+    icon: <CheckCircleOutlined />,
+  },
+  {
+    title: "Rejected",
+    value: 12,
+    color: "#ff4d4f",
+    bgColor: "#fff2f0",
+    icon: <CloseCircleOutlined />,
+  },
 ];
 
 const userMetricsData = [
-  { title: 'Total Downloads', value: '1,234', bgcolor: '#EFF6FF', icon: <TeamOutlined />, iconBg: '#1890ff' },
-  { title: 'Active User', value: 76, bgcolor: '#FAF5FF', icon: <UserOutlined />, iconBg: '#722ed1' },
-  { title: 'Repeated User', value: '5,690', bgcolor: '#EFF6FF', icon: <UserOutlined />, iconBg: '#1890ff' },
+  {
+    title: "Total Downloads",
+    value: "1,234",
+    bgcolor: "#EFF6FF",
+    icon: <TeamOutlined />,
+    iconBg: "#1890ff",
+  },
+  {
+    title: "Active User",
+    value: 76,
+    bgcolor: "#FAF5FF",
+    icon: <UserOutlined />,
+    iconBg: "#722ed1",
+  },
+  {
+    title: "Repeated User",
+    value: "5,690",
+    bgcolor: "#EFF6FF",
+    icon: <UserOutlined />,
+    iconBg: "#1890ff",
+  },
 ];
 
 const consultationStatsData = [
-  { title: 'Walk-ins', value: 214, icon: '🚶', bgColor: '#f5f5f5' },
-  { title: 'Home Care', value: 47, icon: '🏠', bgColor: '#F0FDF4' },
-  { title: 'Ambulance', value: 156, icon: '📅', bgColor: '#F1C1151A' },
-  { title: 'Diagnostic', value: 156, icon: '📅', bgColor: '#F1C1151A' },
-  { title: 'Video Consults', value: 92, icon: '📹', bgColor: '#f0f9ff' },
-  { title: 'Pharmacy', value: 47, icon: '🏠', bgColor: '#F0FDF4' },
+  { title: "Walk-ins", value: 214, icon: "🚶", bgColor: "#f5f5f5" },
+  { title: "Home Care", value: 47, icon: "🏠", bgColor: "#F0FDF4" },
+  { title: "Ambulance", value: 156, icon: "📅", bgColor: "#F1C1151A" },
+  { title: "Diagnostic", value: 156, icon: "📅", bgColor: "#F1C1151A" },
+  { title: "Video Consults", value: 92, icon: "📹", bgColor: "#f0f9ff" },
+  { title: "Pharmacy", value: 47, icon: "🏠", bgColor: "#F0FDF4" },
 ];
 
 const topDoctorsAppointments = [
-  { name: 'Dr. Kavita Rao', appointments: 58 },
-  { name: 'Dr. Arvind Sharma', appointments: 49 },
-  { name: 'Dr. Meena Joshi', appointments: 47 },
-  { name: 'Dr. Sandeep Yadav', appointments: 43 },
+  { name: "Dr. Kavita Rao", appointments: 58 },
+  { name: "Dr. Arvind Sharma", appointments: 49 },
+  { name: "Dr. Meena Joshi", appointments: 47 },
+  { name: "Dr. Sandeep Yadav", appointments: 43 },
 ];
 
 const revenueTrendsData = [
-  { name: 'Jan', revenue: 17 },
-  { name: 'Feb', revenue: 25 },
-  { name: 'Mar', revenue: 40 },
-  { name: 'Apr', revenue: 64 },
-  { name: 'May', revenue: 78 },
-  { name: 'Jun', revenue: 95 },
-  { name: 'Jul', revenue: 103 },
+  { name: "Jan", revenue: 17 },
+  { name: "Feb", revenue: 25 },
+  { name: "Mar", revenue: 40 },
+  { name: "Apr", revenue: 64 },
+  { name: "May", revenue: 78 },
+  { name: "Jun", revenue: 95 },
+  { name: "Jul", revenue: 103 },
 ];
 
 const appointmentDistributionData = [
-  { name: 'Dr. Kavita Rao', value: 17, color: '#3b82f6' },
-  { name: 'Dr. Arvind Sharma', value: 25, color: '#10b981' },
-  { name: 'Dr. Meena Joshi', value: 40, color: '#f59e0b' },
-  { name: 'Dr. Sandeep Yadav', value: 55, color: '#8b5cf6' },
-  { name: 'Dr. Neha Verma', value: 64, color: '#ec4899' },
-  { name: 'Others', value: 78, color: '#6b7280' },
+  { name: "Dr. Kavita Rao", value: 17, color: "#3b82f6" },
+  { name: "Dr. Arvind Sharma", value: 25, color: "#10b981" },
+  { name: "Dr. Meena Joshi", value: 40, color: "#f59e0b" },
+  { name: "Dr. Sandeep Yadav", value: 55, color: "#8b5cf6" },
+  { name: "Dr. Neha Verma", value: 64, color: "#ec4899" },
+  { name: "Others", value: 78, color: "#6b7280" },
 ];
 
 const SuperAdminDashboard = () => {
   // Calculate total points for percentage
-  const totalPoints = appointmentDistributionData.reduce((sum, item) => sum + item.value, 0);
+  const totalPoints = appointmentDistributionData.reduce(
+    (sum, item) => sum + item.value,
+    0
+  );
 
   // Prepare pie chart data from consultationStatsData
   const consultationPieData = consultationStatsData.map((item, idx) => ({
     name: item.title,
     value: item.value,
     color: [
-      '#FF6384', // bright red-pink
-      '#36A2EB', // bright blue
-      '#FFCE56', // bright yellow
-      '#4BC0C0', // bright teal
-      '#9966FF', // bright purple
-      '#FF9F40', // bright orange
-      '#43E97B', // bright green
+      "#FF6384", // bright red-pink
+      "#36A2EB", // bright blue
+      "#FFCE56", // bright yellow
+      "#4BC0C0", // bright teal
+      "#9966FF", // bright purple
+      "#FF9F40", // bright orange
+      "#43E97B", // bright green
     ][idx % 7],
   }));
-  const totalConsultation = consultationPieData.reduce((sum, item) => sum + item.value, 0);
+  const totalConsultation = consultationPieData.reduce(
+    (sum, item) => sum + item.value,
+    0
+  );
 
   // Custom tooltip for the consultation pie chart
   const ConsultationPieTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const entry = payload[0].payload;
       return (
-        <div style={{
-          background: '#fff',
-          border: '1px solid #d9d9d9',
-          borderRadius: 6,
-          padding: '8px 12px',
-          fontSize: 13,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-        }}>
-          <div style={{ fontWeight: 600, color: '#262626' }}>{entry.name}</div>
-          <div style={{ color: '#1890ff', fontWeight: 600 }}>{entry.value} pts</div>
-          <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+        <div
+          style={{
+            background: "#fff",
+            border: "1px solid #d9d9d9",
+            borderRadius: 6,
+            padding: "8px 12px",
+            fontSize: 13,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          }}
+        >
+          <div style={{ fontWeight: 600, color: "#262626" }}>{entry.name}</div>
+          <div style={{ color: "#1890ff", fontWeight: 600 }}>
+            {entry.value} pts
+          </div>
+          <div style={{ color: "#8c8c8c", fontSize: 12 }}>
             {((entry.value / totalConsultation) * 100).toFixed(1)}%
           </div>
         </div>
@@ -135,41 +186,71 @@ const SuperAdminDashboard = () => {
   };
 
   return (
-    <div style={{ padding: '16px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      <Title level={4} style={{ marginBottom: '16px', color: '#8c8c8c', fontWeight: 400 }}>
+    <div
+      style={{
+        padding: "16px",
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
+      <Title
+        level={4}
+        style={{ marginBottom: "16px", color: "#8c8c8c", fontWeight: 400 }}
+      >
         Super Admin Dashboard
       </Title>
-      
+
       {/* Top Row: Revenue Snapshot + Revenue Contribution */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
         {/* Revenue Snapshot - Left Side */}
         <Col xs={24} md={14}>
-          <div style={{ fontSize: '20px', fontWeight: 600, marginBottom: '46px', color: '#262626' }}>
+          <div
+            style={{
+              fontSize: "20px",
+              fontWeight: 600,
+              marginBottom: "46px",
+              color: "#262626",
+            }}
+          >
             Revenue Snapshot
           </div>
           <Row gutter={[8, 8]}>
             {revenueSnapshotData.map((item, index) => (
               <Col xs={24} sm={12} md={6} key={index}>
-                <Card 
+                <Card
                   style={{
-                    textAlign: 'center',
+                    textAlign: "center",
                     backgroundColor: item.bgColor,
-                    borderRadius: '8px',
-                    border: '1px solid #f0f0f0',
-                    height: '150px',
-                    marginLeft: '30px',
-                    width: '100%',
+                    borderRadius: "8px",
+                    border: "1px solid #f0f0f0",
+                    height: "150px",
+                    marginLeft: "30px",
+                    width: "100%",
                   }}
-                  bodyStyle={{ padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+                  bodyStyle={{
+                    padding: "12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
                 >
-                  <div style={{ fontSize: '15px', color: item.color || '#8c8c8c', marginBottom: '4px' }}>
+                  <div
+                    style={{
+                      fontSize: "15px",
+                      color: item.color || "#8c8c8c",
+                      marginBottom: "4px",
+                    }}
+                  >
                     {item.title}
                   </div>
-                  <div style={{ 
-                    fontSize: '16px', 
-                    fontWeight: 'bold', 
-                    color: item.color || 'black', 
-                  }}>
+                  <div
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: "bold",
+                      color: item.color || "black",
+                    }}
+                  >
                     {item.value}
                   </div>
                 </Card>
@@ -180,32 +261,58 @@ const SuperAdminDashboard = () => {
 
         {/* Revenue Contribution - Right Side */}
         <Col xs={24} md={10}>
-          <div style={{ fontSize: '20px',marginLeft: '-40px', fontWeight: 600, marginBottom: '26px', color: '#262626' }}>
+          <div
+            style={{
+              fontSize: "20px",
+              marginLeft: "-40px",
+              fontWeight: 600,
+              marginBottom: "26px",
+              color: "#262626",
+            }}
+          >
             Revenue Contribution
           </div>
           <Row gutter={[8, 8]}>
             {revenueContributionData.map((item, index) => (
               <Col xs={12} sm={6} md={6} key={index}>
-                <Card 
+                <Card
                   style={{
-                    textAlign: 'center',
+                    textAlign: "center",
                     backgroundColor: item.bgColor,
-                    borderRadius: '8px',
-                    border: '1px solid #f0f0f0',
-                    height: '100px',
+                    borderRadius: "8px",
+                    border: "1px solid #f0f0f0",
+                    height: "100px",
                     // marginRight: '30px',
-                    marginLeft: '-40px',
-                    width: '100%',
+                    marginLeft: "-40px",
+                    width: "100%",
                   }}
-                  bodyStyle={{ padding: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+                  bodyStyle={{
+                    padding: "8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
                 >
-                  <div style={{ fontSize: '20px', marginBottom: '4px' }}>
+                  <div style={{ fontSize: "20px", marginBottom: "4px" }}>
                     {item.icon}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#8c8c8c', marginBottom: '4px' }}>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#8c8c8c",
+                      marginBottom: "4px",
+                    }}
+                  >
                     {item.title}
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#262626' }}>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      color: "#262626",
+                    }}
+                  >
                     {item.value}
                   </div>
                 </Card>
@@ -216,36 +323,51 @@ const SuperAdminDashboard = () => {
       </Row>
 
       {/* Second Row: Approval Requests, User Metrics, Consultation Stats */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
         {/* Approval Requests */}
         <Col xs={24} sm={12} md={8}>
-          <Card 
-            title="Partners" 
-            style={{ borderRadius: '8px', minHeight: '380px' }}
-            headStyle={{ fontSize: '16px', fontWeight: 600 }}
-            bodyStyle={{ padding: '12px' }}
+          <Card
+            title="Partners"
+            style={{ borderRadius: "8px", minHeight: "380px" }}
+            headStyle={{ fontSize: "16px", fontWeight: 600 }}
+            bodyStyle={{ padding: "12px" }}
           >
             {approvalRequestsData.map((item, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px',
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px",
                   backgroundColor: item.bgColor,
-                  borderRadius: '6px',
-                  marginBottom: index < approvalRequestsData.length - 1 ? '8px' : '0',
-                  minHeight: '90px'
+                  borderRadius: "6px",
+                  marginBottom:
+                    index < approvalRequestsData.length - 1 ? "8px" : "0",
+                  minHeight: "90px",
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <div style={{ color: item.color, marginRight: '8px', fontSize: '16px' }}>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <div
+                    style={{
+                      color: item.color,
+                      marginRight: "8px",
+                      fontSize: "16px",
+                    }}
+                  >
                     {item.icon}
                   </div>
-                  <span style={{ fontSize: '14px', color: '#595959' }}>{item.title}</span>
+                  <span style={{ fontSize: "14px", color: "#595959" }}>
+                    {item.title}
+                  </span>
                 </div>
-                <span style={{ fontSize: '20px', fontWeight: 'bold', color: item.color }}>
+                <span
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                    color: item.color,
+                  }}
+                >
                   {item.value}
                 </span>
               </div>
@@ -255,35 +377,46 @@ const SuperAdminDashboard = () => {
 
         {/* User Metrics */}
         <Col xs={24} sm={12} md={8}>
-          <Card 
-            title="User Metrics" 
-            style={{ borderRadius: '8px', minHeight: '380px' }}
-            headStyle={{ fontSize: '16px', fontWeight: 600 }}
-            bodyStyle={{ padding: '12px' }}
+          <Card
+            title="User Metrics"
+            style={{ borderRadius: "8px", minHeight: "380px" }}
+            headStyle={{ fontSize: "16px", fontWeight: 600 }}
+            bodyStyle={{ padding: "12px" }}
           >
             {userMetricsData.map((item, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 20px',
-                  borderRadius: '16px',
-                  borderBottom: index < userMetricsData.length - 1 ? '8px solidrgb(255, 253, 253)' : 'none',
-                  minHeight: '100px',
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 20px",
+                  borderRadius: "16px",
+                  borderBottom:
+                    index < userMetricsData.length - 1
+                      ? "8px solidrgb(255, 253, 253)"
+                      : "none",
+                  minHeight: "100px",
                   backgroundColor: item.bgcolor,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <Avatar 
-                    size={32} 
-                    style={{ backgroundColor: item.iconBg, marginRight: '8px' }}
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <Avatar
+                    size={32}
+                    style={{ backgroundColor: item.iconBg, marginRight: "8px" }}
                     icon={item.icon}
                   />
-                  <span style={{ fontSize: '14px', color: '#595959' }}>{item.title}</span>
+                  <span style={{ fontSize: "14px", color: "#595959" }}>
+                    {item.title}
+                  </span>
                 </div>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: item.color }}>
+                <span
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    color: item.color,
+                  }}
+                >
                   {item.value}
                 </span>
               </div>
@@ -293,29 +426,55 @@ const SuperAdminDashboard = () => {
 
         {/* Consultation Stats */}
         <Col xs={24} md={8}>
-          <div style={{ fontSize: '16px', fontWeight: 600,marginTop: 15 , marginBottom: '20px', color: '#262626' }}>
+          <div
+            style={{
+              fontSize: "16px",
+              fontWeight: 600,
+              marginTop: 15,
+              marginBottom: "20px",
+              color: "#262626",
+            }}
+          >
             Consultation Stats
           </div>
-          <Row gutter={[8, 8]} style={{ minHeight: '220px' }}>
+          <Row gutter={[8, 8]} style={{ minHeight: "220px" }}>
             {consultationStatsData.map((item, index) => (
               <Col xs={12} sm={6} md={12} key={index}>
-                <Card 
+                <Card
                   style={{
-                    textAlign: 'center',
+                    textAlign: "center",
                     backgroundColor: item.bgColor,
-                    borderRadius: '8px',
-                    border: '1px solid #f0f0f0',
-                    height: '100px'
+                    borderRadius: "8px",
+                    border: "1px solid #f0f0f0",
+                    height: "100px",
                   }}
-                  bodyStyle={{ padding: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+                  bodyStyle={{
+                    padding: "8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
                 >
-                  <div style={{ fontSize: '20px', marginBottom: '4px' }}>
+                  <div style={{ fontSize: "20px", marginBottom: "4px" }}>
                     {item.icon}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#8c8c8c', marginBottom: '4px' }}>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#8c8c8c",
+                      marginBottom: "4px",
+                    }}
+                  >
                     {item.title}
                   </div>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#262626' }}>
+                  <div
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: "bold",
+                      color: "#262626",
+                    }}
+                  >
                     {item.value}
                   </div>
                 </Card>
@@ -328,36 +487,39 @@ const SuperAdminDashboard = () => {
       {/* Charts */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={16}>
-          <Card title="Revenue Trends" style={{ borderRadius: '8px' }}>
-            <div style={{ width: '100%', height: '300px' }}>
+          <Card title="Revenue Trends" style={{ borderRadius: "8px" }}>
+            <div style={{ width: "100%", height: "300px" }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueTrendsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <AreaChart
+                  data={revenueTrendsData}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 12, fill: '#8c8c8c' }} 
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#8c8c8c" }}
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 12, fill: '#8c8c8c' }} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#8c8c8c" }}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #d9d9d9', 
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                    }} 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #d9d9d9",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    }}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#1890ff" 
-                    fill="#1890ff" 
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#1890ff"
+                    fill="#1890ff"
                     fillOpacity={0.1}
                     strokeWidth={2}
                   />
@@ -366,10 +528,21 @@ const SuperAdminDashboard = () => {
             </div>
           </Card>
         </Col>
-        
+
         <Col xs={24} lg={8}>
-          <Card title="Consultation Stats Distribution" style={{ borderRadius: '8px', minHeight: 0, padding: 0 }}>
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0px 0' }}>
+          <Card
+            title="Consultation Stats Distribution"
+            style={{ borderRadius: "8px", minHeight: 0, padding: 0 }}
+          >
+            <div
+              style={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                padding: "0px 0",
+              }}
+            >
               <PieChart width={220} height={180}>
                 <Pie
                   data={consultationPieData}
@@ -388,36 +561,54 @@ const SuperAdminDashboard = () => {
                 </Pie>
                 <Tooltip content={<ConsultationPieTooltip />} />
               </PieChart>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0px 0 0 0', width: '100%' }}>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: "0px 0 0 0",
+                  width: "100%",
+                }}
+              >
                 {consultationPieData.map((entry, idx) => (
                   <li
                     key={entry.name}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0px 0',
-                      borderBottom: idx < consultationPieData.length - 1 ? '1px solid #f0f0f0' : 'none',
-                      fontSize: 13
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "0px 0",
+                      borderBottom:
+                        idx < consultationPieData.length - 1
+                          ? "1px solid #f0f0f0"
+                          : "none",
+                      fontSize: 13,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{ display: "flex", alignItems: "center" }}>
                       <span
                         style={{
-                          display: 'inline-block',
+                          display: "inline-block",
                           width: 10,
                           height: 10,
-                          borderRadius: '50%',
+                          borderRadius: "50%",
                           background: entry.color,
-                          marginRight: 8
+                          marginRight: 8,
                         }}
                       />
-                      <span style={{ color: '#262626' }}>{entry.name}</span>
+                      <span style={{ color: "#262626" }}>{entry.name}</span>
                     </div>
-                    <div style={{ fontWeight: 600, color: '#1890ff' }}>
+                    <div style={{ fontWeight: 600, color: "#1890ff" }}>
                       {entry.value} pts
-                      <span style={{ color: '#8c8c8c', fontWeight: 400, fontSize: 12, marginLeft: 6 }}>
-                        ({((entry.value / totalConsultation) * 100).toFixed(1)}%)
+                      <span
+                        style={{
+                          color: "#8c8c8c",
+                          fontWeight: 400,
+                          fontSize: 12,
+                          marginLeft: 6,
+                        }}
+                      >
+                        ({((entry.value / totalConsultation) * 100).toFixed(1)}
+                        %)
                       </span>
                     </div>
                   </li>

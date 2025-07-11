@@ -247,7 +247,7 @@ export default function Pharmacy() {
 
   async function fetchRevenueCount() {
     const response = await apiGet(
-      "/finance/getDoctorTodayAndThisMonthRevenue/pharmacy"
+      `/finance/getDoctorTodayAndThisMonthRevenue/pharmacy?doctorId=${doctorId}`
     );
 
     if (response.status === 200 && response?.data?.data) {
