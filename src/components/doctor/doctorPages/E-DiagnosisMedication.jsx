@@ -488,7 +488,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                     onChange={(value) => {
                       updateMedication(medication.id, 'frequency', value);
                       if (value && medication.timings.length > value) {
-                        updateMedication(medication.id, 'timings', medication.timings.slice(0, value));
+                        updateMedication(id, 'timings', medication.timings.slice(0, value));
                       }
                     }}
                     style={{ width: '100%' }}

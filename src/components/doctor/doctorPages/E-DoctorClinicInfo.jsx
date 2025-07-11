@@ -11,17 +11,11 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
   const allClinics = user?.addresses?.filter(address => address.type === "Clinic") || [];
   
   const [localData, setLocalData] = useState({
-    doctorName: '',
-    qualifications: '',
-    specialization: '',
+    doctorId: doctorId,
     selectedClinicId: '',
-    clinicName: '',
-    clinicAddress: '',
-    city: '',
-    pincode: '',
-    contactNumber: '',
-    reportDate: '',
-    reportTime: ''
+    appointmentDate: '',
+    appointmentStartTime: '',
+    appointmentEndTime: ''
   });
 
   useEffect(() => {
@@ -30,25 +24,19 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
     } else if (user) {
       const currentDate = new Date();
       const formattedDate = currentDate.toISOString().split('T')[0];
-      const formattedTime = currentDate.toTimeString().substring(0, 5);
 
       const initialData = {
-        doctorName: `${user.firstname} ${user.lastname}`,
-        qualifications: user.specialization?.degree || '',
-        specialization: user.specialization?.name?.trim() || '',
-        reportDate: formattedDate,
-        reportTime: formattedTime
+        doctorId: doctorId,
+        appointmentDate: formattedDate,
+        appointmentStartTime: '',
+        appointmentEndTime: ''
       };
 
       // Set first clinic as default if available
       if (allClinics.length > 0) {
-        const selectedClinic = allClinics[0];
-        initialData.selectedClinicId = selectedClinic.addressId;
-        initialData.clinicName = selectedClinic.clinicName;
-        initialData.clinicAddress = selectedClinic.address;
-        initialData.city = selectedClinic.city;
-        initialData.pincode = selectedClinic.pincode;
-        initialData.contactNumber = selectedClinic.mobile || user.mobile || '';
+        initialData.selectedClinicId = allClinics[0].addressId;
+        initialData.appointmentStartTime = allClinics[0].startTime || '';
+        initialData.appointmentEndTime = allClinics[0].endTime || '';
       }
 
       setLocalData(initialData);
@@ -58,19 +46,14 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
 
   const handleClinicChange = (clinicId) => {
     const selectedClinic = allClinics.find(clinic => clinic.addressId === clinicId);
-    if (selectedClinic) {
-      const updatedData = {
-        ...localData,
-        selectedClinicId: clinicId,
-        clinicName: selectedClinic.clinicName,
-        clinicAddress: selectedClinic.address,
-        city: selectedClinic.city,
-        pincode: selectedClinic.pincode,
-        contactNumber: selectedClinic.mobile || user.mobile || ''
-      };
-      setLocalData(updatedData);
-      updateFormData(updatedData);
-    }
+    const updatedData = {
+      ...localData,
+      selectedClinicId: clinicId,
+      appointmentStartTime: selectedClinic?.startTime || '',
+      appointmentEndTime: selectedClinic?.endTime || ''
+    };
+    setLocalData(updatedData);
+    updateFormData(updatedData);
   };
 
   const handleChange = (e) => {
@@ -87,6 +70,9 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
       updateFormData(updatedData);
     }
   };
+
+  // Get the selected clinic for display purposes
+  const selectedClinic = allClinics.find(clinic => clinic.addressId === localData.selectedClinicId);
 
   return (
     <div className="doctor-clinic-container">
@@ -109,9 +95,7 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
             </label>
             <input
               type="text"
-              name="doctorName"
-              value={localData.doctorName}
-              onChange={handleChange}
+              value={`${user?.firstname || ''} ${user?.lastname || ''}`}
               className="doctor-clinic-input"
               readOnly
             />
@@ -123,9 +107,7 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
             </label>
             <input
               type="text"
-              name="qualifications"
-              value={localData.qualifications}
-              onChange={handleChange}
+              value={user?.specialization?.degree || ''}
               className="doctor-clinic-input"
               readOnly
             />
@@ -137,9 +119,7 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
             </label>
             <input
               type="text"
-              name="specialization"
-              value={localData.specialization}
-              onChange={handleChange}
+              value={user?.specialization?.name?.trim() || ''}
               className="doctor-clinic-input"
               readOnly
             />
@@ -168,9 +148,7 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
               Clinic Address
             </label>
             <textarea
-              name="clinicAddress"
-              value={localData.clinicAddress}
-              onChange={handleChange}
+              value={selectedClinic?.address || ''}
               rows={3}
               className="doctor-clinic-input"
               style={{ resize: 'none' }}
@@ -184,9 +162,7 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
             </label>
             <input
               type="text"
-              name="city"
-              value={localData.city}
-              onChange={handleChange}
+              value={selectedClinic?.city || ''}
               className="doctor-clinic-input"
               readOnly
             />
@@ -198,9 +174,7 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
             </label>
             <input
               type="text"
-              name="pincode"
-              value={localData.pincode}
-              onChange={handleChange}
+              value={selectedClinic?.pincode || ''}
               className="doctor-clinic-input"
               readOnly
             />
@@ -212,9 +186,7 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
             </label>
             <input
               type="tel"
-              name="contactNumber"
-              value={localData.contactNumber}
-              onChange={handleChange}
+              value={selectedClinic?.mobile || user?.mobile || ''}
               className="doctor-clinic-input"
               readOnly
             />
@@ -222,12 +194,12 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
           
           <div>
             <label className="doctor-clinic-label">
-              Report Date
+              Appointment Date
             </label>
             <input
               type="date"
-              name="reportDate"
-              value={localData.reportDate}
+              name="appointmentDate"
+              value={localData.appointmentDate}
               onChange={handleChange}
               className="doctor-clinic-input"
             />
@@ -235,12 +207,25 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
           
           <div>
             <label className="doctor-clinic-label">
-              Report Time
+              Appointment Start Time
             </label>
             <input
               type="time"
-              name="reportTime"
-              value={localData.reportTime}
+              name="appointmentStartTime"
+              value={localData.appointmentStartTime}
+              onChange={handleChange}
+              className="doctor-clinic-input"
+            />
+          </div>
+
+          <div>
+            <label className="doctor-clinic-label">
+              Appointment End Time
+            </label>
+            <input
+              type="time"
+              name="appointmentEndTime"
+              value={localData.appointmentEndTime}
               onChange={handleChange}
               className="doctor-clinic-input"
             />
