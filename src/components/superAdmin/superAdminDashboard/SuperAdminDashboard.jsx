@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import { Card, Row, Col, Avatar, Typography } from "antd";
 import {
   UserOutlined,
@@ -21,17 +22,31 @@ import {
   Pie,
   Cell,
 } from "recharts";
-
+import { apiGet } from "../../api";
 const { Title, Text } = Typography;
 
-// Mock data matching the image exactly
-const revenueSnapshotData = [
-  { title: "Today", value: "₹12,000", bgColor: "#F1C1151A" },
-  // { title: 'This Week', value: '₹84,500', bgColor: '#EFF6FF' },
-  { title: "This Month", value: "₹3,20,000", bgColor: "#F0FDF4" },
+// Define initial state for apiData
+const initialApiData = {
+  today: 0,
+  month: 0,
+  total: 0,
+};
+
+// Mock data with fallback values
+const revenueSnapshotData = (apiData) => [
+  {
+    title: "Today",
+    value: `₹${(apiData.today || 0).toLocaleString()}`,
+    bgColor: "#F1C1151A",
+  },
+  {
+    title: "This Month",
+    value: `₹${(apiData.month || 0).toLocaleString()}`,
+    bgColor: "#F0FDF4",
+  },
   {
     title: "Total Revenue",
-    value: "₹18,56,000",
+    value: `₹${(apiData.total || 0).toLocaleString()}`,
     isHighlight: true,
     bgColor: "#2E4861",
     color: "#FFFFFF",
@@ -43,8 +58,7 @@ const revenueContributionData = [
   { title: "Pharmacy", value: "₹2,000", icon: "⚕️", bgColor: "#F1C1151A" },
   { title: "Labs", value: "₹2,000", icon: "🧪", bgColor: "#EFF6FF" },
   { title: "Ambulance", value: "₹2,000", icon: "🚑", bgColor: "#f0f9ff" },
-  { title: "BloodBank", value: "₹2,000", icon: "🧪", bgColor: "#EFF6FF" },
-  { title: "Labs", value: "₹2,000", icon: "🧪", bgColor: "#EFF6FF" },
+  { title: "BloodBank", value: "₹2,000", icon: "🩺", bgColor: "#EFF6FF" },
   { title: "Home Care", value: "₹2,000", icon: "🏠", bgColor: "#EFF6FF" },
 ];
 
@@ -99,10 +113,10 @@ const userMetricsData = [
 const consultationStatsData = [
   { title: "Walk-ins", value: 214, icon: "🚶", bgColor: "#f5f5f5" },
   { title: "Home Care", value: 47, icon: "🏠", bgColor: "#F0FDF4" },
-  { title: "Ambulance", value: 156, icon: "📅", bgColor: "#F1C1151A" },
-  { title: "Diagnostic", value: 156, icon: "📅", bgColor: "#F1C1151A" },
+  { title: "Ambulance", value: 156, icon: "🚑", bgColor: "#F1C1151A" },
+  { title: "Diagnostic", value: 156, icon: "🧪", bgColor: "#F1C1151A" },
   { title: "Video Consults", value: 92, icon: "📹", bgColor: "#f0f9ff" },
-  { title: "Pharmacy", value: 47, icon: "🏠", bgColor: "#F0FDF4" },
+  { title: "Pharmacy", value: 47, icon: "⚕️", bgColor: "#F0FDF4" },
 ];
 
 const topDoctorsAppointments = [
@@ -132,6 +146,30 @@ const appointmentDistributionData = [
 ];
 
 const SuperAdminDashboard = () => {
+  const [apiData, setApiData] = useState(initialApiData);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await apiGet("finance/getTotalAmount");
+        if (response.status == 200) {
+          const data = response.data;
+          setApiData(data);
+        }
+      } catch (error) {
+        console.error("Error fetching revenue data:", error);
+        setError("Failed to fetch revenue data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   // Calculate total points for percentage
   const totalPoints = appointmentDistributionData.reduce(
     (sum, item) => sum + item.value,
@@ -143,13 +181,13 @@ const SuperAdminDashboard = () => {
     name: item.title,
     value: item.value,
     color: [
-      "#FF6384", // bright red-pink
-      "#36A2EB", // bright blue
-      "#FFCE56", // bright yellow
-      "#4BC0C0", // bright teal
-      "#9966FF", // bright purple
-      "#FF9F40", // bright orange
-      "#43E97B", // bright green
+      "#FF6384",
+      "#36A2EB",
+      "#FFCE56",
+      "#4BC0C0",
+      "#9966FF",
+      "#FF9F40",
+      "#43E97B",
     ][idx % 7],
   }));
   const totalConsultation = consultationPieData.reduce(
@@ -195,7 +233,7 @@ const SuperAdminDashboard = () => {
     >
       <Title
         level={4}
-        style={{ marginBottom: "16px", color: "#8c8c8c", fontWeight: 400 }}
+        style={{ marginBottom: "16px", color: "#262626", fontWeight: 600 }}
       >
         Super Admin Dashboard
       </Title>
@@ -214,8 +252,11 @@ const SuperAdminDashboard = () => {
           >
             Revenue Snapshot
           </div>
+          {loading && <div>Loading revenue data...</div>}
+          {error && <div style={{ color: "red" }}>{error}</div>}
+
           <Row gutter={[8, 8]}>
-            {revenueSnapshotData.map((item, index) => (
+            {revenueSnapshotData(apiData).map((item, index) => (
               <Col xs={24} sm={12} md={6} key={index}>
                 <Card
                   style={{
@@ -264,7 +305,6 @@ const SuperAdminDashboard = () => {
           <div
             style={{
               fontSize: "20px",
-              marginLeft: "-40px",
               fontWeight: 600,
               marginBottom: "26px",
               color: "#262626",
@@ -282,8 +322,6 @@ const SuperAdminDashboard = () => {
                     borderRadius: "8px",
                     border: "1px solid #f0f0f0",
                     height: "100px",
-                    // marginRight: '30px',
-                    marginLeft: "-40px",
                     width: "100%",
                   }}
                   bodyStyle={{
@@ -394,7 +432,7 @@ const SuperAdminDashboard = () => {
                   borderRadius: "16px",
                   borderBottom:
                     index < userMetricsData.length - 1
-                      ? "8px solidrgb(255, 253, 253)"
+                      ? "8px solid rgb(255, 253, 253)"
                       : "none",
                   minHeight: "100px",
                   backgroundColor: item.bgcolor,
@@ -414,7 +452,7 @@ const SuperAdminDashboard = () => {
                   style={{
                     fontSize: "18px",
                     fontWeight: "bold",
-                    color: item.color,
+                    color: "#262626",
                   }}
                 >
                   {item.value}
@@ -532,7 +570,7 @@ const SuperAdminDashboard = () => {
         <Col xs={24} lg={8}>
           <Card
             title="Consultation Stats Distribution"
-            style={{ borderRadius: "8px", minHeight: 0, padding: 0 }}
+            style={{ borderRadius: "8px", minHeight: "360px", padding: 0 }}
           >
             <div
               style={{
