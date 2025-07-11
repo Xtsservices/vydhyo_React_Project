@@ -22,7 +22,12 @@ import {
 } from "@ant-design/icons";
 import moment from "moment";
 import { apiGet, apiPost } from "../../api";
+
+import { toast } from "react-toastify";
+
+
 import { useNavigate } from "react-router-dom";
+
 
 const { useBreakpoint } = Grid;
 const { Title, Text } = Typography;
@@ -420,11 +425,14 @@ useEffect(() => {
         setPatientCreated(true);
         setCreatedPatientId(data.userId || "");
         message.success(msg);
+        toast.success(msg);
       } else {
         setApiError(msg);
+        toast.error(msg);
       }
     } catch (error) {
       setApiError(error.message || "Failed to create patient");
+      toast.error(error.message || "Failed to create patient");
     } finally {
       setIsCreatingPatient(false);
     }
@@ -468,13 +476,18 @@ useEffect(() => {
       );
       if (success) {
         message.success(`Appointment created successfully! ${msg}`);
+
+        toast.success(`Appointment created successfully! ${msg}`);
+
     navigate("/Doctor/dashboard");
+
         resetForm();
       } else {
         setApiError(msg);
       }
     } catch (error) {
       setApiError(error.message || "An unexpected error occurred");
+      toast.error(error.message || "An unexpected error occurred");
     } finally {
       setIsCreatingAppointment(false);
       setIsCreatingPatient(false);

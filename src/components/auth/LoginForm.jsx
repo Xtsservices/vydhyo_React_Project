@@ -17,10 +17,10 @@ const LoginForm = ({
     <div className="login-form">
       <div className="form-header">
         <img
-          src="/images/vydh_logo.png"
+          src="/images/pic1.png"
           alt="Login"
           className="form-image"
-          style={{ width: 200, height: 160, marginBottom: 0, marginTop: -40}}
+          style={{ width: 230, height: 280, marginBottom: -90, marginTop: -120}}
         />
         <h1 className="form-title">{otpSent ? 'Enter OTP' : ''}</h1>
         {!otpSent && <p className="form-subtitle">Enter your registered mobile number to continue</p>}

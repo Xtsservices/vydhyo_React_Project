@@ -407,21 +407,41 @@ useEffect(() => {
           </Col>
 
           <Col xs={24} sm={12} md={6}>
-            <Card
+            <div
               style={{
+                cursor: "pointer",
+                transition: "box-shadow 0.2s, transform 0.2s",
                 borderRadius: "8px",
-                border: "1px solid #e8e8e8",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
               }}
-            >
-              <div
+              onClick={() => {
+                // Replace with your navigation logic, e.g. react-router-dom's useNavigate
+                window.location.href = "/doctor/doctorPages/TotalExpenditure";
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(255,77,79,0.15)";
+                e.currentTarget.style.transform = "translateY(-2px) scale(1.03)";
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.05)";
+                e.currentTarget.style.transform = "none";
+                }}
+              >
+                <Card
                 style={{
+                  borderRadius: "8px",
+                  // border: "1px solid #e8e8e8",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                }}
+                bodyStyle={{ cursor: "pointer" }}
+                >
+                <div
+                  style={{
                   display: "flex",
                   alignItems: "center",
                   marginBottom: "8px",
-                }}
-              >
-                <div
+                  }}
+                >
+                  <div
                   style={{
                     width: "32px",
                     height: "32px",
@@ -432,43 +452,64 @@ useEffect(() => {
                     justifyContent: "center",
                     marginRight: "12px",
                   }}
-                >
+                  >
                   <CreditCardOutlined
                     style={{ color: "white", fontSize: "16px" }}
                   />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <Text
+                <div>
+                  <Text
                   style={{ fontSize: "24px", fontWeight: "600", color: "#000" }}
-                >
+                  >
                   ₹{accountSummary.totalExpenditure.toLocaleString()}
-                </Text>
-                <div
+                  </Text>
+                  <div
                   style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
-                >
+                  >
                   Total Expenditure
+                  </div>
                 </div>
+                </Card>
               </div>
-            </Card>
-          </Col>
+              </Col>
 
-          <Col xs={24} sm={12} md={6}>
-            <Card
-              style={{
-                borderRadius: "8px",
-                border: "1px solid #e8e8e8",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-              }}
-            >
+              <Col xs={24} sm={12} md={6}>
               <div
                 style={{
+                cursor: "pointer",
+                transition: "box-shadow 0.2s, transform 0.2s",
+                borderRadius: "8px",
+                }}
+                onClick={() => {
+                // Navigate to pending transactions page
+                window.location.href = "/doctor/doctorPages/PendingTransactions";
+                }}
+                onMouseOver={e => {
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(250,173,20,0.15)";
+                e.currentTarget.style.transform = "translateY(-2px) scale(1.03)";
+                }}
+                onMouseOut={e => {
+                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.05)";
+                e.currentTarget.style.transform = "none";
+                }}
+              >
+                <Card
+                style={{
+                  borderRadius: "8px",
+                  // border: "1px solid #e8e8e8",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                }}
+                bodyStyle={{ cursor: "pointer" }}
+                >
+                <div
+                  style={{
                   display: "flex",
                   alignItems: "center",
                   marginBottom: "8px",
-                }}
-              >
-                <div
+                  }}
+                >
+                  <div
                   style={{
                     width: "32px",
                     height: "32px",
@@ -479,58 +520,59 @@ useEffect(() => {
                     justifyContent: "center",
                     marginRight: "12px",
                   }}
-                >
+                  >
                   <ClockCircleOutlined
                     style={{ color: "white", fontSize: "16px" }}
                   />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <Text
+                <div>
+                  <Text
                   style={{ fontSize: "24px", fontWeight: "600", color: "#000" }}
-                >
+                  >
                   {accountSummary.pendingTransactions}
-                </Text>
-                <div
+                  </Text>
+                  <div
                   style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
-                >
+                  >
                   Pending Transactions
+                  </div>
                 </div>
+                </Card>
               </div>
-            </Card>
-          </Col>
+              </Col>
 
-          <Col xs={24} sm={12} md={6}>
-            <Card
-              style={{
+              <Col xs={24} sm={12} md={6}>
+              <Card
+                style={{
                 borderRadius: "8px",
                 border: "1px solid #e8e8e8",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-              }}
-            >
-              <div
+                }}
+              >
+                <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   marginBottom: "8px",
                 }}
-              >
+                >
                 <div
                   style={{
-                    width: "32px",
-                    height: "32px",
-                    backgroundColor: "#1890ff",
-                    borderRadius: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: "12px",
+                  width: "32px",
+                  height: "32px",
+                  backgroundColor: "#1890ff",
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: "12px",
                   }}
                 >
                   <SyncOutlined style={{ color: "white", fontSize: "16px" }} />
                 </div>
-              </div>
-              <div>
+                </div>
+                <div>
                 <Text
                   style={{ fontSize: "14px", fontWeight: "600", color: "#000" }}
                 >
@@ -538,33 +580,33 @@ useEffect(() => {
                 </Text>
                 <div style={{ marginTop: "8px" }}>
                   {accountSummary.recentTransactions.map(
-                    (transaction, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          fontSize: "12px",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        <Text style={{ fontSize: "12px", color: "#666" }}>
-                          {transaction.name}
-                        </Text>
-                        <Text style={{ fontSize: "12px", fontWeight: "500" }}>
-                          ₹{transaction.amount}
-                        </Text>
-                      </div>
-                    )
+                  (transaction, index) => (
+                    <div
+                    key={index}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      fontSize: "12px",
+                      marginBottom: "4px",
+                    }}
+                    >
+                    <Text style={{ fontSize: "12px", color: "#666" }}>
+                      {transaction.name}
+                    </Text>
+                    <Text style={{ fontSize: "12px", fontWeight: "500" }}>
+                      ₹{transaction.amount}
+                    </Text>
+                    </div>
+                  )
                   )}
                 </div>
-              </div>
-            </Card>
-          </Col>
-        </Row>
+                </div>
+              </Card>
+              </Col>
+            </Row>
 
-        {/* Transaction History */}
+            {/* Transaction History */}
         <Card
           style={{
             borderRadius: "8px",
