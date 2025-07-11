@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'lucide-react';
-import '../../stylings/EPrescription.css';
 import { useSelector } from 'react-redux';
+import '../../stylings/EPrescription.css';
 
-const DoctorClinicInfo = () => {
+const DoctorClinicInfo = ({ formData, updateFormData }) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
   // Get all clinic addresses
   const allClinics = user?.addresses?.filter(address => address.type === "Clinic") || [];
   
-  const [formData, setFormData] = useState({
+  const [localData, setLocalData] = useState({
     doctorName: '',
     qualifications: '',
     specialization: '',
@@ -25,39 +25,51 @@ const DoctorClinicInfo = () => {
   });
 
   useEffect(() => {
-    if (user) {
+    if (formData && Object.keys(formData).length > 0) {
+      setLocalData(formData);
+    } else if (user) {
       const currentDate = new Date();
       const formattedDate = currentDate.toISOString().split('T')[0];
       const formattedTime = currentDate.toTimeString().substring(0, 5);
 
-      setFormData(prev => ({
-        ...prev,
+      const initialData = {
         doctorName: `${user.firstname} ${user.lastname}`,
         qualifications: user.specialization?.degree || '',
         specialization: user.specialization?.name?.trim() || '',
         reportDate: formattedDate,
         reportTime: formattedTime
-      }));
+      };
 
       // Set first clinic as default if available
       if (allClinics.length > 0) {
-        handleClinicChange(allClinics[0].addressId);
+        const selectedClinic = allClinics[0];
+        initialData.selectedClinicId = selectedClinic.addressId;
+        initialData.clinicName = selectedClinic.clinicName;
+        initialData.clinicAddress = selectedClinic.address;
+        initialData.city = selectedClinic.city;
+        initialData.pincode = selectedClinic.pincode;
+        initialData.contactNumber = selectedClinic.mobile || user.mobile || '';
       }
+
+      setLocalData(initialData);
+      updateFormData(initialData);
     }
-  }, [user]);
+  }, [user, formData]);
 
   const handleClinicChange = (clinicId) => {
     const selectedClinic = allClinics.find(clinic => clinic.addressId === clinicId);
     if (selectedClinic) {
-      setFormData(prev => ({
-        ...prev,
+      const updatedData = {
+        ...localData,
         selectedClinicId: clinicId,
         clinicName: selectedClinic.clinicName,
         clinicAddress: selectedClinic.address,
         city: selectedClinic.city,
         pincode: selectedClinic.pincode,
         contactNumber: selectedClinic.mobile || user.mobile || ''
-      }));
+      };
+      setLocalData(updatedData);
+      updateFormData(updatedData);
     }
   };
 
@@ -67,10 +79,12 @@ const DoctorClinicInfo = () => {
     if (name === 'selectedClinicId') {
       handleClinicChange(value);
     } else {
-      setFormData({
-        ...formData,
+      const updatedData = {
+        ...localData,
         [name]: value
-      });
+      };
+      setLocalData(updatedData);
+      updateFormData(updatedData);
     }
   };
 
@@ -96,7 +110,7 @@ const DoctorClinicInfo = () => {
             <input
               type="text"
               name="doctorName"
-              value={formData.doctorName}
+              value={localData.doctorName}
               onChange={handleChange}
               className="doctor-clinic-input"
               readOnly
@@ -110,7 +124,7 @@ const DoctorClinicInfo = () => {
             <input
               type="text"
               name="qualifications"
-              value={formData.qualifications}
+              value={localData.qualifications}
               onChange={handleChange}
               className="doctor-clinic-input"
               readOnly
@@ -124,7 +138,7 @@ const DoctorClinicInfo = () => {
             <input
               type="text"
               name="specialization"
-              value={formData.specialization}
+              value={localData.specialization}
               onChange={handleChange}
               className="doctor-clinic-input"
               readOnly
@@ -137,7 +151,7 @@ const DoctorClinicInfo = () => {
             </label>
             <select
               name="selectedClinicId"
-              value={formData.selectedClinicId}
+              value={localData.selectedClinicId}
               onChange={handleChange}
               className="doctor-clinic-input"
             >
@@ -155,7 +169,7 @@ const DoctorClinicInfo = () => {
             </label>
             <textarea
               name="clinicAddress"
-              value={formData.clinicAddress}
+              value={localData.clinicAddress}
               onChange={handleChange}
               rows={3}
               className="doctor-clinic-input"
@@ -171,7 +185,7 @@ const DoctorClinicInfo = () => {
             <input
               type="text"
               name="city"
-              value={formData.city}
+              value={localData.city}
               onChange={handleChange}
               className="doctor-clinic-input"
               readOnly
@@ -185,7 +199,7 @@ const DoctorClinicInfo = () => {
             <input
               type="text"
               name="pincode"
-              value={formData.pincode}
+              value={localData.pincode}
               onChange={handleChange}
               className="doctor-clinic-input"
               readOnly
@@ -199,7 +213,7 @@ const DoctorClinicInfo = () => {
             <input
               type="tel"
               name="contactNumber"
-              value={formData.contactNumber}
+              value={localData.contactNumber}
               onChange={handleChange}
               className="doctor-clinic-input"
               readOnly
@@ -213,7 +227,7 @@ const DoctorClinicInfo = () => {
             <input
               type="date"
               name="reportDate"
-              value={formData.reportDate}
+              value={localData.reportDate}
               onChange={handleChange}
               className="doctor-clinic-input"
             />
@@ -226,7 +240,7 @@ const DoctorClinicInfo = () => {
             <input
               type="time"
               name="reportTime"
-              value={formData.reportTime}
+              value={localData.reportTime}
               onChange={handleChange}
               className="doctor-clinic-input"
             />

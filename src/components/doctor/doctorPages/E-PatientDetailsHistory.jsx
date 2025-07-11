@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { User, FileText, Heart, Users, Stethoscope } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { apiGet } from '../../api';
+import { useLocation } from 'react-router-dom';
 import '../../stylings/EPrescription.css';
 
-const PatientDetailsHistory = () => {
-  const user = useSelector((state) => state.currentUserData);
-  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-  
-  const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedPatientId, setSelectedPatientId] = useState('');
-
-  const [formData, setFormData] = useState({
+const PatientDetailsHistory = ({ formData, updateFormData }) => {
+  const location = useLocation();
+  const [localData, setLocalData] = useState({
     patientName: '',
     age: '',
     gender: '',
@@ -24,83 +17,35 @@ const PatientDetailsHistory = () => {
   });
 
   useEffect(() => {
-    const fetchPatients = async () => {
-      setLoading(true);
-      try {
-        const response = await apiGet(
-          `/appointment/getAppointmentsByDoctorID/appointment?doctorId=${doctorId}`
-        );
-        
-        if (response.status === 200) {
-          // Extract unique patients based on userId
-          const uniquePatients = response.data.data.reduce((acc, appointment) => {
-            if (!acc.some(p => p.userId === appointment.userId)) {
-              acc.push({
-                userId: appointment.userId,
-                patientId: appointment.userId, // Using userId as patientId since it's unique
-                patientName: appointment.patientName,
-                ...appointment.patientDetails
-              });
-            }
-            return acc;
-          }, []);
-          
-          setPatients(uniquePatients);
-        }
-      } catch (error) {
-        console.error("Error fetching patients:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (doctorId) {
-      fetchPatients();
-    }
-  }, [doctorId]);
-
-  useEffect(() => {
-    if (selectedPatientId) {
-      const selectedPatient = patients.find(p => p.userId === selectedPatientId);
-      if (selectedPatient) {
-        // Calculate age from dob if available
-        let age = "";
-        const dob = selectedPatient.dob;
-        if (dob) {
-          // Parse the date in DD-MM-YYYY format
-          const [day, month, year] = dob.split('-').map(Number);
-          const birthDate = new Date(year, month - 1, day);
-          if (!isNaN(birthDate.getTime())) {
-            const ageDiff = Date.now() - birthDate.getTime();
-            const ageDate = new Date(ageDiff);
-            age = Math.abs(ageDate.getUTCFullYear() - 1970).toString();
-          }
-        }
-
-        setFormData({
-          patientName: selectedPatient.patientName || '',
-          age: age,
-          gender: selectedPatient.gender?.toLowerCase() || '',
-          mobileNumber: selectedPatient.mobile || '',
-          chiefComplaint: '',
-          pastMedicalHistory: '',
-          familyMedicalHistory: '',
-          physicalExamination: ''
-        });
+    if (location.state?.patientData) {
+      const patientData = location.state.patientData;
+      const updatedData = {
+        patientName: patientData.patientName || '',
+        age: patientData.age || '',
+        gender: patientData.gender?.toLowerCase() || '',
+        mobileNumber: patientData.mobileNumber || '',
+        chiefComplaint: formData?.chiefComplaint || '',
+        pastMedicalHistory: formData?.pastMedicalHistory || '',
+        familyMedicalHistory: formData?.familyMedicalHistory || '',
+        physicalExamination: formData?.physicalExamination || ''
+      };
+      setLocalData(updatedData);
+      if (updateFormData) {
+        updateFormData(updatedData);
       }
     }
-  }, [selectedPatientId, patients]);
+  }, [location.state]); // Removed formData and updateFormData from dependencies
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    const updatedData = {
+      ...localData,
       [name]: value
-    }));
-  };
-
-  const handlePatientSelect = (e) => {
-    setSelectedPatientId(e.target.value);
+    };
+    setLocalData(updatedData);
+    if (updateFormData) {
+      updateFormData(updatedData);
+    }
   };
 
   return (
@@ -115,24 +60,6 @@ const PatientDetailsHistory = () => {
         </div>
       </div>
       
-      {/* Patient Selection Dropdown */}
-      <div className="patient-selection" style={{ marginBottom: '20px' }}>
-        <label className="patient-details-label">Select Patient</label>
-        <select
-          value={selectedPatientId}
-          onChange={handlePatientSelect}
-          className="patient-details-input"
-          disabled={loading}
-        >
-          <option value="">Select a patient</option>
-          {patients.map(patient => (
-            <option key={patient.userId} value={patient.userId}>
-              {patient.patientName} ({patient.mobile || 'No phone'})
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Patient Details Form */}
       <div className="patient-details-form">
         <div className="patient-details-grid">
@@ -141,9 +68,10 @@ const PatientDetailsHistory = () => {
             <input
               type="text"
               name="patientName"
-              value={formData.patientName}
+              value={localData.patientName}
               onChange={handleChange}
               className="patient-details-input"
+              readOnly
             />
           </div>
           
@@ -155,9 +83,10 @@ const PatientDetailsHistory = () => {
                   type="radio"
                   name="gender"
                   value="male"
-                  checked={formData.gender === 'male'}
+                  checked={localData.gender === 'male'}
                   onChange={handleChange}
                   style={{ margin: '0' }}
+                  disabled
                 />
                 Male
               </label>
@@ -166,9 +95,10 @@ const PatientDetailsHistory = () => {
                   type="radio"
                   name="gender"
                   value="female"
-                  checked={formData.gender === 'female'}
+                  checked={localData.gender === 'female'}
                   onChange={handleChange}
                   style={{ margin: '0' }}
+                  disabled
                 />
                 Female
               </label>
@@ -177,9 +107,10 @@ const PatientDetailsHistory = () => {
                   type="radio"
                   name="gender"
                   value="other"
-                  checked={formData.gender === 'other'}
+                  checked={localData.gender === 'other'}
                   onChange={handleChange}
                   style={{ margin: '0' }}
+                  disabled
                 />
                 Other
               </label>
@@ -191,9 +122,10 @@ const PatientDetailsHistory = () => {
             <input
               type="number"
               name="age"
-              value={formData.age}
+              value={localData.age}
               onChange={handleChange}
               className="patient-details-input"
+              readOnly
             />
           </div>
           
@@ -202,9 +134,10 @@ const PatientDetailsHistory = () => {
             <input
               type="tel"
               name="mobileNumber"
-              value={formData.mobileNumber}
+              value={localData.mobileNumber}
               onChange={handleChange}
               className="patient-details-input"
+              readOnly
             />
           </div>
         </div>
@@ -227,10 +160,11 @@ const PatientDetailsHistory = () => {
             </div>
             <textarea
               name="chiefComplaint"
-              value={formData.chiefComplaint}
+              value={localData.chiefComplaint}
               onChange={handleChange}
               className="history-textarea"
               placeholder="Describe the primary reason for the visit..."
+              rows={4}
             />
           </div>
 
@@ -247,10 +181,11 @@ const PatientDetailsHistory = () => {
             </div>
             <textarea
               name="pastMedicalHistory"
-              value={formData.pastMedicalHistory}
+              value={localData.pastMedicalHistory}
               onChange={handleChange}
               className="history-textarea"
               placeholder="Enter previous illnesses, surgeries, or chronic conditions..."
+              rows={4}
             />
           </div>
 
@@ -267,10 +202,11 @@ const PatientDetailsHistory = () => {
             </div>
             <textarea
               name="familyMedicalHistory"
-              value={formData.familyMedicalHistory}
+              value={localData.familyMedicalHistory}
               onChange={handleChange}
               className="history-textarea"
               placeholder="Mention any hereditary conditions in the family..."
+              rows={4}
             />
           </div>
 
@@ -282,15 +218,16 @@ const PatientDetailsHistory = () => {
               </div>
               <div>
                 <h4 className="history-section-title">Physical Examination</h4>
-                <p className="history-section-subtitle">Clinical examination findings and</p>
+                <p className="history-section-subtitle">Clinical examination findings and observations</p>
               </div>
             </div>
             <textarea
               name="physicalExamination"
-              value={formData.physicalExamination}
+              value={localData.physicalExamination}
               onChange={handleChange}
               className="history-textarea"
               placeholder="Enter findings from clinical examination..."
+              rows={4}
             />
           </div>
         </div>

@@ -1,20 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, User, Stethoscope } from 'lucide-react';
 import '../../stylings/EPrescription.css';
 
-const AdviceFollowUp = () => {
-  const [advice, setAdvice] = useState('');
-  const [followUpDate, setFollowUpDate] = useState('');
+const AdviceFollowUp = ({ formData, updateFormData }) => {
+  const [localData, setLocalData] = useState({
+    advice: '',
+    followUpDate: ''
+  });
 
-  const handleCancel = () => {
-    setAdvice('');
-    setFollowUpDate('');
+  useEffect(() => {
+    if (formData && Object.keys(formData).length > 0) {
+      setLocalData(formData);
+    }
+  }, [formData]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const updatedData = {
+      ...localData,
+      [name]: value
+    };
+    setLocalData(updatedData);
+    updateFormData(updatedData);
   };
 
-  const handleConfirm = () => {
-    console.log('Advice:', advice);
-    console.log('Follow-up Date:', followUpDate);
-    // Handle form submission here
+  const handleCancel = () => {
+    const resetData = {
+      advice: '',
+      followUpDate: ''
+    };
+    setLocalData(resetData);
+    updateFormData(resetData);
   };
 
   return (
@@ -39,8 +55,8 @@ const AdviceFollowUp = () => {
           
           <textarea
             placeholder="Enter findings from clinical examination..."
-            value={advice}
-            onChange={(e) => setAdvice(e.target.value)}
+            value={localData.advice}
+            onChange={(e) => handleChange({ target: { name: 'advice', value: e.target.value } })}
             className="common-textarea"
           />
         </div>
@@ -58,15 +74,14 @@ const AdviceFollowUp = () => {
         <div className="common-date-input-container">
           <input
             type="date"
-            value={followUpDate}
-            onChange={(e) => setFollowUpDate(e.target.value)}
+            name="followUpDate"
+            value={localData.followUpDate}
+            onChange={handleChange}
             className="common-date-input"
           />
           <Calendar size={16} className="common-calendar-icon" />
         </div>
       </div>
-
-    
     </div>
   );
 };

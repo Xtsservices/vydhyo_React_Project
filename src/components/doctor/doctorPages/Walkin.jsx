@@ -539,22 +539,6 @@ useEffect(() => {
      setTimeSlots([]);
   }, []);
 
-  // const timeSlots = [
-  //   "1:00 PM",
-  //   "1:30 PM",
-  //   "2:00 PM",
-  //   "2:30 PM",
-  //   "3:00 PM",
-  //   "3:30 PM",
-  //   "4:00 PM",
-  //   "5:00 PM",
-  //   "5:30 PM",
-  //   "6:00 PM",
-  //   "6:30 PM",
-  //   "7:00 PM",
-  // ];
-
-
    const getCurrentUserData = async () => {
   try {
     const response = await apiGet("/users/getUser");
@@ -1016,27 +1000,6 @@ useEffect(() => {
               </Title>
             </Col>
           </Row>
-        </Col>
-        <Col span={24}>
-          {/* <Text strong>Payment Status</Text> */}
-          {/* <Row gutter={16} style={{ marginTop: 8 }}> */}
-            {/* <Col>
-              <Button
-                type={paymentStatus === "paid" ? "primary" : "default"}
-                onClick={() => setPaymentStatus("paid")}
-              >
-                Paid
-              </Button>
-            </Col> */}
-            {/* <Col>
-              <Button
-                type={paymentStatus === "pending" ? "primary" : "default"}
-                onClick={() => setPaymentStatus("pending")}
-              >
-                Pending
-              </Button>
-            </Col> */}
-          {/* </Row> */}
         </Col>
       </Row>
     </Card>
