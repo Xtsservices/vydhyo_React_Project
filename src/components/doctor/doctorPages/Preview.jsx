@@ -177,6 +177,13 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                 <div className="detail-label">BMI</div>
                 <div className="detail-value">{formData.vitals?.bmi || 'N/A'}</div>
               </div>
+              {/* Display other vitals */}
+              {formData.vitals?.other && Object.entries(formData.vitals.other).map(([key, value]) => (
+                <div className="vital-item" key={key}>
+                  <div className="detail-label">{key}</div>
+                  <div className="detail-value">{value}</div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -203,7 +210,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
           )}
 
-          {/* Diagnosis */}
+          {/* Diagnosis - Now uncommented */}
           {formData.diagnosis?.diagnosisList && (
             <div className="prescription-section">
               <div className="section-header">

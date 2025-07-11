@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Stethoscope } from 'lucide-react';
+import { Activity, Stethoscope, Plus, X } from 'lucide-react';
 import '../../stylings/EPrescription.css';
 
 const VitalsInvestigation = ({ formData, updateFormData }) => {
@@ -12,8 +12,12 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
     height: '',
     weight: '',
     bmi: '',
-    investigationFindings: ''
+    investigationFindings: '',
+    other: {}
   });
+
+  const [newKey, setNewKey] = useState('');
+  const [newValue, setNewValue] = useState('');
 
   useEffect(() => {
     if (formData && Object.keys(formData).length > 0) {
@@ -48,6 +52,36 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
     return '';
   };
 
+  const handleAddOther = () => {
+    if (!newKey.trim() || !newValue.trim()) return;
+    
+    const updatedData = {
+      ...localData,
+      other: {
+        ...localData.other,
+        [newKey]: newValue
+      }
+    };
+    
+    setLocalData(updatedData);
+    updateFormData(updatedData);
+    setNewKey('');
+    setNewValue('');
+  };
+
+  const handleRemoveOther = (key) => {
+    const newOther = { ...localData.other };
+    delete newOther[key];
+    
+    const updatedData = {
+      ...localData,
+      other: newOther
+    };
+    
+    setLocalData(updatedData);
+    updateFormData(updatedData);
+  };
+
   const handleCancel = () => {
     const resetData = {
       bp: '',
@@ -58,7 +92,8 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
       height: '',
       weight: '',
       bmi: '',
-      investigationFindings: ''
+      investigationFindings: '',
+      other: {}
     };
     setLocalData(resetData);
     updateFormData(resetData);
@@ -173,6 +208,47 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
             />
           </div>
         </div>
+
+        {/* Other Vitals - Key Value Pairs */}
+        <div className="other-vitals-section">
+          <h3 className="other-vitals-title">Other Vitals</h3>
+          <div className="other-vitals-grid">
+            {Object.entries(localData.other || {}).map(([key, value]) => (
+              <div key={key} className="other-vital-item">
+                <div className="other-vital-key">{key}</div>
+                <div className="other-vital-value">{value}</div>
+                <button 
+                  className="remove-other-vital"
+                  onClick={() => handleRemoveOther(key)}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="add-other-vital">
+            <input
+              type="text"
+              placeholder="Key"
+              value={newKey}
+              onChange={(e) => setNewKey(e.target.value)}
+              className="other-vital-input"
+            />
+            <input
+              type="text"
+              placeholder="Value"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              className="other-vital-input"
+            />
+            <button 
+              className="add-other-button"
+              onClick={handleAddOther}
+            >
+              <Plus size={16} /> Add
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Investigation Section */}
@@ -202,7 +278,11 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
         </div>
       </div>
 
-     
+      <div className="vitals-actions">
+        <button className="cancel-button" onClick={handleCancel}>
+          Clear All
+        </button>
+      </div>
     </div>
   );
 };

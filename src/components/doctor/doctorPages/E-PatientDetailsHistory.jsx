@@ -6,10 +6,7 @@ import '../../stylings/EPrescription.css';
 const PatientDetailsHistory = ({ formData, updateFormData }) => {
   const location = useLocation();
   const [localData, setLocalData] = useState({
-    patientName: '',
-    age: '',
-    gender: '',
-    mobileNumber: '',
+    patientId: location.state?.patientData?.patientId || '',
     chiefComplaint: '',
     pastMedicalHistory: '',
     familyMedicalHistory: '',
@@ -20,10 +17,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
     if (location.state?.patientData) {
       const patientData = location.state.patientData;
       const updatedData = {
-        patientName: patientData.patientName || '',
-        age: patientData.age || '',
-        gender: patientData.gender?.toLowerCase() || '',
-        mobileNumber: patientData.mobileNumber || '',
+        patientId: patientData.patientId || '',
         chiefComplaint: formData?.chiefComplaint || '',
         pastMedicalHistory: formData?.pastMedicalHistory || '',
         familyMedicalHistory: formData?.familyMedicalHistory || '',
@@ -34,7 +28,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
         updateFormData(updatedData);
       }
     }
-  }, [location.state]); // Removed formData and updateFormData from dependencies
+  }, [location.state]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,6 +41,8 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
       updateFormData(updatedData);
     }
   };
+
+  const patientData = location.state?.patientData || {};
 
   return (
     <div className="patient-details-container">
@@ -67,9 +63,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
             <label className="patient-details-label">Patient Name</label>
             <input
               type="text"
-              name="patientName"
-              value={localData.patientName}
-              onChange={handleChange}
+              value={patientData.patientName || ''}
               className="patient-details-input"
               readOnly
             />
@@ -81,10 +75,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#374151' }}>
                 <input
                   type="radio"
-                  name="gender"
-                  value="male"
-                  checked={localData.gender === 'male'}
-                  onChange={handleChange}
+                  checked={patientData.gender?.toLowerCase() === 'male'}
                   style={{ margin: '0' }}
                   disabled
                 />
@@ -93,10 +84,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#374151' }}>
                 <input
                   type="radio"
-                  name="gender"
-                  value="female"
-                  checked={localData.gender === 'female'}
-                  onChange={handleChange}
+                  checked={patientData.gender?.toLowerCase() === 'female'}
                   style={{ margin: '0' }}
                   disabled
                 />
@@ -105,10 +93,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#374151' }}>
                 <input
                   type="radio"
-                  name="gender"
-                  value="other"
-                  checked={localData.gender === 'other'}
-                  onChange={handleChange}
+                  checked={patientData.gender?.toLowerCase() === 'other'}
                   style={{ margin: '0' }}
                   disabled
                 />
@@ -121,9 +106,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
             <label className="patient-details-label">Age</label>
             <input
               type="number"
-              name="age"
-              value={localData.age}
-              onChange={handleChange}
+              value={patientData.age || ''}
               className="patient-details-input"
               readOnly
             />
@@ -133,9 +116,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
             <label className="patient-details-label">Mobile Number</label>
             <input
               type="tel"
-              name="mobileNumber"
-              value={localData.mobileNumber}
-              onChange={handleChange}
+              value={patientData.mobileNumber || ''}
               className="patient-details-input"
               readOnly
             />
