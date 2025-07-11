@@ -12,6 +12,8 @@ import "react-toastify/dist/ReactToastify.css";
 
 const libraries = ["places", "geocoding"];
 const googleAPI = "AIzaSyCrmF3351j82RVuTZbVBJ-X3ufndylJsvo";
+import { useSelector } from "react-redux";
+
 
 export default function ClinicManagement() {
   const { isLoaded, loadError } = useLoadScript({
@@ -42,7 +44,9 @@ export default function ClinicManagement() {
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 });
   const [markerPosition, setMarkerPosition] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-
+    const user = useSelector((state) => state.currentUserData);
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  // console.log("Doctor ID:", doctorId);
   const autocompleteRef = useRef(null);
   const mapRef = useRef(null);
 
@@ -50,7 +54,16 @@ export default function ClinicManagement() {
     const fetchClinics = async () => {
       try {
         setLoading(true);
-        const response = await apiGet("/users/getClinicAddress", {});
+        console.log("Fetching clinics from API...");
+        const accessToken = localStorage.getItem("accessToken");
+
+        console.log("Access Token:", accessToken);
+        // const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+        console.log("Doctor ID:", doctorId);
+
+        const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
+
+        console.log("Fetch Response:", response);
         if (response.status === 200 && response.data?.status === "success") {
           // Filter to only show active clinics
           const activeClinics = response.data.data.filter(
@@ -65,8 +78,11 @@ export default function ClinicManagement() {
         setLoading(false);
       }
     };
-    fetchClinics();
-  }, []);
+    if(user && doctorId) {
+
+      fetchClinics();
+    }
+  }, [user, doctorId]);
 
   const getStatusStyle = (status) => {
     switch (status) {
@@ -345,6 +361,8 @@ export default function ClinicManagement() {
 
     // Refresh the clinics list after successful operation
     const refreshResponse = await apiGet("/users/getClinicAddress", {});
+
+    console.log("Refresh Response:", refreshResponse);
     if (
       refreshResponse.status === 200 &&
       refreshResponse.data?.status === "success"
