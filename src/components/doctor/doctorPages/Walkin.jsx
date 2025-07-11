@@ -399,7 +399,7 @@ useEffect(() => {
       "firstName",
       "lastName",
       "phoneNumber",
-      "dateOfBirth",
+      // "dateOfBirth",
       "gender",
     ];
     const errors = {};
@@ -409,8 +409,8 @@ useEffect(() => {
     });
     if (!validatePhoneNumber(patientData.phoneNumber))
       errors.phoneNumber = "Invalid phone number";
-    if (!validateDOB(patientData.dateOfBirth))
-      errors.dateOfBirth = "Invalid date of birth";
+    // if (!validateDOB(patientData.dateOfBirth))
+    //   errors.dateOfBirth = "Invalid date of birth";
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);

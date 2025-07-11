@@ -66,8 +66,10 @@ const Login = () => {
         mobile: phone,
         language: "tel",
       });
+
       if (data.data.userId || data.data.success !== false) {
         setUserId(data.data.userId || `temp-${Date.now()}`);
+
         setCurrentUserType(data.data.role || "");
         setOtpSent(true);
         setOtpTimer(60);
@@ -114,21 +116,40 @@ const Login = () => {
         OTP: otp,
         mobile: phone,
       });
+      console.log("OTP Verification Response:=============", data);
+      if (data?.data?.userData?.role === "doctor") {
+        console.log("Doctor:", data);
+
+        const isValidUser =
+          !data.data?.userData?.isDeleted &&
+          data.data?.userData?.status === "approved";
+        // Additional checks or actions for doctor role can be added here
+        if (!isValidUser) {
+          toast.error("You are not authorized to login as a doctor.");
+          return;
+        }
+      }
+      
+      console.log("User Data:====================", data.data);
 
       if (data.data.accessToken) {
-        const userData = data.data.userData || {};
+        const userData = data.data.userData;
+        console.log("User Data:", userData);
+
         if (userData) {
           dispatch({
             type: "currentUserData",
             payload: userData,
           });
         }
+
         localStorage.setItem("accessToken", data.data.accessToken);
         localStorage.setItem("userID", userId);
         localStorage.setItem(
           "role",
           data.data.userData.role || currentUserType
         );
+
         const redirectRoute = getRouteFromUserType(
           data.data.userData.role || currentUserType
         );
@@ -145,12 +166,13 @@ const Login = () => {
         setTimeout(() => navigate(redirectRoute), 1500);
       }
     } catch (error) {
+      console.log("loginerror",error)
       const errorMsg =
         error.response?.status === 401
           ? "Invalid OTP."
           : error.message?.includes("Network Error")
           ? "Network Error: Unable to connect to server."
-          : "Verification failed.";
+          : "Verification failed.========";
       message.error(errorMsg);
       toast.error(errorMsg);
     } finally {
