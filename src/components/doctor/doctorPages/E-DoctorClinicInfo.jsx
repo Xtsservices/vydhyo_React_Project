@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from 'lucide-react';
 import '../../stylings/EPrescription.css';
+import { useSelector } from 'react-redux';
 
 const DoctorClinicInfo = () => {
+  const user = useSelector((state) => state.currentUserData);
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
+  // Get all clinic addresses
+  const allClinics = user?.addresses?.filter(address => address.type === "Clinic") || [];
+  
   const [formData, setFormData] = useState({
     doctorName: '',
     qualifications: '',
     specialization: '',
+    selectedClinicId: '',
     clinicName: '',
     clinicAddress: '',
     city: '',
@@ -16,11 +24,54 @@ const DoctorClinicInfo = () => {
     reportTime: ''
   });
 
+  useEffect(() => {
+    if (user) {
+      const currentDate = new Date();
+      const formattedDate = currentDate.toISOString().split('T')[0];
+      const formattedTime = currentDate.toTimeString().substring(0, 5);
+
+      setFormData(prev => ({
+        ...prev,
+        doctorName: `${user.firstname} ${user.lastname}`,
+        qualifications: user.specialization?.degree || '',
+        specialization: user.specialization?.name?.trim() || '',
+        reportDate: formattedDate,
+        reportTime: formattedTime
+      }));
+
+      // Set first clinic as default if available
+      if (allClinics.length > 0) {
+        handleClinicChange(allClinics[0].addressId);
+      }
+    }
+  }, [user]);
+
+  const handleClinicChange = (clinicId) => {
+    const selectedClinic = allClinics.find(clinic => clinic.addressId === clinicId);
+    if (selectedClinic) {
+      setFormData(prev => ({
+        ...prev,
+        selectedClinicId: clinicId,
+        clinicName: selectedClinic.clinicName,
+        clinicAddress: selectedClinic.address,
+        city: selectedClinic.city,
+        pincode: selectedClinic.pincode,
+        contactNumber: selectedClinic.mobile || user.mobile || ''
+      }));
+    }
+  };
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    
+    if (name === 'selectedClinicId') {
+      handleClinicChange(value);
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   return (
@@ -48,6 +99,7 @@ const DoctorClinicInfo = () => {
               value={formData.doctorName}
               onChange={handleChange}
               className="doctor-clinic-input"
+              readOnly
             />
           </div>
           
@@ -61,6 +113,7 @@ const DoctorClinicInfo = () => {
               value={formData.qualifications}
               onChange={handleChange}
               className="doctor-clinic-input"
+              readOnly
             />
           </div>
           
@@ -68,33 +121,32 @@ const DoctorClinicInfo = () => {
             <label className="doctor-clinic-label">
               Specialization
             </label>
-            <select
+            <input
+              type="text"
               name="specialization"
               value={formData.specialization}
               onChange={handleChange}
               className="doctor-clinic-input"
-            >
-              <option value="">Select Specialization</option>
-              <option value="cardiology">Cardiology</option>
-              <option value="neurology">Neurology</option>
-              <option value="orthopedics">Orthopedics</option>
-              <option value="pediatrics">Pediatrics</option>
-              <option value="dermatology">Dermatology</option>
-              <option value="general-medicine">General Medicine</option>
-            </select>
+              readOnly
+            />
           </div>
           
           <div>
             <label className="doctor-clinic-label">
               Clinic Name
             </label>
-            <input
-              type="text"
-              name="clinicName"
-              value={formData.clinicName}
+            <select
+              name="selectedClinicId"
+              value={formData.selectedClinicId}
               onChange={handleChange}
               className="doctor-clinic-input"
-            />
+            >
+              {allClinics.map(clinic => (
+                <option key={clinic.addressId} value={clinic.addressId}>
+                  {clinic.clinicName}
+                </option>
+              ))}
+            </select>
           </div>
           
           <div style={{ gridColumn: '1 / -1' }}>
@@ -108,6 +160,7 @@ const DoctorClinicInfo = () => {
               rows={3}
               className="doctor-clinic-input"
               style={{ resize: 'none' }}
+              readOnly
             />
           </div>
           
@@ -121,6 +174,7 @@ const DoctorClinicInfo = () => {
               value={formData.city}
               onChange={handleChange}
               className="doctor-clinic-input"
+              readOnly
             />
           </div>
           
@@ -134,6 +188,7 @@ const DoctorClinicInfo = () => {
               value={formData.pincode}
               onChange={handleChange}
               className="doctor-clinic-input"
+              readOnly
             />
           </div>
           
@@ -147,6 +202,7 @@ const DoctorClinicInfo = () => {
               value={formData.contactNumber}
               onChange={handleChange}
               className="doctor-clinic-input"
+              readOnly
             />
           </div>
           

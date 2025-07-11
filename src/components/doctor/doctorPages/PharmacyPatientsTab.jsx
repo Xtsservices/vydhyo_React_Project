@@ -51,7 +51,7 @@ async function filterPatientsDAta(data) {
       );
 
       if (filteredMeds.length > 0) {
-        const { medicines, ...rest } = patient; // remove 'medicines'
+        const { medicines, ...rest } = patient; 
         return {
           ...rest,
           medicines: filteredMeds,
@@ -60,7 +60,7 @@ async function filterPatientsDAta(data) {
 
       return null;
     })
-    .filter(Boolean); // Remove null entries
+    .filter(Boolean);
 
   console.log(`${isPending ? "pending" : "completed"} filtered`, filtered);
 

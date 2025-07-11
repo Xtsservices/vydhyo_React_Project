@@ -11,6 +11,7 @@ import {
   message,
   Popconfirm,
   QRCode,
+  Tag,
 } from "antd";
 import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
 import { apiGet, apiPost } from "../../api";
@@ -208,6 +209,29 @@ const LabPatientManagement = ({ status, updateCount }) => {
       key: "patientName",
     },
     {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (_, record) => {
+        // Determine overall patient status based on tests
+        const allCompleted = record.tests.every(test => test.status === 'completed');
+        const anyPending = record.tests.some(test => test.status === 'pending');
+        
+        let statusText = 'Partial';
+        let color = 'orange';
+        
+        if (allCompleted) {
+          statusText = 'Completed';
+          color = 'green';
+        } else if (anyPending && !record.tests.some(test => test.status === 'completed')) {
+          statusText = 'Pending';
+          color = 'gold';
+        }
+        
+        return <Tag color={color}>{statusText}</Tag>;
+      },
+    },
+    {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
@@ -275,18 +299,32 @@ const LabPatientManagement = ({ status, updateCount }) => {
       dataIndex: "status",
       key: "status",
       render: (status) => {
-        let color = "#faad14"; // default: pending
-        if (status === "completed") color = "#52c41a";
-        else if (status === "cancelled") color = "#ff4d4f";
-
-        return (
-          <Typography.Text style={{ color, textTransform: "capitalize" }}>
-            {status}
-          </Typography.Text>
-        );
+        let color, text;
+        switch (status) {
+          case 'completed':
+            color = 'green';
+            text = 'Completed';
+            break;
+          case 'pending':
+            color = 'gold';
+            text = 'Pending';
+            break;
+          case 'cancelled':
+            color = 'red';
+            text = 'Cancelled';
+            break;
+          case 'in_progress':
+            color = 'blue';
+            text = 'In Progress';
+            break;
+          default:
+            color = 'gray';
+            text = 'Unknown';
+        }
+        
+        return <Tag color={color}>{text}</Tag>;
       },
     },
-
     {
       title: "Created Date",
       dataIndex: "createdAt",
@@ -321,7 +359,7 @@ const LabPatientManagement = ({ status, updateCount }) => {
       >
         <Col>
           <Title level={4} style={{ margin: 0, color: "#1A3C6A" }}>
-            Patients
+            Patients {status === 'pending' ? 'Pending' : 'Completed'} Tests
           </Title>
         </Col>
       </Row>
