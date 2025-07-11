@@ -59,7 +59,11 @@ export default function ClinicManagement() {
         setLoading(true);
         const response = await apiGet("/users/getClinicAddress", {});
         if (response.status === 200 && response.data?.status === "success") {
-          setClinics(response.data.data || []);
+          // Filter to only show active clinics
+          const activeClinics = response.data.data.filter(
+            (clinic) => clinic.status === "Active"
+          );
+          setClinics(activeClinics || []);
         }
       } catch (err) {
         console.error("Fetch error:", err);
@@ -481,6 +485,7 @@ export default function ClinicManagement() {
       const response = await apiPost("/users/deleteClinicAddress", { addressId });
       if (response.status === 200 || response.data?.status === "success") {
         toast.success(response.data?.message || "Clinic deleted successfully");
+        // Remove the deleted clinic from the list
         setClinics(prevClinics => prevClinics.filter(clinic => clinic.addressId !== addressId));
 
       } else {

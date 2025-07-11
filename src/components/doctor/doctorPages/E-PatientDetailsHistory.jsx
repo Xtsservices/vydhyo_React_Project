@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, FileText, Heart, Users, Stethoscope } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { apiGet } from '../../api';
 import '../../stylings/EPrescription.css';
 
 const PatientDetailsHistory = () => {
+  const user = useSelector((state) => state.currentUserData);
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
+
   const [formData, setFormData] = useState({
     patientName: '',
     age: '',
@@ -14,12 +23,84 @@ const PatientDetailsHistory = () => {
     physicalExamination: ''
   });
 
+  useEffect(() => {
+    const fetchPatients = async () => {
+      setLoading(true);
+      try {
+        const response = await apiGet(
+          `/appointment/getAppointmentsByDoctorID/appointment?doctorId=${doctorId}`
+        );
+        
+        if (response.status === 200) {
+          // Extract unique patients based on userId
+          const uniquePatients = response.data.data.reduce((acc, appointment) => {
+            if (!acc.some(p => p.userId === appointment.userId)) {
+              acc.push({
+                userId: appointment.userId,
+                patientId: appointment.userId, // Using userId as patientId since it's unique
+                patientName: appointment.patientName,
+                ...appointment.patientDetails
+              });
+            }
+            return acc;
+          }, []);
+          
+          setPatients(uniquePatients);
+        }
+      } catch (error) {
+        console.error("Error fetching patients:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (doctorId) {
+      fetchPatients();
+    }
+  }, [doctorId]);
+
+  useEffect(() => {
+    if (selectedPatientId) {
+      const selectedPatient = patients.find(p => p.userId === selectedPatientId);
+      if (selectedPatient) {
+        // Calculate age from dob if available
+        let age = "";
+        const dob = selectedPatient.dob;
+        if (dob) {
+          // Parse the date in DD-MM-YYYY format
+          const [day, month, year] = dob.split('-').map(Number);
+          const birthDate = new Date(year, month - 1, day);
+          if (!isNaN(birthDate.getTime())) {
+            const ageDiff = Date.now() - birthDate.getTime();
+            const ageDate = new Date(ageDiff);
+            age = Math.abs(ageDate.getUTCFullYear() - 1970).toString();
+          }
+        }
+
+        setFormData({
+          patientName: selectedPatient.patientName || '',
+          age: age,
+          gender: selectedPatient.gender?.toLowerCase() || '',
+          mobileNumber: selectedPatient.mobile || '',
+          chiefComplaint: '',
+          pastMedicalHistory: '',
+          familyMedicalHistory: '',
+          physicalExamination: ''
+        });
+      }
+    }
+  }, [selectedPatientId, patients]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  const handlePatientSelect = (e) => {
+    setSelectedPatientId(e.target.value);
   };
 
   return (
@@ -34,6 +115,24 @@ const PatientDetailsHistory = () => {
         </div>
       </div>
       
+      {/* Patient Selection Dropdown */}
+      <div className="patient-selection" style={{ marginBottom: '20px' }}>
+        <label className="patient-details-label">Select Patient</label>
+        <select
+          value={selectedPatientId}
+          onChange={handlePatientSelect}
+          className="patient-details-input"
+          disabled={loading}
+        >
+          <option value="">Select a patient</option>
+          {patients.map(patient => (
+            <option key={patient.userId} value={patient.userId}>
+              {patient.patientName} ({patient.mobile || 'No phone'})
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Patient Details Form */}
       <div className="patient-details-form">
         <div className="patient-details-grid">
