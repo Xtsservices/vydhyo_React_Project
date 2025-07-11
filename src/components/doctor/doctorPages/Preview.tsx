@@ -1,10 +1,18 @@
 import React from "react";
 import logo from "../../../assets/logooo.png";
 import '../../stylings/EPrescription.css';
+import { FaWhatsapp } from 'react-icons/fa';
 
 const MedicalPrescriptionForm = () => {
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleWhatsAppShare = () => {
+    // Customize the message you want to share
+    const message = "Here's my medical prescription from VYDHYO MULTISPECIALTY CLINIC";
+    const url = "https://wa.me/?text=" + encodeURIComponent(message);
+    window.open(url, '_blank');
   };
 
   return (
@@ -12,6 +20,9 @@ const MedicalPrescriptionForm = () => {
       <div className="print-button-container">
         <button className="print-button" onClick={handlePrint}>
           Print Prescription
+        </button>
+        <button className="whatsapp-button" onClick={handleWhatsAppShare}>
+          <FaWhatsapp className="whatsapp-icon" /> Share via WhatsApp
         </button>
       </div>
 

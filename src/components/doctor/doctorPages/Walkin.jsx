@@ -556,20 +556,30 @@ useEffect(() => {
 
 
    const getCurrentUserData = async () => {
-      try {
-        const response = await apiGet("/users/getUser");
-        const userData = response.data?.data;
-       if (userData?.addresses) {
-        setClinics(userData.addresses.map((address) => ({
+  try {
+    const response = await apiGet("/users/getUser");
+    const userData = response.data?.data;
+    if (userData?.addresses) {
+      // Filter only active clinics (case-insensitive comparison)
+      const activeClinics = userData.addresses
+        .filter(address => 
+          address.type === "Clinic" && 
+          address.status?.toLowerCase() === "active"
+        )
+        .map((address) => ({
           label: address.clinicName,
           value: address.addressId,
-        })));
-      }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-  
+          // Include additional clinic data if needed
+          startTime: address.startTime,
+          endTime: address.endTime,
+          location: address.location
+        }));
+      setClinics(activeClinics);
+    }
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+  }
+};
     useEffect(() => {
       if (user) {
         getCurrentUserData();
@@ -1008,16 +1018,16 @@ useEffect(() => {
           </Row>
         </Col>
         <Col span={24}>
-          <Text strong>Payment Status</Text>
-          <Row gutter={16} style={{ marginTop: 8 }}>
-            <Col>
+          {/* <Text strong>Payment Status</Text> */}
+          {/* <Row gutter={16} style={{ marginTop: 8 }}> */}
+            {/* <Col>
               <Button
                 type={paymentStatus === "paid" ? "primary" : "default"}
                 onClick={() => setPaymentStatus("paid")}
               >
                 Paid
               </Button>
-            </Col>
+            </Col> */}
             {/* <Col>
               <Button
                 type={paymentStatus === "pending" ? "primary" : "default"}
@@ -1026,7 +1036,7 @@ useEffect(() => {
                 Pending
               </Button>
             </Col> */}
-          </Row>
+          {/* </Row> */}
         </Col>
       </Row>
     </Card>
