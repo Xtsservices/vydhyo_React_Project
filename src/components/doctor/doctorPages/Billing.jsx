@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
 import DownloadTaxInvoice from "../../Models/DownloadTaxInvoice";
-import {  toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const BillingSystem = () => {
@@ -143,7 +143,7 @@ const BillingSystem = () => {
     if (payload?.medicines?.length === 0 && payload?.tests?.length === 0) {
       toast.error("at least one of tests or medicines is provided");
     }
-    console.log("payload----", payload);
+
     try {
       // Send POST request to the API
       const response = await apiPost(
@@ -305,132 +305,286 @@ const BillingSystem = () => {
             </tr>
           </thead>
           <tbody>
-            {patients.map((patient) => (
-              <React.Fragment key={patient.id}>
-                <tr
-                  style={{
-                    borderBottom: "1px solid #eee",
-                    backgroundColor: expandedPatients[patient.id]
-                      ? "#f0f8ff"
-                      : "white",
-                  }}
-                >
-                  <td style={{ padding: "12px 15px" }}>
-                    <button
-                      onClick={() => handlePatientExpand(patient.id)}
-                      style={{
-                        background: "#007bff",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        padding: "8px 12px",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {expandedPatients[patient.id] ? "−" : "+"}
-                    </button>
-                  </td>
-                  <td style={{ padding: "12px 15px" }}>{patient.patientId}</td>
-                  <td style={{ padding: "12px 15px", fontWeight: "500" }}>
-                    {patient.name}
-                  </td>
-                  <td style={{ padding: "12px 15px" }}>{patient.mobile}</td>
-                  <td style={{ padding: "12px 15px" }}>{patient.DOB}</td>
-                  <td style={{ padding: "12px 15px" }}>{patient.gender}</td>
-                  <td style={{ padding: "12px 15px" }}>{patient.bloodgroup}</td>
-                </tr>
-
-                {expandedPatients[patient.id] && (
-                  <tr>
-                    <td colSpan="7" style={{ padding: "0" }}>
-                      <div
+            {patients.map((patient) => {
+              const totals = calculateTotals(patient);
+              return (
+                <React.Fragment key={patient.id}>
+                  <tr
+                    style={{
+                      borderBottom: "1px solid #eee",
+                      backgroundColor: expandedPatients[patient.id]
+                        ? "#f0f8ff"
+                        : "white",
+                    }}
+                  >
+                    <td style={{ padding: "12px 15px" }}>
+                      <button
+                        onClick={() => handlePatientExpand(patient.id)}
                         style={{
-                          backgroundColor: "#f8f9fa",
-                          padding: "20px",
-                          border: "1px solid #ddd",
+                          background: "#007bff",
+                          color: "white",
+                          border: "none",
                           borderRadius: "4px",
-                          margin: "10px",
+                          padding: "8px 12px",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          fontWeight: "bold",
                         }}
                       >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: "20px",
-                          }}
-                        >
-                          <h3
-                            style={{
-                              margin: "0",
-                              color: "#333",
-                              fontSize: "20px",
-                            }}
-                          >
-                            Patient Details
-                          </h3>
-                          <button
-                            onClick={() => handlePatientExpand(patient.id)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              fontSize: "18px",
-                              cursor: "pointer",
-                              color: "#666",
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
+                        {expandedPatients[patient.id] ? "−" : "+"}
+                      </button>
+                    </td>
+                    <td style={{ padding: "12px 15px" }}>{patient.patientId}</td>
+                    <td style={{ padding: "12px 15px", fontWeight: "500" }}>
+                      {patient.name}
+                    </td>
+                    <td style={{ padding: "12px 15px" }}>{patient.mobile}</td>
+                    <td style={{ padding: "12px 15px" }}>{patient.DOB}</td>
+                    <td style={{ padding: "12px 15px" }}>{patient.gender}</td>
+                    <td style={{ padding: "12px 15px" }}>{patient.bloodgroup}</td>
+                  </tr>
 
-                        {/* Patient Info */}
+                  {expandedPatients[patient.id] && (
+                    <tr>
+                      <td colSpan="7" style={{ padding: "0" }}>
                         <div
                           style={{
-                            backgroundColor: "white",
-                            padding: "15px",
-                            borderRadius: "4px",
-                            marginBottom: "20px",
+                            backgroundColor: "#f8f9fa",
+                            padding: "20px",
                             border: "1px solid #ddd",
+                            borderRadius: "4px",
+                            margin: "10px",
                           }}
                         >
-                          <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>
-                            Patient Information
-                          </h4>
                           <div
                             style={{
-                              display: "grid",
-                              gridTemplateColumns: "1fr 1fr",
-                              gap: "10px",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              marginBottom: "20px",
                             }}
                           >
-                            <p style={{ margin: "5px 0" }}>
-                              <strong>Patient ID:</strong> {patient.patientId}
-                            </p>
-                            <p style={{ margin: "5px 0" }}>
-                              <strong>First Name:</strong> {patient.firstname}
-                            </p>
-                            <p style={{ margin: "5px 0" }}>
-                              <strong>Last Name:</strong> {patient.lastname}
-                            </p>
-                            <p style={{ margin: "5px 0" }}>
-                              <strong>DOB:</strong> {patient.DOB}
-                            </p>
-                            <p style={{ margin: "5px 0" }}>
-                              <strong>Gender:</strong> {patient.gender}
-                            </p>
-                            <p style={{ margin: "5px 0" }}>
-                              <strong>Mobile:</strong> {patient.mobile}
-                            </p>
-                            <p style={{ margin: "5px 0" }}>
-                              <strong>Blood Group:</strong> {patient.bloodgroup}
-                            </p>
+                            <h3
+                              style={{
+                                margin: "0",
+                                color: "#333",
+                                fontSize: "20px",
+                              }}
+                            >
+                              Patient Details
+                            </h3>
+                            <button
+                              onClick={() => handlePatientExpand(patient.id)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                fontSize: "18px",
+                                cursor: "pointer",
+                                color: "#666",
+                              }}
+                            >
+                              ✕
+                            </button>
                           </div>
-                        </div>
 
-                        {/* Medicines Section */}
-                        {patient.medicines.length > 0 && (
+                          {/* Patient Info */}
+                          <div
+                            style={{
+                              backgroundColor: "white",
+                              padding: "15px",
+                              borderRadius: "4px",
+                              marginBottom: "20px",
+                              border: "1px solid #ddd",
+                            }}
+                          >
+                            <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>
+                              Patient Information
+                            </h4>
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gap: "10px",
+                              }}
+                            >
+                              <p style={{ margin: "5px 0" }}>
+                                <strong>Patient ID:</strong> {patient.patientId}
+                              </p>
+                              <p style={{ margin: "5px 0" }}>
+                                <strong>First Name:</strong> {patient.firstname}
+                              </p>
+                              <p style={{ margin: "5px 0" }}>
+                                <strong>Last Name:</strong> {patient.lastname}
+                              </p>
+                              <p style={{ margin: "5px 0" }}>
+                                <strong>DOB:</strong> {patient.DOB}
+                              </p>
+                              <p style={{ margin: "5px 0" }}>
+                                <strong>Gender:</strong> {patient.gender}
+                              </p>
+                              <p style={{ margin: "5px 0" }}>
+                                <strong>Mobile:</strong> {patient.mobile}
+                              </p>
+                              <p style={{ margin: "5px 0" }}>
+                                <strong>Blood Group:</strong> {patient.bloodgroup}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Medicines Section */}
+                          {patient.medicines.length > 0 && (
+                            <div
+                              style={{
+                                backgroundColor: "white",
+                                padding: "15px",
+                                borderRadius: "4px",
+                                marginBottom: "20px",
+                                border: "1px solid #ddd",
+                              }}
+                            >
+                              <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
+                                Medicines Prescribed
+                              </h4>
+                              <table
+                                style={{
+                                  width: "100%",
+                                  borderCollapse: "collapse",
+                                }}
+                              >
+                                <thead>
+                                  <tr style={{ backgroundColor: "#f8f9fa" }}>
+                                    <th
+                                      style={{
+                                        padding: "10px",
+                                        textAlign: "left",
+                                        borderBottom: "1px solid #ddd",
+                                      }}
+                                    >
+                                      Medicine Name
+                                    </th>
+                                    <th
+                                      style={{
+                                        padding: "10px",
+                                        textAlign: "left",
+                                        borderBottom: "1px solid #ddd",
+                                      }}
+                                    >
+                                      Quantity
+                                    </th>
+                                    <th
+                                      style={{
+                                        padding: "10px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #ddd",
+                                      }}
+                                    >
+                                      Price (₹)
+                                    </th>
+                                    <th
+                                      style={{
+                                        padding: "10px",
+                                        textAlign: "center",
+                                        borderBottom: "1px solid #ddd",
+                                      }}
+                                    >
+                                      Status
+                                    </th>
+                                    <th
+                                      style={{
+                                        padding: "10px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #ddd",
+                                      }}
+                                    >
+                                      Subtotal (₹)
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {patient.medicines.map((medicine) => (
+                                    <tr key={medicine.id}>
+                                      <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                        }}
+                                      >
+                                        {medicine.name}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                        }}
+                                      >
+                                        {medicine.quantity}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "right",
+                                        }}
+                                      >
+                                        {medicine.price
+                                          ? medicine.price.toFixed(2)
+                                          : "N/A"}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "center",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            padding: "4px 8px",
+                                            borderRadius: "12px",
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            backgroundColor:
+                                              medicine.status === "Pending"
+                                                ? "#fff3cd"
+                                                : "#d4edda",
+                                            color:
+                                              medicine.status === "Pending"
+                                                ? "#856404"
+                                                : "#155724",
+                                          }}
+                                        >
+                                          {medicine.status}
+                                        </span>
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "right",
+                                        }}
+                                      >
+                                        {medicine.price
+                                          ? (
+                                              medicine.quantity * medicine.price
+                                            ).toFixed(2)
+                                          : "N/A"}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                              <div
+                                style={{ textAlign: "right", marginTop: "10px" }}
+                              >
+                                <strong>
+                                  Medicine Total: ₹
+                                  {totals.medicineTotal.toFixed(2)}
+                                </strong>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Tests Section */}
                           <div
                             style={{
                               backgroundColor: "white",
@@ -441,7 +595,7 @@ const BillingSystem = () => {
                             }}
                           >
                             <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
-                              Medicines Prescribed
+                              Tests Conducted
                             </h4>
                             <table
                               style={{
@@ -458,16 +612,7 @@ const BillingSystem = () => {
                                       borderBottom: "1px solid #ddd",
                                     }}
                                   >
-                                    Medicine Name
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "10px",
-                                      textAlign: "left",
-                                      borderBottom: "1px solid #ddd",
-                                    }}
-                                  >
-                                    Quantity
+                                    Test Name
                                   </th>
                                   <th
                                     style={{
@@ -490,296 +635,154 @@ const BillingSystem = () => {
                                   <th
                                     style={{
                                       padding: "10px",
-                                      textAlign: "right",
+                                      textAlign: "left",
                                       borderBottom: "1px solid #ddd",
                                     }}
                                   >
-                                    Subtotal (₹)
+                                    Created Date
                                   </th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {patient.medicines.map((medicine) => (
-                                  <tr key={medicine.id}>
+                                {patient.tests.length > 0 ? (
+                                  patient.tests.map((test) => (
+                                    <tr key={test.id}>
+                                      <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                        }}
+                                      >
+                                        {test.name}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "right",
+                                        }}
+                                      >
+                                        {test.price
+                                          ? test.price.toFixed(2)
+                                          : "N/A"}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "center",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            padding: "4px 8px",
+                                            borderRadius: "12px",
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            backgroundColor:
+                                              test.status === "Completed"
+                                                ? "#d4edda"
+                                                : test.status === "Pending"
+                                                ? "#fff3cd"
+                                                : "#f8d7da",
+                                            color:
+                                              test.status === "Completed"
+                                                ? "#155724"
+                                                : test.status === "Pending"
+                                                ? "#856404"
+                                                : "#721c24",
+                                          }}
+                                        >
+                                          {test.status}
+                                        </span>
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                        }}
+                                      >
+                                        {test.createdDate}
+                                      </td>
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr>
                                     <td
+                                      colSpan="4"
                                       style={{
                                         padding: "10px",
-                                        borderBottom: "1px solid #eee",
-                                      }}
-                                    >
-                                      {medicine.name}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "10px",
-                                        borderBottom: "1px solid #eee",
-                                      }}
-                                    >
-                                      {medicine.quantity}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "10px",
-                                        borderBottom: "1px solid #eee",
-                                        textAlign: "right",
-                                      }}
-                                    >
-                                      {medicine.price
-                                        ? medicine.price.toFixed(2)
-                                        : "N/A"}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "10px",
-                                        borderBottom: "1px solid #eee",
                                         textAlign: "center",
                                       }}
                                     >
-                                      <span
-                                        style={{
-                                          padding: "4px 8px",
-                                          borderRadius: "12px",
-                                          fontSize: "12px",
-                                          fontWeight: "bold",
-                                          backgroundColor:
-                                            medicine.status === "Pending"
-                                              ? "#fff3cd"
-                                              : "#d4edda",
-                                          color:
-                                            medicine.status === "Pending"
-                                              ? "#856404"
-                                              : "#155724",
-                                        }}
-                                      >
-                                        {medicine.status}
-                                      </span>
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "10px",
-                                        borderBottom: "1px solid #eee",
-                                        textAlign: "right",
-                                      }}
-                                    >
-                                      {medicine.price
-                                        ? (
-                                            medicine.quantity * medicine.price
-                                          ).toFixed(2)
-                                        : "N/A"}
+                                      No tests conducted
                                     </td>
                                   </tr>
-                                ))}
+                                )}
                               </tbody>
                             </table>
                             <div
                               style={{ textAlign: "right", marginTop: "10px" }}
                             >
                               <strong>
-                                Medicine Total: ₹
-                                {calculateTotals(patient).medicineTotal.toFixed(
-                                  2
-                                )}
+                                Test Total: ₹
+                                {totals.testTotal.toFixed(2)}
                               </strong>
                             </div>
                           </div>
-                        )}
 
-                        {/* Tests Section */}
-                        <div
-                          style={{
-                            backgroundColor: "white",
-                            padding: "15px",
-                            borderRadius: "4px",
-                            marginBottom: "20px",
-                            border: "1px solid #ddd",
-                          }}
-                        >
-                          <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
-                            Tests Conducted
-                          </h4>
-                          <table
-                            style={{
-                              width: "100%",
-                              borderCollapse: "collapse",
-                            }}
-                          >
-                            <thead>
-                              <tr style={{ backgroundColor: "#f8f9fa" }}>
-                                <th
-                                  style={{
-                                    padding: "10px",
-                                    textAlign: "left",
-                                    borderBottom: "1px solid #ddd",
-                                  }}
-                                >
-                                  Test Name
-                                </th>
-                                <th
-                                  style={{
-                                    padding: "10px",
-                                    textAlign: "right",
-                                    borderBottom: "1px solid #ddd",
-                                  }}
-                                >
-                                  Price (₹)
-                                </th>
-                                <th
-                                  style={{
-                                    padding: "10px",
-                                    textAlign: "center",
-                                    borderBottom: "1px solid #ddd",
-                                  }}
-                                >
-                                  Status
-                                </th>
-                                <th
-                                  style={{
-                                    padding: "10px",
-                                    textAlign: "left",
-                                    borderBottom: "1px solid #ddd",
-                                  }}
-                                >
-                                  Created Date
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {patient.tests.length > 0 ? (
-                                patient.tests.map((test) => (
-                                  <tr key={test.id}>
-                                    <td
-                                      style={{
-                                        padding: "10px",
-                                        borderBottom: "1px solid #eee",
-                                      }}
-                                    >
-                                      {test.name}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "10px",
-                                        borderBottom: "1px solid #eee",
-                                        textAlign: "right",
-                                      }}
-                                    >
-                                      {test.price
-                                        ? test.price.toFixed(2)
-                                        : "N/A"}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "10px",
-                                        borderBottom: "1px solid #eee",
-                                        textAlign: "center",
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          padding: "4px 8px",
-                                          borderRadius: "12px",
-                                          fontSize: "12px",
-                                          fontWeight: "bold",
-                                          backgroundColor:
-                                            test.status === "Completed"
-                                              ? "#d4edda"
-                                              : test.status === "Pending"
-                                              ? "#fff3cd"
-                                              : "#f8d7da",
-                                          color:
-                                            test.status === "Completed"
-                                              ? "#155724"
-                                              : test.status === "Pending"
-                                              ? "#856404"
-                                              : "#721c24",
-                                        }}
-                                      >
-                                        {test.status}
-                                      </span>
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "10px",
-                                        borderBottom: "1px solid #eee",
-                                      }}
-                                    >
-                                      {test.createdDate}
-                                    </td>
-                                  </tr>
-                                ))
-                              ) : (
-                                <tr>
-                                  <td
-                                    colSpan="4"
-                                    style={{
-                                      padding: "10px",
-                                      textAlign: "center",
-                                    }}
-                                  >
-                                    No tests conducted
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
-                          <div
-                            style={{ textAlign: "right", marginTop: "10px" }}
-                          >
-                            <strong>
-                              Test Total: ₹
-                              {calculateTotals(patient).testTotal.toFixed(2)}
-                            </strong>
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            backgroundColor: "#e9ecef",
-                            padding: "15px",
-                            borderRadius: "4px",
-                          }}
-                        >
                           <div
                             style={{
-                              fontSize: "18px",
-                              fontWeight: "bold",
-                              color: "#333",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              backgroundColor: "#e9ecef",
+                              padding: "15px",
+                              borderRadius: "4px",
                             }}
                           >
-                            Grand Total: ₹
-                            {calculateTotals(patient).grandTotal.toFixed(2)}
-                          </div>
-                          <div>
-                            <DownloadTaxInvoice
-                              patient={patient}
-                              // disabled={!billingCompleted[patient.id]}
-                            />
-                            <button
-                              onClick={() => handleMarkAsPaid(patient.id)}
+                            <div
                               style={{
-                                background: "#28a745",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "4px",
-                                padding: "10px 20px",
-                                cursor: "pointer",
-                                fontSize: "16px",
+                                fontSize: "18px",
                                 fontWeight: "bold",
-                                marginLeft: "10px",
+                                color: "#333",
                               }}
                             >
-                              Pay
-                            </button>
+                              Grand Total: ₹
+                              {totals.grandTotal.toFixed(2)}
+                            </div>
+                            <div>
+                              <DownloadTaxInvoice
+                                patient={patient}
+                                // disabled={!billingCompleted[patient.id]}
+                              />
+                              <button
+                                onClick={() => handleMarkAsPaid(patient.id)}
+                                style={{
+                                  background: "#28a745",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "4px",
+                                  padding: "10px 20px",
+                                  cursor: totals.grandTotal > 0 ? "pointer" : "not-allowed",
+                                  fontSize: "16px",
+                                  fontWeight: "bold",
+                                  marginLeft: "10px",
+                                  opacity: totals.grandTotal > 0 ? 1 : 0.6,
+                                }}
+                                disabled={totals.grandTotal <= 0}
+                              >
+                                Pay
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            ))}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

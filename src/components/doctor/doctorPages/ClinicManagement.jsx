@@ -6,7 +6,9 @@ import {
   Autocomplete,
   Marker,
 } from "@react-google-maps/api";
+
 import { apiGet, apiPost, apiPut } from "../../api";
+
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -41,7 +43,12 @@ export default function ClinicManagement() {
   });
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 });
   const [markerPosition, setMarkerPosition] = useState(null);
+
+  const [editMode, setEditMode] = useState(false);
+  const [editingClinicId, setEditingClinicId] = useState(null);
+
   const [isEditing, setIsEditing] = useState(false);
+
 
   const autocompleteRef = useRef(null);
   const mapRef = useRef(null);
@@ -196,6 +203,15 @@ export default function ClinicManagement() {
     setMarkerPosition({ lat: latitude, lng: longitude });
   }, []);
 
+  const getData = async () => {
+    const refreshResponse = await apiPost("/users/getClinicAddress", {});
+    if (
+      refreshResponse.status === 200 &&
+      refreshResponse.data?.status === "success"
+    ) {
+      setClinics(refreshResponse.data.data || []);
+    }
+  };
   const handleMapClick = useCallback(
     (event) => {
       const lat = event.latLng.lat();
@@ -209,7 +225,12 @@ export default function ClinicManagement() {
 
   const handleAddClinic = () => {
     setShowModal(true);
+
+    setEditMode(false);
+    setEditingClinicId(null);
+
     setIsEditing(false);
+
     setFormData({
       type: "Clinic",
       clinicName: "",
@@ -247,157 +268,231 @@ export default function ClinicManagement() {
   };
 
   const handleEditClinic = (clinic) => {
-    setShowModal(true);
-    setIsEditing(true);
-    setFormData({
-      type: clinic.type,
-      clinicName: clinic.clinicName,
-      address: clinic.address,
-      city: clinic.city,
-      state: clinic.state,
-      country: clinic.country,
-      mobile: clinic.mobile,
-      pincode: clinic.pincode,
-      startTime: clinic.startTime,
-      endTime: clinic.endTime,
-      latitude: clinic.latitude?.toString() || "",
-      longitude: clinic.longitude?.toString() || "",
-      addressId: clinic.addressId,
-    });
 
-    if (clinic.latitude && clinic.longitude) {
-      const lat = parseFloat(clinic.latitude);
-      const lng = parseFloat(clinic.longitude);
-      setMapCenter({ lat, lng });
-      setMarkerPosition({ lat, lng });
-    } else {
-      setMapCenter({ lat: 20.5937, lng: 78.9629 });
-      setMarkerPosition(null);
-    }
+    setEditMode(true);
+    setEditingClinicId(clinic.addressId);
+    setShowModal(true);
+    setFormData({
+      type: clinic.type || "Clinic",
+      clinicName: clinic.clinicName || "",
+      address: clinic.address || "",
+      city: clinic.city || "",
+      state: clinic.state || "",
+      country: clinic.country || "India",
+      mobile: clinic.mobile || "",
+      pincode: clinic.pincode || "",
+      startTime: clinic.startTime || "",
+      endTime: clinic.endTime || "",
+      latitude: clinic.latitude ? clinic.latitude.toString() : "",
+      longitude: clinic.longitude ? clinic.longitude.toString() : "",
+    });
+    setMapCenter({
+      lat: clinic.latitude || 20.5937,
+      lng: clinic.longitude || 78.9629,
+    });
+    setMarkerPosition(
+      clinic.latitude && clinic.longitude
+        ? { lat: clinic.latitude, lng: clinic.longitude }
+        : null
+    );
+
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Only validate time fields when creating a new clinic (not editing)
-  if (!isEditing && ["Clinic", "Hospital"].includes(formData.type)) {
-    const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
-    if (!formData.startTime || !formData.endTime) {
-      toast.error(
-        "Both start time and end time are required for Clinic or Hospital type"
-      );
-      return;
-    }
-    if (!timeRegex.test(formData.startTime) || !timeRegex.test(formData.endTime)) {
-      toast.error("Invalid time format. Use HH:MM (24-hour format)");
-      return;
-    }
-    const toMinutes = (t) => {
-      const [h, m] = t.split(":").map(Number);
-      return h * 60 + m;
-    };
-    if (toMinutes(formData.startTime) >= toMinutes(formData.endTime)) {
-      toast.error("Start time must be before end time");
-      return;
-    }
-  }
+    e.preventDefault();
+    
+    // Only validate time fields when creating a new clinic (not editing)
+    if (!isEditing && ["Clinic", "Hospital"].includes(formData.type)) {
+      const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
+      if (!formData.startTime || !formData.endTime) {
+        toast.error(
+          "Both start time and end time are required for Clinic or Hospital type"
+        );
+        return;
+      }
 
-  try {
-    let response;
-    if (isEditing) {
-      const updateData = {
-        addressId: formData.addressId,
-        clinicName: formData.clinicName,
-        mobile: formData.mobile,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        country: formData.country,
-        pincode: formData.pincode,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        location: {
-          type: "Point",
-          coordinates: [
-            parseFloat(formData.longitude),
-            parseFloat(formData.latitude),
-          ],
-        },
+      if (
+        !timeRegex.test(formData.startTime) ||
+        !timeRegex.test(formData.endTime)
+      ) {
+
+        toast.error("Invalid time format. Use HH:MM (24-hour format)");
+        return;
+      }
+      const toMinutes = (t) => {
+        const [h, m] = t.split(":").map(Number);
+        return h * 60 + m;
       };
-      response = await apiPut("/users/updateAddress", updateData);
-      
-      // Check if update was successful (status 200 and success status)
-      if (response.status === 200 && response.data?.status === "success") {
-        toast.success(response.data?.message || "Clinic updated successfully");
-      } else {
-        throw new Error(response.data?.message || "Failed to update clinic");
-      }
-    } else {
-      response = await apiPost("/users/addAddress", formData);
-      
-      // Check if creation was successful (status 201)
-      if (response.status === 201) {
-        toast.success(response.data?.message || "Clinic added successfully");
-      } else {
-        throw new Error(response.data?.message || "Failed to add clinic");
+      if (toMinutes(formData.startTime) >= toMinutes(formData.endTime)) {
+        toast.error("Start time must be before end time");
+        return;
       }
     }
+    try {
+      let response;
 
-    // Refresh the clinics list after successful operation
-    const refreshResponse = await apiGet("/users/getClinicAddress", {});
-    if (
-      refreshResponse.status === 200 &&
-      refreshResponse.data?.status === "success"
-    ) {
-      // Filter to only show active clinics
-      const activeClinics = refreshResponse.data.data.filter(
-        (clinic) => clinic.status === "Active"
+      if (editMode && editingClinicId) {
+        // Check if update endpoint exists
+        response = await apiPost("/users/updateClinicAddress", {
+          ...formData,
+          addressId: editingClinicId,
+        });
+
+      if (isEditing) {
+        const updateData = {
+          addressId: formData.addressId,
+          clinicName: formData.clinicName,
+          mobile: formData.mobile,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          pincode: formData.pincode,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          location: {
+            type: "Point",
+            coordinates: [
+              parseFloat(formData.longitude),
+              parseFloat(formData.latitude),
+            ],
+          },
+        };
+        response = await apiPut("/users/updateAddress", updateData);
+      } else {
+        response = await apiPost("/users/addAddress", formData);
+      }
+
+      if (response.status === 200) {
+        toast.success(
+          response.data?.message ||
+            (isEditing
+              ? "Clinic updated successfully"
+              : "Clinic added successfully")
+        );
+
+        const refreshResponse = await apiGet("/users/getClinicAddress", {});
+
+        if (
+          response.status === 404 ||
+          (typeof response.data?.message === "string" &&
+            response.data.message.includes("Cannot POST"))
+        ) {
+          toast.error(
+            "Clinic update API endpoint is not available. Please contact admin."
+          );
+          return;
+        }
+<
+      } else {
+        response = await apiPost("/users/addAddress", formData);
+      }
+      if (
+        (editMode &&
+          response.status === 200 &&
+          response.data?.status === "success") ||
+        (!editMode && response.status === 201)
+      ) {
+        toast.success(
+          response.data?.message ||
+            (editMode
+              ? "Clinic updated successfully"
+              : "Clinic added successfully")
+        );
+
+        setShowModal(false);
+        setEditMode(false);
+        setEditingClinicId(null);
+        setFormData({
+          type: "Clinic",
+          clinicName: "",
+          address: "",
+          city: "",
+          state: "",
+          country: "India",
+          mobile: "",
+          pincode: "",
+          startTime: "",
+          endTime: "",
+          latitude: "",
+          longitude: "",
+          addressId: "",
+        });
+        // Refresh clinics list
+        try {
+          const refreshResponse = await apiGet("/users/getClinicAddress", {});
+          if (
+            refreshResponse.status === 200 &&
+            refreshResponse.data?.status === "success"
+          ) {
+            setClinics(refreshResponse.data.data || []);
+          }
+        } catch {}
+      } else {
+        toast.error(
+          response.data?.message ||
+
+            (editMode ? "Failed to update clinic" : "Failed to add clinic")
+        );
+      }
+    } catch (err) {
+      toast.error(
+        err.message ||
+          (editMode
+            ? "Failed to update clinic. Please try again."
+            : "Failed to add clinic. Please try again.")
       );
-      setClinics(activeClinics || []);
-    }
 
-    // Reset form and close modal
-    setShowModal(false);
-    setFormData({
-      type: "Clinic",
-      clinicName: "",
-      address: "",
-      city: "",
-      state: "",
-      country: "India",
-      mobile: "",
-      pincode: "",
-      startTime: "",
-      endTime: "",
-      latitude: "",
-      longitude: "",
-      addressId: "",
-    });
-  } catch (err) {
-    console.error("Error:", err);
-    toast.error(
-      err.message ||
-        (isEditing
-          ? "Failed to update clinic. Please try again."
-          : "Failed to add clinic. Please try again.")
-    );
-  }
-};
+            (isEditing ? "Failed to update clinic" : "Failed to add clinic")
+        );
+        throw new Error(
+          response.data?.message ||
+            (isEditing ? "Failed to update clinic" : "Failed to add clinic")
+        );
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to save clinic. Please try again.");
+
+    }
+  };
 
   const handleDeleteClinic = async (addressId) => {
     if (!window.confirm("Are you sure you want to delete this clinic?")) return;
-
     try {
+
+      const response = await apiPost("/users/deleteClinicAddress", {
+        addressId,
+      });
+      if (response.status === 200 && response.data?.status === "success") {
+        toast.success(response.data?.message || "Clinic deleted successfully");
+        // Refresh the clinics list after successful deletion
+        try {
+          const refreshResponse = await apiGet("/users/getClinicAddress", {});
+          if (
+            refreshResponse.status === 200 &&
+            refreshResponse.data?.status === "success"
+          ) {
+            setClinics(refreshResponse.data.data || []);
+          } else {
+            toast.error(
+              refreshResponse.data?.message || "Failed to refresh clinics list"
+            );
+          }
+        } catch (refreshErr) {
+          toast.error(refreshErr.message || "Failed to refresh clinics list");
+        }
+
       const response = await apiPost("/users/deleteClinicAddress", { addressId });
       if (response.status === 200 || response.data?.status === "success") {
         toast.success(response.data?.message || "Clinic deleted successfully");
         // Remove the deleted clinic from the list
         setClinics(prevClinics => prevClinics.filter(clinic => clinic.addressId !== addressId));
+
       } else {
         toast.error(response.data?.message || "Failed to delete clinic");
       }
     } catch (err) {
-      console.error("Delete error:", err);
+
       toast.error(err.message || "Failed to delete clinic. Please try again.");
     }
   };
@@ -423,10 +518,12 @@ export default function ClinicManagement() {
     setMarkerPosition(null);
   };
 
+  // Only show clinics with status 'Active'
   const filteredClinics = clinics.filter(
     (clinic) =>
-      clinic.clinicName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      clinic.addressId?.toLowerCase().includes(searchTerm.toLowerCase())
+      clinic.status === "Active" &&
+      (clinic.clinicName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        clinic.addressId?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Styles (same as before)
@@ -1148,4 +1245,6 @@ export default function ClinicManagement() {
       </div>
     </div>
   );
+
 }
+
