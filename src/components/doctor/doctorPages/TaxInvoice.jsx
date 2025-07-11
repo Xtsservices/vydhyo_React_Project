@@ -129,7 +129,9 @@ const BillingSystem = () => {
           status: "pending",
           price: test.price,
         })),
-      medicines: pendingMedicines.map((med) => ({
+      medicines: pendingMedicines
+       .filter((test) => test.price > 0)
+       .map((med) => ({
         medicineId: med.medicineId, // MongoDB _id
         pharmacyMedID: med.pharmacyMedID,
         quantity: med.quantity,
