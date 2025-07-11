@@ -116,7 +116,7 @@ const Login = () => {
         OTP: otp,
         mobile: phone,
       });
-      console.log("OTP Verification Response:", data);
+      console.log("OTP Verification Response:=============", data);
       if (data?.data?.userData?.role === "doctor") {
         console.log("Doctor:", data);
 
@@ -129,9 +129,7 @@ const Login = () => {
           return;
         }
       }
-
-      console.log("Is Valid User:", isValidUser);
-
+      
       console.log("User Data:====================", data.data);
 
       if (data.data.accessToken) {
@@ -168,12 +166,13 @@ const Login = () => {
         setTimeout(() => navigate(redirectRoute), 1500);
       }
     } catch (error) {
+      console.log("loginerror",error)
       const errorMsg =
         error.response?.status === 401
           ? "Invalid OTP."
           : error.message?.includes("Network Error")
           ? "Network Error: Unable to connect to server."
-          : "Verification failed.";
+          : "Verification failed.========";
       message.error(errorMsg);
       toast.error(errorMsg);
     } finally {
