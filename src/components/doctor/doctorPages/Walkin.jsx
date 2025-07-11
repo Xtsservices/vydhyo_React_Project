@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
 import {
   Input,
@@ -23,6 +23,12 @@ import {
 import moment from "moment";
 import { apiGet, apiPost } from "../../api";
 
+import { toast } from "react-toastify";
+
+
+import { useNavigate } from "react-router-dom";
+
+
 const { useBreakpoint } = Grid;
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -30,7 +36,9 @@ const { Option } = Select;
 
 const AddWalkInPatient = () => {
   const screens = useBreakpoint();
+  const navigation = useNavigate()
   const user = useSelector((state) => state.currentUserData);
+  console.log("user=====",user)
   const [patientData, setPatientData] = useState({
     firstName: "",
     lastName: "",
@@ -38,6 +46,7 @@ const AddWalkInPatient = () => {
     dateOfBirth: "",
     gender: "",
     appointmentType: "",
+     clinic: "", 
     department: "",
     visitReason: "",
     selectedTimeSlot: "",
@@ -67,9 +76,23 @@ const AddWalkInPatient = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [searchResults, setSearchResults] = useState([]);
   const [selectedUserIndex, setSelectedUserIndex] = useState(null);
+   const [clinics, setClinics] = useState([]);
+   const [timeSlots, setTimeSlots] = useState([]);
+  const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+
 
   const getAuthToken = () => localStorage.getItem("accessToken") || "";
   const currentUserID = localStorage.getItem("userID");
+
+  // Update department once user is available
+useEffect(() => {
+  if (user?.specialization?.name) {
+    setPatientData((prev) => ({
+      ...prev,
+      department: user.specialization.name,
+    }));
+  }
+}, [user]);
 
   const validatePhoneNumber = useCallback(
     (phone) => /^[6-9][0-9]{9}$/.test(phone),
@@ -156,6 +179,10 @@ const AddWalkInPatient = () => {
     }
     if (!patientData.department) {
       errors.department = "Department is required";
+      isValid = false;
+    }
+     if (!patientData.clinic) {
+      errors.clinic = "Clinic is required";
       isValid = false;
     }
     if (!date) {
@@ -398,11 +425,14 @@ const AddWalkInPatient = () => {
         setPatientCreated(true);
         setCreatedPatientId(data.userId || "");
         message.success(msg);
+        toast.success(msg);
       } else {
         setApiError(msg);
+        toast.error(msg);
       }
     } catch (error) {
       setApiError(error.message || "Failed to create patient");
+      toast.error(error.message || "Failed to create patient");
     } finally {
       setIsCreatingPatient(false);
     }
@@ -430,6 +460,7 @@ const AddWalkInPatient = () => {
         doctorName: `${user.firstname} ${user.lastname}`,
         appointmentType: patientData.appointmentType,
         appointmentDepartment: patientData.department,
+          addressId: patientData.clinic,
         appointmentDate: moment(date).format("YYYY-MM-DD"),
         appointmentTime: formatTimeForAPI(patientData.selectedTimeSlot),
         appointmentStatus: "scheduled",
@@ -445,12 +476,18 @@ const AddWalkInPatient = () => {
       );
       if (success) {
         message.success(`Appointment created successfully! ${msg}`);
+
+        toast.success(`Appointment created successfully! ${msg}`);
+
+    navigate("/Doctor/dashboard");
+
         resetForm();
       } else {
         setApiError(msg);
       }
     } catch (error) {
       setApiError(error.message || "An unexpected error occurred");
+      toast.error(error.message || "An unexpected error occurred");
     } finally {
       setIsCreatingAppointment(false);
       setIsCreatingPatient(false);
@@ -482,6 +519,7 @@ const AddWalkInPatient = () => {
       gender: "",
       appointmentType: "",
       department: "",
+        clinic: "",
       visitReason: "",
       selectedTimeSlot: "",
     });
@@ -498,23 +536,95 @@ const AddWalkInPatient = () => {
     setSearchResults([]);
     setSelectedUserIndex(null);
     setApiError("");
+     setTimeSlots([]);
   }, []);
 
-  const timeSlots = [
-    "1:00 PM",
-    "1:30 PM",
-    "2:00 PM",
-    "2:30 PM",
-    "3:00 PM",
-    "3:30 PM",
-    "4:00 PM",
-    "5:00 PM",
-    "5:30 PM",
-    "6:00 PM",
-    "6:30 PM",
-    "7:00 PM",
-  ];
+  // const timeSlots = [
+  //   "1:00 PM",
+  //   "1:30 PM",
+  //   "2:00 PM",
+  //   "2:30 PM",
+  //   "3:00 PM",
+  //   "3:30 PM",
+  //   "4:00 PM",
+  //   "5:00 PM",
+  //   "5:30 PM",
+  //   "6:00 PM",
+  //   "6:30 PM",
+  //   "7:00 PM",
+  // ];
 
+
+   const getCurrentUserData = async () => {
+      try {
+        const response = await apiGet("/users/getUser");
+        const userData = response.data?.data;
+       if (userData?.addresses) {
+        setClinics(userData.addresses.map((address) => ({
+          label: address.clinicName,
+          value: address.addressId,
+        })));
+      }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+  
+    useEffect(() => {
+      if (user) {
+        getCurrentUserData();
+      }
+    }, [user]);
+
+
+    const fetchTimeSlots = useCallback(async (selectedDate, clinicId) => {
+    if (!selectedDate || !clinicId || !currentUserID) return;
+    setIsFetchingSlots(true);
+    try {
+      const response = await apiGet(
+        `/appointment/getSlotsByDoctorIdAndDate?doctorId=${currentUserID}&date=${selectedDate}&addressId=${clinicId}`
+      );
+      const data = response.data;
+      if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
+        const availableSlots = data.data.slots
+          .filter((slot) => slot.status === "available")
+          .map((slot) => formatTimeForAPI(slot.time));
+        setTimeSlots(availableSlots);
+        if (!availableSlots.includes(patientData.selectedTimeSlot)) {
+          setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
+        }
+        console.log("availableSlots=====",availableSlots)
+        if (availableSlots.length === 0) {
+          setApiError("No available time slots found for the selected date and clinic.");
+        }
+         else {
+    setApiError(""); // Clear error if slots found
+  }
+      } else {
+        setTimeSlots([]);
+        setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
+        setApiError("No available time slots found for the selected date and clinic.");
+      }
+    } catch (error) {
+      console.error("Error fetching time slots:", error);
+      setTimeSlots([]);
+      setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
+      setApiError("No available time slots found for the selected date and clinic.");
+    } finally {
+      setIsFetchingSlots(false);
+    }
+  }, [currentUserID, patientData.selectedTimeSlot, formatTimeForAPI]);
+
+     useEffect(() => {
+    if (date && patientData.clinic) {
+      fetchTimeSlots(date, patientData.clinic);
+    } else {
+      setTimeSlots([]);
+      setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
+    }
+  }, [date, patientData.clinic, fetchTimeSlots]);
+
+  console.log("timeslots=====",timeSlots)
   const renderSearchCard = () => (
     <Card style={{ marginBottom: 16 }}>
       <Row gutter={16}>
@@ -729,17 +839,18 @@ const AddWalkInPatient = () => {
             min={new Date().toISOString().split("T")[0]}
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            disabled={!patientCreated && !userFound}
+            // disabled={!patientCreated && !userFound}
           />
           {fieldErrors.date && <Text type="danger">{fieldErrors.date}</Text>}
         </Col>
         <Col xs={24} sm={12}>
           <Text strong>Department *</Text>
           <Select
+            // value={user.specialization?.name}
             value={patientData.department}
-            onChange={(value) => handleInputChange("department", value)}
+            // onChange={(value) => handleInputChange("department", value)}
             placeholder="Select department"
-            disabled={!patientCreated && !userFound}
+            disabled={true}
             style={{ width: "100%", marginTop: 8 }}
           >
             <Option value="cardiology">Cardiology</Option>
@@ -751,13 +862,32 @@ const AddWalkInPatient = () => {
             <Text type="danger">{fieldErrors.department}</Text>
           )}
         </Col>
+          <Col xs={24} sm={12}>
+          <Text strong>Clinic *</Text>
+          <Select
+            value={patientData.clinic}
+            onChange={(value) => handleInputChange("clinic", value)}
+            placeholder="Select clinic"
+            // disabled={!patientCreated && !userFound}
+            style={{ width: "100%", marginTop: 8 }}
+          >
+            {clinics.map((clinic) => (
+              <Option key={clinic.value} value={clinic.value}>
+                {clinic.label}
+              </Option>
+            ))}
+          </Select>
+          {fieldErrors.clinic && (
+            <Text type="danger">{fieldErrors.clinic}</Text>
+          )}
+        </Col>
         <Col xs={24} sm={12}>
           <Text strong>Time Slot *</Text>
           <Select
             value={patientData.selectedTimeSlot}
             onChange={(value) => handleInputChange("selectedTimeSlot", value)}
             placeholder="Select time slot"
-            disabled={!patientCreated && !userFound}
+            // disabled={!patientCreated && !userFound}
             style={{ width: "100%", marginTop: 8 }}
           >
             {timeSlots.map((slot) => (

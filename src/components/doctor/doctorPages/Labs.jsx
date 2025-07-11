@@ -204,15 +204,17 @@ const Labs = () => {
           <LabPatientManagement status={"pending"} updateCount={updateCount} />
         </TabPane>
 
-        <TabPane tab="Tests" key="tests">
-          <TestManagement />
-        </TabPane>
+       
 
         <TabPane tab="Completed Patients" key="completedPatients">
           <LabPatientManagement
             status={"completed"}
             updateCount={updateCount}
           />
+        </TabPane>
+
+         <TabPane tab="Tests" key="tests">
+          <TestManagement />
         </TabPane>
       </Tabs>
     </div>

@@ -26,6 +26,7 @@ import {
   UploadOutlined,
   DownloadOutlined,
 } from "@ant-design/icons";
+import * as XLSX from "xlsx";
 
 
 // Import the tab components
@@ -139,19 +140,19 @@ export default function Pharmacy() {
 
   const handleFileUpload = (file) => {
     setUploadedFile(file); // Store the file for later upload
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
         const processedData = jsonData.map((row, index) => ({
           key: index,
-          medName: row.medName || row.MedName || row['Medicine Name'] || '',
+          medName: row.medName || row.MedName || row["Medicine Name"] || "",
           price: parseFloat(row.price || row.Price || 0),
           quantity: parseInt(row.quantity || row.Quantity || 100),
           row: index + 2,
@@ -160,10 +161,12 @@ export default function Pharmacy() {
         setBulkData(processedData);
         setBulkErrors([]);
         setBulkResults(null);
-        message.success('File processed successfully! Preview your data before uploading.');
+        message.success(
+          "File processed successfully! Preview your data before uploading."
+        );
       } catch (error) {
-        console.error('Error reading file:', error);
-        message.error('Error reading file. Please check the file format.');
+        console.error("Error reading file:", error);
+        message.error("Error reading file. Please check the file format.");
       }
     };
     reader.readAsArrayBuffer(file);
@@ -172,37 +175,43 @@ export default function Pharmacy() {
 
   const handleBulkUpload = async () => {
     if (!uploadedFile) {
-      message.error('Please upload a file first');
+      message.error("Please upload a file first");
       return;
     }
 
     setIsProcessing(true);
     try {
       const formData = new FormData();
-      formData.append('file', uploadedFile);
-      formData.append('doctorId', doctorId);
+      formData.append("file", uploadedFile);
+      formData.append("doctorId", doctorId);
 
-      const response = await apiPost("pharmacy/addMedInventory/bulk", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      const response = await apiPost(
+        "pharmacy/addMedInventory/bulk",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
-      });
+      );
 
       if (response.status === 200) {
         setBulkResults(response.data.data);
-        message.success(`${response.data.data.insertedCount} medicines added successfully!`);
+        message.success(
+          `${response.data.data.insertedCount} medicines added successfully!`
+        );
         updateCount();
       }
     } catch (error) {
-      console.error('Error uploading bulk data:', error);
-      message.error('Failed to upload medicines');
-      
+      console.error("Error uploading bulk data:", error);
+      message.error("Failed to upload medicines");
+
       if (error.response && error.response.data && error.response.data.errors) {
         setBulkResults({
-          errors: error.response.data.errors.map(err => ({
+          errors: error.response.data.errors.map((err) => ({
             row: err.row,
-            message: err.message
-          }))
+            message: err.message,
+          })),
         });
       }
     } finally {
@@ -212,15 +221,15 @@ export default function Pharmacy() {
 
   const downloadTemplate = () => {
     const sampleData = [
-      { medName: 'Paracetamol', price: 10.5, quantity: 100 },
-      { medName: 'Ibuprofen', price: 15.75, quantity: 50 },
-      { medName: 'Amoxicillin', price: 25, quantity: 30 },
+      { medName: "Paracetamol", price: 10.5, quantity: 100 },
+      { medName: "Ibuprofen", price: 15.75, quantity: 50 },
+      { medName: "Amoxicillin", price: 25, quantity: 30 },
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(sampleData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Medicines');
-    XLSX.writeFile(workbook, 'medicine_template.xlsx');
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Medicines");
+    XLSX.writeFile(workbook, "medicine_template.xlsx");
   };
 
   const tabItems = [
@@ -231,13 +240,13 @@ export default function Pharmacy() {
     },
     {
       key: "2",
-      label: "Medicines",
-      children: <MedicinesTab />,
+      label: "Completed Patients",
+      children: <PatientsTab status={"completed"} updateCount={updateCount} />,
     },
     {
       key: "3",
-      label: "Completed Patients",
-      children: <PatientsTab status={"completed"} updateCount={updateCount} />,
+      label: "Medicines",
+      children: <MedicinesTab />,
     },
   ];
 
@@ -263,20 +272,20 @@ export default function Pharmacy() {
 
   const bulkDataColumns = [
     {
-      title: 'Medicine Name',
-      dataIndex: 'medName',
-      key: 'medName',
+      title: "Medicine Name",
+      dataIndex: "medName",
+      key: "medName",
     },
     {
-      title: 'Price (₹)',
-      dataIndex: 'price',
-      key: 'price',
+      title: "Price (₹)",
+      dataIndex: "price",
+      key: "price",
       render: (price) => `₹${price}`,
     },
     {
-      title: 'Quantity',
-      dataIndex: 'quantity',
-      key: 'quantity',
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
     },
   ];
 
@@ -304,7 +313,9 @@ export default function Pharmacy() {
               <Card className="revenue-card-today">
                 <div className="revenue-icon">
                   <div className="revenue-icon-today">
-                    <UserOutlined style={{ color: "white", fontSize: "18px" }} />
+                    <UserOutlined
+                      style={{ color: "white", fontSize: "18px" }}
+                    />
                   </div>
                 </div>
                 <div>
@@ -323,7 +334,9 @@ export default function Pharmacy() {
               <Card className="revenue-card-month">
                 <div className="revenue-icon">
                   <div className="revenue-icon-month">
-                    <UsergroupAddOutlined style={{ color: "white", fontSize: "18px" }} />
+                    <UsergroupAddOutlined
+                      style={{ color: "white", fontSize: "18px" }}
+                    />
                   </div>
                 </div>
                 <div>
@@ -340,16 +353,16 @@ export default function Pharmacy() {
           </Row>
 
           <div style={{ marginBottom: "24px", textAlign: "right" }}>
-            <Button 
-              type="default" 
-              icon={<UploadOutlined />} 
+            <Button
+              type="default"
+              icon={<UploadOutlined />}
               onClick={showBulkModal}
               style={{ marginRight: "8px" }}
             >
               Bulk Import
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>
-              Add Inventory
+              Add Medicine
             </Button>
           </div>
 
@@ -373,7 +386,9 @@ export default function Pharmacy() {
                   placeholder="Enter medicine name"
                 />
                 {errors.medName && (
-                  <div style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+                  <div
+                    style={{ color: "red", fontSize: "12px", marginTop: "4px" }}
+                  >
                     {errors.medName}
                   </div>
                 )}
@@ -392,7 +407,9 @@ export default function Pharmacy() {
                   style={{ width: "100%" }}
                 />
                 {errors.price && (
-                  <div style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+                  <div
+                    style={{ color: "red", fontSize: "12px", marginTop: "4px" }}
+                  >
                     {errors.price}
                   </div>
                 )}
@@ -406,7 +423,11 @@ export default function Pharmacy() {
             onCancel={handleBulkCancel}
             width={800}
             footer={[
-              <Button key="template" icon={<DownloadOutlined />} onClick={downloadTemplate}>
+              <Button
+                key="template"
+                icon={<DownloadOutlined />}
+                onClick={downloadTemplate}
+              >
                 Download Template
               </Button>,
               <Button key="cancel" onClick={handleBulkCancel}>
@@ -441,7 +462,9 @@ export default function Pharmacy() {
                 <p className="ant-upload-drag-icon">
                   <UploadOutlined />
                 </p>
-                <p className="ant-upload-text">Click or drag Excel file to this area to upload</p>
+                <p className="ant-upload-text">
+                  Click or drag Excel file to this area to upload
+                </p>
                 <p className="ant-upload-hint">
                   Support for .xlsx and .xls files only
                 </p>
@@ -468,7 +491,7 @@ export default function Pharmacy() {
                     showIcon
                     style={{ marginBottom: "16px" }}
                   />
-                  
+
                   {bulkResults.errors && bulkResults.errors.length > 0 && (
                     <Alert
                       message={`${bulkResults.errors.length} errors encountered`}

@@ -212,9 +212,9 @@ const DoctorLayoutWrapper = () => {
       ),
     },
     {
-      key: "Billing",
-      accessKey: "Billing",
-      label: <Link to="/doctor/doctorPages/TaxInvoice">Billing</Link>,
+      key: "billing",
+      accessKey: "billing",
+      label: <Link to="/doctor/doctorPages/Billing">Billing</Link>,
       icon: (
         <FontAwesomeIcon
           icon={faFileInvoice}
@@ -259,11 +259,12 @@ const DoctorLayoutWrapper = () => {
     }
 
     // If user is a receptionist, filter based on access
-    if (user.role === 'receptionist' || user.role === 'Receptionist') {
+    if (user.role !== 'doctor' || user.role !== 'doctor') {
       // If user.access is not available, return empty array
       if (!user.access || !Array.isArray(user.access)) {
         return [];
       }
+      console.log("accesssssss",user.access)
       
       // Filter menu items based on user access
       return allMenuItems.filter(item => 

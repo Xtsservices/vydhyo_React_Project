@@ -16,11 +16,11 @@ import {
 } from 'lucide-react';
 
 // Import components
-import DoctorClinicInfo from './DoctorClinicInfo';
-import PatientDetailsHistory from './PatientDetailsHistory';
-import VitalsInvestigation from './VitalsInvestigation';
-import DiagnosisMedication from './DiagnosisMedication';
-import AdviceFollowUp from './AdviceFollowUp';
+import DoctorClinicInfo from './E-DoctorClinicInfo';
+import PatientDetailsHistory from './E-PatientDetailsHistory';
+import VitalsInvestigation from './E-VitalsInvestigation';
+import DiagnosisMedication from './E-DiagnosisMedication';
+import AdviceFollowUp from './E-AdviceFollowUp';
 import Preview from './Preview';
 import '../../stylings/EPrescription.css';
 

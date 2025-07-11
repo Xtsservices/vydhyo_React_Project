@@ -911,13 +911,13 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex }) => {
     background: "white",
     marginBottom: "24px",
     position: "relative",
-    height: "230px", // Fixed height for consistency
+    height: "250px", // Fixed height for consistency
   }}
-  bodyStyle={{ padding: "16px" }} // Reduced from 24px
+  bodyStyle={{ padding: "14px" }} // Reduced from 24px
 >
   <div style={{ marginBottom: "12px" }}> {/* Reduced from 20px */}
     <Title
-      level={4}
+      level={3}
       style={{
         margin: 0,
         fontWeight: 600,

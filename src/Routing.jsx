@@ -21,10 +21,12 @@ import Pharmacy from "./components/doctor/doctorPages/Pharmacy";
 import Labs from "./components/doctor/doctorPages/Labs";
 import ClinicManagement from "./components/doctor/doctorPages/ClinicManagement"
 import NotFound from "./components/NotFound ";
-import TaxInvoice from "./components/doctor/doctorPages/TaxInvoice";
+import Billing from "./components/doctor/doctorPages/Billing";
 import Header from "./components/landingPage/Header";
 import DoctorProfileView from "./components/doctor/doctorPages/DoctorProfileView";
 import EPrescription from "./components/doctor/doctorPages/EPrescription";
+import TotalExpenditureScreen from "./components/doctor/doctorPages/TotalExpenditure";
+import PendingTransactionsScreen from "./components/doctor/doctorPages/PendingTransactions";
 
 // import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingDoctorsPage";
 import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage"; 
@@ -261,10 +263,10 @@ const AppRoutes = () => {
         />
 
         <Route
-          path="/doctor/doctorPages/TaxInvoice"
+          path="/doctor/doctorPages/Billing"
           element={
             <ProtectedRoute>
-              <TaxInvoice />
+              <Billing />
             </ProtectedRoute>
           }
         />
@@ -283,6 +285,24 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Accounts />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/doctor/doctorPages/TotalExpenditure"
+          element={
+            <ProtectedRoute>
+              <TotalExpenditureScreen />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/doctor/doctorPages/PendingTransactions"
+          element={
+            <ProtectedRoute>
+              <PendingTransactionsScreen />
             </ProtectedRoute>
           }
         />

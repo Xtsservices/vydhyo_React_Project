@@ -3,6 +3,7 @@ import { Modal, Button, AutoComplete, InputNumber, Table, message } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import { apiGet, apiPost } from '../api';
+import { toast } from 'react-toastify';
 
 const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
   const [medicineName, setMedicineName] = useState('');
@@ -12,6 +13,7 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
   const [tests, setTests] = useState([]);
   const [medInventory, setMedInventory] = useState([]);
   const [testList, setTestList] = useState([]);
+  ;
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === 'doctor' ? user?.userId : user?.createdBy;
@@ -72,6 +74,7 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
     setMedicineName('');
     setMedicineQuantity(null);
     message.success('Medicine added successfully');
+    toast.success('Medicine added successfully');
   };
 
   const handleRemoveMedicine = (id) => {
@@ -92,6 +95,7 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
     setTests([...tests, newTest]);
     setTestName('');
     message.success('Test added successfully');
+    toast.success('Test added successfully');
   };
 
   const handleRemoveTest = (id) => {
@@ -117,6 +121,7 @@ const PrescriptionForm = ({ selectedPatient, isVisible, onClose }) => {
       console.log('Prescription response:', response);
       if (response?.data?.success === true) {
         message.success(response.data.message || 'Prescription submitted successfully');
+        toast.success(response.data.message || 'Prescription submitted successfully');
         setMedicines([]);
         setTests([]);
         onClose();
