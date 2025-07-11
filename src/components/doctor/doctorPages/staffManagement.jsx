@@ -233,6 +233,7 @@ const StaffModal = ({
                   <Option value="pharmacy-Assistant">Pharmacy Assistant</Option>
                   <Option value="receptionist">Receptionist</Option>
                   <Option value="assistent">Assistant</Option>
+                  <Option value="junior-doctor">Junior Doctor</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -363,6 +364,7 @@ const StaffManagement = () => {
 
       if (error.response) {
         errorMessage =
+          error.response.data?.message?.message ||
           error.response.data?.message ||
           error.response?.message ||
           `Server error: ${error.response.status}`;
