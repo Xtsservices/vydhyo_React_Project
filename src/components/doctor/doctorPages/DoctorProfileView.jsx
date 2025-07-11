@@ -12,7 +12,11 @@ import {
   Modal,
   message,
   Spin,
+  Form,
+  Input,
+  Upload,
 } from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import { apiGet } from "../../api";
 import {
   UserOutlined,
@@ -29,7 +33,10 @@ import {
   CarOutlined,
   EyeOutlined,
   ManOutlined,
+  EditOutlined
 } from "@ant-design/icons";
+// import { EditOutlined } from "@ant-design/icons";
+
 import "../../stylings/DoctorProfileView.css";
 
 const { Title, Text } = Typography;
@@ -41,6 +48,10 @@ const DoctorProfileView = () => {
   const [doctorData, setDoctorData] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [form] = Form.useForm();
+
+
 
   const fetchDoctorData = async () => {
     setLoading(true);
@@ -141,6 +152,46 @@ const DoctorProfileView = () => {
   if (!doctorData) {
     return <Spin spinning={loading} tip="Loading doctor details..." />;
   }
+
+  const handleSaveProfile = async (values) => {
+    console.log("Form values:", values);
+
+
+  try {
+
+    
+    // API logic here
+    console.log("Form values:", values);
+    message.success("Profile updated successfully");
+    setEditModalVisible(false);
+    fetchDoctorData(); // refresh data
+  } catch (error) {
+    message.error("Failed to update profile");
+  }
+};
+
+const UploadImage = ({ onUpload }) => {
+  return (
+    <Upload
+      beforeUpload={(file) => {
+        const isValidType =
+          file.type.startsWith("image/") || file.type === "application/pdf";
+
+        if (!isValidType) {
+          message.error("You can only upload JPG/PNG/PDF files!");
+          return Upload.LIST_IGNORE;
+        }
+
+        onUpload(file); // pass file to parent (form field)
+        return false; // stop default upload
+      }}
+      maxCount={1}
+      showUploadList={{ showRemoveIcon: true }}
+    >
+      <Button icon={<UploadOutlined />}>Upload File</Button>
+    </Upload>
+  );
+};
 
   return (
     <div className="doctor-profile-container">
@@ -657,6 +708,7 @@ const DoctorProfileView = () => {
             </Card>
           </Col>
         </Row>
+       
 
         <Modal
           title={selectedDocument?.type || "Document"}
@@ -686,7 +738,190 @@ const DoctorProfileView = () => {
             </div>
           )}
         </Modal>
+
+      <Modal
+  title="Edit Profile"
+  open={editModalVisible}
+  onCancel={() => setEditModalVisible(false)}
+  onOk={() => form.submit()}
+  okText="Save Changes"
+>
+  <Form
+    form={form}
+    layout="vertical"
+    initialValues={{
+      firstname: doctorData?.firstname,
+      lastname: doctorData?.lastname,
+      email: doctorData?.email,
+      mobile: doctorData?.mobile,
+      DOB: doctorData?.DOB,
+      bankDetails: {
+        accountNumber: doctorData?.bankDetails?.accountNumber,
+        ifscCode: doctorData?.bankDetails?.ifscCode,
+        bankName: doctorData?.bankDetails?.bankName,
+        accountHolderName: doctorData?.bankDetails?.accountHolderName,
+      },
+
+      // kycDetails: {
+      //   panNumber: doctorData.kycDetails.panNumber,
+      //   voterId: doctorData.kycDetails.voterId,
+      // },
+      bloodgroup: doctorData?.bloodgroup,
+      specialization: {
+        services: doctorData?.specialization?.services || [],
+      },
+      // experience: doctorData?.specialization?.experience || 0,
+      certifications: doctorData?.certifications.map(cert => ({
+        name: cert.name || "",
+        registrationNo: cert.registrationNo || "",
+        image: cert.image || null,
+      })),
+      PAN_name: doctorData?.kycDetails?.panNumber || "",
+      PAN_image: doctorData?.kycDetails?.panImage || null,
+      voterId_name: doctorData?.kycDetails?.voterId || "",
+      voterId_image: doctorData?.kycDetails?.voterIdImage || null,
+      maritalStatus: doctorData?.maritalStatus || "",
+    }}
+    onFinish={handleSaveProfile}
+  >
+    <Form.Item
+      label="First Name"
+      name="firstname"
+    >
+      <Input />
+    </Form.Item>
+
+    <Form.Item
+      label="Last Name"
+      name="lastname"
+    >
+      <Input />
+    </Form.Item>
+
+    <Form.Item
+      label="Email"
+      name="email"
+    >
+      <Input />
+    </Form.Item>
+
+    <Form.Item
+      label="Mobile"
+      name="mobile"
+    >
+      <Input />
+    </Form.Item>
+
+        <Form.Item
+      label="Date of Birth"
+      name="DOB"
+    >
+      <Input />
+    </Form.Item>
+            <Form.Item
+      label="Blood Group"
+      name="bloodgroup"
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item
+      label="Bank Details"
+      name={["bankDetails", "accountNumber"]}
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item
+      label="IFSC Code"
+      name={["bankDetails", "ifscCode"]}
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item
+      label="Bank Name"
+      name={["bankDetails", "bankName"]}
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item
+      label="Account Holder Name"
+      name={["bankDetails", "accountHolderName"]}
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item
+      label="PAN Number"
+      name="PAN_name"
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item
+      label="PAN Image"
+      name="PAN_image"
+    >
+      <UploadImage
+    onUpload={(file) => {
+      form.setFieldsValue({ PAN_image: file });
+    }}
+  />
+    </Form.Item>
+    <Form.Item
+      label="Voter ID"
+      name="voterId_name"
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item
+      label="Voter ID Image"
+      name="voterId_image"
+    >
+         <UploadImage
+    onUpload={(file) => {
+      form.setFieldsValue({ voterId_image: file });
+    }}
+  />
+    </Form.Item>  
+    <Form.Item
+      label="Marital Status"
+      name="maritalStatus"
+    >
+      <Input />
+    </Form.Item>  
+    <Form.Item
+      label="Specialization"
+      name="specialization"
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item
+      label="Certifications"
+      name="certifications"
+    >
+      <Input />
+    </Form.Item>
+    
+  </Form>
+</Modal>
+
+
+
+
+       <Button
+  type="primary"
+  shape="circle"
+  icon={<EditOutlined />}
+  size="large"
+  onClick={() => setEditModalVisible(true)}
+  style={{
+    position: 'fixed',
+    bottom: 24,
+    right: 24,
+    zIndex: 1000,
+    boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+  }}
+/> 
       </Spin>
+      
+
     </div>
   );
 };
