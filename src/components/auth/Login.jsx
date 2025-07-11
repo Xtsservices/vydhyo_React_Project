@@ -117,13 +117,22 @@ const Login = () => {
         mobile: phone,
       });
       console.log("OTP Verification Response:", data);
-     const isValidUser = !data.data?.userData?.isDeleted && data.data?.userData?.status === "approved" && data.data?.userData?.role === 'doctor';
-console.log("Is Valid User:", isValidUser);
-     if(!isValidUser) {
-        toast.error("You are not authorized to login as a doctor.");
-        return;
-     }
-        console.log("User Data:====================", data.data);
+      if (data?.data?.userData?.role === "doctor") {
+        console.log("Doctor:", data);
+
+        const isValidUser =
+          !data.data?.userData?.isDeleted &&
+          data.data?.userData?.status === "approved";
+        // Additional checks or actions for doctor role can be added here
+        if (!isValidUser) {
+          toast.error("You are not authorized to login as a doctor.");
+          return;
+        }
+      }
+
+      console.log("Is Valid User:", isValidUser);
+
+      console.log("User Data:====================", data.data);
 
       if (data.data.accessToken) {
         const userData = data.data.userData;
@@ -132,7 +141,7 @@ console.log("Is Valid User:", isValidUser);
         if (userData) {
           dispatch({
             type: "currentUserData",
-            payload: userData
+            payload: userData,
           });
         }
 
@@ -142,7 +151,6 @@ console.log("Is Valid User:", isValidUser);
           "role",
           data.data.userData.role || currentUserType
         );
-
 
         const redirectRoute = getRouteFromUserType(
           data.data.userData.role || currentUserType
