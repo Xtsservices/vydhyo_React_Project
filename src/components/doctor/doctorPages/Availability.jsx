@@ -33,20 +33,20 @@ const { Option } = Select;
 const { Panel } = Collapse;
 
 const AvailabilityScreen = () => {
-const today = new Date();
-const dayName = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday"
-][today.getDay()];
+  const today = new Date();
+  const dayName = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ][today.getDay()];
   const [clinics, setClinics] = useState([]);
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [selectedDay, setSelectedDay] = useState(dayName);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(moment());
   const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -139,15 +139,13 @@ const dayName = [
   }, [user]);
 
   useEffect(() => {
-
-const date = new Date().toISOString().split("T")[0]; 
-console.log(selectedDate?.format("YYYY-MM-DD"), date, "selectedDate");
+    const date = new Date().toISOString().split("T")[0];
+    console.log(selectedDate?.format("YYYY-MM-DD"), date, "selectedDate");
 
     if (doctorId && selectedClinic) {
       if (selectedDate !== null) {
-
         fetchSlotsForDate(selectedDate?.format("YYYY-MM-DD"));
-      }else{
+      } else {
         fetchSlotsForDate(date);
       }
     }
@@ -273,43 +271,37 @@ console.log(selectedDate?.format("YYYY-MM-DD"), date, "selectedDate");
     console.log(selectedDate, selectedEndDate, "selectedDate");
     try {
       setLoading(true);
-     
 
-     
       const getDateRangeArray = (fromDate, endDate) => {
-  const dates = [];
-  let currentDate = moment(fromDate, "YYYY-MM-DD");
-  const end = moment(endDate, "YYYY-MM-DD");
+        const dates = [];
+        let currentDate = moment(fromDate, "YYYY-MM-DD");
+        const end = moment(endDate, "YYYY-MM-DD");
 
-  while (currentDate.isSameOrBefore(end)) {
-    dates.push(currentDate.format("YYYY-MM-DD"));
-    currentDate.add(1, "days");
-  }
+        while (currentDate.isSameOrBefore(end)) {
+          dates.push(currentDate.format("YYYY-MM-DD"));
+          currentDate.add(1, "days");
+        }
 
-  return dates;
-};
+        return dates;
+      };
 
-// Example usage based on your code
-const fromDate = selectedDate?.format("YYYY-MM-DD");
-const endDate = selectedEndDate?.format("YYYY-MM-DD");
+      // Example usage based on your code
+      const fromDate = selectedDate?.format("YYYY-MM-DD");
+      const endDate = selectedEndDate?.format("YYYY-MM-DD");
 
- let selectedDates = [];
-console.log(fromDate, "=fromDate");
-console.log(endDate, "=endDate");
-if (fromDate && endDate) {
-  selectedDates = getDateRangeArray(fromDate, endDate);
+      let selectedDates = [];
+      console.log(fromDate, "=fromDate");
+      console.log(endDate, "=endDate");
+      if (fromDate && endDate) {
+        selectedDates = getDateRangeArray(fromDate, endDate);
+      } else {
+        selectedDates = [fromDate];
+      }
+      const dateArray = getDateRangeArray(fromDate, endDate);
 
-}else{
-  selectedDates = [fromDate];
-}
-const dateArray = getDateRangeArray(fromDate, endDate);
-
-// To get the dates as a comma-separated string
-const dateString = dateArray.join(",");
-console.log("Selected Dates:", dateString);
-
-      
-
+      // To get the dates as a comma-separated string
+      const dateString = dateArray.join(",");
+      console.log("Selected Dates:", dateString);
 
       const response = await apiPost("/appointment/createSlotsForDoctor", {
         doctorId: doctorId,
@@ -843,16 +835,15 @@ console.log("Selected Dates:", dateString);
       </>
     );
   };
-   const handleDateChange = (date) => {
+  const handleDateChange = (date) => {
     setSelectedDate(date);
-    console.log('Date changed:', date.format("YYYY-MM-DD"));
+    console.log("Date changed:", date.format("YYYY-MM-DD"));
   };
 
   const handleEndDateChange = (date) => {
     setSelectedEndDate(date);
-    console.log('End Date changed:', date.format("YYYY-MM-DD"));
+    console.log("End Date changed:", date.format("YYYY-MM-DD"));
   };
-
 
   return (
     <div
@@ -896,23 +887,25 @@ console.log("Selected Dates:", dateString);
               >
                 <Space>
                   <Text strong>Manage Availability for:</Text>
-                   <Text strong>Start Date:</Text>
-                    <DatePicker
-                               placeholder="mm/dd/yyyy"
-                               style={{ width: '120px' }}
-                               onChange={handleDateChange}
-                               format="MM/DD/YYYY"
-                             />
+                  <Text strong>Start Date:</Text>
+                  <DatePicker
+                    placeholder="mm/dd/yyyy"
+                    style={{ width: "120px" }}
+                    onChange={handleDateChange}
+                    value={selectedDate}
+                    format="MM/DD/YYYY"
+                  />
 
-                              <Text strong>End Date:</Text>
+                  <Text strong>End Date:</Text>
 
-                              <DatePicker
-                               placeholder="mm/dd/yyyy"
-                               style={{ width: '120px' }}
-                               onChange={handleEndDateChange}
-                               format="MM/DD/YYYY"
-                             />
-                   {/* <DatePicker
+                  <DatePicker
+                    placeholder="mm/dd/yyyy"
+                    style={{ width: "120px" }}
+                    onChange={handleEndDateChange}
+                    value={selectedEndDate}
+                    format="MM/DD/YYYY"
+                  />
+                  {/* <DatePicker
                                     onChange={handleDateChange}
                                      value={filters.date ? moment(filters.date) : null}
                                     placeholder="Filter by date"
@@ -960,7 +953,7 @@ console.log("Selected Dates:", dateString);
             {renderTimeControls("unavailable")}
 
             {/* Unavailable Date Range Section */}
-            <Collapse defaultActiveKey={["1"]} style={{ marginBottom: 24 }}>
+            {/* <Collapse defaultActiveKey={["1"]} style={{ marginBottom: 24 }}>
               <Panel
                 header={<Text strong>Set Unavailable Date Range</Text>}
                 key="1"
@@ -1003,7 +996,7 @@ console.log("Selected Dates:", dateString);
                   Add Unavailable Date Range
                 </Button>
               </Panel>
-            </Collapse>
+            </Collapse> */}
 
             {/* Legend */}
             <div style={{ marginBottom: 16 }}>
