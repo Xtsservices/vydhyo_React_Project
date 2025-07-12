@@ -9,11 +9,14 @@ const App = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.currentUserData);
   const hasFetchedUser = useRef(false);
+const getToken = () => localStorage.getItem("accessToken");
+
 
   const getCurrentUserData = async () => {
     try {
       const response = await apiGet("/users/getUser");
       const userData = response.data?.data;
+      console.log("userDatafrom app.jsx",userData)
       if (userData) {
         dispatch({
           type: "currentUserData",
@@ -26,7 +29,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    if (!user && !hasFetchedUser.current) {
+    if (getToken() && !user && !hasFetchedUser.current) {
       hasFetchedUser.current = true; // ✅ Prevent future fetch attempts
       getCurrentUserData();
     }

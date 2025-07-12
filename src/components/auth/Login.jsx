@@ -130,7 +130,7 @@ const Login = () => {
         }
       }
       
-      console.log("User Data:====================", data.data);
+      console.log("User Data:otp", data.data);
 
       if (data.data.accessToken) {
         const userData = data.data.userData;
