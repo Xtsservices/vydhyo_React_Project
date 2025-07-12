@@ -36,7 +36,7 @@ const { Option } = Select;
 
 const AddWalkInPatient = () => {
   const screens = useBreakpoint();
-  const navigation = useNavigate()
+  const navigate = useNavigate()
   const user = useSelector((state) => state.currentUserData);
   console.log("user=====",user)
   const [patientData, setPatientData] = useState({
@@ -721,7 +721,7 @@ useEffect(() => {
           )}
         </Col>
         <Col xs={24} sm={8}>
-          <Text strong>Date of Birth *</Text>
+          <Text strong>Date of Birth </Text>
           <DatePicker
             value={
               patientData.dateOfBirth

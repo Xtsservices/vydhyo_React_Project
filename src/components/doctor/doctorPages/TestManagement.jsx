@@ -181,7 +181,7 @@ const TestManagement = () => {
       formData.append('file', uploadedFile);
       formData.append('doctorId', doctorId);
 
-      const response = await apiPost("http://192.168.1.44:3000/lab/addtest/bulk", formData, {
+      const response = await apiPost("/lab/addtest/bulk", formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

@@ -350,6 +350,7 @@ export default function ClinicManagement() {
         throw new Error(response.data?.message || "Failed to update clinic");
       }
     } else {
+     delete formData.addressId;
       response = await apiPost("/users/addAddress", formData);
       
       // Check if creation was successful (status 201)
