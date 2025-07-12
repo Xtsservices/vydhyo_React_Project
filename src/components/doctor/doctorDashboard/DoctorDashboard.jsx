@@ -903,7 +903,12 @@ const PatientFeedback = () => (
   </Card>
 );
 
-const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex }) => {
+const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorId }) => {
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [nextAvailableSlot, setNextAvailableSlot] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const handlePreviousClinic = () => {
     setCurrentClinicIndex((prev) =>
       prev === 0 ? clinics.length - 1 : prev - 1
@@ -916,200 +921,265 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex }) => {
     );
   };
 
+  useEffect(() => {
+    const fetchAvailableSlots = async () => {
+      try {
+        setIsLoading(true);
+        // Replace '686cf2e2db9237e81c3618f5' with the actual addressId if needed
+        const response = await apiGet(
+          `/appointment/getNextAvailableSlotsByDoctorAndAddress?doctorId=${doctorId}&addressId=686cf2e2db9237e81c3618f5`
+        );
+        
+        if (response.data.status === "success") {
+          const slots = response.data.data.availableSlots || [];
+          const nextSlot = response.data.data.nextAvailableSlot || null;
+          
+          setAvailableSlots(slots);
+          setNextAvailableSlot(nextSlot);
+        } else {
+          setError("Failed to fetch available slots");
+        }
+      } catch (err) {
+        console.error("Error fetching available slots:", err);
+        setError("Error fetching available slots");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (doctorId) {
+      fetchAvailableSlots();
+    }
+  }, [doctorId]);
+
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    const [hours, minutes] = timeString.split(":");
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    return moment(dateString).format("DD-MM-YYYY");
+  };
+
   return (
     <Card
-  style={{
-    borderRadius: "16px",
-    border: "none",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-    background: "white",
-    marginBottom: "24px",
-    position: "relative",
-    height: "250px", // Fixed height for consistency
-  }}
-  bodyStyle={{ padding: "14px" }} // Reduced from 24px
->
-  <div style={{ marginBottom: "12px" }}> {/* Reduced from 20px */}
-    <Title
-      level={3}
       style={{
-        margin: 0,
-        fontWeight: 600,
-        color: "#1a1a1a",
-        fontSize: "16px", // Reduced from 18px
-        marginBottom: "4px", // Reduced from 8px
-        fontFamily: "Poppins, sans-serif",
+        borderRadius: "16px",
+        border: "none",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+        background: "white",
+        marginBottom: "24px",
+        position: "relative",
+        height: "250px",
       }}
+      bodyStyle={{ padding: "14px" }}
     >
-      Clinic Availability
-    </Title>
-    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
-      <Title
-        level={5} // Changed from level 3 to 5
-        style={{
-          margin: 0,
-          fontWeight: 600,
-          color: "#495057",
-          fontSize: "14px", // Reduced from 16px
-          fontFamily: "Poppins, sans-serif",
-        }}
-      >
-        {clinics[currentClinicIndex].name}
-      </Title>
-      <Text
-        style={{
-          fontSize: "11px", // Reduced from 12px
-          color: "#8c8c8c",
-          fontFamily: "Poppins, sans-serif",
-        }}
-      >
-        {clinics[currentClinicIndex].date}
-      </Text>
-      <Text
-        style={{
-          fontSize: "11px", // Reduced from 12px
-          color: "#1890ff",
-          fontWeight: 500,
-          fontFamily: "Poppins, sans-serif",
-        }}
-      >
-        {clinics[currentClinicIndex].location}
-      </Text>
-    </div>
+      {isLoading ? (
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <Text style={{ fontFamily: "Poppins, sans-serif" }}>
+            Loading clinic availability...
+          </Text>
+        </div>
+      ) : error ? (
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <Text style={{ fontFamily: "Poppins, sans-serif", color: "#ff4d4f" }}>
+            {error}
+          </Text>
+        </div>
+      ) : (
+        <>
+          <div style={{ marginBottom: "12px" }}>
+            <Title
+              level={3}
+              style={{
+                margin: 0,
+                fontWeight: 600,
+                color: "#1a1a1a",
+                fontSize: "16px",
+                marginBottom: "4px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              Clinic Availability
+            </Title>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
+              <Title
+                level={5}
+                style={{
+                  margin: 0,
+                  fontWeight: 600,
+                  color: "#495057",
+                  fontSize: "14px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {clinics[currentClinicIndex].name}
+              </Title>
+              <Text
+                style={{
+                  fontSize: "11px",
+                  color: "#8c8c8c",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {clinics[currentClinicIndex].date}
+              </Text>
+              <Text
+                style={{
+                  fontSize: "11px",
+                  color: "#1890ff",
+                  fontWeight: 500,
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {clinics[currentClinicIndex].location}
+              </Text>
+            </div>
 
-    <Text
-      style={{
-        fontSize: "13px", // Reduced from 14px
-        color: "#6c757d",
-        display: "block",
-        marginBottom: "8px", // Reduced from 12px
-        fontWeight: 500,
-        fontFamily: "Poppins, sans-serif",
-      }}
-    >
-      Available Slots:
-    </Text>
+            <Text
+              style={{
+                fontSize: "13px",
+                color: "#6c757d",
+                display: "block",
+                marginBottom: "8px",
+                fontWeight: 500,
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              Available Slots:
+            </Text>
 
-    <div
-      style={{
-        display: "flex",
-        gap: "6px", // Reduced from 8px
-        flexWrap: "wrap",
-        marginBottom: "16px", // Reduced from 20px
-      }}
-    >
-      <div
-        style={{
-          padding: "4px 10px", // Reduced from 6px 12px
-          backgroundColor: "#f0f8f0",
-          color: "#16A34A",
-          borderRadius: "12px", // Reduced from 15px
-          fontSize: "11px", // Reduced from 12px
-          fontWeight: 500,
-          fontFamily: "Poppins, sans-serif",
-          lineHeight: "1.2",
-          height: "24px",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        10:00 AM - 11:00 AM
-      </div>
-      <div
-        style={{
-          padding: "4px 10px", // Reduced from 6px 12px
-          backgroundColor: "#f0f8f0",
-          color: "#16A34A",
-          borderRadius: "12px", // Reduced from 16px
-          fontSize: "11px", // Reduced from 12px
-          fontWeight: 500,
-          fontFamily: "Poppins, sans-serif",
-          lineHeight: "1.2",
-          height: "24px",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        2:00 PM - 3:00 PM
-      </div>
-    </div>
-  </div>
+            <div
+              style={{
+                display: "flex",
+                gap: "6px",
+                flexWrap: "wrap",
+                marginBottom: "16px",
+              }}
+            >
+              {availableSlots.length > 0 ? (
+                availableSlots.map((slot, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      padding: "4px 10px",
+                      backgroundColor: "#f0f8f0",
+                      color: "#16A34A",
+                      borderRadius: "12px",
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      fontFamily: "Poppins, sans-serif",
+                      lineHeight: "1.2",
+                      height: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                  </div>
+                ))
+              ) : (
+                <Text
+                  style={{
+                    fontSize: "12px",
+                    color: "#8c8c8c",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
+                  No available slots today
+                </Text>
+              )}
+            </div>
+          </div>
 
-  <div
-    style={{
-      padding: "12px", // Reduced from 16px
-      backgroundColor: "#f0f8f0",
-      borderRadius: "10px", // Reduced from 12px
-      position: "relative",
-      marginBottom: "2rem", // Reduced from 3rem
-    }}
-  >
-    <Text
-      style={{
-        fontSize: "13px", // Reduced from 14px
-        display: "block",
-        marginBottom: "2px", // Reduced from 4px
-        fontWeight: 500,
-        fontFamily: "Poppins, sans-serif",
-      }}
-    >
-      Next Availability
-    </Text>
-    <Title
-      level={5} // Changed from level 4 to 5
-      style={{
-        margin: 0,
-        fontWeight: 500,
-        color: "#16A34A",
-        fontSize: "14px", // Reduced from 16px
-        fontFamily: "Poppins, sans-serif",
-      }}
-    >
-      Tomorrow 9:30 AM
-    </Title>
-  </div>
+          <div
+            style={{
+              padding: "12px",
+              backgroundColor: "#f0f8f0",
+              borderRadius: "10px",
+              position: "relative",
+              marginBottom: "2rem",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: "13px",
+                display: "block",
+                marginBottom: "2px",
+                fontWeight: 500,
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              Next Availability
+            </Text>
+            <Title
+              level={5}
+              style={{
+                margin: 0,
+                fontWeight: 500,
+                color: "#16A34A",
+                fontSize: "14px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              {nextAvailableSlot ? (
+                <>
+                  {formatDate(nextAvailableSlot.date)} at {formatTime(nextAvailableSlot.startTime)}
+                </>
+              ) : (
+                "No upcoming availability"
+              )}
+            </Title>
+          </div>
 
-  <div
-    style={{
-      position: "absolute",
-      bottom: "42px",
-      right: "1px", 
-      display: "flex",
-      gap: "16rem", 
-    }}
-  >
-    <div
-      style={{
-        width: "27px", 
-        height: "28px", 
-        borderRadius: "50%",
-        backgroundColor: "#9EBEFF",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-      }}
-      onClick={handlePreviousClinic}
-    >
-      <LeftOutlined style={{ fontSize: "12px", color: "white" }} /> {/* Reduced from 14px */}
-    </div>
-    <div
-      style={{
-        width: "28px", // Reduced from 32px
-        height: "28px", // Reduced from 32px
-        borderRadius: "50%",
-        backgroundColor: "#9EBEFF",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-      }}
-      onClick={handleNextClinic}
-    >
-      <RightOutlined style={{ fontSize: "12px", color: "white" }} /> {/* Reduced from 14px */}
-    </div>
-  </div>
-</Card>
+          <div
+            style={{
+              position: "absolute",
+              bottom: "42px",
+              right: "1px", 
+              display: "flex",
+              gap: "16rem", 
+            }}
+          >
+            <div
+              style={{
+                width: "27px", 
+                height: "28px", 
+                borderRadius: "50%",
+                backgroundColor: "#9EBEFF",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+              onClick={handlePreviousClinic}
+            >
+              <LeftOutlined style={{ fontSize: "12px", color: "white" }} />
+            </div>
+            <div
+              style={{
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                backgroundColor: "#9EBEFF",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+              onClick={handleNextClinic}
+            >
+              <RightOutlined style={{ fontSize: "12px", color: "white" }} />
+            </div>
+          </div>
+        </>
+      )}
+    </Card>
   );
 };
 
@@ -1153,7 +1223,7 @@ const RevenueSummary = ({ revenueSummaryData }) => (
 const DoctorDashboard = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.currentUserData);
-    const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [dashboardData, setDashboardData] = useState({
     success: true,
     totalAmount: { today: 0, week: 0, month: 0, total: 0 },
@@ -1177,18 +1247,12 @@ const DoctorDashboard = () => {
 
   const [appointments, setAppointments] = useState([]);
   const [currentClinicIndex, setCurrentClinicIndex] = useState(0);
-  // const [selectedDate, setSelectedDate] = useState(
-  //   new Date().toISOString().split("T")[0]
-  // );
   const today = new Date();
-const year = today.getFullYear();
-const month = String(today.getMonth() + 1).padStart(2, "0");
-const day = String(today.getDate()).padStart(2, "0");
-
-const formattedDate = `${year}-${month}-${day}`;
-const [selectedDate, setSelectedDate] = useState(formattedDate);
-
-
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const formattedDate = `${year}-${month}-${day}`;
+  const [selectedDate, setSelectedDate] = useState(formattedDate);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [revenueSummaryData, setRevenueSummaryData] = useState([
     { label: "Appointment", value: 0, color: "#4285f4" },
@@ -1400,18 +1464,15 @@ const [selectedDate, setSelectedDate] = useState(formattedDate);
 
   useEffect(() => {
     if(user && doctorId){
-  getAppointments();
-    getTodayAppointmentCount();
+      getAppointments();
+      getTodayAppointmentCount();
     }
   
     getTodayRevenue();
     getRevenueSummary();
-  }, [Users, doctorId]);
+  }, [user, doctorId]);
 
-  console.log("userrrrr:", user);
-  // console.log("roleeeee:",user.role)
-
-     return (
+  return (
     <>
       <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
@@ -1475,6 +1536,7 @@ const [selectedDate, setSelectedDate] = useState(formattedDate);
               <ClinicAvailability
                 currentClinicIndex={currentClinicIndex}
                 setCurrentClinicIndex={setCurrentClinicIndex}
+                doctorId={doctorId}
               />
               <RevenueSummary revenueSummaryData={revenueSummaryData} />
             </div>
