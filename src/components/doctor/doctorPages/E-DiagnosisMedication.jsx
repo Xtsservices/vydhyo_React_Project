@@ -16,6 +16,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const [testList, setTestList] = useState([]);
   const [medicineOptions, setMedicineOptions] = useState([]);
   const [testOptions, setTestOptions] = useState([]);
+  const [testInputValue, setTestInputValue] = useState(""); // New state for test input value
 
   const [localData, setLocalData] = useState({
     diagnosisList: "",
@@ -122,6 +123,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
+    setTestInputValue(""); // Clear the input field after adding
     toast.success("Test added successfully");
   };
 
@@ -179,7 +181,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     }
 
     const newMedication = {
-      id: null, // ✅ Will be set when medName is chosen
+      id: null,
       medName: "",
       quantity: null,
       dosage: "",
@@ -219,7 +221,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
             updatedMed = {
               ...updatedMed,
               medInventoryId: selectedMed._id,
-              id: selectedMed._id, // ✅ SET id FROM BACKEND _id
+              id: selectedMed._id,
               price: selectedMed.price,
             };
           } else {
@@ -269,7 +271,12 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           <AutoComplete
             options={testOptions}
             style={{ width: "100%" }}
-            onSelect={(value) => addTest(value)}
+            onSelect={(value) => {
+              addTest(value);
+              setTestInputValue(""); // Clear input after selection
+            }}
+            onChange={(value) => setTestInputValue(value)}
+            value={testInputValue}
             placeholder="Enter or search test name"
             filterOption={(input, option) =>
               option.label.toLowerCase().includes(input.toLowerCase())

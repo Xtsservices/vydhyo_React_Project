@@ -14,6 +14,8 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // Import components
 import DoctorClinicInfo from "./E-DoctorClinicInfo";
@@ -60,23 +62,50 @@ const EPrescription = () => {
       window.print();
     } else if (type === "whatsapp") {
       const message =
-        `Here's my medical prescription from VYDHYO MULTISPECIALTY CLINIC` +
-        `Patient: ${formData.patientInfo?.patientName || "N/A"}` +
-        `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}` +
+        `Here's my medical prescription from VYDHYO MULTISPECIALTY CLINIC\n` +
+        `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
+        `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
         `Date: ${formData.doctorInfo?.reportDate || "N/A"}`;
       const url = "https://wa.me/?text=" + encodeURIComponent(message);
       window.open(url, "_blank");
     }
   };
 
-  console.log("formData",formData)
+  const generatePDF = async () => {
+  try {
+    // Use a more specific selector or add a ref to your preview container
+      const input = document.getElementById('eprescription-container');
+      console.log("input",input)
+    
+    if (!input) {
+      throw new Error("Could not find the prescription container element");
+    }
 
+    const canvas = await html2canvas(input, {
+      scale: 2,
+      useCORS: true,
+      logging: true,
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    return pdf;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    throw error;
+  }
+};
   function transformEprescriptionData(formData) {
     const { doctorInfo, patientInfo, vitals, diagnosis, advice } = formData;
     const appointmentId = location?.state?.patientData?.appointmentId;
 
     return {
-      appointmentId:appointmentId,
+      appointmentId: appointmentId,
       userId: patientInfo.patientId,
       doctorId: doctorInfo.doctorId,
       addressId: doctorInfo.selectedClinicId,
@@ -91,7 +120,7 @@ const EPrescription = () => {
         physicalExamination: patientInfo.physicalExamination || null,
       },
       vitals: {
-        bp: `${vitals?.bpSystolic}/${vitals?.bpDiastolic} `|| null,
+        bp: `${vitals?.bpSystolic}/${vitals?.bpDiastolic}` || null,
         pulseRate: vitals.pulseRate || null,
         respiratoryRate: vitals.respiratoryRate || null,
         temperature: vitals.temperature || null,
@@ -132,18 +161,37 @@ const EPrescription = () => {
     };
   }
 
-  const handleConfirm = async() => {
-    const formattedData = transformEprescriptionData(formData);
-    console.log("Form formattedData:", formattedData);
-    //here make api call appoi
-    try{
-const response = await apiPost("/pharmacy/addPrescription",formattedData)
-console.log("response",response)
-    }catch(error){
-console.error("erroraddPrescription",error)
+
+  const handleConfirm = async () => {
+  
+
+    try {
+      console.log("pdfstart",90)
+
+      // // Generate PDF first
+      // const pdf = await generatePDF();
+      // const pdfBlob = pdf.output('blob');
+      // console.log("pdf",pdf)
+      // console.log("pdfBlob",pdfBlob)
+      
+      // Transform form data
+      const formattedData = transformEprescriptionData(formData);
+      
+      // // Create FormData to send both JSON and PDF
+      // const formDataToSend = new FormData();
+      // formDataToSend.append('prescriptionData', JSON.stringify(formattedData));
+      // formDataToSend.append('prescriptionPdf', pdfBlob, 'prescription.pdf');
+      
+      console.log("apistart")
+      // Make API call
+      const response = await apiPost("/pharmacy/addPrescription", formattedData);
+      
+      console.log("response", response);
+      setActiveTab("preview");
+      setShowPreview(true);
+    } catch (error) {
+      console.error("erroraddPrescription", error);
     }
-    setActiveTab("preview");
-    setShowPreview(true);
   };
 
   const handleNext = () => {
@@ -219,7 +267,7 @@ console.error("erroraddPrescription",error)
   };
 
   return (
-    <div className="eprescription-container">
+    <div id = "eprescription-container" className="eprescription-container">
       {/* Main Content */}
       <div className="eprescription-main">
         {/* Tab Navigation */}
