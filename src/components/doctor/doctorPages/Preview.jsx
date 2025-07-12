@@ -1,6 +1,8 @@
 import React from "react";
 import { Printer, CheckCircle } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import logo from "../../../assets/logooo.png";
 import '../../stylings/EPrescription.css';
 
@@ -15,8 +17,68 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     });
   };
 
+  const generatePDF = async () => {
+    try {
+      const input = document.getElementById('prescription-container');
+      console.log("input", input);
+      
+      if (!input) {
+        throw new Error("Could not find the prescription container element");
+      }
+
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        logging: true,
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: input.scrollWidth,
+        windowHeight: input.scrollHeight,
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      // Handle multi-page PDF if content height exceeds A4 page height
+      let heightLeft = imgHeight;
+     let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      // Generate Blob and trigger download
+      const pdfBlob = pdf.output('blob');
+      return pdfBlob;
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      throw error;
+    }
+  };
+
+  const handleWhatsAppClick = async () => {
+    try {
+      const pdfBlob = await generatePDF();
+      console.log("pdfBlob",pdfBlob)
+      handlePrescriptionAction('whatsapp', pdfBlob);
+    } catch (error) {
+      console.error("Failed to generate PDF for WhatsApp:", error);
+    }
+  };
+
   return (
-    <div id="prescription-container">
+    <div>
       <div className="print-button-container">
         <button 
           className="print-button" 
@@ -27,13 +89,13 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
         </button>
         <button 
           className="whatsapp-button" 
-          onClick={() => handlePrescriptionAction('whatsapp')}
+          onClick={handleWhatsAppClick}
         >
           <FaWhatsapp className="whatsapp-icon" /> Share via WhatsApp
         </button>
       </div>
 
-      <div className="prescription-container">
+      <div id="prescription-container" className="prescription-container">
         {/* Header */}
         <div className="prescription-header">
           <div className="clinic-info">
@@ -177,7 +239,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                 <div className="detail-label">BMI</div>
                 <div className="detail-value">{formData.vitals?.bmi || 'N/A'}</div>
               </div>
-              {/* Display other vitals */}
               {formData.vitals?.other && Object.entries(formData.vitals.other).map(([key, value]) => (
                 <div className="vital-item" key={key}>
                   <div className="detail-label">{key}</div>
@@ -200,7 +261,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   </div>
                 ))}
               </div>
-              {/* Display test notes if they exist */}
               {formData.diagnosis?.testNotes && (
                 <div className="notes-display">
                   <div className="notes-label">Test Instructions:</div>
@@ -213,7 +273,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
           {/* Diagnosis */}
           {formData.diagnosis?.diagnosisList && (
             <div className="prescription-section">
-              <div className="section-header">
+              <div className="section concierto">
                 🩺 DIAGNOSIS
               </div>
               <div className="diagnosis-tags">
@@ -258,7 +318,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   ))}
                 </tbody>
               </table>
-              {/* Display medication notes if they exist */}
               {formData.diagnosis?.medicationNotes && (
                 <div className="notes-display">
                   <div className="notes-label">Medication Instructions:</div>
