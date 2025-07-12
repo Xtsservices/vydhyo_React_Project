@@ -727,6 +727,9 @@ const AvailabilityScreen = () => {
           </Col>
 
           {/* Duration */}
+          {isAvailable &&
+          
+          
           <Col xs={12} sm={6}>
             <Text strong>Duration (minutes):</Text>
             <div
@@ -763,6 +766,8 @@ const AvailabilityScreen = () => {
               </div>
             </div>
           </Col>
+
+          }
 
           {/* Action Buttons */}
           <Col xs={12} sm={6}>
