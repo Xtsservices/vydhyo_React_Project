@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Typography, Button, Modal } from "antd";
+import { Card, Typography, Button } from "antd";
 import {
   UserOutlined,
   LeftOutlined,
@@ -22,18 +22,16 @@ const feedbacks = [
     name: "Rahul Sharma",
     avatar: "",
     rating: 5,
-    comment:
-      "Dr. Arvind was very patient and explained everything clearly. Highly recommended!",
-    daysAgo: 2,
+    comment: "Dr. Arvind was very patient and explained everything clearly. Highly recommended!",
+    daysAgo: 2
   },
   {
     name: "Priya Patel",
     avatar: "",
     rating: 4,
-    comment:
-      "Good consultation but had to wait longer than expected. Otherwise satisfied with the treatment.",
-    daysAgo: 5,
-  },
+    comment: "Good consultation but had to wait longer than expected. Otherwise satisfied with the treatment.",
+    daysAgo: 5
+  }
 ];
 
 const PercentageChangeIndicator = ({
@@ -264,8 +262,7 @@ const Header = ({ user, navigate }) => {
         >
           {greeting}{" "}
           <span style={{ color: "#ff6b6b" }}>
-            {user?.role === "doctor" && "Dr. "}
-            {user?.firstname || ""} {user?.lastname || ""}
+            Dr. {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
           </span>
         </Title>
         <Text
@@ -899,11 +896,7 @@ const PatientFeedback = () => (
   </Card>
 );
 
-const ClinicAvailability = ({
-  currentClinicIndex,
-  setCurrentClinicIndex,
-  doctorId,
-}) => {
+const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorId }) => {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [nextAvailableSlot, setNextAvailableSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -914,11 +907,13 @@ const ClinicAvailability = ({
   useEffect(() => {
     const fetchClinics = async () => {
       try {
-        const response = await apiGet(
-          `/users/getClinicAddress?doctorId=${doctorId}`
-        );
+        const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`);
         if (response.data.status === "success") {
-          setClinics(response.data.data);
+          // Filter to only show active clinics
+          const activeClinics = response.data.data.filter(
+            clinic => clinic.status === "Active"
+          );
+          setClinics(activeClinics || []);
         } else {
           setError("Failed to fetch clinics");
         }
@@ -933,53 +928,39 @@ const ClinicAvailability = ({
     }
   }, [doctorId]);
 
-  const handlePreviousClinic = () => {
-    setCurrentClinicIndex((prev) =>
-      prev === 0 ? clinics.length - 1 : prev - 1
-    );
-  };
-
-  const handleNextClinic = () => {
-    setCurrentClinicIndex((prev) =>
-      prev === clinics.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  // Fetch available slots when clinic index changes
+  // Fetch available slots for the current clinic
   useEffect(() => {
     const fetchAvailableSlots = async () => {
-      if (clinics.length === 0) return;
-
+      if (!doctorId || clinics.length === 0) return;
+      
       try {
         setIsLoading(true);
         const currentClinic = clinics[currentClinicIndex];
         const response = await apiGet(
-          `/appointment/getNextAvailableSlotsByDoctorAndAddress?doctorId=${doctorId}&addressId=${currentClinic._id}`
+          `/appointment/getNextAvailableSlotsByDoctor?doctorId=${doctorId}&clinicId=${currentClinic.addressId}`
         );
-
+        
         if (response.data.status === "success") {
-          // Find today's slots (first entry in the array)
-          const todaySlots = response.data.data[0]?.slots || [];
-          // Format the slots to match what the component expects
-          const formattedSlots = todaySlots
-            .filter((slot) => slot.status === "available")
-            .map((slot) => ({
+          const slotsData = response.data.data;
+          
+          // Today's available slots
+          const todaySlots = slotsData[0]?.slots
+            ?.filter(slot => slot.status === "available")
+            .map(slot => ({
               startTime: slot.time,
-              endTime: calculateEndTime(slot.time), // You'll need to implement this
-            }));
-
-          setAvailableSlots(formattedSlots);
-
-          // Set the next available slot (first available slot from the next day)
-          if (response.data.data.length > 1) {
-            const nextDay = response.data.data[1];
-            const firstSlot = nextDay.slots.find(
-              (slot) => slot.status === "available"
-            );
-            if (firstSlot) {
+              endTime: calculateEndTime(slot.time)
+            })) || [];
+          
+          setAvailableSlots(todaySlots);
+          
+          // Next available slot (first available from next day)
+          if (slotsData.length > 1) {
+            const nextDay = slotsData[1];
+            const firstAvailable = nextDay.slots.find(slot => slot.status === "available");
+            if (firstAvailable) {
               setNextAvailableSlot({
                 date: nextDay.date,
-                startTime: firstSlot.time,
+                startTime: firstAvailable.time
               });
             }
           }
@@ -994,21 +975,29 @@ const ClinicAvailability = ({
       }
     };
 
-    // Helper function to calculate end time (assuming 15-minute slots)
     const calculateEndTime = (startTime) => {
-      const [hours, minutes] = startTime.split(":").map(Number);
+      const [hours, minutes] = startTime.split(':').map(Number);
       const date = new Date();
       date.setHours(hours, minutes + 15, 0, 0);
-      return `${date.getHours().toString().padStart(2, "0")}:${date
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}`;
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
     };
 
-    if (doctorId && clinics.length > 0) {
+    if (clinics.length > 0) {
       fetchAvailableSlots();
     }
-  }, [doctorId, currentClinicIndex, clinics]);
+  }, [doctorId, clinics, currentClinicIndex]);
+
+  const handlePreviousClinic = () => {
+    setCurrentClinicIndex((prev) =>
+      prev === 0 ? clinics.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextClinic = () => {
+    setCurrentClinicIndex((prev) =>
+      prev === clinics.length - 1 ? 0 : prev + 1
+    );
+  };
 
   const formatTime = (timeString) => {
     if (!timeString) return "";
@@ -1040,7 +1029,7 @@ const ClinicAvailability = ({
       >
         <div style={{ textAlign: "center", padding: "40px 0" }}>
           <Text style={{ fontFamily: "Poppins, sans-serif" }}>
-            No clinics found for this doctor
+            No active clinics found for this doctor
           </Text>
         </div>
       </Card>
@@ -1056,11 +1045,12 @@ const ClinicAvailability = ({
         border: "none",
         boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
         background: "white",
-        marginBottom: "24px",
+        marginBottom: "-2rem",
         position: "relative",
         height: "250px",
+        // paddingBottom:"2rem"
       }}
-      bodyStyle={{ padding: "14px" }}
+      bodyStyle={{ padding: "14px"}}
     >
       {isLoading ? (
         <div style={{ textAlign: "center", padding: "40px 0" }}>
@@ -1090,14 +1080,7 @@ const ClinicAvailability = ({
             >
               Clinic Availability
             </Title>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                marginBottom: "12px",
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
               <Title
                 level={5}
                 style={{
@@ -1219,8 +1202,7 @@ const ClinicAvailability = ({
             >
               {nextAvailableSlot ? (
                 <>
-                  {formatDate(nextAvailableSlot.date)} at{" "}
-                  {formatTime(nextAvailableSlot.startTime)}
+                  {formatDate(nextAvailableSlot.date)} at {formatTime(nextAvailableSlot.startTime)}
                 </>
               ) : (
                 "No upcoming availability"
@@ -1228,46 +1210,48 @@ const ClinicAvailability = ({
             </Title>
           </div>
 
-          <div
-            style={{
-              position: "absolute",
-              bottom: "42px",
-              right: "1px",
-              display: "flex",
-              gap: "16rem",
-            }}
-          >
+          {clinics.length > 1 && (
             <div
               style={{
-                width: "27px",
-                height: "28px",
-                borderRadius: "50%",
-                backgroundColor: "#9EBEFF",
+                position: "absolute",
+                bottom: "42px",
+                right: "1px", 
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
+                gap: "16rem", 
               }}
-              onClick={handlePreviousClinic}
             >
-              <LeftOutlined style={{ fontSize: "12px", color: "white" }} />
+              <div
+                style={{
+                  width: "27px", 
+                  height: "28px", 
+                  borderRadius: "50%",
+                  backgroundColor: "#9EBEFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                onClick={handlePreviousClinic}
+              >
+                <LeftOutlined style={{ fontSize: "12px", color: "white" }} />
+              </div>
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  backgroundColor: "#9EBEFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                onClick={handleNextClinic}
+              >
+                <RightOutlined style={{ fontSize: "12px", color: "white" }} />
+              </div>
             </div>
-            <div
-              style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "50%",
-                backgroundColor: "#9EBEFF",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-              onClick={handleNextClinic}
-            >
-              <RightOutlined style={{ fontSize: "12px", color: "white" }} />
-            </div>
-          </div>
+          )}
         </>
       )}
     </Card>
@@ -1350,7 +1334,6 @@ const DoctorDashboard = () => {
     { label: "Lab", value: 0, color: "#34a853" },
     { label: "Pharmacy", value: 0, color: "#fbbc04" },
   ]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isReceptionist = user?.role === "receptionist";
 
@@ -1426,9 +1409,7 @@ const DoctorDashboard = () => {
 
   const getTodayAppointmentCount = async () => {
     try {
-      const response = await apiGet(
-        `/appointment/getTodayAppointmentCount?doctorId=${doctorId}`
-      );
+      const response = await apiGet(`/appointment/getTodayAppointmentCount?doctorId=${doctorId}`);
       if (response.data.status === "success") {
         setDashboardData((prev) => ({
           ...prev,
@@ -1557,38 +1538,14 @@ const DoctorDashboard = () => {
   };
 
   useEffect(() => {
-
-    const activeClinics = user?.addresses
-        .filter(address => 
-          address.type === "Clinic" && 
-          address.status?.toLowerCase() === "active"
-        )
-        .map((address) => ({
-          label: address?.clinicName,
-          value: address?.addressId,
-          // Include additional clinic data if needed
-          startTime: address?.startTime,
-          endTime: address?.endTime,
-          location: address?.location
-        }));
-      
-      if (activeClinics?.length === 0) {
-          setIsModalOpen(true);
-        } else {
-
-          setIsModalOpen(false);
-        }
     if(user && doctorId){
-
       getAppointments();
       getTodayAppointmentCount();
     }
-
+  
     getTodayRevenue();
     getRevenueSummary();
   }, [user, doctorId]);
-
- 
 
   return (
     <>
@@ -1616,7 +1573,7 @@ const DoctorDashboard = () => {
           }}
         >
           <AppointmentsCard dashboardData={dashboardData} />
-
+          
           {user?.role === "doctor" && (
             <RevenueCard dashboardData={dashboardData} />
           )}
@@ -1661,27 +1618,6 @@ const DoctorDashboard = () => {
           )}
         </div>
       </div>
-
-      <Modal
-        open={isModalOpen}
-        title="No Clinic or Slots Found"
-        closable={false}
-        maskClosable={false}
-        maskStyle={{ backdropFilter: "blur(4px)" }}
-        okText="Add Clinic"
-        cancelText="Cancel"
-        onOk={() => {
-          navigate("/doctor/doctorPages/ClinicManagement");
-        }}
-        onCancel={() => {
-          setIsModalOpen(false);
-        }}
-      >
-
-       
-          <p>No active clinic and availability found. Please add a clinic and add Availability add appointments.</p>
-        
-      </Modal>
     </>
   );
 };
