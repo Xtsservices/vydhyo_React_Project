@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Table,
@@ -69,7 +71,7 @@ const DoctorOnboardingDashboard = () => {
         navigate("/login");
         return;
       }
-const response = await apiGet("users/AllUsers?type=doctor")
+      const response = await apiGet("users/AllUsers?type=doctor");
       // const response = await fetch(`${API_BASE_URL}/users/AllUsers?type=doctor`, {
       //   method: "GET",
       //   headers: {
@@ -77,7 +79,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
       //     "Content-Type": "application/json",
       //   },
       // });
-      if (!response.status === 'success') {
+      if (!response.status === "success") {
         if (response.status === 401) {
           message.error("Session expired. Please login again.");
           navigate("/login");
@@ -87,13 +89,14 @@ const response = await apiGet("users/AllUsers?type=doctor")
       }
 
       const data = response.data;
-      console.log
+      console.log;
       let doctorsData = [];
 
       if (data.status === "success" && data.data) {
-        doctorsData = Array.isArray(data.data) ? data.data.reverse() : [data.data];
-      }
-     else {
+        doctorsData = Array.isArray(data.data)
+          ? data.data.reverse()
+          : [data.data];
+      } else {
         doctorsData = data.data.reverse() || [];
       }
       // Normalize doctor data
@@ -133,10 +136,16 @@ const response = await apiGet("users/AllUsers?type=doctor")
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
-    const pending = doctors.filter((doc) => doc.status?.toLowerCase() === "inactive").length;
-    const rejected = doctors.filter((doc) => doc.status?.toLowerCase() === "rejected").length;
+    const pending = doctors.filter(
+      (doc) => doc.status?.toLowerCase() === "inactive"
+    ).length;
+    const rejected = doctors.filter(
+      (doc) => doc.status?.toLowerCase() === "rejected"
+    ).length;
     const approved = doctors.filter(
-      (doc) => doc.status?.toLowerCase() === "approved" || doc.status?.toLowerCase() === "active"
+      (doc) =>
+        doc.status?.toLowerCase() === "approved" ||
+        doc.status?.toLowerCase() === "active"
     ).length;
 
     return { pending, rejected, approved };
@@ -145,20 +154,25 @@ const response = await apiGet("users/AllUsers?type=doctor")
   // Filter doctors based on search and status
 
   const filteredDoctors = useMemo(() => {
-  return doctors.filter((doctor) => {
-    const searchTextLower = searchText.toLowerCase();
-    
-    const matchesSearch =
-      (doctor.firstname?.toLowerCase()?.includes(searchTextLower) || false) ||
-      (doctor.lastname?.toLowerCase()?.includes(searchTextLower) || false) ||
-      (doctor.email?.toLowerCase()?.includes(searchTextLower) || false) ||
-      (doctor.mobile?.toString()?.includes(searchTextLower) || false); // Added mobile number search
-    
-    const matchesStatus = statusFilter === "all" || doctor.status?.toLowerCase() === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-}, [doctors, searchText, statusFilter]);
+    return doctors.filter((doctor) => {
+      const searchTextLower = searchText.toLowerCase();
+
+      const matchesSearch =
+        doctor.firstname?.toLowerCase()?.includes(searchTextLower) ||
+        false ||
+        doctor.lastname?.toLowerCase()?.includes(searchTextLower) ||
+        false ||
+        doctor.email?.toLowerCase()?.includes(searchTextLower) ||
+        false ||
+        doctor.mobile?.toString()?.includes(searchTextLower) ||
+        false; // Added mobile number search
+
+      const matchesStatus =
+        statusFilter === "all" || doctor.status?.toLowerCase() === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [doctors, searchText, statusFilter]);
   // Utility functions
   const getImageSrc = useCallback((profilepic) => {
     if (profilepic?.data && profilepic?.mimeType) {
@@ -173,8 +187,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
   }, []);
 
   const handleViewProfile = (userId, doctorId) => {
-    
-    navigate('/SuperAdmin/profileView', { state: { userId, doctorId } });
+    navigate("/SuperAdmin/profileView", { state: { userId, doctorId } });
   };
 
   const handleRefresh = useCallback(() => {
@@ -206,7 +219,9 @@ const response = await apiGet("users/AllUsers?type=doctor")
         width: 250,
         render: (_, record) => {
           const imageSrc = getImageSrc(record.profilepic);
-          const fullName = `${record.firstname || "N/A"} ${record.lastname || ""}`.trim();
+          const fullName = `${record.firstname || "N/A"} ${
+            record.lastname || ""
+          }`.trim();
 
           return (
             <Space size={12}>
@@ -219,9 +234,13 @@ const response = await apiGet("users/AllUsers?type=doctor")
                 }}
               >
                 {!imageSrc &&
-                  (fullName === "N/A"
-                    ? <UserOutlined />
-                    : `${record.firstname?.[0] ?? ""}${record.lastname?.[0] ?? ""}`)}
+                  (fullName === "N/A" ? (
+                    <UserOutlined />
+                  ) : (
+                    `${record.firstname?.[0] ?? ""}${
+                      record.lastname?.[0] ?? ""
+                    }`
+                  ))}
               </Avatar>
               <div>
                 <Text strong style={{ display: "block", fontSize: "14px" }}>
@@ -257,7 +276,10 @@ const response = await apiGet("users/AllUsers?type=doctor")
           };
 
           return (
-            <Tag color={specColor[specName] || "default"} style={{ borderRadius: "12px" }}>
+            <Tag
+              color={specColor[specName] || "default"}
+              style={{ borderRadius: "12px" }}
+            >
               {specName}
             </Tag>
           );
@@ -298,10 +320,16 @@ const response = await apiGet("users/AllUsers?type=doctor")
             rejected: { color: "red", icon: "❌" },
           };
 
-          const config = statusConfig[status?.toLowerCase()] || { color: "default", icon: "⚪" };
+          const config = statusConfig[status?.toLowerCase()] || {
+            color: "default",
+            icon: "⚪",
+          };
 
           return (
-            <Tag color={config.color} style={{ borderRadius: "12px", textTransform: "capitalize" }}>
+            <Tag
+              color={config.color}
+              style={{ borderRadius: "12px", textTransform: "capitalize" }}
+            >
               {config.icon} {status}
             </Tag>
           );
@@ -330,9 +358,18 @@ const response = await apiGet("users/AllUsers?type=doctor")
   };
 
   return (
-    <div style={{ padding: "24px", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <div
+      style={{
+        padding: "24px",
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
       {/* Header */}
-      <Title level={2} style={{ marginBottom: "24px", fontSize: "24px", fontWeight: 600 }}>
+      <Title
+        level={2}
+        style={{ marginBottom: "24px", fontSize: "24px", fontWeight: 600 }}
+      >
         Doctor Onboarding Request
       </Title>
 
@@ -350,7 +387,13 @@ const response = await apiGet("users/AllUsers?type=doctor")
             hoverable
             onClick={() => handleCardClick("approved")}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <div>
                 <div
                   style={{
@@ -384,7 +427,10 @@ const response = await apiGet("users/AllUsers?type=doctor")
                 }}
               >
                 <CheckCircleOutlined
-                  style={{ color: "white", fontSize: "clamp(16px, 2.5vw, 20px)" }}
+                  style={{
+                    color: "white",
+                    fontSize: "clamp(16px, 2.5vw, 20px)",
+                  }}
                 />
               </div>
             </div>
@@ -402,7 +448,13 @@ const response = await apiGet("users/AllUsers?type=doctor")
             hoverable
             onClick={() => handleCardClick("inactive")}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <div>
                 <div
                   style={{
@@ -436,7 +488,10 @@ const response = await apiGet("users/AllUsers?type=doctor")
                 }}
               >
                 <ClockCircleOutlined
-                  style={{ color: "white", fontSize: "clamp(16px, 2.5vw, 20px)" }}
+                  style={{
+                    color: "white",
+                    fontSize: "clamp(16px, 2.5vw, 20px)",
+                  }}
                 />
               </div>
             </div>
@@ -454,7 +509,13 @@ const response = await apiGet("users/AllUsers?type=doctor")
             hoverable
             onClick={() => handleCardClick("rejected")}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <div>
                 <div
                   style={{
@@ -488,7 +549,10 @@ const response = await apiGet("users/AllUsers?type=doctor")
                 }}
               >
                 <CloseCircleOutlined
-                  style={{ color: "white", fontSize: "clamp(16px, 2.5vw, 20px)" }}
+                  style={{
+                    color: "white",
+                    fontSize: "clamp(16px, 2.5vw, 20px)",
+                  }}
                 />
               </div>
             </div>
@@ -500,7 +564,7 @@ const response = await apiGet("users/AllUsers?type=doctor")
       <Row style={{ marginBottom: "clamp(16px, 2vw, 24px)" }}>
         <Col xs={24}>
           <Input
-          placeholder="Search by name or mobile number..."
+            placeholder="Search by name or mobile number..."
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -514,42 +578,49 @@ const response = await apiGet("users/AllUsers?type=doctor")
       </Row>
 
       {/* Table */}
-        <Card
+      <Card
+        style={{
+          borderRadius: "12px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+          transition: "all 0.3s ease",
+        }}
+        hoverable
+      >
+        <div
           style={{
-            borderRadius: "12px",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-            transition: "all 0.3s ease",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "clamp(12px, 2vw, 16px)",
+            flexWrap: "wrap",
+            gap: "8px",
           }}
-          hoverable
         >
           <div
             style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "clamp(12px, 2vw, 16px)",
-          flexWrap: "wrap",
-          gap: "8px",
+              fontWeight: 600,
+              fontSize: "clamp(14px, 2vw, 16px)",
+              color: "#262626",
             }}
           >
-            <div
-          style={{
-            fontWeight: 600,
-            fontSize: "clamp(14px, 2vw, 16px)",
-            color: "#262626",
-          }}
-            >
-          Doctor Requests
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {/* <DatePicker.RangePicker
+            {statusFilter === "approved"
+              ? "Doctors Approved"
+              : statusFilter === "rejected"
+              ? "Doctors Rejected"
+              : statusFilter === "inactive"
+              ? "Doctor Requests"
+              : "All Doctor Requests"}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* <DatePicker.RangePicker
             value={null}
             placeholder={["Start Date", "End Date"]}
             style={{ borderRadius: "12px", fontSize: "clamp(12px, 1.8vw, 14px)" }}
             suffixIcon={<CalendarOutlined />}
             allowClear
           /> */}
-          {/* <Select
+            {/* <Select
             value={statusFilter}
             onChange={setStatusFilter}
             style={{
@@ -563,38 +634,39 @@ const response = await apiGet("users/AllUsers?type=doctor")
             <Option value="rejected">Rejected</Option>
             <Option value="all">All</Option>
           </Select> */}
-            </div>
           </div>
-          <Table
-            columns={columns}
-            dataSource={filteredDoctors}
-            pagination={{
-          current: currentPage,
-          pageSize: pageSize,
-          total: filteredDoctors.length,
-          showSizeChanger: true,
-          onChange: (page, size) => {
+        </div>
+        <Table
+          columns={columns}
+          dataSource={filteredDoctors}
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: filteredDoctors.length,
+            showSizeChanger: true,
+            onChange: (page, size) => {
               setCurrentPage(page);
               setPageSize(size);
             },
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} items`,
             style: { marginTop: "16px" },
           }}
           scroll={{ x: true }}
           loading={loading}
           rowClassName="custom-row"
           style={{
-            '.ant-table-thead > tr > th': {
-              backgroundColor: '#fafafa',
+            ".ant-table-thead > tr > th": {
+              backgroundColor: "#fafafa",
               fontWeight: 600,
-              color: '#262626',
-              fontSize: 'clamp(12px, 1.8vw, 14px)',
+              color: "#262626",
+              fontSize: "clamp(12px, 1.8vw, 14px)",
             },
-            '.ant-table-row': {
-              transition: 'background-color 0.3s ease',
+            ".ant-table-row": {
+              transition: "background-color 0.3s ease",
             },
-            '.ant-table-row:hover': {
-              backgroundColor: '#f0f9ff',
+            ".ant-table-row:hover": {
+              backgroundColor: "#f0f9ff",
             },
           }}
         />

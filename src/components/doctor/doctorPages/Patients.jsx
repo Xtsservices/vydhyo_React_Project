@@ -9,12 +9,14 @@ import {
   Trash2,
 } from "lucide-react";
 import { message, Modal, Select, Button, Input, Table } from "antd";
+import { EyeOutlined } from "@ant-design/icons";
+
 import moment from "moment";
 import { apiGet } from "../../api";
 import styles from "../../stylings/MyPatientsStyles";
 import { useSelector } from "react-redux";
 
-const { option } = Select;
+const { Option } = Select;
 
 const MyPatients = () => {
   const navigate = useNavigate();
@@ -23,26 +25,26 @@ const MyPatients = () => {
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
   const [searchText, setSearchText] = useState("");
-  const [searchField, setSearchField] = useState("all"); // New state for search field selection
-  const [sortBy, setSortBy] = useState("all"); // Default to 'all' so all patients show initially
+  const [searchField, setSearchField] = useState("all");
+  const [sortBy, setSortBy] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [filterStatus, setFilterStatus] = useState("");
-  const [filterAppointmentStatus, setFilterAppointmentStatus] = useState(""); // New state for appointmentStatus
+  const [filterAppointmentStatus, setFilterAppointmentStatus] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("");
 
-  // Patient Profile Modal States
-  const [isPatientProfileModalVisible, setIsPatientProfileModalVisible] =
+  // Prescription Modal States
+  const [isPrescriptionModalVisible, setIsPrescriptionModalVisible] =
     useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [medicines, setMedicines] = useState([]);
-  const [tests, setTests] = useState([]);
-  const [medicineName, setMedicineName] = useState("");
-  const [medicineQuantity, setMedicineQuantity] = useState("");
-  const [testName, setTestName] = useState("");
+  const [prescriptionData, setPrescriptionData] = useState({
+    medicines: [],
+    tests: [],
+  });
+  const [prescriptionLoading, setPrescriptionLoading] = useState(false);
 
   const pageSize = 10;
 
@@ -145,13 +147,51 @@ const MyPatients = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [doctorId]);
 
   useEffect(() => {
     if (user && doctorId) {
       fetchPatients();
     }
-  }, [user, doctorId]);
+  }, [user, doctorId, fetchPatients]);
+
+  const fetchPrescriptionDetails = useCallback(async (patientId) => {
+    setPrescriptionLoading(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        message.error("No authentication token found. Please login again.");
+        return;
+      }
+
+      const response = await apiGet(
+        `/pharmacy/getPatientPrescriptionDetails/${patientId}`
+      );
+      const data = response.data;
+
+      if (response.status === 200 && data.success) {
+        setPrescriptionData({
+          medicines: data.data.medicines || [],
+          tests:
+            data.data.tests.map((test) => ({
+              id: test.id,
+              name: test.testName,
+              labTestID: test.labTestID,
+              status: test.status,
+             
+            })) || [],
+        });
+      } else {
+        throw new Error("Failed to fetch prescription details");
+      }
+    } catch (error) {
+      console.error("Error fetching prescription details:", error);
+      message.error("Failed to fetch prescription details. Please try again.");
+      setPrescriptionData({ medicines: [], tests: [] });
+    } finally {
+      setPrescriptionLoading(false);
+    }
+  }, []);
 
   const handleSearch = useCallback(
     (e) => {
@@ -241,62 +281,15 @@ const MyPatients = () => {
     message.success("Patients data exported successfully");
   }, [patients]);
 
-  const handleViewProfile = useCallback((patient) => {
-    setSelectedPatient(patient);
-    setMedicines([]);
-    setTests([]);
-    setMedicineName("");
-    setMedicineQuantity("");
-    setTestName("");
-    setIsPatientProfileModalVisible(true);
-  }, []);
-
-  const handleAddMedicine = () => {
-    if (!medicineName.trim() || !medicineQuantity.trim()) {
-      message.error("Please enter medicine name and quantity");
-      return;
-    }
-
-    const newMedicine = {
-      id: Date.now(),
-      name: medicineName.trim(),
-      quantity: medicineQuantity.trim(),
-    };
-
-    setMedicines([...medicines, newMedicine]);
-    setMedicineName("");
-    setMedicineQuantity("");
-    message.success("Medicine added successfully");
-  };
-
-  const handleRemoveMedicine = (id) => {
-    setMedicines(medicines.filter((medicine) => medicine.id !== id));
-  };
-
-  const handleAddTest = () => {
-    if (!testName.trim()) {
-      message.error("Please enter test name");
-      return;
-    }
-
-    const newTest = {
-      id: Date.now(),
-      name: testName.trim(),
-    };
-
-    setTests([...tests, newTest]);
-    setTestName("");
-    message.success("Test added successfully");
-  };
-
-  const handleRemoveTest = (id) => {
-    setTests(tests.filter((test) => test.id !== id));
-  };
-
-  const handleSubmitPatientProfile = () => {
-    message.success("Patient profile updated successfully");
-    setIsPatientProfileModalVisible(false);
-  };
+  const handleViewPrescription = useCallback(
+    (patient) => {
+      setSelectedPatient(patient);
+      setPrescriptionData({ medicines: [], tests: [] });
+      fetchPrescriptionDetails(patient.id);
+      setIsPrescriptionModalVisible(true);
+    },
+    [fetchPrescriptionDetails]
+  );
 
   const getStatusBadge = (status) => {
     const badgeStyle =
@@ -329,27 +322,13 @@ const MyPatients = () => {
   const medicineColumns = [
     {
       title: "Medicine Name",
-      dataIndex: "name",
-      key: "name",
+      dataIndex: "medName",
+      key: "medName",
     },
     {
       title: "Quantity",
       dataIndex: "quantity",
       key: "quantity",
-    },
-    {
-      title: "Action",
-      key: "action",
-      render: (_, record) => (
-        <Button
-          type="link"
-          danger
-          icon={<Trash2 size={16} />}
-          onClick={() => handleRemoveMedicine(record.id)}
-        >
-          Remove
-        </Button>
-      ),
     },
   ];
 
@@ -360,25 +339,21 @@ const MyPatients = () => {
       key: "name",
     },
     {
-      title: "Action",
-      key: "action",
-      render: (_, record) => (
-        <Button
-          type="link"
-          danger
-          icon={<Trash2 size={16} />}
-          onClick={() => handleRemoveTest(record.id)}
-        >
-          Remove
-        </Button>
-      ),
+      title: "Lab Test ID",
+      dataIndex: "labTestID",
+      key: "labTestID",
     },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+    },
+    
   ];
 
   // Filtering logic for search and dropdown
   useEffect(() => {
     let filtered = [...patients];
-    // Search filter
     if (searchText) {
       filtered = filtered.filter((patient) => {
         if (searchField === "all") {
@@ -398,7 +373,6 @@ const MyPatients = () => {
         return true;
       });
     }
-    // Dropdown filter for appointmentType (normalize for comparison)
     if (sortBy && sortBy !== "all") {
       filtered = filtered.filter(
         (patient) =>
@@ -425,7 +399,6 @@ const MyPatients = () => {
           <div style={styles.leftControls}>
             <div style={styles.searchContainer}>
               <Search style={styles.searchIcon} />
-
               <input
                 type="text"
                 placeholder={`Search by ${
@@ -438,17 +411,6 @@ const MyPatients = () => {
                 onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
               />
             </div>
-
-            {/* <button
-              style={styles.filterButton}
-              onClick={() => setIsFilterModalVisible(true)}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#f9fafb")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "white")}
-            >
-              <Filter style={{ width: "16px", height: "16px" }} />
-              Filter
-            </button> */}
-
             <select
               value={sortBy}
               onChange={(e) => handleSort(e.target.value)}
@@ -465,189 +427,44 @@ const MyPatients = () => {
               <option value="followup-homecare">Followup Homecare</option>
             </select>
           </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            {/* <button
-              style={{
-                ...styles.exportButton,
-                marginRight: "8px",
-                backgroundColor: "#6b7280",
-              }}
-              onClick={() => {
-                setSearchText("");
-                setSearchField("all");
-                setFilterStatus("");
-                setFilterAppointmentStatus("");
-                setFilterDepartment("");
-                setSortBy("Name");
-                setCurrentPage(1);
-                setFilteredPatients(patients);
-              }}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#4b5563")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "#6b7280")}
-            >
-              Reset
-            </button>
-            <button
-              style={styles.exportButton}
-              onClick={handleExport}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#15803d")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "#16a34a")}
-            >
-              <Download style={{ width: "16px", height: "16px" }} />
-              Export
-            </button> */}
-          </div>
         </div>
       </div>
 
-      {/* <Modal
-        title="Filter Patients"
-        open={isFilterModalVisible}
-        onOk={() => {
-          setCurrentPage(1);
-          let filtered = [...patients];
-          if (filterStatus)
-            filtered = filtered.filter(
-              (patient) => patient.status === filterStatus
-            );
-          if (filterAppointmentStatus)
-            filtered = filtered.filter(
-              (patient) => patient.appointmentStatus === filterAppointmentStatus
-            );
-          if (filterDepartment)
-            filtered = filtered.filter((patient) =>
-              patient.department
-                .toLowerCase()
-                .includes(filterDepartment.toLowerCase())
-            );
-          setFilteredPatients(filtered);
-          setIsFilterModalVisible(false);
-        }}
-        onCancel={() => setIsFilterModalVisible(false)}
-        footer={[
-          <Button
-            key="reset"
-            onClick={() => {
-              setFilterStatus("");
-              setFilterAppointmentStatus("");
-              setFilterDepartment("");
-              setFilteredPatients(patients);
-              setIsFilterModalVisible(false);
-            }}
-          >
-            Reset
-          </Button>,
-          <Button key="cancel" onClick={() => setIsFilterModalVisible(false)}>
-            Cancel
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            onClick={() => {
-              setCurrentPage(1);
-              let filtered = [...patients];
-              if (filterStatus)
-                filtered = filtered.filter(
-                  (patient) => patient.status === filterStatus
-                );
-              if (filterAppointmentStatus)
-                filtered = filtered.filter(
-                  (patient) =>
-                    patient.appointmentStatus === filterAppointmentStatus
-                );
-              if (filterDepartment)
-                filtered = filtered.filter((patient) =>
-                  patient.department
-                    .toLowerCase()
-                    .includes(filterDepartment.toLowerCase())
-                );
-              setFilteredPatients(filtered);
-              setIsFilterModalVisible(false);
-            }}
-          >
-            Apply Filters
-          </Button>,
-        ]}
-      >
-        <div style={styles.filterModalContent}>
-          <div style={styles.filterField}>
-            <label style={styles.filterLabel}>Status</label>
-            <Select
-              value={filterStatus}
-              onChange={(value) => setFilterStatus(value)}
-              style={{ width: "100%" }}
-              placeholder="Select status"
-              allowClear
-            >
-              <option value="New Patient">New Patient</option>
-              <option value="Follow-up">Follow-up</option>
-            </Select>
-          </div>
-          <div style={styles.filterField}>
-            <label style={styles.filterLabel}>Appointment Status</label>
-            <Select
-              value={filterAppointmentStatus}
-              onChange={(value) => setFilterAppointmentStatus(value)}
-              style={{ width: "100%" }}
-              placeholder="Select appointment status"
-              allowClear
-            >
-              {uniqueAppointmentStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div style={styles.filterField}>
-            <label style={styles.filterLabel}>Department</label>
-            <Select
-              value={filterDepartment}
-              onChange={(value) => setFilterDepartment(value)}
-              style={{ width: "100%" }}
-              placeholder="Select department"
-              allowClear
-            >
-              {uniqueDepartments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-      </Modal> */}
-
-      {/* Patient Profile Modal */}
-      {/* <Modal
-        title="Patient Profile"
-        open={isPatientProfileModalVisible}
-        onCancel={() => setIsPatientProfileModalVisible(false)}
+      {/* Prescription Modal */}
+      <Modal
+        title="Patient Prescription Details"
+        open={isPrescriptionModalVisible}
+        onCancel={() => setIsPrescriptionModalVisible(false)}
         width={800}
         footer={[
-          <Button key="cancel" onClick={() => setIsPatientProfileModalVisible(false)}>
-            Cancel
-          </Button>,
-          <Button key="submit" type="primary" onClick={handleSubmitPatientProfile}>
-            Submit
+          <Button
+            key="close"
+            onClick={() => setIsPrescriptionModalVisible(false)}
+          >
+            Close
           </Button>,
         ]}
       >
         {selectedPatient && (
-          <div style={{ padding: '20px 0' }}>
-          
-            <div style={{ marginBottom: '30px' }}>
-              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+          <div style={{ padding: "20px 0" }}>
+            <div style={{ marginBottom: "30px" }}>
+              <h3
+                style={{
+                  marginBottom: "20px",
+                  color: "#1f2937",
+                  fontSize: "18px",
+                  fontWeight: "600",
+                }}
+              >
                 Patient Information
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "16px",
+                }}
+              >
                 <div>
                   <strong>Patient ID:</strong> {selectedPatient.id}
                 </div>
@@ -675,72 +492,66 @@ const MyPatients = () => {
               </div>
             </div>
 
-  
-            <div style={{ marginBottom: '30px' }}>
-              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
-                Add Medicine
+            <div style={{ marginBottom: "30px" }}>
+              <h3
+                style={{
+                  marginBottom: "20px",
+                  color: "#1f2937",
+                  fontSize: "18px",
+                  fontWeight: "600",
+                }}
+              >
+                Prescribed Medicines
               </h3>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
-                <Input
-                  placeholder="Medicine Name"
-                  value={medicineName}
-                  onChange={(e) => setMedicineName(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <Input
-                  placeholder="Quantity"
-                  value={medicineQuantity}
-                  onChange={(e) => setMedicineQuantity(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <Button type="primary" icon={<Plus size={16} />} onClick={handleAddMedicine}>
-                  Add
-                </Button>
-              </div>
-              
-              {medicines.length > 0 && (
+              {prescriptionLoading ? (
+                <div style={{ textAlign: "center", padding: "24px" }}>
+                  Loading prescription details...
+                </div>
+              ) : prescriptionData.medicines.length > 0 ? (
                 <Table
-                  dataSource={medicines}
+                  dataSource={prescriptionData.medicines}
                   columns={medicineColumns}
                   rowKey="id"
                   pagination={false}
                   size="small"
-                  style={{ marginTop: '16px' }}
+                  style={{ marginTop: "16px" }}
                 />
+              ) : (
+                <div>No medicines prescribed for this patient.</div>
               )}
             </div>
 
-          
-            <div style={{ marginBottom: '20px' }}>
-              <h3 style={{ marginBottom: '20px', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
-                Add Test
+            <div style={{ marginBottom: "20px" }}>
+              <h3
+                style={{
+                  marginBottom: "20px",
+                  color: "#1f2937",
+                  fontSize: "18px",
+                  fontWeight: "600",
+                }}
+              >
+                Prescribed Tests
               </h3>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
-                <Input
-                  placeholder="Test Name"
-                  value={testName}
-                  onChange={(e) => setTestName(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <Button type="primary" icon={<Plus size={16} />} onClick={handleAddTest}>
-                  Add
-                </Button>
-              </div>
-              
-              {tests.length > 0 && (
+              {prescriptionLoading ? (
+                <div style={{ textAlign: "center", padding: "24px" }}>
+                  Loading prescription details...
+                </div>
+              ) : prescriptionData.tests.length > 0 ? (
                 <Table
-                  dataSource={tests}
+                  dataSource={prescriptionData.tests}
                   columns={testColumns}
                   rowKey="id"
                   pagination={false}
                   size="small"
-                  style={{ marginTop: '16px' }}
+                  style={{ marginTop: "16px" }}
                 />
+              ) : (
+                <div>No tests prescribed for this patient.</div>
               )}
             </div>
           </div>
         )}
-      </Modal> */}
+      </Modal>
 
       <div style={styles.tableContainer}>
         <div style={styles.tableHeader}>
@@ -750,7 +561,7 @@ const MyPatients = () => {
           <div>Age</div>
           <div>Phone</div>
           <div>Last Visit</div>
-          {/* <div>Action</div> */}
+          <div>Action</div>
         </div>
 
         <div style={styles.tableBody}>
@@ -790,10 +601,10 @@ const MyPatients = () => {
                 <div style={styles.tableCell}>{patient.age}</div>
                 <div style={styles.tableCell}>{patient.phone}</div>
                 <div style={styles.tableCell}>{patient.lastVisit}</div>
-                {/* <div>
+                <div>
                   <button
                     style={styles.actionButton}
-                    onClick={() => handleViewProfile(patient)}
+                    onClick={() => handleViewPrescription(patient)}
                     onMouseEnter={(e) =>
                       (e.target.style.backgroundColor = "#f3f4f6")
                     }
@@ -801,15 +612,14 @@ const MyPatients = () => {
                       (e.target.style.backgroundColor = "transparent")
                     }
                   >
-                    <MoreVertical
+                    <EyeOutlined
                       style={{
-                        width: "16px",
-                        height: "16px",
+                        fontSize: "16px",
                         color: "#9ca3af",
                       }}
                     />
                   </button>
-                </div> */}
+                </div>
               </div>
             ))
           )}

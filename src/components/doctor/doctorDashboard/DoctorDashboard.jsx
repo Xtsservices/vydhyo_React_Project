@@ -269,7 +269,8 @@ const Header = ({ user, navigate }) => {
         >
           {greeting}{" "}
           <span style={{ color: "#ff6b6b" }}>
-            Dr. {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
+            {user?.role === "doctor" && "Dr. "}
+            {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
           </span>
         </Title>
         <Text
@@ -903,7 +904,11 @@ const PatientFeedback = () => (
   </Card>
 );
 
-const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorId }) => {
+const ClinicAvailability = ({
+  currentClinicIndex,
+  setCurrentClinicIndex,
+  doctorId,
+}) => {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [nextAvailableSlot, setNextAvailableSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -929,11 +934,11 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
         const response = await apiGet(
           `/appointment/getNextAvailableSlotsByDoctorAndAddress?doctorId=${doctorId}&addressId=686cf2e2db9237e81c3618f5`
         );
-        
+
         if (response.data.status === "success") {
           const slots = response.data.data.availableSlots || [];
           const nextSlot = response.data.data.nextAvailableSlot || null;
-          
+
           setAvailableSlots(slots);
           setNextAvailableSlot(nextSlot);
         } else {
@@ -1007,7 +1012,14 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
             >
               Clinic Availability
             </Title>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                marginBottom: "12px",
+              }}
+            >
               <Title
                 level={5}
                 style={{
@@ -1129,7 +1141,8 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
             >
               {nextAvailableSlot ? (
                 <>
-                  {formatDate(nextAvailableSlot.date)} at {formatTime(nextAvailableSlot.startTime)}
+                  {formatDate(nextAvailableSlot.date)} at{" "}
+                  {formatTime(nextAvailableSlot.startTime)}
                 </>
               ) : (
                 "No upcoming availability"
@@ -1141,15 +1154,15 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
             style={{
               position: "absolute",
               bottom: "42px",
-              right: "1px", 
+              right: "1px",
               display: "flex",
-              gap: "16rem", 
+              gap: "16rem",
             }}
           >
             <div
               style={{
-                width: "27px", 
-                height: "28px", 
+                width: "27px",
+                height: "28px",
                 borderRadius: "50%",
                 backgroundColor: "#9EBEFF",
                 display: "flex",
@@ -1334,7 +1347,9 @@ const DoctorDashboard = () => {
 
   const getTodayAppointmentCount = async () => {
     try {
-      const response = await apiGet(`/appointment/getTodayAppointmentCount?doctorId=${doctorId}`);
+      const response = await apiGet(
+        `/appointment/getTodayAppointmentCount?doctorId=${doctorId}`
+      );
       if (response.data.status === "success") {
         setDashboardData((prev) => ({
           ...prev,
@@ -1463,11 +1478,11 @@ const DoctorDashboard = () => {
   };
 
   useEffect(() => {
-    if(user && doctorId){
+    if (user && doctorId) {
       getAppointments();
       getTodayAppointmentCount();
     }
-  
+
     getTodayRevenue();
     getRevenueSummary();
   }, [user, doctorId]);
@@ -1498,7 +1513,7 @@ const DoctorDashboard = () => {
           }}
         >
           <AppointmentsCard dashboardData={dashboardData} />
-          
+
           {user?.role === "doctor" && (
             <RevenueCard dashboardData={dashboardData} />
           )}

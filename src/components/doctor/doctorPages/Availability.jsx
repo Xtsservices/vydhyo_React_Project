@@ -76,45 +76,50 @@ const AvailabilityScreen = () => {
   // Helper function to get current clinic's slots
   const getCurrentClinicSlots = () => {
     if (!selectedClinic) return { availableSlots: [], unavailableSlots: [] };
-    return clinicSlots[selectedClinic] || { availableSlots: [], unavailableSlots: [] };
+    return (
+      clinicSlots[selectedClinic] || {
+        availableSlots: [],
+        unavailableSlots: [],
+      }
+    );
   };
 
   // Helper function to set current clinic's slots
   const setCurrentClinicSlots = (newSlots) => {
-    setClinicSlots(prev => ({
+    setClinicSlots((prev) => ({
       ...prev,
-      [selectedClinic]: newSlots
+      [selectedClinic]: newSlots,
     }));
   };
 
   const getCurrentUserData = async () => {
-  try {
-    const response = await apiGet("/users/getUser");
-    const userData = response.data?.data;
-    if (userData?.addresses) {
-      // Filter only active clinics (status === "Active")
-      const activeClinics = userData.addresses
-        .filter(address => address.status === "Active") // Filter active clinics
-        .map((address) => ({
-          label: address.clinicName,
-          value: address.addressId,
-          addressData: address // Include the full address data if needed
-        }));
-      
-      setClinics(activeClinics);
-      
-      if (activeClinics.length > 0) {
-        setSelectedClinic(activeClinics[0].value);
-      } else {
-        setSelectedClinic(null);
-        message.warning("No active clinics available");
+    try {
+      const response = await apiGet("/users/getUser");
+      const userData = response.data?.data;
+      if (userData?.addresses) {
+        // Filter only active clinics (status === "Active")
+        const activeClinics = userData.addresses
+          .filter((address) => address.status === "Active") // Filter active clinics
+          .map((address) => ({
+            label: address.clinicName,
+            value: address.addressId,
+            addressData: address, // Include the full address data if needed
+          }));
+
+        setClinics(activeClinics);
+
+        if (activeClinics.length > 0) {
+          setSelectedClinic(activeClinics[0].value);
+        } else {
+          setSelectedClinic(null);
+          message.warning("No active clinics available");
+        }
       }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      message.error("Failed to fetch clinic data");
     }
-  } catch (error) {
-    console.error("Error fetching user data:", error);
-    message.error("Failed to fetch clinic data");
-  }
-};
+  };
 
   useEffect(() => {
     if (user) {
@@ -129,73 +134,77 @@ const AvailabilityScreen = () => {
   }, [selectedDate, doctorId, selectedClinic]);
 
   const fetchSlotsForDate = async (date) => {
-  try {
-    setLoading(true);
-    const response = await apiGet("/appointment/getSlotsByDoctorIdAndDate", {
-      params: {
-        doctorId: doctorId,
-        date: date,
-        addressId: selectedClinic
-      },
-    });
+    try {
+      setLoading(true);
+      const response = await apiGet("/appointment/getSlotsByDoctorIdAndDate", {
+        params: {
+          doctorId: doctorId,
+          date: date,
+          addressId: selectedClinic,
+        },
+      });
 
-    if (response.data && response.data.status === "success") {
-      const slotsData = response.data.data;
-      const available = [];
-      const unavailable = [];
+      if (response.data && response.data.status === "success") {
+        const slotsData = response.data.data;
+        const available = [];
+        const unavailable = [];
 
-      if (slotsData?.slots && Array.isArray(slotsData.slots)) {
-        slotsData.slots.forEach((slot) => {
-          const timeStr = moment(slot.time, "HH:mm").format("hh:mm A");
-          if (slot.status === "available") {
-            available.push({
-              time: timeStr,
-              available: true,
-              id: slot._id,
-              originalTime: slot.time,
-            });
-          } else {
-            unavailable.push({
-              time: timeStr,
-              available: false,
-              id: slot._id,
-              reason: slot.reason || "Not available",
-              originalTime: slot.time,
-            });
-          }
+        if (slotsData?.slots && Array.isArray(slotsData.slots)) {
+          slotsData.slots.forEach((slot) => {
+            const timeStr = moment(slot.time, "HH:mm").format("hh:mm A");
+            if (slot.status === "available") {
+              available.push({
+                time: timeStr,
+                available: true,
+                id: slot._id,
+                originalTime: slot.time,
+              });
+            } else {
+              unavailable.push({
+                time: timeStr,
+                available: false,
+                id: slot._id,
+                reason: slot.reason || "Not available",
+                originalTime: slot.time,
+              });
+            }
+          });
+        }
+
+        setCurrentClinicSlots({
+          availableSlots: available,
+          unavailableSlots: unavailable,
         });
+      } else if (response.response?.status === 404) {
+        // Handle 404 - No slots found for this date
+        setCurrentClinicSlots({
+          availableSlots: [],
+          unavailableSlots: [],
+        });
+        message.info(
+          "No slots found for this date - starting with empty schedule"
+        );
+      } else {
+        message.error(response.data?.message || "Failed to fetch slots");
       }
-
-      setCurrentClinicSlots({
-        availableSlots: available,
-        unavailableSlots: unavailable
-      });
-    } else if (response.response?.status === 404) {
-      // Handle 404 - No slots found for this date
-      setCurrentClinicSlots({
-        availableSlots: [],
-        unavailableSlots: []
-      });
-      message.info("No slots found for this date - starting with empty schedule");
-    } else {
-      message.error(response.data?.message || "Failed to fetch slots");
+    } catch (error) {
+      console.error("Error fetching slots:", error);
+      if (error.response?.status === 404) {
+        // Handle 404 from the API
+        setCurrentClinicSlots({
+          availableSlots: [],
+          unavailableSlots: [],
+        });
+        message.info(
+          "No slots found for this date - starting with empty schedule"
+        );
+      } else {
+        message.error("Failed to fetch slots");
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching slots:", error);
-    if (error.response?.status === 404) {
-      // Handle 404 from the API
-      setCurrentClinicSlots({
-        availableSlots: [],
-        unavailableSlots: []
-      });
-      message.info("No slots found for this date - starting with empty schedule");
-    } else {
-      message.error("Failed to fetch slots");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleUpdateSlots = async () => {
     try {
@@ -204,26 +213,26 @@ const AvailabilityScreen = () => {
 
       // Prepare all slots data - only include slots that should exist
       const allSlots = [
-        ...availableSlots.map(slot => ({
+        ...availableSlots.map((slot) => ({
           time: slot.originalTime,
           status: "available",
-          reason: ""
+          reason: "",
         })),
-        ...unavailableSlots.map(slot => ({
+        ...unavailableSlots.map((slot) => ({
           time: slot.originalTime,
           status: "unavailable",
-          reason: slot.reason
-        }))
+          reason: slot.reason,
+        })),
       ];
 
       // Convert to the format expected by the API
-      const timeSlots = allSlots.map(slot => slot.time);
+      const timeSlots = allSlots.map((slot) => slot.time);
 
       const response = await apiPut("/appointment/updateDoctorSlots", {
         doctorId: doctorId,
         date: selectedDate.format("YYYY-MM-DD"),
         timeSlots: timeSlots,
-        addressId: selectedClinic
+        addressId: selectedClinic,
       });
 
       if (response.data && response.data.status === "success") {
@@ -256,7 +265,7 @@ const AvailabilityScreen = () => {
         ).format("HH:mm"),
         interval: availableDuration,
         isAvailable: true,
-        addressId: selectedClinic
+        addressId: selectedClinic,
       });
 
       if (response.data && response.data.status === "success") {
@@ -292,7 +301,7 @@ const AvailabilityScreen = () => {
           message.success("Available slots deleted successfully");
           setCurrentClinicSlots({
             ...getCurrentClinicSlots(),
-            availableSlots: []
+            availableSlots: [],
           });
         } else {
           message.error(
@@ -314,93 +323,97 @@ const AvailabilityScreen = () => {
     try {
       setLoading(true);
       const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
-      
+
       // Generate the time slots we want to mark as unavailable
       const startTime = moment(
         `${unavailableStartTime}:00 ${unavailableStartPeriod}`,
         "hh:mm A"
       ).format("HH:mm");
-      
+
       const endTime = moment(
         `${unavailableEndTime}:00 ${unavailableEndPeriod}`,
         "hh:mm A"
       ).format("HH:mm");
-      
+
       const slotsToMarkUnavailable = generateTimeSlots(
         startTime,
         endTime,
         unavailableDuration
       );
-      
+
       // Filter out any slots that are already unavailable
-      const existingUnavailableTimes = unavailableSlots.map(slot => slot.originalTime);
-      const newSlotsToMark = slotsToMarkUnavailable.filter(time => 
-        !existingUnavailableTimes.includes(time)
+      const existingUnavailableTimes = unavailableSlots.map(
+        (slot) => slot.originalTime
       );
-      
+      const newSlotsToMark = slotsToMarkUnavailable.filter(
+        (time) => !existingUnavailableTimes.includes(time)
+      );
+
       if (newSlotsToMark.length === 0) {
         message.info("All selected slots are already marked as unavailable");
         return;
       }
-      
+
       // Find any existing available slots that overlap with these times
-      const overlappingAvailableSlots = availableSlots.filter(slot => 
+      const overlappingAvailableSlots = availableSlots.filter((slot) =>
         newSlotsToMark.includes(slot.originalTime)
       );
-      
+
       // Create new unavailable slots for the times that weren't already available
       const newUnavailableSlots = [
         ...unavailableSlots,
         ...newSlotsToMark
-          .filter(time => !availableSlots.some(slot => slot.originalTime === time))
-          .map(time => ({
+          .filter(
+            (time) => !availableSlots.some((slot) => slot.originalTime === time)
+          )
+          .map((time) => ({
             time: moment(time, "HH:mm").format("hh:mm A"),
             available: false,
             id: `temp-${Date.now()}-${time}`,
             reason: unavailableReason || "Not available",
-            originalTime: time
-          }))
+            originalTime: time,
+          })),
       ];
-      
+
       // Remove the overlapping slots from available slots
-      const updatedAvailableSlots = availableSlots.filter(slot => 
-        !newSlotsToMark.includes(slot.originalTime)
+      const updatedAvailableSlots = availableSlots.filter(
+        (slot) => !newSlotsToMark.includes(slot.originalTime)
       );
-      
+
       // Add the converted slots to unavailable
       if (overlappingAvailableSlots.length > 0) {
-        overlappingAvailableSlots.forEach(slot => {
+        overlappingAvailableSlots.forEach((slot) => {
           newUnavailableSlots.push({
             ...slot,
             available: false,
-            reason: unavailableReason || "Not available"
+            reason: unavailableReason || "Not available",
           });
         });
       }
-      
+
       // Update state
       setCurrentClinicSlots({
         availableSlots: updatedAvailableSlots,
-        unavailableSlots: newUnavailableSlots
+        unavailableSlots: newUnavailableSlots,
       });
-      
+
       // Send API request to update the slots
       const response = await apiPut("/appointment/updateDoctorSlots", {
         doctorId: doctorId,
         date: selectedDate.format("YYYY-MM-DD"),
         timeSlots: [
-          ...updatedAvailableSlots.map(slot => ({
+          ...updatedAvailableSlots.map((slot) => ({
             time: slot.originalTime,
             status: "available",
-            reason: ""
+            reason: "",
           })),
-          ...newUnavailableSlots.map(slot => ({
+          ...newUnavailableSlots.map((slot) => ({
             time: slot.originalTime,
             status: "unavailable",
-            reason: slot.reason
-          }))
-        ].map(slot => slot.time),
-        addressId: selectedClinic
+            reason: slot.reason,
+          })),
+        ].map((slot) => slot.time),
+        addressId: selectedClinic,
       });
 
       if (response.data && response.data.status === "success") {
@@ -433,7 +446,7 @@ const AvailabilityScreen = () => {
           message.success("Unavailable slots deleted successfully");
           setCurrentClinicSlots({
             ...getCurrentClinicSlots(),
-            unavailableSlots: []
+            unavailableSlots: [],
           });
         } else {
           message.error(
@@ -456,12 +469,12 @@ const AvailabilityScreen = () => {
     const slots = [];
     let currentTime = moment(startTime, "HH:mm");
     const endTimeMoment = moment(endTime, "HH:mm");
-    
+
     while (currentTime.isSameOrBefore(endTimeMoment)) {
       slots.push(currentTime.format("HH:mm"));
-      currentTime.add(interval, 'minutes');
+      currentTime.add(interval, "minutes");
     }
-    
+
     return slots;
   };
 
