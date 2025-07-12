@@ -12,6 +12,7 @@ import {
   Card,
   Grid,
   DatePicker,
+  Modal
 } from "antd";
 import {
   SearchOutlined,
@@ -79,6 +80,8 @@ const AddWalkInPatient = () => {
    const [clinics, setClinics] = useState([]);
    const [timeSlots, setTimeSlots] = useState([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+  const [isClinicModalVisible, setIsClinicModalVisible] = useState(false);
+  const [slotAvailability, setSlotAvailability] = useState(true);
 
 
   const getAuthToken = () => localStorage.getItem("accessToken") || "";
@@ -165,10 +168,10 @@ useEffect(() => {
       errors.phoneNumber = "Valid 10-digit mobile number is required";
       isValid = false;
     }
-    if (!patientData.dateOfBirth || !validateDOB(patientData.dateOfBirth)) {
-      errors.dateOfBirth = "Valid date of birth is required";
-      isValid = false;
-    }
+    // if (!patientData.dateOfBirth || !validateDOB(patientData.dateOfBirth)) {
+    //   errors.dateOfBirth = "Valid date of birth is required";
+    //   isValid = false;
+    // }
     if (!patientData.gender) {
       errors.gender = "Gender is required";
       isValid = false;
@@ -277,14 +280,21 @@ useEffect(() => {
       const response = await apiPost("/appointment/createAppointment", body);
 
       const data = response.data;
-      if (response.status !== 200)
-        throw new Error(data.message || "Failed to create appointment");
+      console.log("appointmentResponse", data);
 
-      return {
-        success: true,
-        data: data.data,
-        message: data.message || "Appointment created",
-      };
+      if (response?.data?.status !== "success") {
+ toast.error(data.message || "Failed to create appointment");
+        throw new Error(data.message || "Failed to create appointment");
+      } else {
+        toast.success("Appointment created successfully");
+      }
+       
+
+      // return {
+      //   success: true,
+      //   data: data.data,
+      //   message: data.message || "Appointment created",
+      // };
     } catch (error) {
       return {
         success: false,
@@ -559,11 +569,19 @@ useEffect(() => {
           location: address.location
         }));
       setClinics(activeClinics);
-    }
+       if (activeClinics.length === 0) {
+          setIsClinicModalVisible(true);
+        }
+    }else {
+        setClinics([]);
+        setIsClinicModalVisible(true);
+      }
   } catch (error) {
     console.error("Error fetching user data:", error);
   }
 };
+
+
     useEffect(() => {
       if (user) {
         getCurrentUserData();
@@ -574,12 +592,17 @@ useEffect(() => {
     const fetchTimeSlots = useCallback(async (selectedDate, clinicId) => {
     if (!selectedDate || !clinicId || !currentUserID) return;
     setIsFetchingSlots(true);
+    
     try {
+      console.log(clinicId, currentUserID, selectedDate)
       const response = await apiGet(
         `/appointment/getSlotsByDoctorIdAndDate?doctorId=${currentUserID}&date=${selectedDate}&addressId=${clinicId}`
       );
       const data = response.data;
+
+      console.log("Time Slots Response:=============",   data.data );
       if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
+        console.log("Time Slots Data:=============", data.data.slots);
         const availableSlots = data.data.slots
           .filter((slot) => slot.status === "available")
           .map((slot) => formatTimeForAPI(slot.time));
@@ -589,6 +612,8 @@ useEffect(() => {
         }
         console.log("availableSlots=====",availableSlots)
         if (availableSlots.length === 0) {
+          setIsClinicModalVisible(true);
+          setSlotAvailability(false)
           setApiError("No available time slots found for the selected date and clinic.");
         }
          else {
@@ -597,12 +622,16 @@ useEffect(() => {
       } else {
         setTimeSlots([]);
         setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
+         setIsClinicModalVisible(true);
+          setSlotAvailability(false)
         setApiError("No available time slots found for the selected date and clinic.");
       }
     } catch (error) {
       console.error("Error fetching time slots:", error);
       setTimeSlots([]);
       setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
+       setIsClinicModalVisible(true);
+        setSlotAvailability(false)
       setApiError("No available time slots found for the selected date and clinic.");
     } finally {
       setIsFetchingSlots(false);
@@ -778,7 +807,7 @@ useEffect(() => {
             type="primary"
             onClick={handleCreatePatient}
             loading={isCreatingPatient}
-            disabled={isCreatingPatient}
+            disabled={isCreatingPatient || clinics.length === 0}
           >
             Create Patient
           </Button>
@@ -950,7 +979,7 @@ useEffect(() => {
             style={{ width: "100%", marginTop: 8 }}
           >
             <Option value="percentage">Percentage (%)</Option>
-            <Option value="flat">Flat Amount</Option>
+            {/* <Option value="flat">Flat Amount</Option> */}
           </Select>
         </Col>
         <Col span={24}>
@@ -1071,7 +1100,7 @@ useEffect(() => {
               type="primary"
               onClick={handleContinueToPayment}
               loading={isCreatingAppointment}
-              disabled={isCreatingAppointment || !patientCreated}
+              disabled={isCreatingAppointment || !patientCreated || isClinicModalVisible}
               style={{ width: "100%" }}
             >
               Continue to Payment
@@ -1079,6 +1108,30 @@ useEffect(() => {
           </Col>
         </Row>
       </div>
+      <Modal
+  open={isClinicModalVisible}
+  title="No Clinic or Slots Found"
+  closable={false}
+  maskClosable={false}
+  maskStyle={{ backdropFilter: "blur(4px)" }}
+  okText="Go to Clinic Management"
+  cancelText="Cancel"
+  onOk={() => {
+    setIsClinicModalVisible(false);
+    {slotAvailability ? navigate("/doctor/doctorPages/ClinicManagement") : navigate("/doctor/doctorPages/Availability")} ;
+  }}
+  onCancel={() => {
+    setIsClinicModalVisible(false);
+  }}
+>
+
+  {!slotAvailability ? (
+    <p>No available slots for this clinic please add slots.</p>
+  ) : (
+    <p>No active clinic and availability found. Please add a clinic and add Availability to continue creating appointments.</p>
+  )}
+</Modal>
+
     </div>
   );
 };

@@ -347,6 +347,8 @@ export default function ClinicManagement() {
       if (response.status === 200 && response.data?.status === "success") {
         toast.success(response.data?.message || "Clinic updated successfully");
       } else {
+        console.log("Update Response:", response?.data);
+        toast.error(response.data?.message || "Failed to update clinic");
         throw new Error(response.data?.message || "Failed to update clinic");
       }
     } else {
@@ -357,6 +359,8 @@ export default function ClinicManagement() {
       if (response.status === 201) {
         toast.success(response.data?.message || "Clinic added successfully");
       } else {
+        console.log("Create Response:", response?.data);
+        toast.error(response.data?.message || "Failed to add clinic");
         throw new Error(response.data?.message || "Failed to add clinic");
       }
     }
@@ -394,12 +398,9 @@ export default function ClinicManagement() {
       addressId: "",
     });
   } catch (err) {
-    console.error("Error:", err);
+    console.log("Error:", err?.response?.data?.message?.message || err.message);
     toast.error(
-      err.message ||
-        (isEditing
-          ? "Failed to update clinic. Please try again."
-          : "Failed to add clinic. Please try again.")
+     err?.response?.data?.message?.message || err.message
     );
   }
 };
