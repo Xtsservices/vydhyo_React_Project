@@ -553,7 +553,7 @@ const Appointment = () => {
                   value={filters.clinic}
                   onChange={(value) => handleFilterChange("clinic", value)}
                 >
-                  <Option value="all">All clinics</Option>
+                  <Option value="all">All Departments</Option>
                   <Option value="cardiology">Cardiology</Option>
                   <Option value="neurology">Neurology</Option>
                   <Option value="orthopedics">Orthopedics</Option>
