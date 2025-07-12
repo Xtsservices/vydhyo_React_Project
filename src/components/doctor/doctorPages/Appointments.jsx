@@ -80,6 +80,7 @@ const Appointment = () => {
   };
 
   const handleEPrescription = (appointment) => {
+    console.log("appointment===",appointment)
     // Calculate age from dob if available
     let age = "N/A";
     const dob = appointment.patientDetails?.dob;
@@ -102,6 +103,7 @@ const Appointment = () => {
       appointmentDate: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
       appointmentDepartment: appointment.appointmentDepartment,
       appointmentStatus: appointment.appointmentStatus,
+      appointmentReason: appointment.appointmentReason || "N/A",
     };
 
     console.log("patientData",patientData)
@@ -282,7 +284,12 @@ const Appointment = () => {
 
       if (response.status === 200) {
         const updatedAppointments = response.data.data;
-        setAppointments(updatedAppointments);
+         const sortedAppointments = updatedAppointments.sort((a, b) => {
+        const idA = parseInt(a.appointmentId.replace("VYDAPMT", ""), 10);
+        const idB = parseInt(b.appointmentId.replace("VYDAPMT", ""), 10);
+        return idB - idA; // Descending order (higher ID first)
+      });
+        setAppointments(sortedAppointments);
         setFilteredData(applyFilters(updatedAppointments));
       } else {
         message.error("Failed to fetch appointments");
@@ -346,6 +353,10 @@ const Appointment = () => {
       <Menu.Item
         key="e-prescription"
         onClick={() => handleEPrescription(record)}
+         disabled={
+          record.appointmentStatus === "completed" ||
+          record.appointmentStatus === "cancelled"
+        }
         icon={<EyeOutlined />}
       >
         E-Prescription
