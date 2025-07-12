@@ -22,16 +22,18 @@ const feedbacks = [
     name: "Rahul Sharma",
     avatar: "",
     rating: 5,
-    comment: "Dr. Arvind was very patient and explained everything clearly. Highly recommended!",
-    daysAgo: 2
+    comment:
+      "Dr. Arvind was very patient and explained everything clearly. Highly recommended!",
+    daysAgo: 2,
   },
   {
     name: "Priya Patel",
     avatar: "",
     rating: 4,
-    comment: "Good consultation but had to wait longer than expected. Otherwise satisfied with the treatment.",
-    daysAgo: 5
-  }
+    comment:
+      "Good consultation but had to wait longer than expected. Otherwise satisfied with the treatment.",
+    daysAgo: 5,
+  },
 ];
 
 const PercentageChangeIndicator = ({
@@ -263,7 +265,7 @@ const Header = ({ user, navigate }) => {
           {greeting}{" "}
           <span style={{ color: "#ff6b6b" }}>
             {user?.role === "doctor" && "Dr. "}
-            {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
+            {user?.firstname || ""} {user?.lastname || ""}
           </span>
         </Title>
         <Text
@@ -912,7 +914,9 @@ const ClinicAvailability = ({
   useEffect(() => {
     const fetchClinics = async () => {
       try {
-        const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`);
+        const response = await apiGet(
+          `/users/getClinicAddress?doctorId=${doctorId}`
+        );
         if (response.data.status === "success") {
           setClinics(response.data.data);
         } else {
@@ -945,7 +949,7 @@ const ClinicAvailability = ({
   useEffect(() => {
     const fetchAvailableSlots = async () => {
       if (clinics.length === 0) return;
-      
+
       try {
         setIsLoading(true);
         const currentClinic = clinics[currentClinicIndex];
@@ -958,22 +962,24 @@ const ClinicAvailability = ({
           const todaySlots = response.data.data[0]?.slots || [];
           // Format the slots to match what the component expects
           const formattedSlots = todaySlots
-            .filter(slot => slot.status === "available")
-            .map(slot => ({
+            .filter((slot) => slot.status === "available")
+            .map((slot) => ({
               startTime: slot.time,
-              endTime: calculateEndTime(slot.time) // You'll need to implement this
+              endTime: calculateEndTime(slot.time), // You'll need to implement this
             }));
-          
+
           setAvailableSlots(formattedSlots);
-          
+
           // Set the next available slot (first available slot from the next day)
           if (response.data.data.length > 1) {
             const nextDay = response.data.data[1];
-            const firstSlot = nextDay.slots.find(slot => slot.status === "available");
+            const firstSlot = nextDay.slots.find(
+              (slot) => slot.status === "available"
+            );
             if (firstSlot) {
               setNextAvailableSlot({
                 date: nextDay.date,
-                startTime: firstSlot.time
+                startTime: firstSlot.time,
               });
             }
           }
@@ -990,10 +996,13 @@ const ClinicAvailability = ({
 
     // Helper function to calculate end time (assuming 15-minute slots)
     const calculateEndTime = (startTime) => {
-      const [hours, minutes] = startTime.split(':').map(Number);
+      const [hours, minutes] = startTime.split(":").map(Number);
       const date = new Date();
       date.setHours(hours, minutes + 15, 0, 0);
-      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      return `${date.getHours().toString().padStart(2, "0")}:${date
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}`;
     };
 
     if (doctorId && clinics.length > 0) {

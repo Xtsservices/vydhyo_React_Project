@@ -22,17 +22,18 @@ import {
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
-import logo from "./../../public/images/pic1.png"; 
+import logo from "./../../public/images/pic1.png";
 import { apiPost } from "./api";
 import { useLocation } from "react-router-dom";
-
 
 const { Header, Sider, Content, Footer } = Layout;
 
 const DoctorLayoutWrapper = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [selectedKey, setSelectedKey] = useState(accessKey => accessKey || "dashboard");
+  const [selectedKey, setSelectedKey] = useState(
+    (accessKey) => accessKey || "dashboard"
+  );
   const user = useSelector((state) => state.currentUserData);
   const navigate = useNavigate();
   const location = useLocation();
@@ -86,9 +87,9 @@ const DoctorLayoutWrapper = () => {
       }
     } finally {
       localStorage.removeItem("accessToken");
-        localStorage.removeItem("userID");
-        localStorage.removeItem("role");
-        localStorage.removeItem("appointments");
+      localStorage.removeItem("userID");
+      localStorage.removeItem("role");
+      localStorage.removeItem("appointments");
       navigate("/login");
     }
   };
@@ -192,7 +193,9 @@ const DoctorLayoutWrapper = () => {
     {
       key: "clinic-management",
       accessKey: "clinic-management",
-      label: <Link to="/doctor/doctorPages/ClinicManagement">Clinic Management</Link>,
+      label: (
+        <Link to="/doctor/doctorPages/ClinicManagement">Clinic Management</Link>
+      ),
       icon: (
         <FontAwesomeIcon
           icon={faStar}
@@ -254,20 +257,20 @@ const DoctorLayoutWrapper = () => {
     }
 
     // If user is a doctor, show all menu items
-    if (user.role === 'doctor' || user.role === 'Doctor') {
+    if (user.role === "doctor" || user.role === "Doctor") {
       return allMenuItems;
     }
 
     // If user is a receptionist, filter based on access
-    if (user.role !== 'doctor' || user.role !== 'doctor') {
+    if (user.role !== "doctor" || user.role !== "doctor") {
       // If user.access is not available, return empty array
       if (!user.access || !Array.isArray(user.access)) {
         return [];
       }
-      console.log("accesssssss",user.access)
-      
+      console.log("accesssssss", user.access);
+
       // Filter menu items based on user access
-      return allMenuItems.filter(item => 
+      return allMenuItems.filter((item) =>
         user.access.includes(item.accessKey)
       );
     }
@@ -369,7 +372,6 @@ const DoctorLayoutWrapper = () => {
             />
           </Badge>
 
-
           {/* User Profile Section with Dropdown */}
           <Dropdown overlay={profileMenu} trigger={["click"]}>
             <div
@@ -402,7 +404,7 @@ const DoctorLayoutWrapper = () => {
                     lineHeight: "1.2",
                   }}
                 >
-                  Dr. {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
+                  Dr. {user?.firstname || ""} {user?.lastname || ""}
                 </div>
                 <div
                   style={{
@@ -493,7 +495,7 @@ const DoctorLayoutWrapper = () => {
               ))}
 
               {/* Show message if no menu items are available for receptionist */}
-              {menuItems.length === 0 && user?.role === 'receptionist' && (
+              {menuItems.length === 0 && user?.role === "receptionist" && (
                 <div
                   style={{
                     color: "#ffffff",
