@@ -305,31 +305,51 @@ const StaffManagement = () => {
   };
 
   const handleStaffOperation = async (staffData, mode) => {
+   
     try {
       setLoading(true);
 
       if (mode === "add") {
-        const userid = user.createdBy;
-        const response = await apiPost(`/doctor/createReceptionist/${userid}`, {
-          ...staffData,
-        });
-        notification.success({
-          message: `${
-            selectedStaffType.charAt(0).toUpperCase() +
-            selectedStaffType.slice(1)
-          } Added Successfully`,
-          description: `${
-            selectedStaffType.charAt(0).toUpperCase() +
-            selectedStaffType.slice(1)
-          } has been added to the staff list.`,
-          duration: 3,
-        });
-        toast.success(
-          response.data?.message ||
-            response?.message ||
-            "Staff added successfully"
-        );
-      } else if (mode === "edit") {
+  try {
+    const userid = user.createdBy;
+    console.log("Staff Data:", staffData, "Mode:", mode);
+
+    const response = await apiPost(`/doctor/createReceptionist/${userid}`, {
+      ...staffData,
+    });
+
+    console.log("API Response:", response);
+
+    if (response.status !== 200) {
+      throw new Error(response?.data?.message || "Failed to add staff");
+    }else if (response.status === 200) {
+      setIsModalOpen(false);
+    }
+
+
+    notification.success({
+      message:
+        `${selectedStaffType.charAt(0).toUpperCase() + selectedStaffType.slice(1)} Added Successfully`,
+      description:
+        `${selectedStaffType.charAt(0).toUpperCase() + selectedStaffType.slice(1)} has been added to the staff list.`,
+      duration: 3,
+    });
+
+    toast.success(
+      response.data?.message ||
+        response?.message ||
+        "Staff added successfully"
+    );
+  } catch (error) {
+    console.log("Error while adding staff:", error?.response?.data?.message.message);
+     // keep modal open if failed
+    toast.error(
+      error?.response?.data?.message.message ||
+        "Something went wrong while adding staff"
+    );
+    setIsModalOpen(true);
+  }
+} else if (mode === "edit") {
         const body = {
           ...staffData,
           stafftype: staffData.role,
@@ -350,7 +370,7 @@ const StaffManagement = () => {
         );
       }
 
-      setIsModalOpen(false);
+      
       fetchStaff();
     } catch (error) {
       console.error(
@@ -384,7 +404,7 @@ const StaffManagement = () => {
       toast.error(errorMessage);
     } finally {
       setLoading(false);
-      setIsModalOpen(false);
+      // setIsModalOpen(false);
     }
   };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Typography, Button } from "antd";
+import { Card, Typography, Button, Modal } from "antd";
 import {
   UserOutlined,
   LeftOutlined,
@@ -1350,6 +1350,7 @@ const DoctorDashboard = () => {
     { label: "Lab", value: 0, color: "#34a853" },
     { label: "Pharmacy", value: 0, color: "#fbbc04" },
   ]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isReceptionist = user?.role === "receptionist";
 
@@ -1556,7 +1557,29 @@ const DoctorDashboard = () => {
   };
 
   useEffect(() => {
-    if (user && doctorId) {
+
+    const activeClinics = user?.addresses
+        .filter(address => 
+          address.type === "Clinic" && 
+          address.status?.toLowerCase() === "active"
+        )
+        .map((address) => ({
+          label: address?.clinicName,
+          value: address?.addressId,
+          // Include additional clinic data if needed
+          startTime: address?.startTime,
+          endTime: address?.endTime,
+          location: address?.location
+        }));
+      
+      if (activeClinics?.length === 0) {
+          setIsModalOpen(true);
+        } else {
+
+          setIsModalOpen(false);
+        }
+    if(user && doctorId){
+
       getAppointments();
       getTodayAppointmentCount();
     }
@@ -1564,6 +1587,8 @@ const DoctorDashboard = () => {
     getTodayRevenue();
     getRevenueSummary();
   }, [user, doctorId]);
+
+ 
 
   return (
     <>
@@ -1636,6 +1661,27 @@ const DoctorDashboard = () => {
           )}
         </div>
       </div>
+
+      <Modal
+        open={isModalOpen}
+        title="No Clinic or Slots Found"
+        closable={false}
+        maskClosable={false}
+        maskStyle={{ backdropFilter: "blur(4px)" }}
+        okText="Add Clinic"
+        cancelText="Cancel"
+        onOk={() => {
+          navigate("/doctor/doctorPages/ClinicManagement");
+        }}
+        onCancel={() => {
+          setIsModalOpen(false);
+        }}
+      >
+
+       
+          <p>No active clinic and availability found. Please add a clinic and add Availability add appointments.</p>
+        
+      </Modal>
     </>
   );
 };

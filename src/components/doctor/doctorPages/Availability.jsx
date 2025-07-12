@@ -33,10 +33,21 @@ const { Option } = Select;
 const { Panel } = Collapse;
 
 const AvailabilityScreen = () => {
+const today = new Date();
+const dayName = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday"
+][today.getDay()];
   const [clinics, setClinics] = useState([]);
   const [selectedClinic, setSelectedClinic] = useState(null);
-  const [selectedDay, setSelectedDay] = useState("Monday");
-  const [selectedDate, setSelectedDate] = useState(moment());
+  const [selectedDay, setSelectedDay] = useState(dayName);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Clinic-specific slots state
@@ -128,8 +139,17 @@ const AvailabilityScreen = () => {
   }, [user]);
 
   useEffect(() => {
+
+const date = new Date().toISOString().split("T")[0]; 
+console.log(selectedDate?.format("YYYY-MM-DD"), date, "selectedDate");
+
     if (doctorId && selectedClinic) {
-      fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
+      if (selectedDate !== null) {
+
+        fetchSlotsForDate(selectedDate?.format("YYYY-MM-DD"));
+      }else{
+        fetchSlotsForDate(date);
+      }
     }
   }, [selectedDate, doctorId, selectedClinic]);
 
@@ -250,11 +270,50 @@ const AvailabilityScreen = () => {
   };
 
   const handleAddAvailableSlots = async () => {
+    console.log(selectedDate, selectedEndDate, "selectedDate");
     try {
       setLoading(true);
+     
+
+     
+      const getDateRangeArray = (fromDate, endDate) => {
+  const dates = [];
+  let currentDate = moment(fromDate, "YYYY-MM-DD");
+  const end = moment(endDate, "YYYY-MM-DD");
+
+  while (currentDate.isSameOrBefore(end)) {
+    dates.push(currentDate.format("YYYY-MM-DD"));
+    currentDate.add(1, "days");
+  }
+
+  return dates;
+};
+
+// Example usage based on your code
+const fromDate = selectedDate?.format("YYYY-MM-DD");
+const endDate = selectedEndDate?.format("YYYY-MM-DD");
+
+ let selectedDates = [];
+console.log(fromDate, "=fromDate");
+console.log(endDate, "=endDate");
+if (fromDate && endDate) {
+  selectedDates = getDateRangeArray(fromDate, endDate);
+
+}else{
+  selectedDates = [fromDate];
+}
+const dateArray = getDateRangeArray(fromDate, endDate);
+
+// To get the dates as a comma-separated string
+const dateString = dateArray.join(",");
+console.log("Selected Dates:", dateString);
+
+      
+
+
       const response = await apiPost("/appointment/createSlotsForDoctor", {
         doctorId: doctorId,
-        dates: [selectedDate.format("YYYY-MM-DD")],
+        dates: selectedDates,
         startTime: moment(
           `${availableStartTime}:00 ${availableStartPeriod}`,
           "hh:mm A"
@@ -724,14 +783,14 @@ const AvailabilityScreen = () => {
               >
                 Add Slots
               </Button>
-              <Button
+              {/* <Button
                 danger
                 onClick={deleteHandler}
                 icon={<DeleteOutlined />}
                 style={{ fontWeight: "bold" }}
               >
                 Clear All
-              </Button>
+              </Button> */}
             </Space>
           </Col>
         </Row>
@@ -784,6 +843,16 @@ const AvailabilityScreen = () => {
       </>
     );
   };
+   const handleDateChange = (date) => {
+    setSelectedDate(date);
+    console.log('Date changed:', date.format("YYYY-MM-DD"));
+  };
+
+  const handleEndDateChange = (date) => {
+    setSelectedEndDate(date);
+    console.log('End Date changed:', date.format("YYYY-MM-DD"));
+  };
+
 
   return (
     <div
@@ -827,13 +896,34 @@ const AvailabilityScreen = () => {
               >
                 <Space>
                   <Text strong>Manage Availability for:</Text>
-                  <DatePicker
+                   <Text strong>Start Date:</Text>
+                    <DatePicker
+                               placeholder="mm/dd/yyyy"
+                               style={{ width: '120px' }}
+                               onChange={handleDateChange}
+                               format="MM/DD/YYYY"
+                             />
+
+                              <Text strong>End Date:</Text>
+
+                              <DatePicker
+                               placeholder="mm/dd/yyyy"
+                               style={{ width: '120px' }}
+                               onChange={handleEndDateChange}
+                               format="MM/DD/YYYY"
+                             />
+                   {/* <DatePicker
+                                    onChange={handleDateChange}
+                                     value={filters.date ? moment(filters.date) : null}
+                                    placeholder="Filter by date"
+                                  /> */}
+                  {/* <DatePicker
                     style={{ width: 200 }}
                     value={selectedDate}
                     onChange={(date) => setSelectedDate(date ? date : moment())}
                     format="YYYY-MM-DD"
                     allowClear={false}
-                  />
+                  /> */}
                 </Space>
               </div>
             }

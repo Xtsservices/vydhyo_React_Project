@@ -355,7 +355,7 @@ const DoctorLayoutWrapper = () => {
           }}
         >
           {/* Notification Bell */}
-          <Badge
+          {/* <Badge
             count={5}
             size="small"
             style={{
@@ -370,7 +370,7 @@ const DoctorLayoutWrapper = () => {
                 color: "#64748b",
               }}
             />
-          </Badge>
+          </Badge> */}
 
           {/* User Profile Section with Dropdown */}
           <Dropdown overlay={profileMenu} trigger={["click"]}>
