@@ -26,7 +26,7 @@ import { useSelector } from "react-redux";
 const { Header, Sider, Content, Footer } = Layout;
 
 const LayoutWrapper = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const user = useSelector((state) => state.currentUserData);
@@ -270,33 +270,32 @@ const LayoutWrapper = () => {
   };
 
   const handleLogout = async () => {
-        console.log("Logout successful:", 10);
-    
-      try {
-        const response = await apiPost("/auth/logout");
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("userID");
-        localStorage.removeItem("role");
-        localStorage.removeItem("appointments");
+    console.log("Logout successful:", 10);
 
-        console.log("Logout successful:", response.data.message);
-      } catch (error) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("userID");
-        localStorage.removeItem("role");
-        localStorage.removeItem("appointments");
-
-        navigate("/login");
-        console.error(
-          "Logout API failed:",
-          error.response?.statusText || error.message
-        );
-      }
-    finally {
+    try {
+      const response = await apiPost("/auth/logout");
       localStorage.removeItem("accessToken");
-        localStorage.removeItem("userID");
-        localStorage.removeItem("role");
-        localStorage.removeItem("appointments");
+      localStorage.removeItem("userID");
+      localStorage.removeItem("role");
+      localStorage.removeItem("appointments");
+
+      console.log("Logout successful:", response.data.message);
+    } catch (error) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userID");
+      localStorage.removeItem("role");
+      localStorage.removeItem("appointments");
+
+      navigate("/login");
+      console.error(
+        "Logout API failed:",
+        error.response?.statusText || error.message
+      );
+    } finally {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userID");
+      localStorage.removeItem("role");
+      localStorage.removeItem("appointments");
       navigate("/login");
     }
   };
@@ -465,8 +464,7 @@ const LayoutWrapper = () => {
                       lineHeight: "1.2",
                     }}
                   >
-                    Dr. {user?.firstname || "Arvind"}{" "}
-                    {user?.lastname || "Sharma"}
+                    Dr. {user?.firstname || ""} {user?.lastname || ""}
                   </div>
                   <div
                     style={{
@@ -520,7 +518,7 @@ const LayoutWrapper = () => {
                     />
                   </div>
                   <h3 className="profile-name">
-                    {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
+                    {user?.firstname || ""} {user?.lastname || ""}
                   </h3>
                 </div>
               )}

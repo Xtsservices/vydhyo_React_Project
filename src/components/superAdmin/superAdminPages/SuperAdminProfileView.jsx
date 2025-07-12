@@ -33,7 +33,8 @@ import {
   ManOutlined,
 } from "@ant-design/icons";
 import { apiGet, apiPut } from "../../api";
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 const { Title, Text } = Typography;
 
 // Constants
@@ -59,16 +60,15 @@ const DoctorProfileView = () => {
 
   const { userId, doctorId } = location.state || {};
 
-  console.log("Doctor ID from URL:", doctorId, userId); 
+  console.log("Doctor ID from URL:", doctorId, userId);
   // Fetch doctor details from API
   const fetchDoctorDetails = async () => {
     console.log("Fetching doctor details for ID:", doctorId);
     console.log("Fetching doctor details for ID:", !doctorId);
-    if (!doctorId || !userId ) {
+    if (!doctorId || !userId) {
       message.error("No doctor ID provided.");
       navigate("/SuperAdmin/doctor-onboarding");
       return;
-      
     }
 
     setLoading(true);
@@ -79,7 +79,9 @@ const DoctorProfileView = () => {
         navigate("/login");
         return;
       }
-const response = await apiGet(`users/AllUsers?type=doctor&id=${doctorId}`)
+      const response = await apiGet(
+        `users/AllUsers?type=doctor&id=${doctorId}`
+      );
 
       // const response = await fetch(
       //   `${API_BASE_URL}/users/AllUsers?type=doctor&id=${doctorId}`,
@@ -91,7 +93,7 @@ const response = await apiGet(`users/AllUsers?type=doctor&id=${doctorId}`)
       //     },
       //   }
       // );
-console.log("response123===",response)
+
       if (!response.statusText) {
         if (response.status === 401) {
           message.error("Session expired. Please login again.");
@@ -101,8 +103,7 @@ console.log("response123===",response)
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data =  response.data;
-      console.log("API Response:", data); // Debug: Log the API response
+      const data = response.data;
 
       let doctor = null;
       if (data.status === "success" && data.data) {
@@ -170,7 +171,6 @@ console.log("response123===",response)
     fetchDoctorDetails();
   }, []);
 
-
   const showModal = (doc) => {
     setSelectedDocument(doc);
     setIsModalVisible(true);
@@ -202,33 +202,49 @@ console.log("response123===",response)
       const token = localStorage.getItem("accessToken");
       if (!token) {
         message.error("No authentication token found");
+        toast.error("No authentication token found");
         return;
       }
 
-      //here define body based on newStatus
       if (newStatus === "rejected" && !reason) {
-        message.error("Please provide a reason for rejection");   
+        message.error("Please provide a reason for rejection");
+        toast.error("Please provide a reason for rejection");
         return;
       }
 
-        // Build request body
-    const body = {
-      userId: userId,
-      status: newStatus === "active" ? "approved" : "rejected",
-    };
+      const body = {
+        userId: userId,
+        status: newStatus === "active" ? "approved" : "rejected",
+      };
 
-    if (newStatus === "rejected" && reason) {
-      body.rejectionReason = reason;
-    }
-      const response = await apiPut("/admin/approveDoctor", JSON.stringify(body) )
-
-      console.log("Doctor status updated successfully:", newStatus);
-      if (newStatus === "active") {
-        setApproveModalVisible(false)
-      } else if (newStatus === "inactive") {
-        setRejectModalVisible(false)
+      if (newStatus === "rejected" && reason) {
+        body.rejectionReason = reason;
       }
-      navigate("/SuperAdmin/doctors"); 
+
+      const response = await apiPut(
+        "/admin/approveDoctor",
+        JSON.stringify(body)
+      );
+
+      if (response?.data?.status === "success") {
+        if (newStatus === "active") {
+          toast.success("Doctor has been approved successfully.");
+          message.success("Doctor has been approved successfully.");
+          setApproveModalVisible(false);
+        } else {
+          toast.error("Doctor has been rejected.");
+          message.error("Doctor has been rejected.");
+          setRejectModalVisible(false);
+        }
+        navigate("/SuperAdmin/doctors");
+      } else {
+        toast.warning("Failed to update doctor status.");
+        message.warning("Failed to update doctor status.");
+      }
+    } catch (error) {
+      console.error("Error updating doctor status:", error);
+      toast.error("An error occurred while updating the status.");
+      message.error("An error occurred while updating the status.");
     } finally {
       setUpdatingStatus(null);
     }
@@ -1039,52 +1055,58 @@ console.log("response123===",response)
               }}
             >
               <Space size="large">
-                <Button
-                  size="large"
-                  loading={actionLoading === "reject"}
-                  onClick={() => {
-                    setRejectModalVisible(true);
-                  }}
-                  style={{
-                    minWidth: "140px",
-                    backgroundColor: "#dc2626",
-                    borderColor: "#dc2626",
-                    color: "white",
-                    fontWeight: "500",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = "#b91c1c";
-                    e.target.style.borderColor = "#b91c1c";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = "#dc2626";
-                    e.target.style.borderColor = "#dc2626";
-                  }}
-                >
-                  Reject Request
-                </Button>
-                <Button
-                  size="large"
-                  loading={actionLoading === "approve"}
-                  onClick={() => {setApproveModalVisible(true)}}
-                  style={{
-                    minWidth: "140px",
-                    backgroundColor: "#16a34a",
-                    borderColor: "#16a34a",
-                    color: "white",
-                    fontWeight: "500",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = "#15803d";
-                    e.target.style.borderColor = "#15803d";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = "#16a34a";
-                    e.target.style.borderColor = "#16a34a";
-                  }}
-                >
-                  Accept Request
-                </Button>
+                {doctorData?.status !== "rejected" && (
+                  <Button
+                    size="large"
+                    loading={actionLoading === "reject"}
+                    onClick={() => {
+                      setRejectModalVisible(true);
+                    }}
+                    style={{
+                      minWidth: "140px",
+                      backgroundColor: "#dc2626",
+                      borderColor: "#dc2626",
+                      color: "white",
+                      fontWeight: "500",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = "#b91c1c";
+                      e.target.style.borderColor = "#b91c1c";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = "#dc2626";
+                      e.target.style.borderColor = "#dc2626";
+                    }}
+                  >
+                    Reject Request
+                  </Button>
+                )}
+                {doctorData?.status !== "approved" && (
+                  <Button
+                    size="large"
+                    loading={actionLoading === "approve"}
+                    onClick={() => {
+                      setApproveModalVisible(true);
+                    }}
+                    style={{
+                      minWidth: "140px",
+                      backgroundColor: "#16a34a",
+                      borderColor: "#16a34a",
+                      color: "white",
+                      fontWeight: "500",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = "#15803d";
+                      e.target.style.borderColor = "#15803d";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = "#16a34a";
+                      e.target.style.borderColor = "#16a34a";
+                    }}
+                  >
+                    Accept Request
+                  </Button>
+                )}
               </Space>
             </div>
           </Col>
@@ -1182,7 +1204,7 @@ console.log("response123===",response)
           open={approveModalVisible}
           onCancel={() => setApproveModalVisible(false)}
           footer={
-            <div style={{ display: "flex", justifyContent: "flex-end"  }}>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <Button onClick={() => setApproveModalVisible(false)}>
                 Cancel
               </Button>
@@ -1204,32 +1226,37 @@ console.log("response123===",response)
 
         {/* reject modal */}
         <Modal
-      title="Reject Doctor"
-      open={rejectModalVisible}
-      onCancel={() => {
-        setRejectModalVisible(false);
-        setReason("");
-      }}
-      footer={
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button onClick={() => setRejectModalVisible(false)}>Cancel</Button>
-          <Button type="primary" style={{ marginLeft: 8 }} 
-          onClick={() =>{
-              updateDoctorStatus("rejected")
-          }}>
-            Yes, Reject
-          </Button>
-        </div>
-      }
-    >
-      <p>Please provide a reason for rejecting this doctor:</p>
-      <TextArea
-        rows={4}
-        placeholder="Enter reason..."
-        value={reason}
-        onChange={(e) => setReason(e.target.value)}
-      />
-    </Modal>
+          title="Reject Doctor"
+          open={rejectModalVisible}
+          onCancel={() => {
+            setRejectModalVisible(false);
+            setReason("");
+          }}
+          footer={
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button onClick={() => setRejectModalVisible(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                style={{ marginLeft: 8 }}
+                onClick={() => {
+                  updateDoctorStatus("rejected");
+                }}
+              >
+                Yes, Reject
+              </Button>
+            </div>
+          }
+        >
+          <p>Please provide a reason for rejecting this doctor:</p>
+          <TextArea
+            rows={4}
+            placeholder="Enter reason..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </Modal>
       </Spin>
     </div>
   );
