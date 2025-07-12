@@ -28,7 +28,6 @@ import {
 } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 
-const {Header, Content, Dragger} = Layout
 // Import the tab components
 import PatientsTab from "./PharmacyPatientsTab";
 import MedicinesTab from "./PharmacyMedicinesTab";
@@ -41,6 +40,8 @@ import { useSelector } from "react-redux";
 export default function Pharmacy() {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+const {Header, Content} = Layout
+const { Dragger } = Upload;
 
   const [activeTab, setActiveTab] = useState("1");
   const [searchQuery, setSearchQuery] = useState("");
