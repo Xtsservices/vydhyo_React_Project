@@ -16,7 +16,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
   };
 
   return (
-    <>
+    <div id="prescription-container">
       <div className="print-button-container">
         <button 
           className="print-button" 
@@ -210,7 +210,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
           )}
 
-          {/* Diagnosis - Now uncommented */}
+          {/* Diagnosis */}
           {formData.diagnosis?.diagnosisList && (
             <div className="prescription-section">
               <div className="section-header">
@@ -313,7 +313,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
           This prescription is computer generated and does not require physical signature
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
