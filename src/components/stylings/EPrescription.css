@@ -183,7 +183,8 @@
 .diagnostic-tests-section {
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid #fbbf24;
+  /* border: 1px solid #fbbf24; */
+  background-color: #f3f4f6;
   margin-bottom: 24px;
 }
 
@@ -198,7 +199,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #92400e;
+  /* color: #92400e; */
 }
 
 .add-test-button {
@@ -276,7 +277,9 @@
 .diagnosis-section {
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid #fca5a5;
+  /* border: 1px solid #fca5a5; */
+    background-color: #f3f4f6;
+
   margin-bottom: 24px;
 }
 
@@ -290,7 +293,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #991b1b;
+  /* color: #991b1b; */
 }
 
 .diagnosis-textarea {
@@ -308,7 +311,7 @@
   background-color: #f3f4f6;
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  /* border: 1px solid #d1d5db; */
 }
 
 .medications-header {
@@ -322,7 +325,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #374151;
+  /* color: #374151; */
 }
 
 .add-medication-button {

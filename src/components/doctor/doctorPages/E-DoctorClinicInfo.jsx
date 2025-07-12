@@ -7,8 +7,10 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-  // Get all clinic addresses
-  const allClinics = user?.addresses?.filter(address => address.type === "Clinic") || [];
+  // Get only active clinic addresses
+  const allClinics = (user?.addresses?.filter(address => 
+    address.type === "Clinic" && address.status === "Active"
+  ) || []);
   
   const [localData, setLocalData] = useState({
     doctorId: doctorId,
@@ -32,7 +34,7 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
         appointmentEndTime: ''
       };
 
-      // Set first clinic as default if available
+      // Set first active clinic as default if available
       if (allClinics.length > 0) {
         initialData.selectedClinicId = allClinics[0].addressId;
         initialData.appointmentStartTime = allClinics[0].startTime || '';
