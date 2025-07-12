@@ -1,31 +1,34 @@
-import React, { useState } from 'react';
-import { 
-  Home, 
-  Calendar, 
-  Users, 
-  FileText, 
-  Activity, 
-  Pill, 
-  UserCheck, 
-  Building, 
-  CheckCircle, 
+import React, { useState } from "react";
+import {
+  Home,
+  Calendar,
+  Users,
+  FileText,
+  Activity,
+  Pill,
+  UserCheck,
+  Building,
+  CheckCircle,
   BarChart3,
   Star,
   Menu,
-  X
-} from 'lucide-react';
+  X,
+} from "lucide-react";
 
 // Import components
-import DoctorClinicInfo from './E-DoctorClinicInfo';
-import PatientDetailsHistory from './E-PatientDetailsHistory';
-import VitalsInvestigation from './E-VitalsInvestigation';
-import DiagnosisMedication from './E-DiagnosisMedication';
-import AdviceFollowUp from './E-AdviceFollowUp';
-import Preview from './Preview';
-import '../../stylings/EPrescription.css';
+import DoctorClinicInfo from "./E-DoctorClinicInfo";
+import PatientDetailsHistory from "./E-PatientDetailsHistory";
+import VitalsInvestigation from "./E-VitalsInvestigation";
+import DiagnosisMedication from "./E-DiagnosisMedication";
+import AdviceFollowUp from "./E-AdviceFollowUp";
+import Preview from "./Preview";
+import "../../stylings/EPrescription.css";
+import { useLocation } from "react-router-dom";
+import { apiPost } from "../../api";
 
 const EPrescription = () => {
-  const [activeTab, setActiveTab] = useState('doctor-clinic');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState("doctor-clinic");
   const [showPreview, setShowPreview] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,54 +36,125 @@ const EPrescription = () => {
     patientInfo: {},
     vitals: {},
     diagnosis: {},
-    advice: {}
+    advice: {},
   });
 
   const tabs = [
-    { id: 'doctor-clinic', label: 'Doctor & Clinic Info', icon: UserCheck },
-    { id: 'patient-details', label: 'Patient Details & History', icon: Users },
-    { id: 'vitals', label: 'Vitals & Investigation', icon: Activity },
-    { id: 'diagnosis', label: 'Diagnosis & Medication', icon: Pill },
-    { id: 'advice', label: 'Advice & Follow Up', icon: Calendar },
-    { id: 'preview', label: 'Preview', icon: FileText }
+    { id: "doctor-clinic", label: "Doctor & Clinic Info", icon: UserCheck },
+    { id: "patient-details", label: "Patient Details & History", icon: Users },
+    { id: "vitals", label: "Vitals & Investigation", icon: Activity },
+    { id: "diagnosis", label: "Diagnosis & Medication", icon: Pill },
+    { id: "advice", label: "Advice & Follow Up", icon: Calendar },
+    { id: "preview", label: "Preview", icon: FileText },
   ];
 
   const updateFormData = (section, data) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [section]: data
+      [section]: data,
     }));
   };
 
   const handlePrescriptionAction = (type) => {
-    if (type === 'print') {
+    if (type === "print") {
       window.print();
-    } else if (type === 'whatsapp') {
-      const message = `Here's my medical prescription from VYDHYO MULTISPECIALTY CLINIC` +
-                     `Patient: ${formData.patientInfo?.patientName || 'N/A'}` +
-                     `Doctor: ${formData.doctorInfo?.doctorName || 'N/A'}` +
-                     `Date: ${formData.doctorInfo?.reportDate || 'N/A'}`;
+    } else if (type === "whatsapp") {
+      const message =
+        `Here's my medical prescription from VYDHYO MULTISPECIALTY CLINIC` +
+        `Patient: ${formData.patientInfo?.patientName || "N/A"}` +
+        `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}` +
+        `Date: ${formData.doctorInfo?.reportDate || "N/A"}`;
       const url = "https://wa.me/?text=" + encodeURIComponent(message);
-      window.open(url, '_blank');
+      window.open(url, "_blank");
     }
   };
 
+  console.log("formData",formData)
 
-  const handleConfirm = () => {
-    console.log('Form dataaaaaaaaaaaaaa:', formData); 
-    setActiveTab('preview');
+  function transformEprescriptionData(formData) {
+    const { doctorInfo, patientInfo, vitals, diagnosis, advice } = formData;
+    const appointmentId = location?.state?.patientData?.appointmentId;
+
+    return {
+      appointmentId:appointmentId,
+      userId: patientInfo.patientId,
+      doctorId: doctorInfo.doctorId,
+      addressId: doctorInfo.selectedClinicId,
+      patientInfo: {
+        patientName: patientInfo.patientName || "Unknown",
+        age: patientInfo.age || 0,
+        gender: patientInfo.gender || "Other",
+        mobileNumber: patientInfo.mobileNumber || "0000000000",
+        chiefComplaint: patientInfo.chiefComplaint,
+        pastMedicalHistory: patientInfo.pastMedicalHistory || null,
+        familyMedicalHistory: patientInfo.familyMedicalHistory || null,
+        physicalExamination: patientInfo.physicalExamination || null,
+      },
+      vitals: {
+        bp: `${vitals?.bpSystolic}/${vitals?.bpDiastolic} `|| null,
+        pulseRate: vitals.pulseRate || null,
+        respiratoryRate: vitals.respiratoryRate || null,
+        temperature: vitals.temperature || null,
+        spo2: vitals.spo2 || null,
+        height: vitals.height || null,
+        weight: vitals.weight || null,
+        bmi: vitals.bmi || null,
+        investigationFindings: vitals.investigationFindings || null,
+      },
+      diagnosis: {
+        diagnosisNote: diagnosis.diagnosisList || null,
+        testsNote: diagnosis.testNotes || null,
+        PrescribeMedNotes: diagnosis.medicationNotes || null,
+        selectedTests: Array.isArray(diagnosis.selectedTests)
+          ? diagnosis.selectedTests.map((test) => ({
+              testName: test.testName,
+              testInventoryId: test.testInventoryId,
+            }))
+          : [],
+        medications: Array.isArray(diagnosis.medications)
+          ? diagnosis.medications.map((med) => ({
+              medInventoryId: med.medInventoryId,
+              medName: med.medName,
+              quantity: med.quantity,
+              dosage: med.dosage,
+              duration: med.duration,
+              timings: med.timings,
+              frequency: med.frequency,
+            }))
+          : [],
+      },
+      advice: {
+        advice: advice.advice || null,
+        followUpDate: advice.followUpDate || null,
+      },
+      createdBy: doctorInfo.doctorId,
+      updatedBy: doctorInfo.doctorId,
+    };
+  }
+
+  const handleConfirm = async() => {
+    const formattedData = transformEprescriptionData(formData);
+    console.log("Form formattedData:", formattedData);
+    //here make api call appoi
+    try{
+const response = await apiPost("/pharmacy/addPrescription",formattedData)
+console.log("response",response)
+    }catch(error){
+console.error("erroraddPrescription",error)
+    }
+    setActiveTab("preview");
     setShowPreview(true);
   };
 
   const handleNext = () => {
-    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
     if (currentIndex < tabs.length - 2) {
       setActiveTab(tabs[currentIndex + 1].id);
     }
   };
 
   const handleTabChange = (tabId) => {
-    if (tabId === 'preview') {
+    if (tabId === "preview") {
       setShowPreview(true);
     } else {
       setShowPreview(false);
@@ -89,41 +163,58 @@ const EPrescription = () => {
   };
 
   const renderActiveComponent = () => {
-    if (activeTab === 'preview') {
-      return <Preview formData={formData} handlePrescriptionAction={handlePrescriptionAction} />;
+    if (activeTab === "preview") {
+      return (
+        <Preview
+          formData={formData}
+          handlePrescriptionAction={handlePrescriptionAction}
+        />
+      );
     }
-    
+
     switch (activeTab) {
-      case 'doctor-clinic':
-        return <DoctorClinicInfo 
-                 formData={formData.doctorInfo} 
-                 updateFormData={(data) => updateFormData('doctorInfo', data)} 
-               />;
-      case 'patient-details':
-        return <PatientDetailsHistory 
-                 formData={formData.patientInfo} 
-                 updateFormData={(data) => updateFormData('patientInfo', data)} 
-               />;
-      case 'vitals':
-        return <VitalsInvestigation 
-                 formData={formData.vitals} 
-                 updateFormData={(data) => updateFormData('vitals', data)} 
-               />;
-      case 'diagnosis':
-        return <DiagnosisMedication 
-                 formData={formData.diagnosis} 
-                 updateFormData={(data) => updateFormData('diagnosis', data)} 
-               />;
-      case 'advice':
-        return <AdviceFollowUp 
-                 formData={formData.advice} 
-                 updateFormData={(data) => updateFormData('advice', data)} 
-               />;
+      case "doctor-clinic":
+        return (
+          <DoctorClinicInfo
+            formData={formData.doctorInfo}
+            updateFormData={(data) => updateFormData("doctorInfo", data)}
+          />
+        );
+      case "patient-details":
+        return (
+          <PatientDetailsHistory
+            formData={formData.patientInfo}
+            updateFormData={(data) => updateFormData("patientInfo", data)}
+          />
+        );
+      case "vitals":
+        return (
+          <VitalsInvestigation
+            formData={formData.vitals}
+            updateFormData={(data) => updateFormData("vitals", data)}
+          />
+        );
+      case "diagnosis":
+        return (
+          <DiagnosisMedication
+            formData={formData.diagnosis}
+            updateFormData={(data) => updateFormData("diagnosis", data)}
+          />
+        );
+      case "advice":
+        return (
+          <AdviceFollowUp
+            formData={formData.advice}
+            updateFormData={(data) => updateFormData("advice", data)}
+          />
+        );
       default:
-        return <DoctorClinicInfo 
-                 formData={formData.doctorInfo} 
-                 updateFormData={(data) => updateFormData('doctorInfo', data)} 
-               />;
+        return (
+          <DoctorClinicInfo
+            formData={formData.doctorInfo}
+            updateFormData={(data) => updateFormData("doctorInfo", data)}
+          />
+        );
     }
   };
 
@@ -133,15 +224,23 @@ const EPrescription = () => {
       <div className="eprescription-main">
         {/* Tab Navigation */}
         <div className="eprescription-tabs">
-          <nav style={{ display: 'flex', gap: '8px' }}>
+          <nav style={{ display: "flex", gap: "8px" }}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`eprescription-tab ${activeTab === tab.id ? 'eprescription-tab-active' : 'eprescription-tab-inactive'}`}
-                disabled={tab.id === 'preview' && activeTab !== 'advice' && !showPreview}
+                className={`eprescription-tab ${
+                  activeTab === tab.id
+                    ? "eprescription-tab-active"
+                    : "eprescription-tab-inactive"
+                }`}
+                disabled={
+                  tab.id === "preview" && activeTab !== "advice" && !showPreview
+                }
               >
-                <tab.icon style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                <tab.icon
+                  style={{ width: "16px", height: "16px", marginRight: "8px" }}
+                />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -151,23 +250,25 @@ const EPrescription = () => {
         {/* Main Content Area */}
         <main className="eprescription-content">
           {renderActiveComponent()}
-          
+
           {/* Action Buttons - Hidden in preview */}
-          {activeTab !== 'preview' && (
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end', 
-              marginTop: '24px' 
-            }}>
+          {activeTab !== "preview" && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: "24px",
+              }}
+            >
               <button className="common-button common-cancel-button">
                 Cancel
               </button>
-              
-              <button 
-                onClick={activeTab === 'advice' ? handleConfirm : handleNext}
+
+              <button
+                onClick={activeTab === "advice" ? handleConfirm : handleNext}
                 className="common-button common-confirm-button"
               >
-                {activeTab === 'advice' ? 'Preview' : 'Next'}
+                {activeTab === "advice" ? "Preview" : "Next"}
               </button>
             </div>
           )}

@@ -90,7 +90,9 @@ const Appointment = () => {
       }
     }
 
+
     const patientData = {
+      appointmentId:appointment.appointmentId,
       patientId: appointment.userId || appointment.appointmentId,
       patientName: appointment.patientName,
       gender: appointment.patientDetails?.gender || "N/A",
@@ -101,6 +103,8 @@ const Appointment = () => {
       appointmentDepartment: appointment.appointmentDepartment,
       appointmentStatus: appointment.appointmentStatus,
     };
+
+    console.log("patientData",patientData)
 
     // Navigate to E-Prescription page with patient data
     navigate("/doctor/doctorPages/EPrescription", { state: { patientData } });
