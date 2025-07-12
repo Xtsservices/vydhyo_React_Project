@@ -4,10 +4,12 @@ import { useLocation } from 'react-router-dom';
 import '../../stylings/EPrescription.css';
 
 const PatientDetailsHistory = ({ formData, updateFormData }) => {
+  console.log("formData====", formData, updateFormData)
   const location = useLocation();
   const [localData, setLocalData] = useState({
     patientId: location.state?.patientData?.patientId || '',
-    chiefComplaint: '',
+     chiefComplaint: location.state?.patientData?.appointmentReason || '', // Prefill with appointmentReason
+    // chiefComplaint: '',
     pastMedicalHistory: '',
     familyMedicalHistory: '',
     physicalExamination: ''

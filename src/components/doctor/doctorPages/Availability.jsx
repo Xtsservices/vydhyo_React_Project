@@ -249,7 +249,7 @@ const AvailabilityScreen = () => {
       const response = await apiPut("/appointment/updateDoctorSlots", {
         doctorId: doctorId,
         date: selectedDate.format("YYYY-MM-DD"),
-        timeSlots: timeSlots,
+        // timeSlots: timeSlots,
         addressId: selectedClinic,
       });
 
@@ -452,18 +452,18 @@ const AvailabilityScreen = () => {
       const response = await apiPut("/appointment/updateDoctorSlots", {
         doctorId: doctorId,
         date: selectedDate.format("YYYY-MM-DD"),
-        timeSlots: [
-          ...updatedAvailableSlots.map((slot) => ({
-            time: slot.originalTime,
-            status: "available",
-            reason: "",
-          })),
-          ...newUnavailableSlots.map((slot) => ({
-            time: slot.originalTime,
-            status: "unavailable",
-            reason: slot.reason,
-          })),
-        ].map((slot) => slot.time),
+        // timeSlots: [
+        //   ...updatedAvailableSlots.map((slot) => ({
+        //     time: slot.originalTime,
+        //     status: "available",
+        //     reason: "",
+        //   })),
+        //   ...newUnavailableSlots.map((slot) => ({
+        //     time: slot.originalTime,
+        //     status: "unavailable",
+        //     reason: slot.reason,
+        //   })),
+        // ].map((slot) => slot.time),
         addressId: selectedClinic,
       });
 

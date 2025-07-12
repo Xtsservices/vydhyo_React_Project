@@ -290,11 +290,11 @@ useEffect(() => {
       }
        
 
-      // return {
-      //   success: true,
-      //   data: data.data,
-      //   message: data.message || "Appointment created",
-      // };
+      return {
+        success: true,
+        data: data.data,
+        message: data.message || "Appointment created",
+      };
     } catch (error) {
       return {
         success: false,
