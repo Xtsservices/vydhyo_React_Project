@@ -16,29 +16,22 @@ import { Users } from "lucide-react";
 
 const { Title, Text } = Typography;
 
-// Clinic data for navigation
-const clinics = [
-  { name: "Apollo Clinic", date: "02-07-2025", location: "Gachibowli" },
-  { name: "Main Clinic", date: "03-07-2025", location: "Manikonda" },
-  { name: "Branch Clinic", date: "04-07-2025", location: "Hitech City" },
-  { name: "City Clinic", date: "05-07-2025", location: "Banjara Hills" },
-];
-
+// Sample feedback data
 const feedbacks = [
   {
-    name: "Sarah Wilson",
+    name: "Rahul Sharma",
+    avatar: "",
     rating: 5,
-    comment: "Excellent consultation and very professional approach.",
-    daysAgo: 2,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
+    comment: "Dr. Arvind was very patient and explained everything clearly. Highly recommended!",
+    daysAgo: 2
   },
   {
-    name: "Robert Brown",
-    rating: 5,
-    comment: "Great experience, very thorough examination.",
-    daysAgo: 1,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Robert",
-  },
+    name: "Priya Patel",
+    avatar: "",
+    rating: 4,
+    comment: "Good consultation but had to wait longer than expected. Otherwise satisfied with the treatment.",
+    daysAgo: 5
+  }
 ];
 
 const PercentageChangeIndicator = ({
@@ -908,6 +901,28 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
   const [nextAvailableSlot, setNextAvailableSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [clinics, setClinics] = useState([]);
+
+  // Fetch clinics data
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`);
+        if (response.data.status === "success") {
+          setClinics(response.data.data);
+        } else {
+          setError("Failed to fetch clinics");
+        }
+      } catch (err) {
+        console.error("Error fetching clinics:", err);
+        setError("Error fetching clinics");
+      }
+    };
+
+    if (doctorId) {
+      fetchClinics();
+    }
+  }, [doctorId]);
 
   const handlePreviousClinic = () => {
     setCurrentClinicIndex((prev) =>
@@ -921,21 +936,42 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
     );
   };
 
+  // Fetch available slots when clinic index changes
   useEffect(() => {
     const fetchAvailableSlots = async () => {
+      if (clinics.length === 0) return;
+      
       try {
         setIsLoading(true);
-        // Replace '686cf2e2db9237e81c3618f5' with the actual addressId if needed
+        const currentClinic = clinics[currentClinicIndex];
         const response = await apiGet(
-          `/appointment/getNextAvailableSlotsByDoctorAndAddress?doctorId=${doctorId}&addressId=686cf2e2db9237e81c3618f5`
+          `/appointment/getNextAvailableSlotsByDoctorAndAddress?doctorId=${doctorId}&addressId=${currentClinic._id}`
         );
         
         if (response.data.status === "success") {
-          const slots = response.data.data.availableSlots || [];
-          const nextSlot = response.data.data.nextAvailableSlot || null;
+          // Find today's slots (first entry in the array)
+          const todaySlots = response.data.data[0]?.slots || [];
+          // Format the slots to match what the component expects
+          const formattedSlots = todaySlots
+            .filter(slot => slot.status === "available")
+            .map(slot => ({
+              startTime: slot.time,
+              endTime: calculateEndTime(slot.time) // You'll need to implement this
+            }));
           
-          setAvailableSlots(slots);
-          setNextAvailableSlot(nextSlot);
+          setAvailableSlots(formattedSlots);
+          
+          // Set the next available slot (first available slot from the next day)
+          if (response.data.data.length > 1) {
+            const nextDay = response.data.data[1];
+            const firstSlot = nextDay.slots.find(slot => slot.status === "available");
+            if (firstSlot) {
+              setNextAvailableSlot({
+                date: nextDay.date,
+                startTime: firstSlot.time
+              });
+            }
+          }
         } else {
           setError("Failed to fetch available slots");
         }
@@ -947,10 +983,18 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
       }
     };
 
-    if (doctorId) {
+    // Helper function to calculate end time (assuming 15-minute slots)
+    const calculateEndTime = (startTime) => {
+      const [hours, minutes] = startTime.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes + 15, 0, 0);
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    };
+
+    if (doctorId && clinics.length > 0) {
       fetchAvailableSlots();
     }
-  }, [doctorId]);
+  }, [doctorId, currentClinicIndex, clinics]);
 
   const formatTime = (timeString) => {
     if (!timeString) return "";
@@ -965,6 +1009,31 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
     if (!dateString) return "";
     return moment(dateString).format("DD-MM-YYYY");
   };
+
+  if (clinics.length === 0) {
+    return (
+      <Card
+        style={{
+          borderRadius: "16px",
+          border: "none",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+          background: "white",
+          marginBottom: "24px",
+          position: "relative",
+          height: "250px",
+        }}
+        bodyStyle={{ padding: "14px" }}
+      >
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <Text style={{ fontFamily: "Poppins, sans-serif" }}>
+            No clinics found for this doctor
+          </Text>
+        </div>
+      </Card>
+    );
+  }
+
+  const currentClinic = clinics[currentClinicIndex];
 
   return (
     <Card
@@ -1018,7 +1087,7 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
                   fontFamily: "Poppins, sans-serif",
                 }}
               >
-                {clinics[currentClinicIndex].name}
+                {currentClinic.clinicName}
               </Title>
               <Text
                 style={{
@@ -1027,7 +1096,7 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
                   fontFamily: "Poppins, sans-serif",
                 }}
               >
-                {clinics[currentClinicIndex].date}
+                {currentClinic.startTime} - {currentClinic.endTime}
               </Text>
               <Text
                 style={{
@@ -1037,7 +1106,7 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
                   fontFamily: "Poppins, sans-serif",
                 }}
               >
-                {clinics[currentClinicIndex].location}
+                {currentClinic.address.split(",")[0]}
               </Text>
             </div>
 
@@ -1063,7 +1132,7 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
               }}
             >
               {availableSlots.length > 0 ? (
-                availableSlots.map((slot, index) => (
+                availableSlots.slice(0, 5).map((slot, index) => (
                   <div
                     key={index}
                     style={{

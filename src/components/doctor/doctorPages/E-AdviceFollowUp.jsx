@@ -79,7 +79,7 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
             onChange={handleChange}
             className="common-date-input"
           />
-          <Calendar size={16} className="common-calendar-icon" />
+          {/* <Calendar size={16} className="common-calendar-icon" /> */}
         </div>
       </div>
     </div>
