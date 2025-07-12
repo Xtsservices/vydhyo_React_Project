@@ -1171,6 +1171,30 @@
   background-color: #1d4ed8;
 }
 
+.bp-inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bp-half-input {
+  width: 45%;
+}
+
+.bp-slash {
+  font-weight: bold;
+  margin: 0 4px;
+}
+
+.other-vital-input.styled {
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-right: 6px;
+  min-width: 120px;
+}
+
+
 /* Print Styles */
 @media print {
   @page {
