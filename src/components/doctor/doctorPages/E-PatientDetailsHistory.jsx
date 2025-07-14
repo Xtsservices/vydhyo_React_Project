@@ -4,43 +4,52 @@ import { useLocation } from 'react-router-dom';
 import '../../stylings/EPrescription.css';
 
 const PatientDetailsHistory = ({ formData, updateFormData }) => {
-  console.log("formData====", formData, updateFormData)
+  console.log("formData====", formData, updateFormData);
   const location = useLocation();
+  
+  // Initialize with appointmentReason, but don't allow changes
   const [localData, setLocalData] = useState({
     patientId: location.state?.patientData?.patientId || '',
-     chiefComplaint: location.state?.patientData?.appointmentReason || '', // Prefill with appointmentReason
-    // chiefComplaint: '',
-    pastMedicalHistory: '',
-    familyMedicalHistory: '',
-    physicalExamination: ''
+    chiefComplaint: location.state?.patientData?.appointmentReason || '', // Prefill and lock
+    pastMedicalHistory: formData?.pastMedicalHistory || '',
+    familyMedicalHistory: formData?.familyMedicalHistory || '',
+    physicalExamination: formData?.physicalExamination || ''
   });
 
-  useEffect(() => {
-    if (location.state?.patientData) {
-      const patientData = location.state.patientData;
+// In PatientDetailsHistory component
+useEffect(() => {
+  if (location.state?.patientData) {
+    const patientData = location.state.patientData;
+    const updatedData = {
+      patientId: patientData.patientId || '',
+      patientName: patientData.patientName || '',
+      age: patientData.age || '',
+      gender: patientData.gender || '',
+      mobileNumber: patientData.mobileNumber || '',
+      chiefComplaint: patientData.appointmentReason || '',
+      pastMedicalHistory: formData?.pastMedicalHistory || '',
+      familyMedicalHistory: formData?.familyMedicalHistory || '',
+      physicalExamination: formData?.physicalExamination || ''
+    };
+    setLocalData(updatedData);
+    if (updateFormData) {
+      updateFormData(updatedData);
+    }
+  }
+}, [location.state]);
+
+  // Only allow changes to fields other than chiefComplaint
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name !== 'chiefComplaint') { // Prevent editing chiefComplaint
       const updatedData = {
-        patientId: patientData.patientId || '',
-        chiefComplaint: formData?.chiefComplaint || '',
-        pastMedicalHistory: formData?.pastMedicalHistory || '',
-        familyMedicalHistory: formData?.familyMedicalHistory || '',
-        physicalExamination: formData?.physicalExamination || ''
+        ...localData,
+        [name]: value
       };
       setLocalData(updatedData);
       if (updateFormData) {
         updateFormData(updatedData);
       }
-    }
-  }, [location.state]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const updatedData = {
-      ...localData,
-      [name]: value
-    };
-    setLocalData(updatedData);
-    if (updateFormData) {
-      updateFormData(updatedData);
     }
   };
 
@@ -130,7 +139,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
           <h3 className="patient-history-title">Patient History</h3>
           <p className="patient-history-subtitle">Complete medical history documentation</p>
           
-          {/* Chief Complaint */}
+          {/* Chief Complaint (Read-only) */}
           <div className="history-section">
             <div className="history-section-header">
               <div style={{ width: '32px', height: '32px', backgroundColor: '#dbeafe', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -138,20 +147,20 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               </div>
               <div>
                 <h4 className="history-section-title">Chief Complaint</h4>
-                <p className="history-section-subtitle">Primary reason for the visit</p>
               </div>
             </div>
             <textarea
               name="chiefComplaint"
               value={localData.chiefComplaint}
-              onChange={handleChange}
-              className="history-textarea"
-              placeholder="Describe the primary reason for the visit..."
+              onChange={handleChange} // Still included but won't allow changes
+              readOnly // Makes the field uneditable
+              className="history-textarea readonly-textarea" // Add a class for styling
+              placeholder="Enter Here..."
               rows={4}
             />
           </div>
 
-          {/* Past Medical History */}
+          {/* Past Medical History (Editable) */}
           <div className="history-section">
             <div className="history-section-header">
               <div style={{ width: '32px', height: '32px', backgroundColor: '#fef3c7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -159,7 +168,6 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               </div>
               <div>
                 <h4 className="history-section-title">Past Medical History</h4>
-                <p className="history-section-subtitle">Previous medical conditions and treatments</p>
               </div>
             </div>
             <textarea
@@ -167,12 +175,12 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               value={localData.pastMedicalHistory}
               onChange={handleChange}
               className="history-textarea"
-              placeholder="Enter previous illnesses, surgeries, or chronic conditions..."
+              placeholder="Enter Here..."
               rows={4}
             />
           </div>
 
-          {/* Family Medical History */}
+          {/* Family Medical History (Editable) */}
           <div className="history-section">
             <div className="history-section-header">
               <div style={{ width: '32px', height: '32px', backgroundColor: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -180,7 +188,6 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               </div>
               <div>
                 <h4 className="history-section-title">Family Medical History</h4>
-                <p className="history-section-subtitle">Hereditary conditions and family medical</p>
               </div>
             </div>
             <textarea
@@ -188,20 +195,19 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               value={localData.familyMedicalHistory}
               onChange={handleChange}
               className="history-textarea"
-              placeholder="Mention any hereditary conditions in the family..."
+              placeholder="Enter Here..."
               rows={4}
             />
           </div>
 
-          {/* Physical Examination */}
+          {/* Physical Examination (Editable) */}
           <div className="history-section">
             <div className="history-section-header">
               <div style={{ width: '32px', height: '32px', backgroundColor: '#fed7aa', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Stethoscope style={{ width: '16px', height: '16px', color: '#ea580c' }} />
               </div>
               <div>
-                <h4 className="history-section-title">Physical Examination</h4>
-                <p className="history-section-subtitle">Clinical examination findings and observations</p>
+                <h4>Clinical examination findings and observations</h4>
               </div>
             </div>
             <textarea
@@ -209,7 +215,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               value={localData.physicalExamination}
               onChange={handleChange}
               className="history-textarea"
-              placeholder="Enter findings from clinical examination..."
+              placeholder="Enter Here..."
               rows={4}
             />
           </div>

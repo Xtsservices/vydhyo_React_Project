@@ -34,12 +34,33 @@ const EPrescription = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
-    doctorInfo: {},
-    patientInfo: {},
-    vitals: {},
-    diagnosis: {},
-    advice: {},
-  });
+  doctorInfo: {
+    doctorId: '',
+    doctorName: '',
+    qualifications: '',
+    specialization: '',
+    selectedClinicId: '',
+    clinicAddress: '',
+    contactNumber: '',
+    appointmentDate: '',
+    appointmentStartTime: '',
+    appointmentEndTime: ''
+  },
+  patientInfo: {
+    patientId: '',
+    patientName: '',
+    age: '',
+    gender: '',
+    mobileNumber: '',
+    chiefComplaint: '',
+    pastMedicalHistory: '',
+    familyMedicalHistory: '',
+    physicalExamination: ''
+  },
+  vitals: {},
+  diagnosis: {},
+  advice: {}
+});
 
   const tabs = [
     { id: "doctor-clinic", label: "Doctor & Clinic Info", icon: UserCheck },
@@ -317,6 +338,7 @@ const EPrescription = () => {
     }
   };
 
+  console.log("formdata=12====",formData)
   return (
     <div id="eprescription-container" className="eprescription-container">
       {/* Main Content */}
