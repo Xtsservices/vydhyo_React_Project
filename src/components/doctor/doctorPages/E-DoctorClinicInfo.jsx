@@ -46,17 +46,26 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
     }
   }, [user, formData]);
 
-  const handleClinicChange = (clinicId) => {
-    const selectedClinic = allClinics.find(clinic => clinic.addressId === clinicId);
-    const updatedData = {
-      ...localData,
-      selectedClinicId: clinicId,
-      appointmentStartTime: selectedClinic?.startTime || '',
-      appointmentEndTime: selectedClinic?.endTime || ''
-    };
-    setLocalData(updatedData);
-    updateFormData(updatedData);
+  // In DoctorClinicInfo component
+const handleClinicChange = (clinicId) => {
+  const selectedClinic = allClinics.find(clinic => clinic.addressId === clinicId);
+  const updatedData = {
+    ...localData,
+    selectedClinicId: clinicId,
+    appointmentStartTime: selectedClinic?.startTime || '',
+    appointmentEndTime: selectedClinic?.endTime || '',
+    // Add these fields to match preview expectations
+    doctorName: `${user?.firstname || ''} ${user?.lastname || ''}`,
+    qualifications: user?.specialization?.degree || '',
+    specialization: user?.specialization?.name?.trim() || '',
+    clinicAddress: selectedClinic?.address || '',
+    contactNumber: selectedClinic?.mobile || user?.mobile || '',
+    city: selectedClinic?.city || '',
+    pincode: selectedClinic?.pincode || ''
   };
+  setLocalData(updatedData);
+  updateFormData(updatedData);
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;

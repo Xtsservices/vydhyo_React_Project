@@ -16,7 +16,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const [testList, setTestList] = useState([]);
   const [medicineOptions, setMedicineOptions] = useState([]);
   const [testOptions, setTestOptions] = useState([]);
-  const [testInputValue, setTestInputValue] = useState(""); // New state for test input value
+  const [testInputValue, setTestInputValue] = useState("");
 
   const [localData, setLocalData] = useState({
     diagnosisList: "",
@@ -30,6 +30,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
         duration: null,
         timings: [],
         frequency: null,
+        notes: "",
       },
     ],
   });
@@ -42,6 +43,17 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     "Before Dinner",
     "After Dinner",
     "Bedtime",
+  ];
+
+  const frequencyOptions = [
+    "1-0-0", // Once a day (Morning)
+    "1-0-1", // Twice a day (Morning and Night)
+    "1-1-1", // Three times a day (Morning, Afternoon, Night)
+    "0-0-1", // Once at night
+    "0-1-0", // Once at lunch
+    "1-1-0", // Morning and lunch
+    "0-1-1", // Lunch and night
+    "SOS",   // As needed
   ];
 
   useEffect(() => {
@@ -123,7 +135,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
-    setTestInputValue(""); // Clear the input field after adding
+    setTestInputValue("");
     toast.success("Test added successfully");
   };
 
@@ -138,6 +150,11 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     updateFormData(updatedData);
   };
 
+  const validateDosage = (dosage) => {
+    const dosageRegex = /^\d+\s*(mg|ml|g|tablet|tab|capsule|cap|spoon|drop)s?$/i;
+    return dosageRegex.test(dosage);
+  };
+
   const validateMedication = (medication) => {
     if (!medication.medName.trim()) {
       toast.error("Please enter a valid medicine name");
@@ -147,22 +164,23 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       toast.error("Please enter a valid quantity greater than 0");
       return false;
     }
-    if (!medication.dosage.trim()) {
-      toast.error("Please enter a valid dosage (e.g., 1-0-1)");
+    if (!medication.dosage.trim() || !validateDosage(medication.dosage)) {
+      toast.error("Please enter a valid dosage (e.g., 100mg, 5ml)");
       return false;
     }
     if (medication.duration === null || medication.duration <= 0) {
       toast.error("Please enter a valid duration greater than 0 days");
       return false;
     }
-    if (!medication.frequency || medication.frequency <= 0) {
-      toast.error("Please enter a valid frequency greater than 0");
+    if (!medication.frequency) {
+      toast.error("Please select a frequency");
       return false;
     }
-    if (medication.timings.length !== medication.frequency) {
+    if (medication.frequency !== "SOS" && 
+        medication.timings.length !== medication.frequency.split('-').filter(x => x === '1').length) {
       toast.error(
-        `Please select exactly ${medication.frequency} timing${
-          medication.frequency > 1 ? "s" : ""
+        `Please select exactly ${medication.frequency.split('-').filter(x => x === '1').length} timing${
+          medication.frequency.split('-').filter(x => x === '1').length > 1 ? "s" : ""
         } to match the frequency`
       );
       return false;
@@ -181,7 +199,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     }
 
     const newMedication = {
-      id: null,
+      id: Date.now(),
       medName: "",
       quantity: null,
       dosage: "",
@@ -190,6 +208,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       frequency: null,
       medInventoryId: null,
       price: null,
+      notes: "",
     };
 
     const updatedData = {
@@ -231,11 +250,42 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           }
         }
 
-        if (field === "frequency" && updatedMed.timings.length > value) {
-          updatedMed.timings = updatedMed.timings.slice(0, value);
+        return updatedMed;
+      }
+      return med;
+    });
+
+    const updatedData = {
+      ...localData,
+      medications: updatedMedications,
+    };
+    setLocalData(updatedData);
+    updateFormData(updatedData);
+  };
+
+  const updateMedicationFrequency = (id, value) => {
+    const updatedMedications = localData.medications.map((med) => {
+      if (med.id === id) {
+        // For SOS frequency, clear timings
+        if (value === "SOS") {
+          return {
+            ...med,
+            frequency: value,
+            timings: []
+          };
         }
 
-        return updatedMed;
+        // Calculate how many timings we need based on frequency
+        const requiredTimingsCount = value.split('-').filter(x => x === '1').length;
+        
+        // Filter existing timings to keep only the first X that match the new frequency count
+        const filteredTimings = med.timings.slice(0, requiredTimingsCount);
+        
+        return {
+          ...med,
+          frequency: value,
+          timings: filteredTimings
+        };
       }
       return med;
     });
@@ -273,7 +323,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
             style={{ width: "100%" }}
             onSelect={(value) => {
               addTest(value);
-              setTestInputValue(""); // Clear input after selection
+              setTestInputValue("");
             }}
             onChange={(value) => setTestInputValue(value)}
             value={testInputValue}
@@ -302,10 +352,10 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
 
         {/* Note Box for Diagnostic Tests */}
         <div className="note-box">
-          <div className="note-header">Note:</div>
+          <div className="note-header">Notes:</div>
           <textarea
             className="note-textarea"
-            placeholder="Add any specific instructions for the tests..."
+            placeholder="Enter notes..."
             value={localData.testNotes || ""}
             onChange={(e) => {
               const updatedData = {
@@ -351,7 +401,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           <textarea
             value={localData.diagnosisList}
             onChange={handleDiagnosisChange}
-            placeholder="e.g., Systemic Hypertension, Dyslipidemia, Pre Diabetic, Autoimmune Disease"
+            placeholder="Enter Here..."
             className="diagnosis-textarea"
           />
         </div>
@@ -473,7 +523,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                       marginBottom: "4px",
                     }}
                   >
-                    Dosage
+                    Dosage (e.g., 100mg, 5ml)
                   </label>
                   <input
                     type="text"
@@ -481,7 +531,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                     onChange={(e) =>
                       updateMedication(medication.id, "dosage", e.target.value)
                     }
-                    placeholder="e.g., 1-0-1"
+                    placeholder="e.g., 100mg, 5ml"
                     className="medication-field"
                   />
                 </div>
@@ -532,7 +582,8 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                     }
                     style={{ width: "100%" }}
                     allowClear
-                    maxTagCount={medication.frequency || 3}
+                    disabled={medication.frequency === "SOS"}
+                    maxTagCount={medication.frequency ? medication.frequency.split('-').filter(x => x === '1').length : 3}
                   >
                     {timingOptions.map((option) => (
                       <Option key={option} value={option}>
@@ -554,33 +605,54 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                   >
                     Frequency
                   </label>
-                  <InputNumber
+                  <Select
                     value={medication.frequency}
-                    onChange={(value) => {
-                      updateMedication(medication.id, "frequency", value);
-                      if (value && medication.timings.length > value) {
-                        updateMedication(
-                          id,
-                          "timings",
-                          medication.timings.slice(0, value)
-                        );
-                      }
-                    }}
+                    onChange={(value) => updateMedicationFrequency(medication.id, value)}
                     style={{ width: "100%" }}
-                    min={1}
-                  />
+                    placeholder="Select frequency"
+                  >
+                    {frequencyOptions.map((option) => (
+                      <Option key={option} value={option}>
+                        {option}
+                      </Option>
+                    ))}
+                  </Select>
                 </div>
+              </div>
+
+              {/* Individual Medication Notes */}
+              <div className="note-box" style={{ marginTop: "12px" }}>
+                <div className="note-header">Notes for this medication:</div>
+                <textarea
+                  className="note-textarea"
+                  placeholder="Enter specific notes for this medication..."
+                  value={medication.notes || ""}
+                  onChange={(e) => {
+                    const updatedMedications = localData.medications.map(med => {
+                      if (med.id === medication.id) {
+                        return { ...med, notes: e.target.value };
+                      }
+                      return med;
+                    });
+                    const updatedData = {
+                      ...localData,
+                      medications: updatedMedications,
+                    };
+                    setLocalData(updatedData);
+                    updateFormData(updatedData);
+                  }}
+                />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Note Box for Medications */}
+        {/* General Notes Box for Medications */}
         <div className="note-box">
-          <div className="note-header">Note:</div>
+          <div className="note-header">General Notes:</div>
           <textarea
             className="note-textarea"
-            placeholder="Add any specific instructions for the medications..."
+            placeholder="Enter general notes for all medications..."
             value={localData.medicationNotes || ""}
             onChange={(e) => {
               const updatedData = {
