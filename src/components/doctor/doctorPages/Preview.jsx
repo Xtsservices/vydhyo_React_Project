@@ -77,6 +77,8 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     }
   };
 
+  console.log("formdataaaa:",formData)
+
   return (
     <div>
       <div className="print-button-container">
