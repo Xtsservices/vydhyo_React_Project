@@ -44,7 +44,6 @@ const EPrescription = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [clinicDetails, setClinicDetails] = useState(null);
   const [formData, setFormData] = useState({
-
   doctorInfo: {
    doctorId: doctorId || '',
    doctorName: user ? `${user.firstname || ""} ${user.lastname || ""}`.trim() : "",
