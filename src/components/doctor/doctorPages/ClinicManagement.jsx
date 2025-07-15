@@ -9,11 +9,11 @@ import {
 import { apiGet, apiPost, apiPut } from "../../api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useSelector } from "react-redux";
+import "../../stylings/ClinicManagement.css";
 
 const libraries = ["places", "geocoding"];
 const googleAPI = "AIzaSyCrmF3351j82RVuTZbVBJ-X3ufndylJsvo";
-import { useSelector } from "react-redux";
-
 
 export default function ClinicManagement() {
   const { isLoaded, loadError } = useLoadScript({
@@ -35,8 +35,8 @@ export default function ClinicManagement() {
     country: "India",
     mobile: "",
     pincode: "",
-    startTime: "",
-    endTime: "",
+    startTime: "09:00",
+    endTime: "17:00",
     latitude: "",
     longitude: "",
     addressId: "",
@@ -44,32 +44,38 @@ export default function ClinicManagement() {
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 });
   const [markerPosition, setMarkerPosition] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-    const user = useSelector((state) => state.currentUserData);
+  const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-  // console.log("Doctor ID:", doctorId);
+
   const autocompleteRef = useRef(null);
   const mapRef = useRef(null);
 
   useEffect(() => {
     const fetchClinics = async () => {
+      if (!doctorId) {
+        console.error("No doctorId available. User:", user);
+        setError("No doctor ID available");
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        console.log("Fetching clinics from API...");
+        console.log("Fetching clinics for doctorId:", doctorId);
         const accessToken = localStorage.getItem("accessToken");
-
-        console.log("Access Token:", accessToken);
-        // const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-        console.log("Doctor ID:", doctorId);
-
         const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
 
-        console.log("Fetch Response:", response);
+        console.log("API Response:", response);
+
         if (response.status === 200 && response.data?.status === "success") {
-          // Filter to only show active clinics
-          const activeClinics = response.data.data.filter(
-            (clinic) => clinic.status === "Active"
-          );
-          setClinics(activeClinics || []);
+          const allClinics = response.data.data || [];
+          const activeClinics = allClinics.filter((clinic) => clinic.status === "Active");
+          const sortedClinics = [...activeClinics].sort((a, b) => {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          });
+          setClinics(sortedClinics);
+        } else {
+          setError("Failed to fetch clinics");
         }
       } catch (err) {
         console.error("Fetch error:", err);
@@ -78,8 +84,8 @@ export default function ClinicManagement() {
         setLoading(false);
       }
     };
-    if(user && doctorId) {
 
+    if (user && doctorId) {
       fetchClinics();
     }
   }, [user, doctorId]);
@@ -225,8 +231,7 @@ export default function ClinicManagement() {
 
   const handleAddClinic = () => {
     setShowModal(true);
-    setEditMode(false);
-    setEditingClinicId(null);
+    setIsEditing(false);
     setFormData({
       type: "Clinic",
       clinicName: "",
@@ -236,10 +241,11 @@ export default function ClinicManagement() {
       country: "India",
       mobile: "",
       pincode: "",
-      startTime: "",
-      endTime: "",
+      startTime: "09:00",
+      endTime: "17:00",
       latitude: "",
       longitude: "",
+      addressId: "",
     });
 
     if (navigator.geolocation) {
@@ -275,8 +281,6 @@ export default function ClinicManagement() {
       country: clinic.country,
       mobile: clinic.mobile,
       pincode: clinic.pincode,
-      startTime: clinic.startTime,
-      endTime: clinic.endTime,
       latitude: clinic.latitude?.toString() || "",
       longitude: clinic.longitude?.toString() || "",
       addressId: clinic.addressId,
@@ -294,126 +298,114 @@ export default function ClinicManagement() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Only validate time fields when creating a new clinic (not editing)
-  if (!isEditing && ["Clinic", "Hospital"].includes(formData.type)) {
-    const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
-    if (!formData.startTime || !formData.endTime) {
-      toast.error(
-        "Both start time and end time are required for Clinic or Hospital type"
-      );
-      return;
-    }
-    if (!timeRegex.test(formData.startTime) || !timeRegex.test(formData.endTime)) {
-      toast.error("Invalid time format. Use HH:MM (24-hour format)");
-      return;
-    }
-    const toMinutes = (t) => {
-      const [h, m] = t.split(":").map(Number);
-      return h * 60 + m;
-    };
-    if (toMinutes(formData.startTime) >= toMinutes(formData.endTime)) {
-      toast.error("Start time must be before end time");
-      return;
-    }
-  }
+    e.preventDefault();
 
-  try {
-    let response;
-    if (isEditing) {
-      const updateData = {
-        addressId: formData.addressId,
-        clinicName: formData.clinicName,
-        mobile: formData.mobile,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        country: formData.country,
-        pincode: formData.pincode,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        location: {
-          type: "Point",
-          coordinates: [
-            parseFloat(formData.longitude),
-            parseFloat(formData.latitude),
-          ],
-        },
-      };
-      response = await apiPut("/users/updateAddress", updateData);
-      
-      // Check if update was successful (status 200 and success status)
-      if (response.status === 200 && response.data?.status === "success") {
-        toast.success(response.data?.message || "Clinic updated successfully");
+    if (!doctorId) {
+      toast.error("No doctor ID available. Please try logging in again.");
+      return;
+    }
+
+    try {
+      let response;
+      console.log("Submitting with doctorId:", doctorId, "FormData:", formData);
+      if (isEditing) {
+        const updateData = {
+          addressId: formData.addressId,
+          clinicName: formData.clinicName,
+          mobile: formData.mobile,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          pincode: formData.pincode,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          location: {
+            type: "Point",
+            coordinates: [
+              parseFloat(formData.longitude),
+              parseFloat(formData.latitude),
+            ],
+          },
+        };
+        response = await apiPut("/users/updateAddress", updateData);
+        console.log("Update API Response:", response);
+
+        if (response.status === 200 && response.data?.status === "success") {
+          toast.success(response.data?.message || "Clinic updated successfully");
+        } else {
+          toast.error(response.data?.message || "Failed to update clinic");
+          throw new Error(response.data?.message || "Failed to update clinic");
+        }
       } else {
-        console.log("Update Response:", response?.data);
-        toast.error(response.data?.message || "Failed to update clinic");
-        throw new Error(response.data?.message || "Failed to update clinic");
+        const newClinicData = {
+          ...formData,
+          userId: doctorId,
+          startTime: formData.startTime || "09:00",
+          endTime: formData.endTime || "17:00",
+        };
+        delete newClinicData.addressId;
+        response = await apiPost("/users/addAddress", newClinicData);
+        console.log("Add API Response:", response);
+
+        if (response.status === 201) {
+          toast.success(response.data?.message || "Clinic added successfully");
+        } else {
+          toast.error(response.data?.message || "Failed to add clinic");
+          throw new Error(response.data?.message || "Failed to add clinic");
+        }
       }
-    } else {
-     delete formData.addressId;
-      response = await apiPost("/users/addAddress", formData);
-      
-      // Check if creation was successful (status 201)
-      if (response.status === 201) {
-        toast.success(response.data?.message || "Clinic added successfully");
-      } else {
-        console.log("Create Response:", response?.data);
-        toast.error(response.data?.message || "Failed to add clinic");
-        throw new Error(response.data?.message || "Failed to add clinic");
+
+      const refreshResponse = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
+      console.log("Refresh API Response:", refreshResponse);
+
+      if (
+        refreshResponse.status === 200 &&
+        refreshResponse.data?.status === "success"
+      ) {
+        const allClinics = refreshResponse.data.data || [];
+        const activeClinics = allClinics.filter((clinic) => clinic.status === "Active");
+        const sortedClinics = [...activeClinics].sort((a, b) => {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+        setClinics(sortedClinics);
       }
+
+      setShowModal(false);
+      setFormData({
+        type: "Clinic",
+        clinicName: "",
+        address: "",
+        city: "",
+        state: "",
+        country: "India",
+        mobile: "",
+        pincode: "",
+        startTime: "09:00",
+        endTime: "17:00",
+        latitude: "",
+        longitude: "",
+        addressId: "",
+      });
+    } catch (err) {
+      console.error("Submit error:", err);
+      toast.error(err?.response?.data?.message?.message || err.message);
     }
-
-    // Refresh the clinics list after successful operation
-    const refreshResponse = await apiGet("/users/getClinicAddress", {});
-
-    console.log("Refresh Response:", refreshResponse);
-    if (
-      refreshResponse.status === 200 &&
-      refreshResponse.data?.status === "success"
-    ) {
-      // Filter to only show active clinics
-      const activeClinics = refreshResponse.data.data.filter(
-        (clinic) => clinic.status === "Active"
-      );
-      setClinics(activeClinics || []);
-    }
-
-    // Reset form and close modal
-    setShowModal(false);
-    setFormData({
-      type: "Clinic",
-      clinicName: "",
-      address: "",
-      city: "",
-      state: "",
-      country: "India",
-      mobile: "",
-      pincode: "",
-      startTime: "",
-      endTime: "",
-      latitude: "",
-      longitude: "",
-      addressId: "",
-    });
-  } catch (err) {
-    console.log("Error:", err?.response?.data?.message?.message || err.message);
-    toast.error(
-     err?.response?.data?.message?.message || err.message
-    );
-  }
-};
+  };
 
   const handleDeleteClinic = async (addressId) => {
     if (!window.confirm("Are you sure you want to delete this clinic?")) return;
 
     try {
       const response = await apiPost("/users/deleteClinicAddress", { addressId });
+      console.log("Delete API Response:", response);
       if (response.status === 200 || response.data?.status === "success") {
         toast.success(response.data?.message || "Clinic deleted successfully");
-        // Remove the deleted clinic from the list
-        setClinics(prevClinics => prevClinics.filter(clinic => clinic.addressId !== addressId));
+        setClinics((prevClinics) =>
+          prevClinics.filter((clinic) => clinic.addressId !== addressId)
+        );
       } else {
         toast.error(response.data?.message || "Failed to delete clinic");
       }
@@ -434,8 +426,8 @@ export default function ClinicManagement() {
       country: "India",
       mobile: "",
       pincode: "",
-      startTime: "",
-      endTime: "",
+      startTime: "09:00",
+      endTime: "17:00",
       latitude: "",
       longitude: "",
       addressId: "",
@@ -450,276 +442,6 @@ export default function ClinicManagement() {
       clinic.addressId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Styles (same as before)
-  const containerStyle = {
-    minHeight: "100vh",
-    backgroundColor: "#f9fafb",
-    fontFamily:
-      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  };
-
-  const mainStyle = {
-    maxWidth: "1000px",
-    margin: "0 auto",
-    padding: "16px",
-  };
-
-  const headerStyle = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "20px",
-  };
-
-  const titleStyle = {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: "4px",
-  };
-
-  const subtitleStyle = {
-    color: "#6b7280",
-    fontSize: "14px",
-  };
-
-  const addButtonStyle = {
-    backgroundColor: "#2563eb",
-    color: "white",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: "6px",
-    fontWeight: "500",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    transition: "background-color 0.2s",
-    fontSize: "14px",
-  };
-
-  const searchContainerStyle = {
-    display: "flex",
-    gap: "12px",
-    marginBottom: "16px",
-  };
-
-  const searchInputContainerStyle = {
-    position: "relative",
-    flex: "1",
-    maxWidth: "300px",
-  };
-
-  const searchIconStyle = {
-    position: "absolute",
-    left: "10px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    color: "#9ca3af",
-  };
-
-  const searchInputStyle = {
-    width: "100%",
-    paddingLeft: "32px",
-    paddingRight: "12px",
-    paddingTop: "8px",
-    paddingBottom: "8px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "13px",
-    outline: "none",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-  };
-
-  const searchButtonStyle = {
-    backgroundColor: "#2563eb",
-    color: "white",
-    border: "none",
-    padding: "8px 20px",
-    borderRadius: "6px",
-    fontWeight: "500",
-    cursor: "pointer",
-    transition: "background-color 0.2s",
-    fontSize: "13px",
-  };
-
-  const tableContainerStyle = {
-    backgroundColor: "white",
-    borderRadius: "6px",
-    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
-    border: "1px solid #e5e7eb",
-    overflow: "hidden",
-  };
-
-  const tableStyle = {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: "13px",
-  };
-
-  const theadStyle = {
-    backgroundColor: "#f9fafb",
-    borderBottom: "1px solid #e5e7eb",
-  };
-
-  const thStyle = {
-    padding: "10px 16px",
-    textAlign: "left",
-    fontSize: "12px",
-    fontWeight: "600",
-    color: "#374151",
-  };
-
-  const trStyle = {
-    borderBottom: "1px solid #e5e7eb",
-    transition: "background-color 0.2s",
-    height: "60px",
-  };
-
-  const tdStyle = {
-    padding: "16px",
-    fontSize: "13px",
-    lineHeight: "18px",
-    fontWeight: "400",
-    color: "#374151",
-  };
-
-  const statusBadgeStyle = {
-    display: "inline-flex",
-    padding: "2px 8px",
-    fontSize: "12px",
-    fontWeight: "400",
-    borderRadius: "12px",
-  };
-
-  const actionButtonsStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  };
-
-  const iconButtonStyle = {
-    padding: "4px",
-    cursor: "pointer",
-    transition: "color 0.2s",
-    border: "none",
-    backgroundColor: "transparent",
-    borderRadius: "4px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-
-  const modalOverlayStyle = {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  };
-
-  const modalStyle = {
-    backgroundColor: "white",
-    borderRadius: "8px",
-    padding: "32px",
-    width: "90%",
-    maxWidth: "800px",
-    position: "relative",
-    boxShadow:
-      "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-    maxHeight: "90vh",
-    overflowY: "auto",
-    marginTop: "4rem",
-  };
-
-  const modalHeaderStyle = {
-    fontSize: "22px",
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: "32px",
-    textAlign: "left",
-  };
-
-  const formGroupStyle = {
-    marginBottom: "24px",
-  };
-
-  const labelStyle = {
-    display: "block",
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#374151",
-    marginBottom: "8px",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    padding: "12px 16px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "14px",
-    outline: "none",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-    backgroundColor: "#ffffff",
-  };
-
-  const formRowStyle = {
-    display: "flex",
-    gap: "16px",
-    marginBottom: "24px",
-  };
-
-  const buttonGroupStyle = {
-    display: "flex",
-    gap: "12px",
-    marginTop: "32px",
-  };
-
-  const cancelButtonStyle = {
-    flex: 1,
-    padding: "12px 24px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "14px",
-    fontWeight: "500",
-    cursor: "pointer",
-    backgroundColor: "white",
-    color: "#374151",
-    transition: "all 0.2s",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-  };
-
-  const confirmButtonStyle = {
-    flex: 1,
-    padding: "12px 24px",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "14px",
-    fontWeight: "500",
-    cursor: "pointer",
-    backgroundColor: "#2563eb",
-    color: "white",
-    transition: "background-color 0.2s",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-
-  const mapContainerStyle = {
-    width: "100%",
-    height: "300px",
-    borderRadius: "6px",
-    marginBottom: "24px",
-  };
-
   if (loadError) {
     return <div>Error loading Google Maps</div>;
   }
@@ -729,140 +451,91 @@ export default function ClinicManagement() {
   }
 
   return (
-    <div style={containerStyle}>
-      <div style={mainStyle}>
-        <div style={headerStyle}>
+    <div className="clinic-management-container">
+      <div className="clinic-management-main">
+        <div className="clinic-management-header">
           <div>
-            <h1 style={titleStyle}>Clinic Management</h1>
-            <p style={subtitleStyle}>
+            <h1 className="clinic-management-title">Clinic Management</h1>
+            <p className="clinic-management-subtitle">
               Manage your clinic information, address, and operating status.
             </p>
           </div>
           <button
-            style={addButtonStyle}
+            className="clinic-management-add-button"
             onClick={handleAddClinic}
-            onMouseEnter={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
-            onMouseLeave={(e) => (e.target.style.backgroundColor = "#2563eb")}
           >
             <Plus size={16} />
             Add Clinic
           </button>
         </div>
 
-        <div style={searchContainerStyle}>
-          <div style={searchInputContainerStyle}>
-            <Search style={searchIconStyle} size={16} />
+        <div className="clinic-search-container">
+          <div className="clinic-search-input-container">
+            <Search className="clinic-search-icon" size={16} />
             <input
               type="text"
-              placeholder="Search by Clinic Name or ID"
-              style={searchInputStyle}
+              placeholder="Search by Clinic Name"
+              className="clinic-search-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={(e) => {
-                e.target.style.borderColor = "#3b82f6";
-                e.target.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.1)";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "#d1d5db";
-                e.target.style.boxShadow = "none";
-              }}
             />
           </div>
-          <button
-            style={searchButtonStyle}
-            onMouseEnter={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
-            onMouseLeave={(e) => (e.target.style.backgroundColor = "#2563eb")}
-          >
-            Search
-          </button>
+          <button className="clinic-search-button">Search</button>
         </div>
 
-        <div style={tableContainerStyle}>
-          <table style={tableStyle}>
-            <thead style={theadStyle}>
+        <div className="clinic-table-container">
+          <table className="clinic-table">
+            <thead className="clinic-table-header">
               <tr>
-                <th style={thStyle}>Clinic Name</th>
-                <th style={thStyle}>Type</th>
-                <th style={thStyle}>Address</th>
-                <th style={thStyle}>Contact</th>
-                <th style={thStyle}>Operating Hours</th>
-                <th style={thStyle}>Status</th>
-                <th style={thStyle}>Action</th>
+                <th className="clinic-table-th">Clinic Name</th>
+                <th className="clinic-table-th">Type</th>
+                <th className="clinic-table-th">Address</th>
+                <th className="clinic-table-th">Contact</th>
+                <th className="clinic-table-th">Status</th>
+                <th className="clinic-table-th">Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredClinics.length > 0 ? (
                 filteredClinics.map((clinic) => (
-                  <tr
-                    key={clinic._id}
-                    style={trStyle}
-                    onMouseEnter={(e) =>
-                      (e.target.style.backgroundColor = "#f9fafb")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.target.style.backgroundColor = "transparent")
-                    }
-                  >
-                    <td style={{ ...tdStyle, color: "#111827" }}>
-                      {clinic.clinicName}
+                  <tr key={clinic._id} className="clinic-table-tr">
+                    <td className="clinic-table-td clinic-name">{clinic.clinicName}</td>
+                    <td className="clinic-table-td">{clinic.type}</td>
+                    <td className="clinic-table-td">
+                      {clinic.address}, {clinic.city}, {clinic.state}, {clinic.country} {clinic.pincode}
                     </td>
-                    <td style={tdStyle}>{clinic.type}</td>
-                    <td style={tdStyle}>
-                      {clinic.address}, {clinic.city}, {clinic.state},{" "}
-                      {clinic.country} {clinic.pincode}
-                    </td>
-                    <td style={tdStyle}>{clinic.mobile}</td>
-                    <td style={tdStyle}>
-                      {clinic.startTime} - {clinic.endTime}
-                    </td>
-                    <td style={tdStyle}>
-                      <span
-                        style={{
-                          ...statusBadgeStyle,
-                          ...getStatusStyle(clinic.status),
-                        }}
-                      >
+                    <td className="clinic-table-td">{clinic.mobile}</td>
+                    <td className="clinic-table-td">
+                      <span className="clinic-status-badge" style={getStatusStyle(clinic.status)}>
                         {clinic.status}
                       </span>
                     </td>
-                    <td style={tdStyle}>
-                      <div style={actionButtonsStyle}>
+                    <td className="clinic-table-td">
+                      <div className="clinic-action-buttons">
                         <button
-                          style={{ ...iconButtonStyle, color: "#2563eb" }}
-                          onMouseEnter={(e) =>
-                            (e.target.style.color = "#1d4ed8")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.target.style.color = "#2563eb")
-                          }
+                          className="clinic-edit-button"
                           title="Edit"
                           onClick={() => handleEditClinic(clinic)}
                         >
                           <Edit size={16} />
                         </button>
-                        <button
-                          style={{ ...iconButtonStyle, color: "#dc2626" }}
-                          onMouseEnter={(e) =>
-                            (e.target.style.color = "#b91c1c")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.target.style.color = "#dc2626")
-                          }
-                          title="Delete"
-                          onClick={() => handleDeleteClinic(clinic.addressId)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {user?.role === "doctor" && (
+                          <button
+                            className="clinic-delete-button"
+                            title="Delete"
+                            onClick={() => handleDeleteClinic(clinic.addressId)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" style={{ ...tdStyle, textAlign: "center" }}>
-                    {clinics.length === 0
-                      ? "No clinics found"
-                      : "No matching clinics found"}
+                  <td colSpan="6" className="clinic-table-td no-clinics">
+                    {clinics.length === 0 ? "No active clinics found" : "No matching active clinics found"}
                   </td>
                 </tr>
               )}
@@ -871,19 +544,19 @@ export default function ClinicManagement() {
         </div>
 
         {showModal && (
-          <div style={modalOverlayStyle} onClick={handleCancel}>
-            <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-              <h2 style={modalHeaderStyle}>
+          <div className="clinic-modal-overlay" onClick={handleCancel}>
+            <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 className="clinic-modal-header">
                 {isEditing ? "Edit Clinic Details" : "Add New Clinic Details"}
               </h2>
 
               <div>
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>
+                <div className="clinic-form-group">
+                  <label className="clinic-form-label">
                     Location Preview (Click to select location)
                   </label>
                   <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
+                    mapContainerClassName="clinic-map-container"
                     center={mapCenter}
                     zoom={15}
                     onClick={handleMapClick}
@@ -893,29 +566,20 @@ export default function ClinicManagement() {
                   </GoogleMap>
                 </div>
 
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>Clinic Name</label>
+                <div className="clinic-form-group">
+                  <label className="clinic-form-label">Clinic Name</label>
                   <input
                     type="text"
                     name="clinicName"
                     placeholder="Enter clinic name"
-                    style={inputStyle}
+                    className="clinic-form-input"
                     value={formData.clinicName}
                     onChange={handleInputChange}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#3b82f6";
-                      e.target.style.boxShadow =
-                        "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#d1d5db";
-                      e.target.style.boxShadow = "none";
-                    }}
                   />
                 </div>
 
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>
+                <div className="clinic-form-group">
+                  <label className="clinic-form-label">
                     Address (or click on map to select)
                   </label>
                   <Autocomplete
@@ -929,73 +593,46 @@ export default function ClinicManagement() {
                       type="text"
                       name="address"
                       placeholder="Enter address or select on map"
-                      style={inputStyle}
+                      className="clinic-form-input"
                       value={formData.address}
                       onChange={handleInputChange}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#3b82f6";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#d1d5db";
-                        e.target.style.boxShadow = "none";
-                      }}
                     />
                   </Autocomplete>
                 </div>
 
-                <div style={formRowStyle}>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>City</label>
+                <div className="clinic-form-row">
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">City</label>
                     <input
                       type="text"
                       name="city"
                       placeholder="Enter city"
-                      style={inputStyle}
+                      className="clinic-form-input"
                       value={formData.city}
                       onChange={handleInputChange}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#3b82f6";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#d1d5db";
-                        e.target.style.boxShadow = "none";
-                      }}
                     />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>State</label>
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">State</label>
                     <input
                       type="text"
                       name="state"
                       placeholder="Enter state"
-                      style={inputStyle}
+                      className="clinic-form-input"
                       value={formData.state}
                       onChange={handleInputChange}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#3b82f6";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#d1d5db";
-                        e.target.style.boxShadow = "none";
-                      }}
                     />
                   </div>
                 </div>
 
-                <div style={formRowStyle}>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Mobile</label>
+                <div className="clinic-form-row">
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Mobile</label>
                     <input
                       type="text"
                       name="mobile"
                       placeholder="Enter mobile number"
-                      style={inputStyle}
+                      className="clinic-form-input"
                       value={formData.mobile}
                       maxLength={10}
                       onChange={(e) => {
@@ -1009,157 +646,59 @@ export default function ClinicManagement() {
                           });
                         }
                       }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#3b82f6";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#d1d5db";
-                        e.target.style.boxShadow = "none";
-                      }}
                     />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Pincode</label>
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Pincode</label>
                     <input
                       type="text"
                       name="pincode"
                       placeholder="Enter pincode"
-                      style={inputStyle}
+                      className="clinic-form-input"
                       value={formData.pincode}
                       onChange={handleInputChange}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#3b82f6";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#d1d5db";
-                        e.target.style.boxShadow = "none";
-                      }}
                     />
                   </div>
                 </div>
 
-                <div style={formRowStyle}>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Latitude</label>
+                <div className="clinic-form-row">
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Latitude</label>
                     <input
                       type="number"
                       name="latitude"
                       placeholder="Enter latitude"
-                      style={inputStyle}
+                      className="clinic-form-input"
                       value={formData.latitude}
                       onChange={handleInputChange}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#3b82f6";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#d1d5db";
-                        e.target.style.boxShadow = "none";
-                      }}
                     />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Longitude</label>
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Longitude</label>
                     <input
                       type="number"
                       name="longitude"
                       placeholder="Enter longitude"
-                      style={inputStyle}
+                      className="clinic-form-input"
                       value={formData.longitude}
                       onChange={handleInputChange}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#3b82f6";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#d1d5db";
-                        e.target.style.boxShadow = "none";
-                      }}
                     />
                   </div>
                 </div>
 
-                {/* Only show time fields when creating a new clinic (not editing) */}
-                {!isEditing && (
-                  <div style={formRowStyle}>
-                    <div style={{ flex: 1 }}>
-                      <label style={labelStyle}>
-                        Start Time (required for Clinic/Hospital)
-                      </label>
-                      <input
-                        type="text"
-                        name="startTime"
-                        placeholder="HH:MM (e.g., 09:00)"
-                        style={inputStyle}
-                        value={formData.startTime}
-                        onChange={handleInputChange}
-                        onFocus={(e) => {
-                          e.target.style.borderColor = "#3b82f6";
-                          e.target.style.boxShadow =
-                            "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                        }}
-                        onBlur={(e) => {
-                          e.target.style.borderColor = "#d1d5db";
-                          e.target.style.boxShadow = "none";
-                        }}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={labelStyle}>
-                        End Time (required for Clinic/Hospital)
-                      </label>
-                      <input
-                        type="text"
-                        name="endTime"
-                        placeholder="HH:MM (e.g., 17:00)"
-                        style={inputStyle}
-                        value={formData.endTime}
-                        onChange={handleInputChange}
-                        onFocus={(e) => {
-                          e.target.style.borderColor = "#3b82f6";
-                          e.target.style.boxShadow =
-                            "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                        }}
-                        onBlur={(e) => {
-                          e.target.style.borderColor = "#d1d5db";
-                          e.target.style.boxShadow = "none";
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div style={buttonGroupStyle}>
+                <div className="clinic-button-group">
                   <button
                     type="button"
-                    style={cancelButtonStyle}
+                    className="clinic-cancel-button"
                     onClick={handleCancel}
-                    onMouseEnter={(e) =>
-                      (e.target.style.backgroundColor = "#f3f4f6")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.target.style.backgroundColor = "white")
-                    }
                   >
                     <X size={16} />
                     Cancel
                   </button>
                   <button
                     type="button"
-                    style={confirmButtonStyle}
+                    className="clinic-confirm-button"
                     onClick={handleSubmit}
-                    onMouseEnter={(e) =>
-                      (e.target.style.backgroundColor = "#1d4ed8")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.target.style.backgroundColor = "#2563eb")
-                    }
                   >
                     {isEditing ? "Update" : "Confirm"}
                   </button>

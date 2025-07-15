@@ -417,7 +417,7 @@ console.log(filters.date, "selectedDate")
         }
         icon={<EyeOutlined />}
       >
-        E-Prescription
+        Digital-Prescription
       </Menu.Item>
 
       <Menu.Item
