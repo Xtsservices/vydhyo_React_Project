@@ -67,80 +67,60 @@ const MyPatients = () => {
       );
       const data = response.data;
 
+      console.log(response.data, "response.data from patients.jsx");
+
       let patientsData = [];
 
-      if (response.status === 200 && data.data) {
-        const appointmentsData = Array.isArray(data.data)
-          ? data.data
-          : [data.data];
-        const patientMap = new Map();
+     if (response.status === 200 && data.data) {
+  const appointmentsData = Array.isArray(data.data)
+    ? data.data
+    : [data.data];
 
-        appointmentsData.forEach((appointment) => {
-          const uniqueKey = `${appointment.userId || "unknown"}_${
-            appointment.patientName?.toLowerCase().replace(/\s+/g, "") ||
-            "unnamed"
-          }`;
+  const patientsDataUnsorted = appointmentsData.map((appointment) => ({
+    id: appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`,
+    name: appointment.patientName || "N/A",
+    gender: appointment.patientDetails?.gender || "N/A",
+    age: appointment.patientDetails?.dob
+      ? calculateAge(appointment.patientDetails.dob)
+      : "N/A",
+    phone: appointment.patientDetails?.mobile || "N/A",
+    lastVisit: appointment.appointmentDate
+      ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
+      : "N/A",
+    appointmentType: appointment.appointmentType || "N/A",
+    status:
+      appointment.appointmentType === "New-Walkin" ||
+      appointment.appointmentType === "new-walkin"
+        ? "New Patient"
+        : "Follow-up",
+    department: appointment.appointmentDepartment || "N/A",
+    appointmentTime: appointment.appointmentTime || "N/A",
+    appointmentStatus: appointment.appointmentStatus || "N/A",
+    appointmentReason: appointment.appointmentReason || "N/A",
+    appointmentCount: 1,
+    allAppointments: [appointment],
+  }));
 
-          if (!patientMap.has(uniqueKey)) {
-            patientMap.set(uniqueKey, {
-              id:
-                appointment.userId ||
-                `P-${Math.random().toString(36).substr(2, 6)}`,
-              name: appointment.patientName || "N/A",
-              gender: appointment.patientDetails?.gender || "N/A",
-              age: appointment.patientDetails?.dob
-                ? calculateAge(appointment.patientDetails.dob)
-                : "N/A",
-              phone: appointment.patientDetails?.mobile || "N/A",
-              lastVisit: appointment.appointmentDate
-                ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
-                : "N/A",
-              appointmentType: appointment.appointmentType || "N/A",
-              status:
-                appointment.appointmentType === "New-Walkin" ||
-                appointment.appointmentType === "new-walkin"
-                  ? "New Patient"
-                  : "Follow-up",
-              department: appointment.appointmentDepartment || "N/A",
-              appointmentTime: appointment.appointmentTime || "N/A",
-              appointmentStatus: appointment.appointmentStatus || "N/A",
-              appointmentReason: appointment.appointmentReason || "N/A",
-              appointmentCount: 1,
-              allAppointments: [appointment],
-            });
-          } else {
-            const existingPatient = patientMap.get(uniqueKey);
-            const currentAppointmentDate = moment(appointment.appointmentDate);
-            const existingAppointmentDate = moment(
-              existingPatient.lastVisit,
-              "DD MMMM YYYY"
-            );
+  // 🔽 Sorting by date (desc) then by userId (desc)
+  patientsDataUnsorted.sort((a, b) => {
+    const dateA = moment(a.lastVisit, "DD MMMM YYYY");
+    const dateB = moment(b.lastVisit, "DD MMMM YYYY");
 
-            existingPatient.appointmentCount += 1;
-            existingPatient.allAppointments.push(appointment);
+    if (dateA.isBefore(dateB)) return 1;
+    if (dateA.isAfter(dateB)) return -1;
 
-            if (currentAppointmentDate.isAfter(existingAppointmentDate)) {
-              existingPatient.lastVisit =
-                currentAppointmentDate.format("DD MMMM YYYY");
-              existingPatient.appointmentType =
-                appointment.appointmentType || "N/A";
-              existingPatient.appointmentTime =
-                appointment.appointmentTime || "N/A";
-              existingPatient.appointmentStatus =
-                appointment.appointmentStatus || "N/A";
-              existingPatient.appointmentReason =
-                appointment.appointmentReason || "N/A";
-              existingPatient.department =
-                appointment.appointmentDepartment || "N/A";
-            }
-          }
-        });
+    // Dates are same, now compare ID (assuming alphanumeric)
+    return b.id.localeCompare(a.id); // latest (higher) id first
+  });
 
-        patientsData = Array.from(patientMap.values());
-      }
+  patientsData = patientsDataUnsorted;
 
-      setPatients(patientsData);
-      setFilteredPatients(patientsData);
+  setPatients(patientsData);
+  setFilteredPatients(patientsData);
+}
+
+
+      
     } catch (error) {
       console.error("Error fetching patients:", error);
       message.error("Failed to fetch patients data. Please try again.");

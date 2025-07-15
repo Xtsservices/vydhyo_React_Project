@@ -408,7 +408,9 @@ const DoctorLayoutWrapper = () => {
                     lineHeight: "1.2",
                   }}
                 >
-                  Dr. {user?.firstname || ""} {user?.lastname || ""}
+                  {user?.role === "doctor"
+                    ? `Dr. ${user?.firstname || ""} ${user?.lastname || ""}`
+                    : `${user?.firstname || ""} ${user?.lastname || ""}`}
                 </div>
                 <div
                   style={{

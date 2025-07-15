@@ -221,6 +221,8 @@ useEffect(() => {
   ]);
 
   const searchUser = useCallback(async (mobile) => {
+
+    console.log("Searching user with mobile:", mobile);
     try {
       const response = await apiGet(`/doctor/searchUser?mobile=${mobile}`);
       const data = response.data;
@@ -234,6 +236,7 @@ useEffect(() => {
         data: Array.isArray(data.data) ? data.data : [data.data],
       };
     } catch (error) {
+      console.log(error, 'error======');
       return {
         success: false,
         message: error.message || "Failed to search user",
@@ -251,7 +254,7 @@ useEffect(() => {
         DOB: patientData.dateOfBirth
           ? moment(patientData.dateOfBirth, "DD-MM-YYYY").format("DD-MM-YYYY")
           : "",
-          age: patientData?.age || calculateAge(patientData.dateOfBirth) || 0
+          age: patientData?.age || calculateAge(patientData.dateOfBirth) || "0"
       });
       console.log("Creating patient with body:", body);
 
@@ -268,6 +271,7 @@ useEffect(() => {
           data: data.data,
           message: data.message || "Patient created",
         };
+        toast.success(data.message || "Patient created successfully");
       }
     } catch (error) {
       return {
@@ -279,7 +283,12 @@ useEffect(() => {
 
   const createAppointment = useCallback(async (appointmentRequest) => {
     try {
+      
       const body = JSON.stringify(appointmentRequest);
+
+
+
+      console.log("Creating appointment with body:", body);
       const response = await apiPost("/appointment/createAppointment", body);
 
       const data = response.data;
@@ -294,12 +303,12 @@ useEffect(() => {
         data: data.data,
         message: data.message || "Appointment created",
       };
-        // toast.success("Appointment created successfully");
       }
-       
-
      
     } catch (error) {
+      
+      const errorMessage = error?.response?.data
+      toast.error(errorMessage?.message?.message || "Failed to create appointment");
       return {
         success: false,
         message: error.message || "Failed to create appointment",
@@ -468,9 +477,11 @@ useEffect(() => {
         setIsCreatingPatient(false);
       }
 
+      console.log(patientData.role)
+
       const appointmentRequest = {
         userId: createdPatientId,
-        doctorId: currentUserID,
+        doctorId: patientData.role === "doctor" ? currentUserID : user?.createdBy || "",
         patientName: `${patientData.firstName} ${patientData.lastName}`,
         doctorName: `${user.firstname} ${user.lastname}`,
         appointmentType: patientData.appointmentType,
@@ -557,10 +568,40 @@ useEffect(() => {
    const getCurrentUserData = async () => {
   try {
     const response = await apiGet("/users/getUser");
+    console.log("Current User Data:", response.data);
     const userData = response.data?.data;
-    if (userData?.addresses) {
+    let addresses = []
+
+if (userData.role !== "doctor") {
+  const doctorId = userData.createdBy || ""
+ const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
+ console.log("Clinic Addresses:", response?.data);
+ if (response?.data.status ==="success") {
+addresses = response?.data?.data || [];
+
+const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
+ console.log("Doctor Details:", doctorDetails?.data?.data);
+ const doctorData = doctorDetails?.data?.data;
+ if (doctorDetails?.data?.status === "success") {
+  setPatientData((prev) => ({
+    ...prev,
+    department: doctorData?.specialization?.name,
+  }));
+  }
+ }else{
+  toast.error("No clinics found for the doctor.");
+ }
+    }else if (userData.role === "doctor") {
+      addresses = userData?.addresses || [];
+    }else{
+       
+        setClinics([]);
+        setIsClinicModalVisible(true);
+      
+    }
+
       // Filter only active clinics (case-insensitive comparison)
-      const activeClinics = userData.addresses
+      const activeClinics = addresses
         .filter(address => 
           address.type === "Clinic" && 
           address.status?.toLowerCase() === "active"
@@ -574,13 +615,10 @@ useEffect(() => {
           location: address.location
         }));
       setClinics(activeClinics);
-       if (activeClinics.length === 0) {
-          setIsClinicModalVisible(true);
-        }
-    }else {
-        setClinics([]);
+      if (activeClinics.length === 0) {
         setIsClinicModalVisible(true);
       }
+   
   } catch (error) {
     console.error("Error fetching user data:", error);
   }
@@ -595,13 +633,17 @@ useEffect(() => {
 
 
     const fetchTimeSlots = useCallback(async (selectedDate, clinicId) => {
-    if (!selectedDate || !clinicId || !currentUserID) return;
+      const doctorId = user?.role !== 'doctor' ? user?.createdBy || '' : currentUserID;
+
+      console.log("Fetching time slots for date:", selectedDate, "clinicId:", clinicId, "doctorId:", doctorId, currentUserID);
+
+      if (!selectedDate || !clinicId || !doctorId) return;
     setIsFetchingSlots(true);
     
     try {
       console.log(clinicId, currentUserID, selectedDate)
       const response = await apiGet(
-        `/appointment/getSlotsByDoctorIdAndDate?doctorId=${currentUserID}&date=${selectedDate}&addressId=${clinicId}`
+        `/appointment/getSlotsByDoctorIdAndDate?doctorId=${doctorId}&date=${selectedDate}&addressId=${clinicId}`
       );
       const data = response.data;
 
@@ -694,7 +736,7 @@ useEffect(() => {
             type="primary"
             onClick={handleSearch}
             loading={isSearching}
-            disabled={isSearching || searchQuery.length !== 10}
+            disabled={isSearching || searchQuery.length !== 10 || searchResults.length > 0}
             style={{ width: "100%", marginTop: 32 }}
           >
             Search
@@ -982,7 +1024,7 @@ useEffect(() => {
             <Text type="danger">{fieldErrors.consultationFee}</Text>
           )}
         </Col>
-        <Col span={24}>
+        {/* <Col span={24}>
           <Text strong>Discount Type</Text>
           <Select
             value={discountType}
@@ -990,11 +1032,11 @@ useEffect(() => {
             style={{ width: "100%", marginTop: 8 }}
           >
             <Option value="percentage">Percentage (%)</Option>
-            {/* <Option value="flat">Flat Amount</Option> */}
+            <Option value="flat">Flat Amount</Option>
           </Select>
-        </Col>
+        </Col> */}
         <Col span={24}>
-          <Text strong>Discount</Text>
+          <Text strong>Discount(%)</Text>
           <Input
             placeholder="Enter discount value"
             value={discount}
@@ -1102,8 +1144,9 @@ useEffect(() => {
           )}
           <Col xs={24} lg={16}>
             {renderSearchCard()}
-            {renderBasicInfoCard()}
+           
             {renderAppointmentDetailsCard()}
+             {renderBasicInfoCard()}
           </Col>
           <Col xs={24} lg={8}>
             {renderPaymentSummaryCard()}
