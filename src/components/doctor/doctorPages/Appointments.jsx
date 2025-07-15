@@ -359,7 +359,7 @@ const Appointment = () => {
         }
         icon={<EyeOutlined />}
       >
-        E-Prescription
+        Digital-Prescription
       </Menu.Item>
 
       <Menu.Item

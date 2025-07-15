@@ -385,6 +385,87 @@
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
+/* View Staff Modal Styling */
+.view-staff-modal .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.view-staff-modal .ant-modal-header {
+  background: #f8fafc;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.view-staff-modal .ant-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.view-staff-modal .ant-modal-body {
+  padding: 24px;
+}
+
+.view-staff-modal .staff-detail-item {
+  display: flex;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+
+.view-staff-modal .staff-detail-label {
+  flex: 0 0 120px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.view-staff-modal .staff-detail-value {
+  flex: 1;
+  color: #111827;
+  word-break: break-word;
+}
+
+.view-staff-modal .staff-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 auto 20px;
+}
+
+.view-staff-modal .staff-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.view-staff-modal .staff-name-large {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.view-staff-modal .staff-role-large {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.view-staff-modal .ant-modal-footer {
+  border-top: 1px solid #e5e7eb;
+  padding: 16px 24px;
+}
+
+
 /* Responsive design */
 @media (max-width: 768px) {
   .filters-row {

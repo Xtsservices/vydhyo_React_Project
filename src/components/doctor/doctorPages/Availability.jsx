@@ -103,18 +103,18 @@ const AvailabilityScreen = () => {
     }));
   };
 
-  const getCurrentUserData = async () => {
+  const fetchClinicsForDoctor = async (doctorId) => {
     try {
-      const response = await apiGet("/users/getUser");
-      const userData = response.data?.data;
-      if (userData?.addresses) {
-        // Filter only active clinics (status === "Active")
-        const activeClinics = userData.addresses
-          .filter((address) => address.status === "Active") // Filter active clinics
+      setLoading(true);
+      const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`);
+      
+      if (response.status === 200 && response.data?.status === "success") {
+        const activeClinics = response.data.data
+          .filter((address) => address.status === "Active")
           .map((address) => ({
             label: address.clinicName,
             value: address.addressId,
-            addressData: address, // Include the full address data if needed
+            addressData: address,
           }));
 
         setClinics(activeClinics);
@@ -125,18 +125,22 @@ const AvailabilityScreen = () => {
           setSelectedClinic(null);
           message.warning("No active clinics available");
         }
+      } else {
+        throw new Error(response.data?.message || "Failed to fetch clinics");
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.error("Error fetching clinics:", error);
       message.error("Failed to fetch clinic data");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user) {
-      getCurrentUserData();
+    if (doctorId) {
+      fetchClinicsForDoctor(doctorId);
     }
-  }, [user]);
+  }, [doctorId]);
 
   useEffect(() => {
     const date = new Date().toISOString().split("T")[0];
@@ -194,7 +198,6 @@ const AvailabilityScreen = () => {
           unavailableSlots: unavailable,
         });
       } else if (response.response?.status === 404) {
-        // Handle 404 - No slots found for this date
         setCurrentClinicSlots({
           availableSlots: [],
           unavailableSlots: [],
@@ -208,7 +211,6 @@ const AvailabilityScreen = () => {
     } catch (error) {
       console.error("Error fetching slots:", error);
       if (error.response?.status === 404) {
-        // Handle 404 from the API
         setCurrentClinicSlots({
           availableSlots: [],
           unavailableSlots: [],
@@ -229,7 +231,6 @@ const AvailabilityScreen = () => {
       setLoading(true);
       const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
 
-      // Prepare all slots data - only include slots that should exist
       const allSlots = [
         ...availableSlots.map((slot) => ({
           time: slot.originalTime,
@@ -243,13 +244,11 @@ const AvailabilityScreen = () => {
         })),
       ];
 
-      // Convert to the format expected by the API
       const timeSlots = allSlots.map((slot) => slot.time);
 
       const response = await apiPut("/appointment/updateDoctorSlots", {
         doctorId: doctorId,
         date: selectedDate.format("YYYY-MM-DD"),
-        // timeSlots: timeSlots,
         addressId: selectedClinic,
       });
 
@@ -285,23 +284,15 @@ const AvailabilityScreen = () => {
         return dates;
       };
 
-      // Example usage based on your code
       const fromDate = selectedDate?.format("YYYY-MM-DD");
       const endDate = selectedEndDate?.format("YYYY-MM-DD");
 
       let selectedDates = [];
-      console.log(fromDate, "=fromDate");
-      console.log(endDate, "=endDate");
       if (fromDate && endDate) {
         selectedDates = getDateRangeArray(fromDate, endDate);
       } else {
         selectedDates = [fromDate];
       }
-      const dateArray = getDateRangeArray(fromDate, endDate);
-
-      // To get the dates as a comma-separated string
-      const dateString = dateArray.join(",");
-      console.log("Selected Dates:", dateString);
 
       const response = await apiPost("/appointment/createSlotsForDoctor", {
         doctorId: doctorId,
@@ -375,7 +366,6 @@ const AvailabilityScreen = () => {
       setLoading(true);
       const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
 
-      // Generate the time slots we want to mark as unavailable
       const startTime = moment(
         `${unavailableStartTime}:00 ${unavailableStartPeriod}`,
         "hh:mm A"
@@ -392,7 +382,6 @@ const AvailabilityScreen = () => {
         unavailableDuration
       );
 
-      // Filter out any slots that are already unavailable
       const existingUnavailableTimes = unavailableSlots.map(
         (slot) => slot.originalTime
       );
@@ -405,12 +394,10 @@ const AvailabilityScreen = () => {
         return;
       }
 
-      // Find any existing available slots that overlap with these times
       const overlappingAvailableSlots = availableSlots.filter((slot) =>
         newSlotsToMark.includes(slot.originalTime)
       );
 
-      // Create new unavailable slots for the times that weren't already available
       const newUnavailableSlots = [
         ...unavailableSlots,
         ...newSlotsToMark
@@ -426,12 +413,10 @@ const AvailabilityScreen = () => {
           })),
       ];
 
-      // Remove the overlapping slots from available slots
       const updatedAvailableSlots = availableSlots.filter(
         (slot) => !newSlotsToMark.includes(slot.originalTime)
       );
 
-      // Add the converted slots to unavailable
       if (overlappingAvailableSlots.length > 0) {
         overlappingAvailableSlots.forEach((slot) => {
           newUnavailableSlots.push({
@@ -442,28 +427,14 @@ const AvailabilityScreen = () => {
         });
       }
 
-      // Update state
       setCurrentClinicSlots({
         availableSlots: updatedAvailableSlots,
         unavailableSlots: newUnavailableSlots,
       });
 
-      // Send API request to update the slots
       const response = await apiPut("/appointment/updateDoctorSlots", {
         doctorId: doctorId,
         date: selectedDate.format("YYYY-MM-DD"),
-        // timeSlots: [
-        //   ...updatedAvailableSlots.map((slot) => ({
-        //     time: slot.originalTime,
-        //     status: "available",
-        //     reason: "",
-        //   })),
-        //   ...newUnavailableSlots.map((slot) => ({
-        //     time: slot.originalTime,
-        //     status: "unavailable",
-        //     reason: slot.reason,
-        //   })),
-        // ].map((slot) => slot.time),
         addressId: selectedClinic,
       });
 
@@ -515,7 +486,6 @@ const AvailabilityScreen = () => {
     }
   };
 
-  // Helper function to generate time slots between start and end time with given interval
   const generateTimeSlots = (startTime, endTime, interval) => {
     const slots = [];
     let currentTime = moment(startTime, "HH:mm");
@@ -727,47 +697,44 @@ const AvailabilityScreen = () => {
           </Col>
 
           {/* Duration */}
-          {isAvailable &&
-          
-          
-          <Col xs={12} sm={6}>
-            <Text strong>Duration (minutes):</Text>
-            <div
-              style={{ display: "flex", alignItems: "center", marginTop: 8 }}
-            >
-              <span
-                style={{
-                  minWidth: 30,
-                  textAlign: "center",
-                  fontSize: 16,
-                  fontWeight: "bold",
-                }}
+          {isAvailable && (
+            <Col xs={12} sm={6}>
+              <Text strong>Duration (minutes):</Text>
+              <div
+                style={{ display: "flex", alignItems: "center", marginTop: 8 }}
               >
-                {duration}
-              </span>
-              <div style={{ marginLeft: 8 }}>
-                <Button
-                  size="small"
-                  icon={<UpOutlined />}
-                  onClick={() => adjustDuration("up", section)}
+                <span
                   style={{
-                    display: "block",
-                    marginBottom: 2,
-                    width: 30,
-                    height: 20,
+                    minWidth: 30,
+                    textAlign: "center",
+                    fontSize: 16,
+                    fontWeight: "bold",
                   }}
-                />
-                <Button
-                  size="small"
-                  icon={<DownOutlined />}
-                  onClick={() => adjustDuration("down", section)}
-                  style={{ display: "block", width: 30, height: 20 }}
-                />
+                >
+                  {duration}
+                </span>
+                <div style={{ marginLeft: 8 }}>
+                  <Button
+                    size="small"
+                    icon={<UpOutlined />}
+                    onClick={() => adjustDuration("up", section)}
+                    style={{
+                      display: "block",
+                      marginBottom: 2,
+                      width: 30,
+                      height: 20,
+                    }}
+                  />
+                  <Button
+                    size="small"
+                    icon={<DownOutlined />}
+                    onClick={() => adjustDuration("down", section)}
+                    style={{ display: "block", width: 30, height: 20 }}
+                  />
+                </div>
               </div>
-            </div>
-          </Col>
-
-          }
+            </Col>
+          )}
 
           {/* Action Buttons */}
           <Col xs={12} sm={6}>
@@ -780,14 +747,6 @@ const AvailabilityScreen = () => {
               >
                 Add Slots
               </Button>
-              {/* <Button
-                danger
-                onClick={deleteHandler}
-                icon={<DeleteOutlined />}
-                style={{ fontWeight: "bold" }}
-              >
-                Clear All
-              </Button> */}
             </Space>
           </Col>
         </Row>
@@ -840,14 +799,13 @@ const AvailabilityScreen = () => {
       </>
     );
   };
+
   const handleDateChange = (date) => {
     setSelectedDate(date);
-    console.log("Date changed:", date.format("YYYY-MM-DD"));
   };
 
   const handleEndDateChange = (date) => {
     setSelectedEndDate(date);
-    console.log("End Date changed:", date.format("YYYY-MM-DD"));
   };
 
   return (
@@ -910,18 +868,6 @@ const AvailabilityScreen = () => {
                     value={selectedEndDate}
                     format="MM/DD/YYYY"
                   />
-                  {/* <DatePicker
-                                    onChange={handleDateChange}
-                                     value={filters.date ? moment(filters.date) : null}
-                                    placeholder="Filter by date"
-                                  /> */}
-                  {/* <DatePicker
-                    style={{ width: 200 }}
-                    value={selectedDate}
-                    onChange={(date) => setSelectedDate(date ? date : moment())}
-                    format="YYYY-MM-DD"
-                    allowClear={false}
-                  /> */}
                 </Space>
               </div>
             }
@@ -956,52 +902,6 @@ const AvailabilityScreen = () => {
 
             {/* Unavailable Slots Section */}
             {renderTimeControls("unavailable")}
-
-            {/* Unavailable Date Range Section */}
-            {/* <Collapse defaultActiveKey={["1"]} style={{ marginBottom: 24 }}>
-              <Panel
-                header={<Text strong>Set Unavailable Date Range</Text>}
-                key="1"
-              >
-                <Row gutter={24} style={{ marginBottom: 16 }}>
-                  <Col xs={24} sm={12}>
-                    <Text strong>Start Date:</Text>
-                    <DatePicker
-                      style={{ width: "100%", marginTop: 8 }}
-                      value={unavailableStartDate}
-                      onChange={setUnavailableStartDate}
-                      placeholder="Select start date"
-                    />
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <Text strong>End Date:</Text>
-                    <DatePicker
-                      style={{ width: "100%", marginTop: 8 }}
-                      value={unavailableEndDate}
-                      onChange={setUnavailableEndDate}
-                      placeholder="Select end date"
-                    />
-                  </Col>
-                </Row>
-                <div style={{ marginBottom: 16 }}>
-                  <Text strong>Reason:</Text>
-                  <Input.TextArea
-                    rows={3}
-                    placeholder="Enter reason for unavailability..."
-                    value={unavailableReason}
-                    onChange={(e) => setUnavailableReason(e.target.value)}
-                    style={{ marginTop: 8 }}
-                  />
-                </div>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  style={{ marginTop: 8 }}
-                >
-                  Add Unavailable Date Range
-                </Button>
-              </Panel>
-            </Collapse> */}
 
             {/* Legend */}
             <div style={{ marginBottom: 16 }}>

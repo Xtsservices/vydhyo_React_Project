@@ -1,35 +1,39 @@
-.container {
+/* Main container styles */
+.clinic-management-container {
   min-height: 100vh;
-  background-color: #f9fafb;
+  background-color: #F3FFFD;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.main {
+.clinic-management-main {
   max-width: 1000px;
   margin: 0 auto;
   padding: 16px;
 }
 
-.header {
+/* Header styles */
+.clinic-management-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 20px;
 }
 
-.title {
+.clinic-management-title {
   font-size: 24px;
   font-weight: 700;
   color: #111827;
   margin-bottom: 4px;
+  text-align: justify;
 }
 
-.subtitle {
+.clinic-management-subtitle {
   color: #6b7280;
   font-size: 14px;
+  text-align: justify;
 }
 
-.addButton {
+.clinic-management-add-button {
   background-color: #2563eb;
   color: white;
   border: none;
@@ -44,23 +48,24 @@
   font-size: 14px;
 }
 
-.addButton:hover {
+.clinic-management-add-button:hover {
   background-color: #1d4ed8;
 }
 
-.searchContainer {
+/* Search styles */
+.clinic-search-container {
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.searchInputContainer {
+.clinic-search-input-container {
   position: relative;
   flex: 1;
   max-width: 300px;
 }
 
-.searchIcon {
+.clinic-search-icon {
   position: absolute;
   left: 10px;
   top: 50%;
@@ -68,7 +73,7 @@
   color: #9ca3af;
 }
 
-.searchInput {
+.clinic-search-input {
   width: 100%;
   padding-left: 32px;
   padding-right: 12px;
@@ -79,14 +84,15 @@
   font-size: 13px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
+  text-align: justify;
 }
 
-.searchInput:focus {
+.clinic-search-input:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.searchButton {
+.clinic-search-button {
   background-color: #2563eb;
   color: white;
   border: none;
@@ -98,11 +104,12 @@
   font-size: 13px;
 }
 
-.searchButton:hover {
+.clinic-search-button:hover {
   background-color: #1d4ed8;
 }
 
-.tableContainer {
+/* Table styles */
+.clinic-table-container {
   background-color: white;
   border-radius: 6px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -110,60 +117,73 @@
   overflow: hidden;
 }
 
-.table {
+.clinic-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-.thead {
+.clinic-table-header {
   background-color: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
 }
 
-.th {
+.clinic-table-th {
   padding: 10px 16px;
-  text-align: left;
+  text-align: justify;
   font-size: 12px;
   font-weight: 600;
   color: #374151;
 }
 
-.tr {
+.clinic-table-tr {
   border-bottom: 1px solid #e5e7eb;
   transition: background-color 0.2s;
   height: 60px;
 }
 
-.tr:hover {
+.clinic-table-tr:hover {
   background-color: #f9fafb;
 }
 
-.td {
+.clinic-table-td {
   padding: 16px;
   font-size: 13px;
   line-height: 18px;
   font-weight: 400;
   color: #374151;
+  text-align: justify;
 }
 
-.clinicName {
-  color: #111827;
+.clinic-name {
+  color: #111827 !important;
+  font-weight: 500 !important;
+  font-size: 15px !important;
+  text-align: justify;
 }
 
-.noData {
-  padding: 16px;
-  font-size: 13px;
-  text-align: center;
+.no-clinics {
+  text-align: center !important;
 }
 
-.actionButtons {
+/* Status badge */
+.clinic-status-badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 400;
+  border-radius: 12px;
+  text-align: justify;
+}
+
+/* Action buttons */
+.clinic-action-buttons {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.iconButton {
+.clinic-edit-button {
   padding: 4px;
   cursor: pointer;
   transition: color 0.2s;
@@ -176,19 +196,29 @@
   color: #2563eb;
 }
 
-.iconButton:hover {
+.clinic-edit-button:hover {
   color: #1d4ed8;
 }
 
-.deleteButton {
+.clinic-delete-button {
+  padding: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+  border: none;
+  background-color: transparent;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #dc2626;
 }
 
-.deleteButton:hover {
+.clinic-delete-button:hover {
   color: #b91c1c;
 }
 
-.modalOverlay {
+/* Modal styles */
+.clinic-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -201,7 +231,7 @@
   z-index: 1000;
 }
 
-.modal {
+.clinic-modal {
   background-color: white;
   border-radius: 8px;
   padding: 32px;
@@ -214,27 +244,29 @@
   margin-top: 4rem;
 }
 
-.modalHeader {
+.clinic-modal-header {
   font-size: 22px;
   font-weight: 600;
   color: #111827;
   margin-bottom: 32px;
-  text-align: left;
+  text-align: justify;
 }
 
-.formGroup {
+/* Form styles */
+.clinic-form-group {
   margin-bottom: 24px;
 }
 
-.label {
+.clinic-form-label {
   display: block;
   font-size: 14px;
   font-weight: 500;
   color: #374151;
   margin-bottom: 8px;
+  text-align: justify;
 }
 
-.input {
+.clinic-form-input {
   width: 100%;
   padding: 12px 16px;
   border: 1px solid #d1d5db;
@@ -243,37 +275,40 @@
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   background-color: #ffffff;
+  text-align: justify;
 }
 
-.input:focus {
+.clinic-form-input:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.formRow {
+.clinic-form-row {
   display: flex;
   gap: 16px;
   margin-bottom: 24px;
 }
 
-.formField {
+.clinic-form-col {
   flex: 1;
 }
 
-.mapContainer {
+/* Map styles */
+.clinic-map-container {
   width: 100%;
   height: 300px;
   border-radius: 6px;
   margin-bottom: 24px;
 }
 
-.buttonGroup {
+/* Button group styles */
+.clinic-button-group {
   display: flex;
   gap: 12px;
   margin-top: 32px;
 }
 
-.cancelButton {
+.clinic-cancel-button {
   flex: 1;
   padding: 12px 24px;
   border: 1px solid #d1d5db;
@@ -288,13 +323,14 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  text-align: justify;
 }
 
-.cancelButton:hover {
+.clinic-cancel-button:hover {
   background-color: #f3f4f6;
 }
 
-.confirmButton {
+.clinic-confirm-button {
   flex: 1;
   padding: 12px 24px;
   border: none;
@@ -308,8 +344,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  text-align: justify;
 }
 
-.confirmButton:hover {
+.clinic-confirm-button:hover {
   background-color: #1d4ed8;
 }

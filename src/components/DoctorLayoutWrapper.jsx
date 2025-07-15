@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { Layout, Menu, Avatar, Badge, Dropdown } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faRupeeSign,
+  faReceipt ,
   faBars,
   faTachometerAlt,
   faCalendarCheck,
   faUsers,
+  faCreditCard,
   faUserInjured,
   faCog,
   faCalendarAlt,
@@ -78,7 +81,7 @@ const DoctorLayoutWrapper = () => {
         localStorage.removeItem("role");
         localStorage.removeItem("appointments");
 
-        console.log("Logout successful:", response.data.message);
+        // console.log("Logout successful:", response.data.message);
       } catch (error) {
         console.error(
           "Logout API failed:",
@@ -169,10 +172,10 @@ const DoctorLayoutWrapper = () => {
     {
       key: "e_prescription",
       accessKey: "e_prescription",
-      label: <Link to="/doctor/doctorPages/EPrescription">E-Prescription</Link>,
+      label: <Link to="/doctor/doctorPages/EPrescription">Digital-Prescription</Link>,
       icon: (
         <FontAwesomeIcon
-          icon={faPills}
+          icon={faFileInvoice} // Changed from faPills to faFileInvoice
           style={{ color: "#ffffff", fontSize: "16px" }}
         />
       ),
@@ -220,7 +223,7 @@ const DoctorLayoutWrapper = () => {
       label: <Link to="/doctor/doctorPages/Billing">Billing</Link>,
       icon: (
         <FontAwesomeIcon
-          icon={faFileInvoice}
+          icon={faReceipt } // This is actually good for billing as it represents invoices
           style={{ color: "#ffffff", fontSize: "16px" }}
         />
       ),
@@ -231,7 +234,7 @@ const DoctorLayoutWrapper = () => {
       label: <Link to="/doctor/doctorPages/Accounts">Accounts</Link>,
       icon: (
         <FontAwesomeIcon
-          icon={faFileInvoice}
+          icon={faCreditCard} // Using Indian rupee symbol for accounts
           style={{ color: "#ffffff", fontSize: "16px" }}
         />
       ),
@@ -267,7 +270,7 @@ const DoctorLayoutWrapper = () => {
       if (!user.access || !Array.isArray(user.access)) {
         return [];
       }
-      console.log("accesssssss", user.access);
+      // console.log("accesssssss", user.access);
 
       // Filter menu items based on user access
       return allMenuItems.filter((item) =>
@@ -280,7 +283,7 @@ const DoctorLayoutWrapper = () => {
   };
 
   const menuItems = getFilteredMenuItems();
-  console.log("Filtered menu items:", menuItems);
+  // console.log("Filtered menu items:", menuItems);
 
   // Dropdown menu for profile
   const profileMenu = (
@@ -300,9 +303,6 @@ const DoctorLayoutWrapper = () => {
       </Menu.Item>
     </Menu>
   );
-
-  
-  
 
   return (
     <Layout className="layout">

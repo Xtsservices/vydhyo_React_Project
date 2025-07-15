@@ -1,0 +1,257 @@
+/* Main container styles */
+.accounts-container {
+  padding: 24px;
+  background-color: #F3FFFD;
+  min-height: 100vh;
+}
+
+/* Page title styles */
+.page-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.page-subtitle {
+  font-size: 14px;
+}
+
+/* Content section */
+.content-section {
+  margin-top: 24px;
+}
+
+/* Summary cards row */
+.summary-row {
+  margin-bottom: 24px;
+}
+
+/* Summary card styles */
+.summary-card {
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.clickable-card-container {
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border-radius: 8px;
+}
+
+.clickable-card-container:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+/* Card icon styles */
+.card-icon-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.card-icon.green {
+  background-color: #52c41a;
+}
+
+.card-icon.red {
+  background-color: #ff4d4f;
+}
+
+.card-icon.orange {
+  background-color: #faad14;
+}
+
+.card-icon.blue {
+  background-color: #1890ff;
+}
+
+.card-icon-inner {
+  color: white;
+  font-size: 16px;
+}
+
+/* Card content styles */
+.card-amount {
+  font-size: 24px;
+  font-weight: 600;
+  color: #000;
+}
+
+.card-label {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+}
+
+/* Recent transactions styles */
+.recent-transactions {
+  margin-top: 8px;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.transaction-name {
+  font-size: 12px;
+  color: #666;
+}
+
+.transaction-amount {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Transaction card styles */
+.transaction-card {
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.transaction-header {
+  margin-bottom: 24px;
+}
+
+.transaction-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Search and filter bar styles */
+.search-filter-bar {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.search-col {
+  min-width: 280px;
+}
+
+.search-input {
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background-color: white;
+}
+
+.search-icon {
+  color: #8c8c8c;
+}
+
+.date-picker {
+  width: 220px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+}
+
+.filter-select {
+  width: 140px;
+  border-radius: 6px;
+}
+
+.status-select {
+  width: 120px;
+  border-radius: 16px;
+  margin-left: 8px;
+}
+
+.export-button {
+  background-color: #52c41a;
+  border-color: #52c41a;
+  border-radius: 6px;
+  box-shadow: none;
+  margin-left: 8px;
+}
+
+/* Table styles */
+.status-tag {
+  border-radius: 12px;
+  padding: 0 8px;
+  font-weight: 500;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.view-button {
+  color: #1890ff;
+}
+
+/* Pagination info styles */
+.pagination-info {
+  margin-top: 16px;
+  font-size: 12px;
+  color: #666;
+  text-align: left;
+}
+
+/* Modal styles */
+.transaction-modal .ant-modal-body {
+  padding: 24px;
+}
+
+.transaction-details {
+  margin-bottom: 24px;
+}
+
+.modal-divider {
+  margin: 16px 0;
+}
+
+.loading-container {
+  text-align: center;
+}
+
+.loading-icon {
+  font-size: 24px;
+}
+
+.no-history {
+  text-align: center;
+  color: #999;
+}
+
+.patient-details, .appointment-details {
+  margin-bottom: 16px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-col {
+    margin-bottom: 16px;
+  }
+  
+  .date-picker {
+    margin-bottom: 16px;
+  }
+  
+  .filter-select, .status-select {
+    margin-bottom: 16px;
+  }
+}
