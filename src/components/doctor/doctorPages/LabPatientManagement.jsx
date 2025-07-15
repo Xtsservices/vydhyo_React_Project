@@ -81,6 +81,13 @@ const LabPatientManagement = ({ status, updateCount }) => {
       console.log("getAllTestsPatientsByDoctorID", response);
       if (response.status === 200 && response?.data?.data) {
         const pendingData = await filterPatientsDAta(response.data.data);
+
+         //  Sort by patientId descending
+      pendingData.sort((a, b) => {
+        const idA = parseInt(a.patientId.replace(/\D/g, '')) || 0;
+        const idB = parseInt(b.patientId.replace(/\D/g, '')) || 0;
+        return idB - idA; // latest on top
+      });
         setPatients(pendingData);
         message.success("Patients data loaded successfully");
       }

@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { use, useEffect, useState,useCallback, } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -67,6 +67,8 @@ const Appointment = () => {
     status: "all",
     date: null,
   });
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
 
   const getStatusTag = (status) => {
     const statusConfig = {
@@ -97,13 +99,15 @@ const Appointment = () => {
       patientId: appointment.userId || appointment.appointmentId,
       patientName: appointment.patientName,
       gender: appointment.patientDetails?.gender || "N/A",
-      age: age,
+      age: age || appointment.patientDetails?.age ,
       mobileNumber: appointment.patientDetails?.mobile || "N/A",
       appointmentId: appointment.appointmentId,
       appointmentDate: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
       appointmentDepartment: appointment.appointmentDepartment,
       appointmentStatus: appointment.appointmentStatus,
       appointmentReason: appointment.appointmentReason || "N/A",
+      addressId: appointment.addressId,
+      appointmentTime:appointment.appointmentTime,
     };
 
     console.log("patientData",patientData)
@@ -184,6 +188,10 @@ const Appointment = () => {
   };
 
   const handleRescheduleSubmit = async () => {
+
+    console.log("Selected Appointment:", selectedAppointment);
+    console.log("New Date:", newDate);
+    console.log("New Time:", newTime);
     if (!selectedAppointment) {
       message.error("No appointment selected");
       toast.error("No appointment selected");
@@ -201,9 +209,11 @@ const Appointment = () => {
       const response = await apiPost("/appointment/rescheduleAppointment", {
         appointmentId: selectedAppointment.appointmentId,
         newDate: newDate.format("YYYY-MM-DD"),
-        newTime: newTime.format("HH:mm"),
+        newTime: newTime,
         reason: "Patient requested reschedule",
       });
+
+      console.log(response, "response from reschedule API");
       if (response.status == 200) {
         message.success(
           response.data.message || "Appointment rescheduled successfully"
@@ -284,13 +294,25 @@ console.log(filters.date, "selectedDate")
         `/appointment/getAppointmentsByDoctorID/appointment?doctorId=${doctorId}`
       );
 
+      console.log("Response from getAppointments:", response);
+
       if (response.status === 200) {
-        const updatedAppointments = response.data.data;
-         const sortedAppointments = updatedAppointments.sort((a, b) => {
-        const idA = parseInt(a.appointmentId.replace("VYDAPMT", ""), 10);
-        const idB = parseInt(b.appointmentId.replace("VYDAPMT", ""), 10);
-        return idB - idA; // Descending order (higher ID first)
-      });
+         const updatedAppointments = response.data.data;
+
+  const sortedAppointments = updatedAppointments.sort((a, b) => {
+    // First, compare by appointmentDate (latest date first)
+    const dateA = moment(a.appointmentDate, "YYYY-MM-DD");
+    const dateB = moment(b.appointmentDate, "YYYY-MM-DD");
+
+    if (dateA.isBefore(dateB)) return 1;
+    if (dateA.isAfter(dateB)) return -1;
+
+    // If same date, then compare by appointmentId (highest first)
+    const idA = parseInt(a.appointmentId.replace("VYDAPMT", ""), 10);
+    const idB = parseInt(b.appointmentId.replace("VYDAPMT", ""), 10);
+    return idB - idA;
+  });
+
         setAppointments(sortedAppointments);
         setFilteredData(applyFilters(updatedAppointments));
       } else {
@@ -334,7 +356,41 @@ console.log(filters.date, "selectedDate")
 
   useEffect(() => {
     setFilteredData(applyFilters(appointments));
-  }, [searchText, filters, appointments]);
+  }, [searchText, filters, appointments, ]);
+
+  const timeslots = async (date) => {
+     console.log("Selected Date:", date);
+     console.log(selectedAppointment, "selectedAppointment");
+    const selectedDate = date
+    const clinicId =selectedAppointment?.addressId
+;
+    const currentUserID = selectedAppointment?.doctorId || selectedAppointment?.createdBy;
+   
+    try {
+        const response = await apiGet(
+              `/appointment/getSlotsByDoctorIdAndDate?doctorId=${currentUserID}&date=${selectedDate}&addressId=${clinicId}`
+            );
+            const data = response.data;
+            if (data.status === "success"){
+              setAvailableTimeSlots(data?.data?.slots)
+            }else{
+              toast.error(data?.message?.message || "Failed to fetch timeslots");
+            }
+
+      
+            console.log("Time Slots Response:=============",   data );
+    } catch (error) {
+      toast.error(error?.response?.data?.message?.message || "Error fetching timeslots");
+    }
+  };
+
+  useEffect(() => {
+    if (selectedDate) {
+      timeslots(selectedDate.format("YYYY-MM-DD"));
+    }
+    
+  }, [selectedDate]);
+
 
   const handleFilterChange = (filterName, value) => {
     setFilters((prev) => ({
@@ -449,6 +505,13 @@ console.log(filters.date, "selectedDate")
     },
   ];
 
+    const handleInputChange = useCallback(( value) => {
+      console.log("Input Change:", value);
+      setNewTime(value);
+    }, []);
+
+  console.log(selectedAppointment, "selectedAppointment");
+
   return (
     <div style={{ padding: "24px" }}>
       <Spin spinning={loading}>
@@ -554,9 +617,10 @@ console.log(filters.date, "selectedDate")
                 <Input
                   placeholder="Search by Patient Name or Appointment ID or email or mobile"
                   prefix={<SearchOutlined />}
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
+                  value={searchText.toUpperCase()}
+                   onChange={(e) => setSearchText(e.target.value.toLowerCase())}
                   className="filters-input"
+                  
                 />
               </Col>
 
@@ -597,7 +661,7 @@ console.log(filters.date, "selectedDate")
                 >
                   <Option value="all">All Status</Option>
                   <Option value="scheduled">Scheduled</Option>
-                  <Option value="rescheduled">Rescheduled</Option>
+                  {/* <Option value="rescheduled">Rescheduled</Option> */}
                   <Option value="cancelled">Cancelled</Option>
                 </Select>
               </Col>
@@ -648,20 +712,36 @@ console.log(filters.date, "selectedDate")
               {selectedAppointment.appointmentTime}
             </p>
             <div style={{ margin: "16px 0" }}>
+
+
               <DatePicker
                 style={{ width: "100%", marginBottom: 16 }}
-                value={newDate}
-                onChange={(date) => setNewDate(date)}
+                value={selectedDate}
+                onChange={(date) => setSelectedDate(date)}
                 disabledDate={(current) =>
                   current && current < moment().startOf("day")
                 }
               />
-              <TimePicker
+
+              <Select
+                          value={newTime}
+                          onChange={(value) => handleInputChange( value)}
+                          placeholder="Select time slot"
+                          // disabled={!patientCreated && !userFound}
+                          style={{ width: "100%", marginTop: 8 }}
+                        >
+{availableTimeSlots?.map((slot) => (
+  <Option key={slot._id} value={slot.time}>
+    {slot.time}
+  </Option>
+))}
+                        </Select>
+              {/* <TimePicker
                 style={{ width: "100%" }}
                 value={newTime}
                 onChange={(time) => setNewTime(time)}
                 format="HH:mm"
-              />
+              /> */}
             </div>
           </div>
         )}

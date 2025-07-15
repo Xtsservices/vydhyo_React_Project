@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
+
 import {
   Home,
   Calendar,
@@ -24,74 +26,78 @@ import AdviceFollowUp from "./E-AdviceFollowUp";
 import Preview from "./Preview";
 import "../../stylings/EPrescription.css";
 import { useLocation } from "react-router-dom";
+
 import { apiGet, apiPost } from "../../api";
+
+
+import { useSelector } from "react-redux";
+
 
 const EPrescription = () => {
   const location = useLocation();
+  const { patientData } = location.state || {};
   const [activeTab, setActiveTab] = useState("doctor-clinic");
   const [showPreview, setShowPreview] = useState(false);
+  const user = useSelector((state) => state.currentUserData);
+  console.log("user====", user)
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [clinicDetails, setClinicDetails] = useState(null);
   const [formData, setFormData] = useState({
-    doctorInfo: {
-      doctorId: '',
-      doctorName: '',
-      qualifications: '',
-      specialization: '',
-      selectedClinicId: '',
-      clinicName: '',
-      clinicAddress: '',
-      contactNumber: '',
-      appointmentDate: '',
-      appointmentStartTime: '',
-      appointmentEndTime: ''
-    },
-    patientInfo: {
-      patientId: '',
-      patientName: '',
-      age: '',
-      gender: '',
-      mobileNumber: '',
-      chiefComplaint: '',
-      pastMedicalHistory: '',
-      familyMedicalHistory: '',
-      physicalExamination: ''
-    },
-    vitals: {},
-    diagnosis: {},
-    advice: {}
-  });
 
+  doctorInfo: {
+   doctorId: doctorId || '',
+   doctorName: user ? `${user.firstname || ""} ${user.lastname || ""}`.trim() : "",
+      qualifications: user?.specialization?.degree || "",
+      specialization: user?.specialization?.name || "",
+      medicalRegistrationNumber: user?.medicalRegistrationNumber || "",
+    selectedClinicId: '',
+    clinicAddress: '',
+    contactNumber: '',
+    appointmentDate: '',
+    appointmentStartTime: '',
+    appointmentEndTime: ''
+  },
+  patientInfo: {
+    patientId: '',
+    patientName: '',
+    age: '',
+    gender: '',
+    mobileNumber: '',
+    chiefComplaint: '',
+    pastMedicalHistory: '',
+    familyMedicalHistory: '',
+    physicalExamination: ''
+  },
+  vitals: {},
+  diagnosis: {},
+  advice: {}
+});
+
+
+// Initialize formData with patientData
   useEffect(() => {
-    const fetchClinicDetails = async () => {
-      try {
-        const appointmentData = location?.state?.patientData;
-        if (appointmentData?.addressId) {
-          const response = await apiGet(`/users/getClinicAddressById?addressId=${appointmentData.addressId}`);
-          if (response.status === 200 && response.data?.data) {
-            setClinicDetails(response.data.data);
-            const clinic = response.data.data;
-            const fullAddress = `${clinic.address}, ${clinic.city}, ${clinic.state}, ${clinic.country} - ${clinic.pincode}`;
-            
-            setFormData(prev => ({
-              ...prev,
-              doctorInfo: {
-                ...prev.doctorInfo,
-                selectedClinicId: appointmentData.addressId,
-                clinicName: clinic.clinicName,
-                clinicAddress: fullAddress,
-                contactNumber: clinic.mobile
-              }
-            }));
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching clinic details:", error);
-      }
-    };
-    
-    fetchClinicDetails();
-  }, [location?.state?.patientData]);
+    if (patientData) {
+      setFormData((prev) => ({
+        ...prev,
+        doctorInfo: {
+          ...prev.doctorInfo,
+          appointmentDate: patientData.appointmentDate || "", // e.g., "2039-06-19"
+          appointmentStartTime: patientData.appointmentTime || "", // e.g., "18:30"
+          selectedClinicId: patientData.addressId || "", // Set clinic ID
+        },
+        patientInfo: {
+          ...prev.patientInfo,
+          patientId: patientData.patientId || "",
+          patientName: patientData.patientName || "",
+          age: patientData.age || "",
+          gender: patientData.gender || "",
+          mobileNumber: patientData.mobileNumber || "",
+        },
+      }));
+    }
+  }, [patientData]);
+
 
   const tabs = [
     { id: "doctor-clinic", label: "Doctor & Clinic Info", icon: UserCheck },
@@ -194,6 +200,7 @@ const EPrescription = () => {
               medInventoryId: med.medInventoryId,
               medName: med.medName,
               quantity: med.quantity,
+              medicineType: med.medicineType,
               dosage: med.dosage,
               duration: med.duration,
               timings: med.timings,

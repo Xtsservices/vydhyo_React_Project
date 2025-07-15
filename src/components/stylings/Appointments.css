@@ -45,6 +45,7 @@
 
 .filters-input {
   width: 300px;
+  text-transform: uppercase;
 }
 
 @media (max-width: 576px) {
