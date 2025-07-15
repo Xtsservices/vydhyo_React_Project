@@ -7,6 +7,7 @@ import {
   StarFilled,
   ArrowUpOutlined,
   ArrowDownOutlined,
+  ConsoleSqlOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -936,10 +937,11 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
       try {
         setIsLoading(true);
         const currentClinic = clinics[currentClinicIndex];
+        console.log("Current Clinic for Slots:", currentClinic.addressId, doctorId);
         const response = await apiGet(
-          `/appointment/getNextAvailableSlotsByDoctor?doctorId=${doctorId}&clinicId=${currentClinic.addressId}`
+          `/appointment/getNextAvailableSlotsByDoctorAndAddress?doctorId=${doctorId}&addressId=${currentClinic.addressId}`
         );
-        
+        console.log("Available Slots Response:", response.data);
         if (response.data.status === "success") {
           const slotsData = response.data.data;
           
@@ -1037,6 +1039,8 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
   }
 
   const currentClinic = clinics[currentClinicIndex];
+
+  console.log("Current Clinic:", currentClinic);
 
   return (
     <Card
@@ -1265,6 +1269,7 @@ const RevenueSummary = ({ revenueSummaryData }) => (
       border: "none",
       boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
       background: "white",
+      marginTop: "2rem",
     }}
     bodyStyle={{ padding: "24px" }}
   >
@@ -1378,17 +1383,27 @@ const DoctorDashboard = () => {
       const response = await apiGet(
         `/appointment/getAppointmentsByDoctorID/dashboardAppointment?date=${formattedDate}&doctorId=${doctorId}`
       );
+      console.log("Appointments API response:", response.data.data);
 
       if (
-        response.data.status === "success" &&
-        Array.isArray(response.data.data)
-      ) {
-        const appointmentsList = response.data.data;
-        setAppointments(appointmentsList);
-        if (formattedDate === moment().format("YYYY-MM-DD")) {
-          updatePatientAppointmentsData(appointmentsList, formattedDate);
-        }
-      } else {
+  response.data.status === "success" &&
+  Array.isArray(response.data.data)
+) {
+  const appointmentsList = response.data.data;
+
+  // Sort by appointmentTime in descending order (latest first)
+  appointmentsList.sort((a, b) => {
+    const timeA = moment(a.appointmentTime, "HH:mm");
+    const timeB = moment(b.appointmentTime, "HH:mm");
+    return timeB.diff(timeA); // descending
+  });
+
+  console.log("Sorted Appointments List:", appointmentsList);
+
+  setAppointments(appointmentsList);
+}
+
+      else {
         console.warn("Unexpected API response structure:", response.data);
         setAppointments([]);
         if (formattedDate === moment().format("YYYY-MM-DD")) {
