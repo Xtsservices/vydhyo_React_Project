@@ -51,6 +51,7 @@ const AddWalkInPatient = () => {
     department: "",
     visitReason: "",
     selectedTimeSlot: "",
+    age: "",
   });
 
     const today = new Date();
@@ -125,7 +126,7 @@ useEffect(() => {
       ) {
         return age - 1;
       }
-      return age;
+      return String(age);
     },
     [validateDOB]
   );
@@ -250,7 +251,9 @@ useEffect(() => {
         DOB: patientData.dateOfBirth
           ? moment(patientData.dateOfBirth, "DD-MM-YYYY").format("DD-MM-YYYY")
           : "",
+          age: patientData?.age || calculateAge(patientData.dateOfBirth) || 0
       });
+      console.log("Creating patient with body:", body);
 
       const response = await apiPost("/doctor/createPatient", body);
       console.log("response", response);
@@ -282,19 +285,20 @@ useEffect(() => {
       const data = response.data;
       console.log("appointmentResponse", data);
 
-      if (response?.data?.status !== "success") {
- toast.error(data.message || "Failed to create appointment");
-        throw new Error(data.message || "Failed to create appointment");
+      if (data?.status !== "success") {
+        toast.error(data.message || "Failed to create appointment");
+        // throw new Error(data.message || "Failed to create appointment");
       } else {
-        toast.success("Appointment created successfully");
-      }
-       
-
-      return {
+         return {
         success: true,
         data: data.data,
         message: data.message || "Appointment created",
       };
+        // toast.success("Appointment created successfully");
+      }
+       
+
+     
     } catch (error) {
       return {
         success: false,
@@ -392,6 +396,7 @@ useEffect(() => {
   );
 
   const handleInputChange = useCallback((field, value) => {
+    console.log("Input Change:", field, value);
     setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     let validatedValue = value;
 
@@ -778,9 +783,15 @@ useEffect(() => {
           <Text strong>Age (Calculated)</Text>
           <Input
             placeholder="Age calculated from DOB"
-            value={calculateAge(patientData.dateOfBirth)}
-            disabled
+            value={
+              patientData.dateOfBirth
+                ? calculateAge(patientData.dateOfBirth) || patientData.age
+                : patientData.age
+            }
+            
+            onChange={(e) => handleInputChange("age", e.target.value)}
             style={{ marginTop: 8 }}
+            disabled={!!patientData.dateOfBirth} // Disable only if DOB is selected
           />
         </Col>
         <Col xs={24} sm={8}>
