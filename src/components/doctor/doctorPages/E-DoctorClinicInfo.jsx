@@ -7,11 +7,13 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
+  console.log("user data==========",user)
   // Get only active clinic addresses
   const allClinics = (user?.addresses?.filter(address => 
     address.type === "Clinic" && address.status === "Active"
   ) || []);
   
+  console.log("allClinics====", allClinics)
   const [localData, setLocalData] = useState({
     doctorId: doctorId,
     selectedClinicId: '',
@@ -145,6 +147,7 @@ const handleClinicChange = (clinicId) => {
               value={localData.selectedClinicId}
               onChange={handleChange}
               className="doctor-clinic-input"
+              readOnly
             >
               {allClinics.map(clinic => (
                 <option key={clinic.addressId} value={clinic.addressId}>
@@ -229,7 +232,7 @@ const handleClinicChange = (clinicId) => {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="doctor-clinic-label">
               Appointment End Time
             </label>
@@ -240,7 +243,7 @@ const handleClinicChange = (clinicId) => {
               onChange={handleChange}
               className="doctor-clinic-input"
             />
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

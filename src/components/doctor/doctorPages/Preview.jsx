@@ -1,12 +1,15 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Printer, CheckCircle } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import logo from "../../../assets/logooo.png";
 import '../../stylings/EPrescription.css';
+import { apiGet } from "../../api";
 
 const Preview = ({ formData, handlePrescriptionAction }) => {
+
+  const [selectedClinic, setSelectedClinic] = useState(null)
   const formatDate = (dateString) => {
     if (!dateString) return 'Not specified';
     const date = new Date(dateString);
@@ -17,6 +20,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     });
   };
 
+  console.log("selectedClinic===",selectedClinic)
   const generatePDF = async () => {
     try {
       const input = document.getElementById('prescription-container');
@@ -72,6 +76,30 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     }
   };
 
+  console.log("formdataaaa:",formData)
+
+  
+    const getCurrentUserData = async () => {
+      try {
+        const response = await apiGet("/users/getUser");
+        const userData = response.data?.data;
+        console.log("userData",userData)
+         const selectedClinic2 = userData?.addresses?.find(
+    (address) => address.addressId === formData.doctorInfo?.selectedClinicId
+  ) || {};
+      setSelectedClinic(selectedClinic2)
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    useEffect(() => {
+      if(formData?.doctorInfo?.doctorId){
+        getCurrentUserData()
+      }
+    },[formData?.doctorInfo?.doctorId])
+  
+
   return (
     <div>
       <div className="print-button-container">
@@ -93,7 +121,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
       <div id="prescription-container" className="prescription-container">
         <div className="prescription-header">
           <div className="clinic-info">
-            <div className="clinic-logo">
+            {/* <div className="clinic-logo">
               <img
                 src={logo}
                 alt="Clinic Logo"
@@ -103,15 +131,20 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   objectFit: "contain",
                 }}
               />
-            </div>
+            </div> */}
             <div>
-              <div className="clinic-name">{formData.doctorInfo?.clinicName || 'VYDHYO MULTISPECIALTY CLINIC'}</div>
-              <div className="clinic-tagline">📍 {formData.doctorInfo?.clinicAddress || 'Ring Road, Nagpur - 440001'}</div>
+              <div className="clinic-name">
+  {selectedClinic?.clinicName
+    ? selectedClinic.clinicName.charAt(0).toUpperCase() + selectedClinic.clinicName.slice(1)
+    : 'VYDHYO MULTISPECIALTY CLINIC'}
+</div>
+
+              {/* <div className="clinic-tagline">Connect. Care. Cure.</div> */}
             </div>
           </div>
           <div className="contact-info">
-            <div>📍 {formData.doctorInfo?.clinicAddress || 'Ring Road, Nagpur - 440001'}</div>
-            <div>📞 {formData.doctorInfo?.contactNumber || '+91 98765 43210'}</div>
+            <div>📍{selectedClinic?.address || 'Not specified'}</div>
+            <div>📞  {selectedClinic?.mobile || 'Not specified'}</div>
             <div>
               <div>✉️ info@vydhyo.com</div>
               <div>🌐 www.vydhyo.com</div>
@@ -121,8 +154,11 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
 
         <div className="doctor-info">
           <div className="doctor-name">DR. {formData.doctorInfo?.doctorName || 'Name'}</div>
-          <div className="doctor-title">
+          <div className="doctor-title" style={{ marginBottom: '6px', padding: '6px 0' }}>
             {formData.doctorInfo?.qualifications || 'MBBS, MD'} | {formData.doctorInfo?.specialization || 'Specialist'}
+          </div>
+           <div className="doctor-title" style={{ color: '#6c757d', fontSize: '13px' }}>
+            Medical Registration No : {formData.doctorInfo?.medicalRegistrationNumber || ''}
           </div>
         </div>
 
@@ -198,7 +234,14 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             <div className="vitals-grid">
               <div className="vital-item">
                 <div className="detail-label">BP</div>
-                <div className="detail-value">{formData.vitals?.bp || 'N/A'} mmHg</div>
+                <div className="detail-value">
+                  {formData.vitals?.bp
+                    ? formData.vitals.bp
+                    : formData.vitals?.bpSystolic && formData.vitals?.bpDiastolic
+                      ? `${formData.vitals.bpSystolic}/${formData.vitals.bpDiastolic}`
+                      : 'N/A'
+                  } mmHg
+                </div>
               </div>
               <div className="vital-item">
                 <div className="detail-label">Pulse</div>

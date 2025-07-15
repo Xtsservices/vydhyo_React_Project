@@ -97,13 +97,15 @@ const Appointment = () => {
       patientId: appointment.userId || appointment.appointmentId,
       patientName: appointment.patientName,
       gender: appointment.patientDetails?.gender || "N/A",
-      age: age,
+      age: age || appointment.patientDetails?.age ,
       mobileNumber: appointment.patientDetails?.mobile || "N/A",
       appointmentId: appointment.appointmentId,
       appointmentDate: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
       appointmentDepartment: appointment.appointmentDepartment,
       appointmentStatus: appointment.appointmentStatus,
       appointmentReason: appointment.appointmentReason || "N/A",
+      addressId: appointment.addressId,
+      appointmentTime:appointment.appointmentTime,
     };
 
     console.log("patientData",patientData)
@@ -237,6 +239,7 @@ const Appointment = () => {
   };
 
   const applyFilters = (data) => {
+
     return data.filter((appointment) => {
       const matchesSearch =
         searchText === "" ||
@@ -260,10 +263,11 @@ const Appointment = () => {
       const matchesStatus =
         filters.status === "all" ||
         appointment.appointmentStatus === filters.status;
-
-      const matchesDate =
-        !filters.date ||
-        moment(appointment.appointmentDate).isSame(filters.date, "day");
+console.log(filters.date, "selectedDate")
+     const matchesDate =
+  !filters.date ||
+  moment(appointment.appointmentDate).format("YYYY-MM-DD") ===
+    filters.date.format("YYYY-MM-DD");
 
       return (
         matchesSearch &&
@@ -550,7 +554,7 @@ const Appointment = () => {
             <Row gutter={[16, 16]} align="middle" className="filters-row">
               <Col>
                 <Input
-                  placeholder="Search by Patient Name or ID"
+                  placeholder="Search by Patient Name or Appointment ID or email or mobile"
                   prefix={<SearchOutlined />}
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}

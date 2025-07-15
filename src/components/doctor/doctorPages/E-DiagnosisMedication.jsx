@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus, X, AlertTriangle } from "lucide-react";
-import { AutoComplete, InputNumber, Select } from "antd";
+import { AutoComplete, InputNumber, Select, Button } from "antd";
 import { useSelector } from "react-redux";
 import { apiGet } from "../../api";
 import { toast } from "react-toastify";
@@ -26,6 +26,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
         id: Date.now(),
         medName: "",
         quantity: null,
+         medicineType: null,
         dosage: "",
         duration: null,
         timings: [],
@@ -112,7 +113,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     updateFormData(updatedData);
   };
 
-  const addTest = (testName) => {
+  const addTest2 = (testName) => {
     if (!testName.trim()) {
       toast.error("Please enter a valid test name");
       return;
@@ -126,6 +127,33 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     const selectedTest = testList.find((test) => test.testName === testName);
     const newTest = {
       testName: testName,
+      testInventoryId: selectedTest ? selectedTest.id : null,
+    };
+
+    const updatedData = {
+      ...localData,
+      selectedTests: [...localData.selectedTests, newTest],
+    };
+    setLocalData(updatedData);
+    updateFormData(updatedData);
+    setTestInputValue("");
+    toast.success("Test added successfully");
+  };
+
+  const addTest = () => {
+    if (!testInputValue.trim()) {
+      toast.error("Please enter a valid test name");
+      return;
+    }
+
+    if (localData.selectedTests.some((test) => test.testName === testInputValue)) {
+      toast.error("This test is already added");
+      return;
+    }
+
+    const selectedTest = testList.find((test) => test.testName === testInputValue);
+    const newTest = {
+      testName: testInputValue,
       testInventoryId: selectedTest ? selectedTest.id : null,
     };
 
@@ -162,6 +190,10 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     }
     if (medication.quantity === null || medication.quantity <= 0) {
       toast.error("Please enter a valid quantity greater than 0");
+      return false;
+    }
+     if (!medication.medicineType) {
+      toast.error("Please select a medicine type");
       return false;
     }
     if (!medication.dosage.trim() || !validateDosage(medication.dosage)) {
@@ -202,6 +234,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       id: Date.now(),
       medName: "",
       quantity: null,
+        medicineType: null,
       dosage: "",
       duration: null,
       timings: [],
@@ -298,6 +331,9 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     updateFormData(updatedData);
   };
 
+ const medicineTypeOptions = ["Tablet", "Capsule", "Syrup", "Injection", "Cream", "Drops"];
+  
+
   return (
     <div className="common-container">
       {/* Diagnostic Tests Section */}
@@ -320,11 +356,11 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
         <div style={{ marginBottom: "16px" }}>
           <AutoComplete
             options={testOptions}
-            style={{ width: "100%" }}
-            onSelect={(value) => {
-              addTest(value);
-              setTestInputValue("");
-            }}
+            style={{ width: "80%", marginRight:'10px' }}
+            // onSelect={(value) => {
+            //   addTest(value);
+            //   setTestInputValue("");
+            // }}
             onChange={(value) => setTestInputValue(value)}
             value={testInputValue}
             placeholder="Enter or search test name"
@@ -333,6 +369,9 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
             }
             allowClear
           />
+          <Button type="primary" onClick={addTest}>
+            Add
+          </Button>
         </div>
 
         {/* Tests List */}
@@ -450,6 +489,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
             <div key={medication.id} className="medication-item">
               {/* First Row - Medicine Name, Quantity */}
               <div className="medication-row">
+                
                 <div>
                   <label
                     style={{
@@ -479,6 +519,35 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                   />
                 </div>
 
+<div style={{ flex: 1 }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: "500",
+                  color: "#6b7280",
+                  marginBottom: "4px",
+                }}
+              >
+                Medicine Type
+              </label>
+              <Select
+                value={medication.medicineType || undefined}
+                onChange={(value) =>
+                  updateMedication(medication.id, "medicineType", value)
+                }
+                style={{ width: "100%" }}
+                placeholder="Select type"
+                allowClear
+              >
+                {medicineTypeOptions.map((option) => (
+                  <Option key={option} value={option}>
+                    {option}
+                  </Option>
+                ))}
+              </Select>
+            </div>
+            
                 <div>
                   <label
                     style={{
@@ -500,6 +569,8 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                     min={1}
                   />
                 </div>
+
+                  
 
                 {localData.medications.length > 1 && (
                   <button
@@ -523,7 +594,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                       marginBottom: "4px",
                     }}
                   >
-                    Dosage (e.g., 100mg, 5ml)
+                    Dosage
                   </label>
                   <input
                     type="text"

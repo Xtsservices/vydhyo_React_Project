@@ -34,6 +34,23 @@ const { Panel } = Collapse;
 
 const AvailabilityScreen = () => {
   const today = new Date();
+
+  const fullWeek = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+  
+  
+const todayDate = moment();
+ const todayName = todayDate.format("dddd"); 
+  const startIndex = fullWeek.indexOf(todayName);
+  const orderedDays = [...fullWeek.slice(startIndex), ...fullWeek.slice(0, startIndex)];
+
   const dayName = [
     "Sunday",
     "Monday",
@@ -45,7 +62,7 @@ const AvailabilityScreen = () => {
   ][today.getDay()];
   const [clinics, setClinics] = useState([]);
   const [selectedClinic, setSelectedClinic] = useState(null);
-  const [selectedDay, setSelectedDay] = useState(dayName);
+  const [selectedDay, setSelectedDay] = useState(todayName);
   const [selectedDate, setSelectedDate] = useState(moment());
   const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -144,7 +161,6 @@ const AvailabilityScreen = () => {
 
   useEffect(() => {
     const date = new Date().toISOString().split("T")[0];
-    console.log(selectedDate?.format("YYYY-MM-DD"), date, "selectedDate");
 
     if (doctorId && selectedClinic) {
       if (selectedDate !== null) {
@@ -808,6 +824,22 @@ const AvailabilityScreen = () => {
     setSelectedEndDate(date);
   };
 
+   const handleDayClick = (day) => {
+    setSelectedDay(day);
+
+    console.log("Selected Day:", day);
+
+    // Calculate the date for selected day in this week
+    const todayIndex = moment().isoWeekday(); // Monday=1, Sunday=7
+    const selectedIndex = fullWeek.indexOf(day) + 1; // Make it 1-based like isoWeekday
+    const diff = selectedIndex - todayIndex;
+    const date = moment().add(diff, "days");
+    console.log("Calculated Date for Selected Day:", date);
+
+    setSelectedDate(date); // You can format if needed
+    console.log("Selected Date for API:", date.format("YYYY-MM-DD"));
+  };
+
   return (
     <div
       style={{ padding: 24, backgroundColor: "#F3FFFD", minHeight: "100vh" }}
@@ -883,11 +915,11 @@ const AvailabilityScreen = () => {
                 Select Day of Week:
               </Text>
               <Row gutter={[8, 8]}>
-                {days.map((day) => (
+                {orderedDays.map((day) => (
                   <Col key={day}>
                     <Button
                       type={selectedDay === day ? "primary" : "default"}
-                      onClick={() => setSelectedDay(day)}
+                      onClick={() => handleDayClick(day)}
                       style={{ borderRadius: 20, minWidth: 80, height: 36 }}
                     >
                       {day}
