@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Home,
   Calendar,
@@ -16,8 +16,6 @@ import {
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-
-// Import components
 import DoctorClinicInfo from "./E-DoctorClinicInfo";
 import PatientDetailsHistory from "./E-PatientDetailsHistory";
 import VitalsInvestigation from "./E-VitalsInvestigation";
@@ -26,41 +24,74 @@ import AdviceFollowUp from "./E-AdviceFollowUp";
 import Preview from "./Preview";
 import "../../stylings/EPrescription.css";
 import { useLocation } from "react-router-dom";
-import { apiPost } from "../../api";
+import { apiGet, apiPost } from "../../api";
 
 const EPrescription = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("doctor-clinic");
   const [showPreview, setShowPreview] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [clinicDetails, setClinicDetails] = useState(null);
   const [formData, setFormData] = useState({
-  doctorInfo: {
-    doctorId: '',
-    doctorName: '',
-    qualifications: '',
-    specialization: '',
-    selectedClinicId: '',
-    clinicAddress: '',
-    contactNumber: '',
-    appointmentDate: '',
-    appointmentStartTime: '',
-    appointmentEndTime: ''
-  },
-  patientInfo: {
-    patientId: '',
-    patientName: '',
-    age: '',
-    gender: '',
-    mobileNumber: '',
-    chiefComplaint: '',
-    pastMedicalHistory: '',
-    familyMedicalHistory: '',
-    physicalExamination: ''
-  },
-  vitals: {},
-  diagnosis: {},
-  advice: {}
-});
+    doctorInfo: {
+      doctorId: '',
+      doctorName: '',
+      qualifications: '',
+      specialization: '',
+      selectedClinicId: '',
+      clinicName: '',
+      clinicAddress: '',
+      contactNumber: '',
+      appointmentDate: '',
+      appointmentStartTime: '',
+      appointmentEndTime: ''
+    },
+    patientInfo: {
+      patientId: '',
+      patientName: '',
+      age: '',
+      gender: '',
+      mobileNumber: '',
+      chiefComplaint: '',
+      pastMedicalHistory: '',
+      familyMedicalHistory: '',
+      physicalExamination: ''
+    },
+    vitals: {},
+    diagnosis: {},
+    advice: {}
+  });
+
+  useEffect(() => {
+    const fetchClinicDetails = async () => {
+      try {
+        const appointmentData = location?.state?.patientData;
+        if (appointmentData?.addressId) {
+          const response = await apiGet(`/users/getClinicAddressById?addressId=${appointmentData.addressId}`);
+          if (response.status === 200 && response.data?.data) {
+            setClinicDetails(response.data.data);
+            const clinic = response.data.data;
+            const fullAddress = `${clinic.address}, ${clinic.city}, ${clinic.state}, ${clinic.country} - ${clinic.pincode}`;
+            
+            setFormData(prev => ({
+              ...prev,
+              doctorInfo: {
+                ...prev.doctorInfo,
+                selectedClinicId: appointmentData.addressId,
+                clinicName: clinic.clinicName,
+                clinicAddress: fullAddress,
+                contactNumber: clinic.mobile
+              }
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching clinic details:", error);
+      }
+    };
+    
+    fetchClinicDetails();
+  }, [location?.state?.patientData]);
 
   const tabs = [
     { id: "doctor-clinic", label: "Doctor & Clinic Info", icon: UserCheck },
@@ -78,46 +109,17 @@ const EPrescription = () => {
     }));
   };
 
-  const handlePrescriptionAction2 = async (type) => {
-    const formattedData = transformEprescriptionData(formData);
-    const response = await apiPost("/pharmacy/addPrescription", formattedData);
-    console.log("response", response);
-
-    if (type === "print") {
-      window.print();
-    } else if (type === "whatsapp") {
-      const message =
-        `Here's my medical prescription from VYDHYO MULTISPECIALTY CLINIC\n` +
-        `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
-        `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
-        `Date: ${formData.doctorInfo?.reportDate || "N/A"}`;
-      const url = "https://wa.me/?text=" + encodeURIComponent(message);
-      window.open(url, "_blank");
-    }
-  };
-
   const handlePrescriptionAction = async (type, pdfBlob) => {
     try {
-      // Step 1: Save prescription and get objId
-      console.log("start", type);
       const formattedData = transformEprescriptionData(formData);
-      console.log("start", 1);
-
-      const response = await apiPost(
-        "/pharmacy/addPrescription",
-        formattedData
-      );
-      console.log("Prescription response:", response);
+      const response = await apiPost("/pharmacy/addPrescription", formattedData);
+      
       if (response?.status === 201) {
         const prescriptionId = response?.data?.prescriptionId;
-        console.log("Prescription response prescriptionId:", prescriptionId);
 
-        try {
-          if (!prescriptionId) {
-            throw new Error("Prescription ID is missing");
-          }
-
-          // Step 2: Upload PDF with prescriptionId
+        if (type === "print") {
+          window.print();
+        } else if (type === "whatsapp" && pdfBlob) {
           const formData = new FormData();
           formData.append("file", pdfBlob, "e-prescription.pdf");
           formData.append("prescriptionId", prescriptionId);
@@ -131,50 +133,19 @@ const EPrescription = () => {
               },
             }
           );
-          console.log("Upload response:=============", uploadResponse);
+          
           if (uploadResponse?.status === 200) {
-            toast.success("E-prescription Shared Successfully");
+            const message = `Here's my medical prescription from ${formData.doctorInfo.clinicName}\n` +
+              `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
+              `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
+              `Date: ${formData.doctorInfo?.appointmentDate || "N/A"}`;
+            const url = "https://wa.me/?text=" + encodeURIComponent(message);
+            window.open(url, "_blank");
           }
-        } catch (err) {
-          console.log("err", err);
         }
       }
-
-      // const objId = response.data?.objId; // Adjust based on actual response structure
-      // if (!objId) {
-      //   throw new Error("No objId returned from addPrescription API");
-      // }
-
-      //   const fileUrl = uploadResponse.data.fileUrl; // Adjust based on actual response structure
-      //   if (!fileUrl) {
-      //     throw new Error("No fileUrl returned from uploadFiles API");
-      //   }
-
-      // if (type === "print") {
-      //   // Trigger browser print
-      //   window.print();
-      // } else if (type === "whatsapp") {
-      //   if (!pdfBlob) {
-      //     throw new Error("No PDF Blob provided for WhatsApp sharing");
-      //   }
-
-      // // Step 3: Construct WhatsApp message with prescription details and file URL
-      // const message =
-      //   `Here's my medical prescription from VYDHYO MULTISPECIALTY CLINIC\n` +
-      //   `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
-      //   `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
-      //   `Date: ${formData.doctorInfo?.reportDate || "N/A"}\n` +
-      //   `Prescription: ${fileUrl}`;
-      // const phoneNumber = formData.patientInfo?.mobileNumber || ""; // Use patient's mobile number if available
-      // const whatsappUrl = phoneNumber
-      //   ? `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
-      //   : `https://wa.me/?text=${encodeURIComponent(message)}`;
-      // window.open(whatsappUrl, "_blank");
-      // }
     } catch (error) {
       console.error("Error in handlePrescriptionAction:", error);
-      // Optionally, show error to user (e.g., using react-toastify)
-      // toast.error("Failed to process prescription. Please try again.");
     }
   };
 
@@ -241,24 +212,6 @@ const EPrescription = () => {
 
   const handleConfirm = async () => {
     try {
-      console.log("pdfstart", 90);
-
-      // // Generate PDF first
-      // const pdf = await generatePDF();
-      // const pdfBlob = pdf.output('blob');
-      // console.log("pdf",pdf)
-      // console.log("pdfBlob",pdfBlob)
-
-      // Transform form data
-
-      // // Create FormData to send both JSON and PDF
-      // const formDataToSend = new FormData();
-      // formDataToSend.append('prescriptionData', JSON.stringify(formattedData));
-      // formDataToSend.append('prescriptionPdf', pdfBlob, 'prescription.pdf');
-
-      console.log("apistart");
-      // Make API call
-
       setActiveTab("preview");
       setShowPreview(true);
     } catch (error) {
@@ -338,12 +291,9 @@ const EPrescription = () => {
     }
   };
 
-  console.log("formdata=12====",formData)
   return (
     <div id="eprescription-container" className="eprescription-container">
-      {/* Main Content */}
       <div className="eprescription-main">
-        {/* Tab Navigation */}
         <div className="eprescription-tabs">
           <nav style={{ display: "flex", gap: "8px" }}>
             {tabs.map((tab) => (
@@ -368,11 +318,9 @@ const EPrescription = () => {
           </nav>
         </div>
 
-        {/* Main Content Area */}
         <main className="eprescription-content">
           {renderActiveComponent()}
 
-          {/* Action Buttons - Hidden in preview */}
           {activeTab !== "preview" && (
             <div
               style={{
