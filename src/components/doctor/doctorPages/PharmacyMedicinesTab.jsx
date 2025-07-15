@@ -195,28 +195,6 @@ const MedicinesTab = () => {
       width: 80,
       render: (price) => `₹${price.toFixed(2)}`,
     },
-    {
-      title: 'Action',
-      key: 'action',
-      width: 120,
-      render: (_, record) => (
-        <Space size="small">
-          <Button 
-            type="text" 
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            size="small"
-          />
-          <Button 
-            type="text" 
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-            size="small"
-            danger
-          />
-        </Space>
-      ),
-    },
   ];
 
   const handlePageChange = (page) => {

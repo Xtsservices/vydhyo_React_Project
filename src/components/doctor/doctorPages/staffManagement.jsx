@@ -101,10 +101,18 @@ const StaffModal = ({
     { value: "accounts", label: "Accounts" },
     { value: "staff-management", label: "Staff Management" },
     { value: "clinic-management", label: "Clinic Management" },
-    { value: "e_prescription", label: "E-Prescription" },
+    { value: "EPrescription", label: "EPrescription" },
     { value: "billing", label: "Billing" },
     { value: "reviews", label: "Reviews" },
   ];
+
+  // Function to prevent number input in name fields
+  const preventNumberInput = (e) => {
+    const charCode = e.which ? e.which : e.keyCode;
+    if (charCode >= 48 && charCode <= 57) {
+      e.preventDefault();
+    }
+  };
 
   return (
     <Modal
@@ -143,18 +151,36 @@ const StaffModal = ({
               <Form.Item
                 label="First Name"
                 name="firstName"
-                rules={[{ required: true, message: "Please enter first name" }]}
+                rules={[
+                  { required: true, message: "Please enter first name" },
+                  {
+                    pattern: /^[A-Za-z\s]+$/,
+                    message: "Name should not contain numbers",
+                  },
+                ]}
               >
-                <Input placeholder="Enter first name" />
+                <Input
+                  placeholder="Enter first name"
+                  onKeyPress={preventNumberInput}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 label="Last Name"
                 name="lastName"
-                rules={[{ required: true, message: "Please enter last name" }]}
+                rules={[
+                  { required: true, message: "Please enter last name" },
+                  {
+                    pattern: /^[A-Za-z\s]+$/,
+                    message: "Name should not contain numbers",
+                  },
+                ]}
               >
-                <Input placeholder="Enter last name" />
+                <Input
+                  placeholder="Enter last name"
+                  onKeyPress={preventNumberInput}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -173,6 +199,7 @@ const StaffModal = ({
                   disabledDate={(current) =>
                     current && current > dayjs().endOf("day")
                   }
+                  inputReadOnly={true}
                 />
               </Form.Item>
             </Col>
@@ -204,7 +231,15 @@ const StaffModal = ({
                   },
                 ]}
               >
-                <Input placeholder="Enter mobile number" maxLength={10} />
+                <Input
+                  placeholder="Enter mobile number"
+                  maxLength={10}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -280,14 +315,15 @@ const StaffManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [staffData, setStaffData] = useState([]);
-  const [originalStaffData, setOriginalStaffData] = useState([]); // Store original data for filtering
+  const [originalStaffData, setOriginalStaffData] = useState([]);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterRole, setFilterRole] = useState("all");
-  const [modalMode, setModalMode] = useState("add"); // 'add', 'edit', 'view', 'delete'
+  const [modalMode, setModalMode] = useState("add");
   const [modalData, setModalData] = useState(null);
   const user = useSelector((state) => state.currentUserData);
+  const [formData, setFormData] = useState(null); // To store form data on error
 
   const handleStaffTypeChange = (value) => {
     setSelectedStaffType(value);
@@ -302,76 +338,117 @@ const StaffManagement = () => {
   const handleModalCancel = () => {
     setIsModalOpen(false);
     setModalData(null);
+    setFormData(null); // Clear stored form data when modal closes
   };
 
   const handleStaffOperation = async (staffData, mode) => {
-   
     try {
       setLoading(true);
 
       if (mode === "add") {
-  try {
-    const userid = user.createdBy;
-    console.log("Staff Data:", staffData, "Mode:", mode);
+        try {
+          const userid = user.createdBy;
+          console.log("Staff Data:", staffData, "Mode:", mode);
 
-    const response = await apiPost(`/doctor/createReceptionist/${userid}`, {
-      ...staffData,
-    });
+          // Check if email already exists
+          const emailExists = originalStaffData.some(
+            (staff) => staff.email === staffData.email
+          );
 
-    console.log("API Response:", response);
+          if (emailExists) {
+            toast.error("Email already exists for another staff member");
+            setFormData(staffData); // Store form data to repopulate
+            return; // Don't proceed with API call
+          }
 
-    if (response.status !== 200) {
-      throw new Error(response?.data?.message || "Failed to add staff");
-    }else if (response.status === 200) {
-      setIsModalOpen(false);
-    }
+          const response = await apiPost(
+            `/doctor/createReceptionist/${userid}`,
+            {
+              ...staffData,
+            }
+          );
 
+          console.log("API Response:", response);
 
-    notification.success({
-      message:
-        `${selectedStaffType.charAt(0).toUpperCase() + selectedStaffType.slice(1)} Added Successfully`,
-      description:
-        `${selectedStaffType.charAt(0).toUpperCase() + selectedStaffType.slice(1)} has been added to the staff list.`,
-      duration: 3,
-    });
+          if (response.status !== 200) {
+            throw new Error(response?.data?.message || "Failed to add staff");
+          } else if (response.status === 200) {
+            setIsModalOpen(false);
+            setFormData(null); // Clear stored form data on success
+          }
 
-    toast.success(
-      response.data?.message ||
-        response?.message ||
-        "Staff added successfully"
-    );
-  } catch (error) {
-    console.log("Error while adding staff:", error?.response?.data?.message.message);
-     // keep modal open if failed
-    toast.error(
-      error?.response?.data?.message.message ||
-        "Something went wrong while adding staff"
-    );
-    setIsModalOpen(true);
-  }
-} else if (mode === "edit") {
+          notification.success({
+            message: `${
+              selectedStaffType.charAt(0).toUpperCase() +
+              selectedStaffType.slice(1)
+            } Added Successfully`,
+            description: `${
+              selectedStaffType.charAt(0).toUpperCase() +
+              selectedStaffType.slice(1)
+            } has been added to the staff list.`,
+            duration: 3,
+          });
+
+          toast.success(
+            response.data?.message ||
+              response?.message ||
+              "Staff added successfully"
+          );
+
+          fetchStaff();
+        } catch (error) {
+          console.log(
+            "Error while adding staff:",
+            error?.response?.data?.message.message
+          );
+
+          // Store form data to repopulate on error
+          setFormData(staffData);
+
+          let errorMessage =
+            error?.response?.data?.message.message ||
+            "Something went wrong while adding staff";
+
+          // Specific error for duplicate mobile
+          if (
+            errorMessage.includes("mobile") ||
+            errorMessage.includes("phone")
+          ) {
+            errorMessage =
+              "Mobile number already exists for another staff member";
+          }
+          // Specific error for duplicate email
+          if (errorMessage.includes("email")) {
+            errorMessage = "Email already exists for another staff member";
+          }
+
+          toast.error(errorMessage);
+          return;
+        }
+      } else if (mode === "edit") {
         const body = {
           ...staffData,
           stafftype: staffData.role,
           userId: modalData.userId,
         };
 
-        const resposne = await apiPut("/doctor/editReceptionist", body);
+        const response = await apiPut("/doctor/editReceptionist", body);
+
+        if (response.status === 200) {
+          setIsModalOpen(false);
+          toast.success("Staff updated successfully");
+          fetchStaff();
+        } else {
+          throw new Error(response?.data?.message || "Failed to update staff");
+        }
 
         notification.success({
           message: "Staff Updated Successfully",
           description: "Staff member details have been updated.",
           duration: 3,
         });
-        toast.success(
-          resposne.data?.message ||
-            response?.message ||
-            "Staff updated successfully"
-        );
       }
 
-      
-      fetchStaff();
     } catch (error) {
       console.error(
         `Error ${mode === "add" ? "adding" : "updating"} staff:`,
@@ -402,9 +479,9 @@ const StaffManagement = () => {
         duration: 5,
       });
       toast.error(errorMessage);
+      return;
     } finally {
       setLoading(false);
-      // setIsModalOpen(false);
     }
   };
 
@@ -414,16 +491,13 @@ const StaffManagement = () => {
       dataIndex: "name",
       key: "name",
       render: (_, record) => (
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <Avatar style={{ marginRight: 8 }}>
-            {record.name ? record.name.charAt(0) : "?"}
-          </Avatar>
-          <div>
-            <span style={{ fontWeight: 600 }}>{record.name || "N/A"}</span>
-            <br />
-            <span style={{ color: "#595959", fontSize: 12 }}>
-              {record.email || "No email"}
-            </span>
+        <div className="staff-name-cell">
+          <div className="staff-avatar">
+            {record.name ? record.name.charAt(0).toUpperCase() : "?"}
+          </div>
+          <div className="staff-info">
+            <span className="staff-name">{record.name || "N/A"}</span>
+            <span className="staff-email">{record.email || "No email"}</span>
           </div>
         </div>
       ),
@@ -432,11 +506,22 @@ const StaffManagement = () => {
       title: "Role",
       dataIndex: "type",
       key: "role",
+      render: (role) => (
+        <span className={`role-badge ${role?.toLowerCase().replace('-', '-')}`}>
+          {role}
+        </span>
+      ),
     },
     {
       title: "Login Status",
       dataIndex: "isLoggedIn",
       key: "loginStatus",
+      render: (status) => (
+        <span className={`status-indicator ${status === 'Online' ? 'online' : 'offline'}`}>
+          <span className="status-dot"></span>
+          {status}
+        </span>
+      ),
     },
     {
       title: "Last Login",
@@ -499,7 +584,14 @@ const StaffManagement = () => {
         (each) => each.userId !== user.createdBy
       );
       console.log("filterData", filterData);
-      const formattedData = filterData.map((staff, index) => ({
+
+      const sortedData = [...filterData].sort((a, b) => {
+        const dateA = new Date(a.joinDate);
+        const dateB = new Date(b.joinDate);
+        return dateB - dateA;
+      });
+
+      const formattedData = sortedData.map((staff, index) => ({
         name: staff.name,
         userId: staff.userId,
         type: staff.stafftype,
@@ -526,7 +618,7 @@ const StaffManagement = () => {
       }));
 
       setStaffData(formattedData);
-      setOriginalStaffData(formattedData); // Store original data for filtering
+      setOriginalStaffData(formattedData);
     } catch (error) {
       console.error("Error fetching staff:", error);
       let errorMessage = "Failed to fetch staff data";
@@ -729,7 +821,7 @@ const StaffManagement = () => {
         onSubmit={handleStaffOperation}
         loading={loading}
         modalMode={modalMode}
-        initialData={modalData}
+        initialData={modalMode === "edit" ? modalData : formData}
       />
 
       <Modal

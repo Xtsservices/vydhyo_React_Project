@@ -167,8 +167,8 @@ const DoctorLayoutWrapper = () => {
       ),
     },
     {
-      key: "EPrescription",
-      accessKey: "EPrescription",
+      key: "e_prescription",
+      accessKey: "e_prescription",
       label: <Link to="/doctor/doctorPages/EPrescription">E-Prescription</Link>,
       icon: (
         <FontAwesomeIcon
@@ -280,6 +280,7 @@ const DoctorLayoutWrapper = () => {
   };
 
   const menuItems = getFilteredMenuItems();
+  console.log("Filtered menu items:", menuItems);
 
   // Dropdown menu for profile
   const profileMenu = (
@@ -299,6 +300,9 @@ const DoctorLayoutWrapper = () => {
       </Menu.Item>
     </Menu>
   );
+
+  
+  
 
   return (
     <Layout className="layout">
