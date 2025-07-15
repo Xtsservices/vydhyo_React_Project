@@ -82,6 +82,12 @@ async function filterPatientsDAta(data) {
       let dataArray = [];
       if (response?.status === 200 && response?.data?.data) {
         dataArray = await filterPatientsDAta(response.data.data);
+
+        // Sort by patientId numeric part descending
+  dataArray.sort((a, b) => {
+    const getIdNumber = (id) => parseInt(id.replace(/\D/g, '')) || 0;
+    return getIdNumber(b.patientId) - getIdNumber(a.patientId);
+  });
       }
 
       console.log("dataArray", dataArray);

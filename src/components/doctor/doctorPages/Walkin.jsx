@@ -254,7 +254,9 @@ useEffect(() => {
         DOB: patientData.dateOfBirth
           ? moment(patientData.dateOfBirth, "DD-MM-YYYY").format("DD-MM-YYYY")
           : "",
+
           age: patientData?.age || calculateAge(patientData.dateOfBirth) || "0"
+
       });
       console.log("Creating patient with body:", body);
 
@@ -303,7 +305,9 @@ useEffect(() => {
         data: data.data,
         message: data.message || "Appointment created",
       };
+
       }
+
      
     } catch (error) {
       
