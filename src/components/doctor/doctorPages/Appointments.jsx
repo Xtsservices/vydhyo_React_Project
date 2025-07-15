@@ -97,13 +97,15 @@ const Appointment = () => {
       patientId: appointment.userId || appointment.appointmentId,
       patientName: appointment.patientName,
       gender: appointment.patientDetails?.gender || "N/A",
-      age: age,
+      age: age || appointment.patientDetails?.age ,
       mobileNumber: appointment.patientDetails?.mobile || "N/A",
       appointmentId: appointment.appointmentId,
       appointmentDate: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
       appointmentDepartment: appointment.appointmentDepartment,
       appointmentStatus: appointment.appointmentStatus,
       appointmentReason: appointment.appointmentReason || "N/A",
+      addressId: appointment.addressId,
+      appointmentTime:appointment.appointmentTime,
     };
 
     console.log("patientData",patientData)

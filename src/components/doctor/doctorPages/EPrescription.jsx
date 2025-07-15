@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Home,
   Calendar,
@@ -27,18 +27,24 @@ import Preview from "./Preview";
 import "../../stylings/EPrescription.css";
 import { useLocation } from "react-router-dom";
 import { apiPost } from "../../api";
+import { useSelector } from "react-redux";
 
 const EPrescription = () => {
   const location = useLocation();
+  const { patientData } = location.state || {};
   const [activeTab, setActiveTab] = useState("doctor-clinic");
   const [showPreview, setShowPreview] = useState(false);
+  const user = useSelector((state) => state.currentUserData);
+  console.log("user====", user)
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
   doctorInfo: {
-    doctorId: '',
-    doctorName: '',
-    qualifications: '',
-    specialization: '',
+   doctorId: doctorId || '',
+   doctorName: user ? `${user.firstname || ""} ${user.lastname || ""}`.trim() : "",
+      qualifications: user?.specialization?.degree || "",
+      specialization: user?.specialization?.name || "",
+      medicalRegistrationNumber: user?.medicalRegistrationNumber || "",
     selectedClinicId: '',
     clinicAddress: '',
     contactNumber: '',
@@ -61,6 +67,30 @@ const EPrescription = () => {
   diagnosis: {},
   advice: {}
 });
+
+// Initialize formData with patientData
+  useEffect(() => {
+    if (patientData) {
+      setFormData((prev) => ({
+        ...prev,
+        doctorInfo: {
+          ...prev.doctorInfo,
+          appointmentDate: patientData.appointmentDate || "", // e.g., "2039-06-19"
+          appointmentStartTime: patientData.appointmentTime || "", // e.g., "18:30"
+          selectedClinicId: patientData.addressId || "", // Set clinic ID
+        },
+        patientInfo: {
+          ...prev.patientInfo,
+          patientId: patientData.patientId || "",
+          patientName: patientData.patientName || "",
+          age: patientData.age || "",
+          gender: patientData.gender || "",
+          mobileNumber: patientData.mobileNumber || "",
+        },
+      }));
+    }
+  }, [patientData]);
+
 
   const tabs = [
     { id: "doctor-clinic", label: "Doctor & Clinic Info", icon: UserCheck },
@@ -223,6 +253,7 @@ const EPrescription = () => {
               medInventoryId: med.medInventoryId,
               medName: med.medName,
               quantity: med.quantity,
+              medicineType: med.medicineType,
               dosage: med.dosage,
               duration: med.duration,
               timings: med.timings,
