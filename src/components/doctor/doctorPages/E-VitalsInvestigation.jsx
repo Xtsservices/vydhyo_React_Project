@@ -264,7 +264,7 @@ const handleBlur = (field) => {
         </div>
       </div>
 
-      <div className="vitals-section">
+      {/* <div className="vitals-section">
         <div className="vitals-section-header">
           <div className="vitals-icon-container green-icon">
             <Stethoscope size={16} />
@@ -287,7 +287,7 @@ const handleBlur = (field) => {
             className="investigation-textarea"
           />
         </div>
-      </div>
+      </div> */}
 
       <div className="vitals-actions">
         <button className="cancel-button" onClick={handleCancel}>

@@ -43,16 +43,10 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
           </div>
           <div>
             <h2 className="common-section-title">Advice</h2>
-            <p className="common-section-subtitle">Clinical examination findings and observations</p>
           </div>
         </div>
 
         <div className="advice-container">
-          <div className="advice-header">
-            <h3 className="advice-title">Examination Findings</h3>
-            <p className="advice-subtitle">Record all relevant physical examination findings</p>
-          </div>
-          
           <textarea
             placeholder="Enter findings from clinical examination..."
             value={localData.advice}
@@ -68,7 +62,7 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
           <div className="follow-up-icon-container">
             <User size={14} color="#16a34a" />
           </div>
-          <h3 className="follow-up-title">Follow - Ups</h3>
+          <h3 className="follow-up-title">Follow - Up</h3>
         </div>
 
         <div className="common-date-input-container">
