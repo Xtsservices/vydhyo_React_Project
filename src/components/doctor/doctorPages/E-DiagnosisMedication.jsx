@@ -54,7 +54,6 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     "0-1-0", // Once at lunch
     "1-1-0", // Morning and lunch
     "0-1-1", // Lunch and night
-    "SOS",   // As needed
   ];
 
   useEffect(() => {
@@ -105,9 +104,10 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   }, [user, doctorId]);
 
   const handleDiagnosisChange = (e) => {
+  const capitalizedValue = e.target.value.toUpperCase(); 
     const updatedData = {
       ...localData,
-      diagnosisList: e.target.value,
+    diagnosisList: capitalizedValue,
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
