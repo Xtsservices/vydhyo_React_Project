@@ -6,13 +6,15 @@ import LabPatientManagement from "./LabPatientManagement";
 import { useSelector } from "react-redux";
 import { apiGet } from "../../api";
 
-const { Title, Text } = Typography;
+const { Title, Text } = Typography; 
 const { TabPane } = Tabs;
 
 const Labs = () => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [cardsData, setCardsData] = useState();
+  const [searchValue, setSearchValue] = useState("");
+
 
   async function fetchRevenueCount() {
     const response = await apiGet(
@@ -35,6 +37,8 @@ const Labs = () => {
   function updateCount() {
     fetchRevenueCount();
   }
+
+  console.log(searchValue, "searchValue");
 
   return (
     <div
@@ -77,12 +81,15 @@ const Labs = () => {
         </Col>
         <Col>
           <Input
-            placeholder="Search Patient by Mobile Number"
+            placeholder="Search by PatientId"
             prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
             style={{
               width: "320px",
               borderRadius: "8px",
             }}
+             value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value.trim())}
+  allowClear
           />
         </Col>
       </Row>
@@ -201,7 +208,7 @@ const Labs = () => {
         style={{ marginBottom: "24px" }}
       >
         <TabPane tab="Patients" key="patients">
-          <LabPatientManagement status={"pending"} updateCount={updateCount} />
+          <LabPatientManagement status={"pending"} updateCount={updateCount}  searchValue={searchValue}/>
         </TabPane>
 
        
@@ -210,6 +217,7 @@ const Labs = () => {
           <LabPatientManagement
             status={"completed"}
             updateCount={updateCount}
+            searchValue={searchValue}
           />
         </TabPane>
 

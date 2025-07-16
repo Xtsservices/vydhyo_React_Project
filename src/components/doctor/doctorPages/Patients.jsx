@@ -78,6 +78,7 @@ const MyPatients = () => {
 
   const patientsDataUnsorted = appointmentsData.map((appointment) => ({
     id: appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`,
+    appointmentId: appointment.appointmentId || "N/A",
     name: appointment.patientName || "N/A",
     gender: appointment.patientDetails?.gender || "N/A",
     age: appointment.patientDetails?.dob
@@ -292,6 +293,7 @@ const MyPatients = () => {
   const totalPages = Math.ceil(filteredPatients.length / pageSize);
   const paginatedPatients = useMemo(
     () =>
+
       filteredPatients.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
@@ -384,7 +386,7 @@ const MyPatients = () => {
                 placeholder={`Search by ${
                   searchField === "all" ? "Patient ID, Name " : searchField
                 }`}
-                value={searchText}
+                value={searchText.toUpperCase()}
                 onChange={handleSearch}
                 style={styles.searchInput}
                 onFocus={(e) => (e.target.style.borderColor = "#3b82f6")}
@@ -556,7 +558,7 @@ const MyPatients = () => {
           ) : (
             paginatedPatients.map((patient) => (
               <div
-                key={patient.id}
+                key={patient.appointmentId}
                 style={styles.tableRow}
                 onMouseEnter={(e) =>
                   (e.target.style.backgroundColor = "#f8fafc")

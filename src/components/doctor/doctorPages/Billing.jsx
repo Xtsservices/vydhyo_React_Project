@@ -23,8 +23,16 @@ const BillingSystem = () => {
         );
         if (response.status === 200 && response?.data?.data) {
           const result = response.data.data;
+
+          console.log("Fetched patient data:", result);
+const filteredData = result.filter((patient) => {
+            return patient?.tests?.length > 0 || patient?.medicines?.length > 0;
+          });
+
+
           // Transform API data to match component structure
-          const transformedData = result.map((patient, index) => ({
+          const transformedData = filteredData.map((patient, index) => ({
+
             id: index + 1,
             patientId: patient.patientId,
             name: `${patient.firstname} ${patient.lastname}`.trim(),

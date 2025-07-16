@@ -84,7 +84,7 @@ const StaffModal = ({
       const staffData = {
         firstname: values.firstName,
         lastname: values.lastName,
-        DOB: dayjs(values.DOB).format("DD-MM-YYYY"),
+        DOB: dayjs(values.DOB).format("DD-MM-YYYY") || "",
         gender: values.gender,
         mobile: values.mobile,
         email: values.email,
@@ -195,7 +195,7 @@ const StaffModal = ({
               <Form.Item
                 label="Date of Birth"
                 name="DOB"
-                rules={[{ required: true, message: "Please select DOB" }]}
+                // rules={[{ required: true, message: "Please select DOB" }]}
               >
                 <DatePicker
                   style={{ width: "100%" }}
@@ -366,6 +366,8 @@ const StaffManagement = () => {
             setFormData(staffData);
             return;
           }
+
+          console.log("Adding new staff with data:", staffData);
 
           const response = await apiPost(
             `/doctor/createReceptionist/${userid}`,
