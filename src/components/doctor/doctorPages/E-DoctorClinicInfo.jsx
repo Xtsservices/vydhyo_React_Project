@@ -87,6 +87,7 @@ const handleClinicChange = (clinicId) => {
   // Get the selected clinic for display purposes
   const selectedClinic = allClinics.find(clinic => clinic.addressId === localData.selectedClinicId);
 
+  console.log("local====", localData)
   return (
     <div className="doctor-clinic-container">
       {/* Header */}
@@ -138,14 +139,14 @@ const handleClinicChange = (clinicId) => {
             />
           </div>
           
-          <div>
+          {/* <div>
             <label className="doctor-clinic-label">
               Clinic Name
             </label>
             <select
               name="selectedClinicId"
               value={localData.selectedClinicId}
-              onChange={handleChange}
+              // onChange={handleChange}
               className="doctor-clinic-input"
               readOnly
             >
@@ -155,6 +156,16 @@ const handleClinicChange = (clinicId) => {
                 </option>
               ))}
             </select>
+          </div> */}
+
+           <div>
+            <label className="doctor-clinic-label">Clinic Name</label>
+            <input
+              type="text"
+              value={selectedClinic?.clinicName || ''}
+              className="doctor-clinic-input"
+              readOnly
+            />
           </div>
           
           <div style={{ gridColumn: '1 / -1' }}>
@@ -216,6 +227,7 @@ const handleClinicChange = (clinicId) => {
               value={localData.appointmentDate}
               onChange={handleChange}
               className="doctor-clinic-input"
+               readOnly
             />
           </div>
           
@@ -229,6 +241,7 @@ const handleClinicChange = (clinicId) => {
               value={localData.appointmentStartTime}
               onChange={handleChange}
               className="doctor-clinic-input"
+               readOnly
             />
           </div>
 

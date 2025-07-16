@@ -46,6 +46,7 @@ const StaffModal = ({
   loading,
   modalMode,
   initialData,
+  resetForm,
 }) => {
   const [form] = Form.useForm();
 
@@ -59,6 +60,17 @@ const StaffModal = ({
         mobile: initialData.phone,
         email: initialData.email,
         role: initialData.type,
+        access: initialData.access || [],
+      });
+    } else if (modalMode === "add" && initialData) {
+      form.setFieldsValue({
+        firstName: initialData.firstname || "",
+        lastName: initialData.lastname || "",
+        DOB: initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY") : null,
+        gender: initialData.gender,
+        mobile: initialData.mobile,
+        email: initialData.email,
+        role: initialData.role,
         access: initialData.access || [],
       });
     } else {
@@ -79,8 +91,7 @@ const StaffModal = ({
         role: values.role,
         access: values.access,
       };
-      await onSubmit(staffData, modalMode);
-      form.resetFields();
+      await onSubmit(staffData, modalMode, form);
     } catch (error) {
       console.error("Validation failed:", error);
       notification.error({
@@ -106,7 +117,6 @@ const StaffModal = ({
     { value: "reviews", label: "Reviews" },
   ];
 
-  // Function to prevent number input in name fields
   const preventNumberInput = (e) => {
     const charCode = e.which ? e.which : e.keyCode;
     if (charCode >= 48 && charCode <= 57) {
@@ -117,10 +127,7 @@ const StaffModal = ({
   return (
     <Modal
       open={isOpen}
-      onCancel={() => {
-        onCancel();
-        form.resetFields();
-      }}
+      onCancel={onCancel}
       footer={null}
       width={700}
       centered
@@ -128,9 +135,7 @@ const StaffModal = ({
         <div>
           <h2 style={{ marginBottom: 0 }}>
             <UserAddOutlined style={{ marginRight: 8 }} />
-            {modalMode === "edit"
-              ? "Edit Staff Member"
-              : "Add New Staff Member"}
+            {modalMode === "edit" ? "Edit Staff Member" : "Add New Staff Member"}
           </h2>
           <p style={{ margin: 0, color: "#888" }}>
             {modalMode === "edit"
@@ -323,7 +328,7 @@ const StaffManagement = () => {
   const [modalMode, setModalMode] = useState("add");
   const [modalData, setModalData] = useState(null);
   const user = useSelector((state) => state.currentUserData);
-  const [formData, setFormData] = useState(null); // To store form data on error
+  const [formData, setFormData] = useState(null);
 
   const handleStaffTypeChange = (value) => {
     setSelectedStaffType(value);
@@ -332,23 +337,24 @@ const StaffManagement = () => {
   const handleQuickAdd = () => {
     setModalMode("add");
     setModalData(null);
+    setFormData(null);
     setIsModalOpen(true);
   };
 
   const handleModalCancel = () => {
     setIsModalOpen(false);
     setModalData(null);
-    setFormData(null); // Clear stored form data when modal closes
+    setFormData(null);
   };
 
-  const handleStaffOperation = async (staffData, mode) => {
+  const handleStaffOperation = async (staffData, mode, form) => {
     try {
       setLoading(true);
+      let errorMessage = "An error occurred";
 
       if (mode === "add") {
         try {
           const userid = user.createdBy;
-          console.log("Staff Data:", staffData, "Mode:", mode);
 
           // Check if email already exists
           const emailExists = originalStaffData.some(
@@ -357,8 +363,8 @@ const StaffManagement = () => {
 
           if (emailExists) {
             toast.error("Email already exists for another staff member");
-            setFormData(staffData); // Store form data to repopulate
-            return; // Don't proceed with API call
+            setFormData(staffData);
+            return;
           }
 
           const response = await apiPost(
@@ -368,14 +374,13 @@ const StaffManagement = () => {
             }
           );
 
-          console.log("API Response:", response);
-
           if (response.status !== 200) {
             throw new Error(response?.data?.message || "Failed to add staff");
-          } else if (response.status === 200) {
-            setIsModalOpen(false);
-            setFormData(null); // Clear stored form data on success
           }
+
+          setIsModalOpen(false);
+          setFormData(null);
+          form.resetFields();
 
           notification.success({
             message: `${
@@ -397,27 +402,18 @@ const StaffManagement = () => {
 
           fetchStaff();
         } catch (error) {
-          console.log(
-            "Error while adding staff:",
-            error?.response?.data?.message.message
-          );
-
-          // Store form data to repopulate on error
+          console.log("Error while adding staff:", error);
           setFormData(staffData);
 
-          let errorMessage =
-            error?.response?.data?.message.message ||
-            "Something went wrong while adding staff";
+          errorMessage =
+            error.response?.data?.message?.message ||
+            error.response?.data?.message ||
+            error.message ||
+            "Failed to add staff";
 
-          // Specific error for duplicate mobile
-          if (
-            errorMessage.includes("mobile") ||
-            errorMessage.includes("phone")
-          ) {
-            errorMessage =
-              "Mobile number already exists for another staff member";
+          if (errorMessage.includes("mobile") || errorMessage.includes("phone")) {
+            errorMessage = "Mobile number already exists for another staff member";
           }
-          // Specific error for duplicate email
           if (errorMessage.includes("email")) {
             errorMessage = "Email already exists for another staff member";
           }
@@ -448,16 +444,8 @@ const StaffManagement = () => {
           duration: 3,
         });
       }
-
     } catch (error) {
-      console.error(
-        `Error ${mode === "add" ? "adding" : "updating"} staff:`,
-        error
-      );
-      let errorMessage = `An unexpected error occurred while ${
-        mode === "add" ? "adding" : "updating"
-      } staff`;
-
+      console.error(`Error ${mode === "add" ? "adding" : "updating"} staff:`, error);
       if (error.response) {
         errorMessage =
           error.response.data?.message?.message ||
@@ -534,25 +522,27 @@ const StaffManagement = () => {
       key: "status",
     },
     {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <div className="action-icons">
-          <EyeOutlined
-            className="icon-view"
-            onClick={() => handleView(record)}
-          />
-          <EditOutlined
-            className="icon-edit"
-            onClick={() => handleEdit(record)}
-          />
-          <DeleteOutlined
-            className="icon-delete"
-            onClick={() => handleDelete(record)}
-          />
-        </div>
-      ),
-    },
+  title: "Actions",
+  key: "actions",
+  render: (_, record) => (
+    <div className="action-icons">
+      <EyeOutlined
+        className="icon-view"
+        onClick={() => handleView(record)}
+      />
+      <EditOutlined
+        className="icon-edit"
+        onClick={() => handleEdit(record)}
+      />
+      {user?.role === "doctor" && (
+        <DeleteOutlined
+          className="icon-delete"
+          onClick={() => handleDelete(record)}
+        />
+      )}
+    </div>
+  ),
+}
   ];
 
   const handleView = (record) => {
@@ -577,13 +567,11 @@ const StaffManagement = () => {
     try {
       setFetchLoading(true);
       const userid = user.createdBy;
-      console.log("user", user);
       const response = await apiGet(`/doctor/getStaffByCreator/${userid}`);
 
       const filterData = response.data.data.filter(
         (each) => each.userId !== user.createdBy
       );
-      console.log("filterData", filterData);
 
       const sortedData = [...filterData].sort((a, b) => {
         const dateA = new Date(a.joinDate);

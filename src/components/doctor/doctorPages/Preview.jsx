@@ -24,8 +24,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
   const generatePDF = async () => {
     try {
       const input = document.getElementById('prescription-container');
-      console.log("input", input);
-      
       if (!input) {
         throw new Error("Could not find the prescription container element");
       }
@@ -48,9 +46,8 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
       const imgProps = pdf.getImageProperties(imgData);
       const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-      // Handle multi-page PDF if content height exceeds A4 page height
       let heightLeft = imgHeight;
-     let position = 0;
+      let position = 0;
 
       pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
       heightLeft -= pdfHeight;
@@ -62,7 +59,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
         heightLeft -= pdfHeight;
       }
 
-      // Generate Blob and trigger download
       const pdfBlob = pdf.output('blob');
       return pdfBlob;
     } catch (error) {
@@ -74,12 +70,12 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
   const handleWhatsAppClick = async () => {
     try {
       const pdfBlob = await generatePDF();
-      console.log("pdfBlob",pdfBlob)
       handlePrescriptionAction('whatsapp', pdfBlob);
     } catch (error) {
       console.error("Failed to generate PDF for WhatsApp:", error);
     }
   };
+
 
   console.log("formdataaaa:",formData)
 
@@ -105,6 +101,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     },[formData?.doctorInfo?.doctorId])
   
 
+
   return (
     <div>
       <div className="print-button-container">
@@ -124,7 +121,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
       </div>
 
       <div id="prescription-container" className="prescription-container">
-        {/* Header */}
         <div className="prescription-header">
           <div className="clinic-info">
             {/* <div className="clinic-logo">
@@ -139,6 +135,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
               />
             </div> */}
             <div>
+
               <div className="clinic-name">
   {selectedClinic?.clinicName
     ? selectedClinic.clinicName.charAt(0).toUpperCase() + selectedClinic.clinicName.slice(1)
@@ -146,6 +143,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
 </div>
 
               {/* <div className="clinic-tagline">Connect. Care. Cure.</div> */}
+
             </div>
           </div>
           <div className="contact-info">
@@ -158,7 +156,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
           </div>
         </div>
 
-        {/* Doctor Info */}
         <div className="doctor-info">
           <div className="doctor-name">DR. {formData.doctorInfo?.doctorName || 'Name'}</div>
           <div className="doctor-title" style={{ marginBottom: '6px', padding: '6px 0' }}>
@@ -169,9 +166,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
           </div>
         </div>
 
-        {/* Content */}
         <div className="prescription-content">
-          {/* Patient Details */}
           <div className="prescription-section">
             <div className="section-header">
               👤 PATIENT DETAILS
@@ -200,7 +195,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
           </div>
 
-          {/* Patient History */}
           <div className="prescription-section">
             <div className="section-header">
               📋 PATIENT HISTORY
@@ -237,7 +231,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
           </div>
 
-          {/* Vitals */}
           <div className="prescription-section">
             <div className="section-header">
               🩺 VITALS
@@ -291,7 +284,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
           </div>
 
-          {/* Investigation */}
           {formData.diagnosis?.selectedTests?.length > 0 && (
             <div className="prescription-section">
               <div className="section-header">
@@ -313,7 +305,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
           )}
 
-          {/* Diagnosis */}
           {formData.diagnosis?.diagnosisList && (
             <div className="prescription-section">
               <div className="section concierto">
@@ -329,7 +320,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
           )}
 
-          {/* Medication */}
           {formData.diagnosis?.medications?.length > 0 && (
             <div className="prescription-section">
               <div className="section-header">
@@ -370,7 +360,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
           )}
 
-          {/* Advice */}
           {(formData.advice?.advice || formData.advice?.followUpDate) && (
             <div className="prescription-section">
               <div className="section-header">
@@ -399,7 +388,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
           )}
 
-          {/* Signature */}
           <div className="signature">
             <div style={{ height: "48px" }}></div>
             <div style={{ fontWeight: "bold" }}>DR. {formData.doctorInfo?.doctorName || 'Name'}</div>
@@ -410,7 +398,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="prescription-footer">
           This prescription is computer generated and does not require physical signature
         </div>
