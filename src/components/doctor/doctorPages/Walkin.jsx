@@ -267,13 +267,13 @@ useEffect(() => {
 
       if (response.status === 200) {
         const data = response.data;
-
+ toast.success(data.message || "Patient created successfully");
         return {
           success: true,
           data: data.data,
           message: data.message || "Patient created",
         };
-        toast.success(data.message || "Patient created successfully");
+       
       }
     } catch (error) {
       return {
@@ -300,6 +300,7 @@ useEffect(() => {
         toast.error(data.message || "Failed to create appointment");
         // throw new Error(data.message || "Failed to create appointment");
       } else {
+        toast.success(data.message || "Appointment created successfully");
          return {
         success: true,
         data: data.data,
@@ -1148,9 +1149,9 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
           )}
           <Col xs={24} lg={16}>
             {renderSearchCard()}
-           
+            {renderBasicInfoCard()}
             {renderAppointmentDetailsCard()}
-             {renderBasicInfoCard()}
+            
           </Col>
           <Col xs={24} lg={8}>
             {renderPaymentSummaryCard()}

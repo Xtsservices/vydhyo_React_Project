@@ -167,34 +167,47 @@ async function filterPatientsDAta(data) {
   };
 
   const handlePriceSave = async (patientId, medicineId) => {
-    try {
-      setSaving((prev) => ({ ...prev, [medicineId]: true }));
-      const patient = patientData.find((p) => p.patientId === patientId);
-      const medicine = patient.medicines.find((m) => m._id === medicineId);
-      const price = medicine.price;
+  try {
+    setSaving((prev) => ({ ...prev, [medicineId]: true }));
+    const patient = patientData.find((p) => p.patientId === patientId);
+    const medicine = patient.medicines.find((m) => m._id === medicineId);
+    const price = medicine.price;
 
-      if (price === null || price === undefined) {
-        message.error("Please enter a valid price");
-        return;
-      }
-
-      await apiPost(`/pharmacy/updatePatientMedicinePrice`, {
-        medicineId,
-        patientId,
-        price,
-        doctorId,
-      });
-
-      message.success("Price updated successfully");
-      setEditablePrices((prev) => prev.filter((id) => id !== medicineId));
-      await fetchPharmacyPatients();
-    } catch (error) {
-      console.error("Error updating medicine price:", error);
-      message.error(error.response?.data?.message || "Failed to update price");
-    } finally {
-      setSaving((prev) => ({ ...prev, [medicineId]: false }));
+    if (price === null || price === undefined) {
+      message.error("Please enter a valid price");
+      return;
     }
-  };
+
+    await apiPost(`/pharmacy/updatePatientMedicinePrice`, {
+      medicineId,
+      patientId,
+      price,
+      doctorId,
+    });
+
+    message.success("Price updated successfully");
+    setEditablePrices((prev) => prev.filter((id) => id !== medicineId));
+    
+    // Update local state instead of refetching
+    setPatientData(prev => 
+      prev.map(p => 
+        p.patientId === patientId
+          ? {
+              ...p,
+              medicines: p.medicines.map(m => 
+                m._id === medicineId ? { ...m, price } : m
+              )
+            }
+          : p
+      )
+    );
+  } catch (error) {
+    console.error("Error updating medicine price:", error);
+    message.error(error.response?.data?.message || "Failed to update price");
+  } finally {
+    setSaving((prev) => ({ ...prev, [medicineId]: false }));
+  }
+};
 
   const handlePayment = async (patientId) => {
     try {
