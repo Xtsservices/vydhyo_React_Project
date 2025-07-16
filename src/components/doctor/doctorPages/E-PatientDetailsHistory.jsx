@@ -207,7 +207,7 @@ useEffect(() => {
                 <Stethoscope style={{ width: '16px', height: '16px', color: '#ea580c' }} />
               </div>
               <div>
-                <h4>Clinical examination findings and observations</h4>
+                <h4 className="history-section-title">Clinical examination findings and observations</h4>
               </div>
             </div>
             <textarea
