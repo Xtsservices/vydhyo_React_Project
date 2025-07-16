@@ -20,7 +20,7 @@ import { useSelector } from "react-redux";
 const { Title } = Typography;
 const { Panel } = Collapse;
 
-const LabPatientManagement = ({ status, updateCount }) => {
+const LabPatientManagement = ({ status, updateCount, searchValue}) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   console.log(status, "status");
@@ -80,15 +80,34 @@ const LabPatientManagement = ({ status, updateCount }) => {
 
       console.log("getAllTestsPatientsByDoctorID", response);
       if (response.status === 200 && response?.data?.data) {
-        const pendingData = await filterPatientsDAta(response.data.data);
+
+        // if (searchValue) {
+        //   const filteredData = response?.data?.data?.filter((patient) =>
+        //     patient?.patientId?.toLowerCase().includes(searchValue.toLowerCase())
+        //   );
+        //   setPatients((filteredData));
+        //   return;
+        // }
+        // const pendingData = await filterPatientsDAta(response.data.data);
+  let filteredData = await filterPatientsDAta(response.data.data);
+
+      // ✅ Apply search filtering by patientId
+      if (searchValue) {
+        filteredData = filteredData.filter((patient) =>
+          patient?.patientId
+            ?.toLowerCase()
+            .includes(searchValue.toLowerCase())
+        );
+      }
+
 
          //  Sort by patientId descending
-      pendingData.sort((a, b) => {
+      filteredData.sort((a, b) => {
         const idA = parseInt(a.patientId.replace(/\D/g, '')) || 0;
         const idB = parseInt(b.patientId.replace(/\D/g, '')) || 0;
         return idB - idA; // latest on top
       });
-        setPatients(pendingData);
+        setPatients(filteredData);
         message.success("Patients data loaded successfully");
       }
     } catch (error) {
@@ -160,6 +179,8 @@ const LabPatientManagement = ({ status, updateCount }) => {
         0
       );
 
+      
+
       if (totalAmount <= 0) {
         message.error("No valid prices set for payment");
         return;
@@ -193,7 +214,7 @@ const LabPatientManagement = ({ status, updateCount }) => {
     if (doctorId && user) {
       getAllTestsPatientsByDoctorID();
     }
-  }, [user, doctorId, status]);
+  }, [user, doctorId, status, searchValue]);
 
   const toggleCollapse = (patientId) => {
     setExpandedKeys((prev) =>
@@ -350,6 +371,8 @@ const LabPatientManagement = ({ status, updateCount }) => {
       },
     },
   ];
+
+  console.log(patients, "patients");
 
   return (
     <Card

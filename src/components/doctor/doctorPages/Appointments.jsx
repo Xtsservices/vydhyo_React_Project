@@ -82,7 +82,7 @@ const Appointment = () => {
   };
 
   const handleEPrescription = (appointment) => {
-    console.log("appointment===",appointment)
+    console.log("appointment===",appointment.patientDetails?.age)
     // Calculate age from dob if available
     let age = "N/A";
     const dob = appointment.patientDetails?.dob;
@@ -99,7 +99,7 @@ const Appointment = () => {
       patientId: appointment.userId || appointment.appointmentId,
       patientName: appointment.patientName,
       gender: appointment.patientDetails?.gender || "N/A",
-      age: age || appointment.patientDetails?.age ,
+      age:  appointment.patientDetails?.age || "N/A",
       mobileNumber: appointment.patientDetails?.mobile || "N/A",
       appointmentId: appointment.appointmentId,
       appointmentDate: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
@@ -408,17 +408,20 @@ console.log(filters.date, "selectedDate")
 
   const renderActionMenu = (record) => (
     <Menu>
-      <Menu.Item
-        key="e-prescription"
-        onClick={() => handleEPrescription(record)}
-         disabled={
-          record.appointmentStatus === "completed" ||
-          record.appointmentStatus === "cancelled"
-        }
-        icon={<EyeOutlined />}
-      >
-        Digital-Prescription
-      </Menu.Item>
+     {user?.role === "doctor" && (
+    <Menu.Item
+      key="e-prescription"
+      onClick={() => handleEPrescription(record)}
+      disabled={
+        record.appointmentStatus === "completed" ||
+        record.appointmentStatus === "cancelled"
+      }
+      icon={<EyeOutlined />}
+    >
+      Digital-Prescription
+    </Menu.Item>
+  )}
+
 
       <Menu.Item
         key="complete"
