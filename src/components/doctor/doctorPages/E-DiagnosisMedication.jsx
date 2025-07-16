@@ -561,12 +561,15 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                     Quantity
                   </label>
                   <InputNumber
-                    value={medication.quantity}
-                    onChange={(value) =>
-                      updateMedication(medication.id, "quantity", value)
-                    }
+                    // value={medication.quantity}
+                     value={medication.duration && medication.timings ? medication.duration * medication.timings.length : 0}
+ 
+                    // onChange={(value) =>
+                    //   updateMedication(medication.id, "quantity", value)
+                    // }
                     style={{ width: "100%" }}
-                    min={1}
+                    // min={1}
+                     disabled
                   />
                 </div>
 
