@@ -109,10 +109,8 @@ const StaffModal = ({
     { value: "dashboard", label: "Dashboard" },
     { value: "pharmacy", label: "Pharmacy" },
     { value: "availability", label: "Availability" },
-    { value: "accounts", label: "Accounts" },
     { value: "staff-management", label: "Staff Management" },
     { value: "clinic-management", label: "Clinic Management" },
-    { value: "EPrescription", label: "EPrescription" },
     { value: "billing", label: "Billing" },
     { value: "reviews", label: "Reviews" },
   ];
@@ -515,7 +513,7 @@ const StaffManagement = () => {
     },
     {
       title: "Last Login",
-      dataIndex: "lastLogout",
+      dataIndex: "lastLogin",
       key: "lastLogin",
     },
     {
@@ -524,27 +522,27 @@ const StaffManagement = () => {
       key: "status",
     },
     {
-  title: "Actions",
-  key: "actions",
-  render: (_, record) => (
-    <div className="action-icons">
-      <EyeOutlined
-        className="icon-view"
-        onClick={() => handleView(record)}
-      />
-      <EditOutlined
-        className="icon-edit"
-        onClick={() => handleEdit(record)}
-      />
-      {user?.role === "doctor" && (
-        <DeleteOutlined
-          className="icon-delete"
-          onClick={() => handleDelete(record)}
-        />
-      )}
-    </div>
-  ),
-}
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <div className="action-icons">
+          <EyeOutlined
+            className="icon-view"
+            onClick={() => handleView(record)}
+          />
+          <EditOutlined
+            className="icon-edit"
+            onClick={() => handleEdit(record)}
+          />
+          {user?.role === "doctor" && (
+            <DeleteOutlined
+              className="icon-delete"
+              onClick={() => handleDelete(record)}
+            />
+          )}
+        </div>
+      ),
+    },
   ];
 
   const handleView = (record) => {
@@ -652,9 +650,9 @@ const StaffManagement = () => {
 
     if (filterStatus !== "all") {
       filtered = filtered.filter((staff) =>
-        filterStatus === "paid"
-          ? staff.status === "Active"
-          : staff.status === "InActive"
+        filterStatus === "online"
+          ? staff.isLoggedIn === "Online"
+          : staff.isLoggedIn === "Offline"
       );
     }
 
@@ -677,9 +675,9 @@ const StaffManagement = () => {
 
     if (value !== "all") {
       filtered = filtered.filter((staff) =>
-        value === "paid"
-          ? staff.status === "Active"
-          : staff.status === "InActive"
+        value === "online"
+          ? staff.isLoggedIn === "Online"
+          : staff.isLoggedIn === "Offline"
       );
     }
 
@@ -702,9 +700,9 @@ const StaffManagement = () => {
 
     if (filterStatus !== "all") {
       filtered = filtered.filter((staff) =>
-        filterStatus === "paid"
-          ? staff.status === "Active"
-          : staff.status === "InActive"
+        filterStatus === "online"
+          ? staff.isLoggedIn === "Online"
+          : staff.isLoggedIn === "Offline"
       );
     }
 
@@ -764,8 +762,8 @@ const StaffManagement = () => {
                   value={filterStatus}
                 >
                   <Option value="all">All Status</Option>
-                  <Option value="paid">Active</Option>
-                  <Option value="pending">InActive</Option>
+                  <Option value="online">Online</Option>
+                  <Option value="offline">Offline</Option>
                 </Select>
                 <Select
                   className="filters-select"

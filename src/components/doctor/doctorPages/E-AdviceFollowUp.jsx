@@ -14,11 +14,17 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
     }
   }, [formData]);
 
+  const capitalizeFirstLetter = (str) => {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const capitalizedValue = name === 'advice' ? capitalizeFirstLetter(value) : value;
     const updatedData = {
       ...localData,
-      [name]: value
+      [name]: capitalizedValue
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
@@ -50,7 +56,8 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
           <textarea
             placeholder="Enter findings from clinical examination..."
             value={localData.advice}
-            onChange={(e) => handleChange({ target: { name: 'advice', value: e.target.value } })}
+            onChange={handleChange}
+            name="advice"
             className="common-textarea"
           />
         </div>
@@ -73,7 +80,6 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
             onChange={handleChange}
             className="common-date-input"
           />
-          {/* <Calendar size={16} className="common-calendar-icon" /> */}
         </div>
       </div>
     </div>
