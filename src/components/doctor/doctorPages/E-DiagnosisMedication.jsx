@@ -221,15 +221,18 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   };
 
   const addMedication = () => {
+    console.log("first")
     const lastMedication =
       localData.medications[localData.medications.length - 1];
+      console.log("localData==",localData)
     if (
       localData.medications.length > 0 &&
       !validateMedication(lastMedication)
     ) {
+      console.log("222")
       return;
     }
-
+console.log("999")
     const newMedication = {
       id: Date.now(),
       medName: "",
@@ -272,15 +275,22 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           if (selectedMed) {
             updatedMed = {
               ...updatedMed,
-              medInventoryId: selectedMed._id,
-              id: selectedMed._id,
+              medInventoryId: selectedMed ? selectedMed._id : null,
+              // id: selectedMed._id,
               price: selectedMed.price,
             };
           } else {
             updatedMed.medInventoryId = null;
-            updatedMed.id = null;
+            // updatedMed.id = null;
             updatedMed.price = null;
           }
+        }
+
+          // Update quantity based on duration and timings
+        if (field === "duration" || field === "timings") {
+          const newDuration = field === "duration" ? value : med.duration;
+          const newTimings = field === "timings" ? value : med.timings;
+          updatedMed.quantity = newDuration && newTimings.length ? newDuration * newTimings.length : null;
         }
 
         return updatedMed;
