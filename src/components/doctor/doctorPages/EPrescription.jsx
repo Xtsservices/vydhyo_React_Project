@@ -25,7 +25,9 @@ import DiagnosisMedication from "./E-DiagnosisMedication";
 import AdviceFollowUp from "./E-AdviceFollowUp";
 import Preview from "./Preview";
 import "../../stylings/EPrescription.css";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import { apiGet, apiPost } from "../../api";
 
@@ -39,6 +41,7 @@ const EPrescription = () => {
   const [activeTab, setActiveTab] = useState("doctor-clinic");
   const [showPreview, setShowPreview] = useState(false);
   const user = useSelector((state) => state.currentUserData);
+  const navigate = useNavigate()
   console.log("user====", user)
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -121,7 +124,7 @@ const EPrescription = () => {
       
       if (response?.status === 201) {
         const prescriptionId = response?.data?.prescriptionId;
-
+ toast.success("Prescription submitted successfully");
         if (type === "print") {
           window.print();
         } else if (type === "whatsapp" && pdfBlob) {
@@ -138,9 +141,14 @@ const EPrescription = () => {
               },
             }
           );
-          
+
+           if (uploadResponse?.status === 200) {
+   toast.success("Attachment uploaded successfully");
+   navigate('doctor/doctorPages/Appointments')
+          }
+          return
           if (uploadResponse?.status === 200) {
-            const message = `Here's my medical prescription from ${formData.doctorInfo.clinicName}\n` +
+            const message = `Here's my medical prescription from ${formData.doctorInfo?.clinicName}\n` +
               `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
               `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
               `Date: ${formData.doctorInfo?.appointmentDate || "N/A"}`;
