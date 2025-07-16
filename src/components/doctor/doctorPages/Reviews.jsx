@@ -10,29 +10,29 @@ const ReviewsComponent = () => {
   const [reviews, setReviews] = useState([
     {
       id: 1,
-      name: "Adrian",
+      name: "Rajesh Kumar",
       date: "15 Mar 2024",
       rating: 4,
-      avatar: "A",
+      avatar: "R",
       avatarColor: "#52c41a",
-      review: "Dr. Edalin Hendry has been my family's trusted doctor for years. Their genuine care and thorough approach to our health concerns make every visit reassuring. Dr. Edalin Hendry's ability to listen and explain complex health issues in understandable terms is exceptional. We are grateful to have such a dedicated physician by our side",
+      review: "Dr. Lakshmi Raman has been my family's trusted doctor for years. Their genuine care and thorough approach to our health concerns make every visit reassuring. Dr. Lakshmi Raman's ability to listen and explain complex health issues in understandable terms is exceptional. We are grateful to have such a dedicated physician by our side",
       hasReply: true,
       replies: []
     },
     {
       id: 2,
-      name: "Kelly",
+      name: "Meera ",
       date: "11 Mar 2024",
       rating: 4,
-      avatar: "K",
-      review: "I recently completed a series of dental treatments with Dr.Edalin Hendry, and I couldn't be more pleased with the results. From my very first appointment, Dr. Edalin Hendry and their team made me feel completely at ease, addressing all of my concerns with patience and understanding. Their state-of-the-art office and the staff's attention to comfort and cleanliness were beyond impressive.",
+      avatar: "M",
+      review: "I recently completed a series of dental treatments with Dr. Lakshmi Raman, and I couldn't be more pleased with the results. From my very first appointment, Dr. Lakshmi Raman and their team made me feel completely at ease, addressing all of my concerns with patience and understanding. Their state-of-the-art office and the staff's attention to comfort and cleanliness were beyond impressive.",
       hasReply: true,
       replies: [
         {
           id: 'reply-2-1',
-          name: "Dr Edalin Hendry",
+          name: "Dr Lakshmi Raman",
           date: "2 days ago",
-          avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=40&h=40&fit=crop&crop=face",
+          // avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=40&h=40&fit=crop&crop=face",
           isDoctor: true,
           review: "Thank you so much for taking the time to share your experience at our dental clinic. We are deeply touched by your kind words and thrilled to hear about the positive impact of your treatment. Our team strives to provide a comfortable, welcoming environment for all our patients, and it's heartening to know we achieved this for you."
         }
@@ -70,7 +70,7 @@ const ReviewsComponent = () => {
 
     const newReply = {
       id: `reply-${reviewId}-${Date.now()}`,
-      name: "Doctor",
+      name: "Dr Lakshmi Raman",
       date: "Just now",
       avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=40&h=40&fit=crop&crop=face",
       isDoctor: true,
