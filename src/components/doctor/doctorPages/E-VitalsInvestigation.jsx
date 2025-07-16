@@ -227,41 +227,58 @@ const handleBlur = (field) => {
           </div>
         </div>
 
-        <div className="other-vitals-section">
-          <h3 className="other-vitals-title">Other Vitals</h3>
-          <div className="other-vitals-grid">
-            {Object.entries(localData.other || {}).map(([key, value]) => (
-              <div key={key} className="other-vital-item">
-                <div className="other-vital-key">{key}</div>
-                <div className="other-vital-value">{value}</div>
-                <button className="remove-other-vital" onClick={() => handleRemoveOther(key)}>
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
+<div className="other-vitals-grid">
+  {Object.entries(localData.other || {}).map(([key, value]) => (
+    <div key={key} className="other-vital-item">
+      <div className="other-vital-key">{key}</div>
+      <div className="other-vital-value">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => {
+            const updatedData = {
+              ...localData,
+              other: {
+                ...localData.other,
+                [key]: e.target.value
+              }
+            };
+            setLocalData(updatedData);
+            updateFormData(updatedData);
+          }}
+          className="vitals-input"
+        />
+      </div>
+      <button
+        className="remove-other-vital"
+        onClick={() => handleRemoveOther(key)}
+        aria-label={`Remove ${key}`}
+      >
+        <X size={14} />
+      </button>
+    </div>
+  ))}
+</div>
 
-          <div className="add-other-vital">
-            <input
-              type="text"
-              placeholder="Key"
-              value={newKey}
-              onChange={(e) => setNewKey(e.target.value)}
-              className={`other-vital-input styled ${errors.newOther ? 'error' : ''}`}
-            />
-            <input
-              type="text"
-              placeholder="Value"
-              value={newValue}
-              onChange={(e) => setNewValue(e.target.value)}
-              className={`other-vital-input styled ${errors.newOther ? 'error' : ''}`}
-            />
-            <button className="add-other-button" onClick={handleAddOther}>
-              <Plus size={16} /> Add
-            </button>
-            {errors.newOther && <div className="error-message">{errors.newOther}</div>}
-          </div>
-        </div>
+<div className="add-other-vital">
+  <input
+    type="text"
+    placeholder="Additional Vital"
+    value={newKey}
+    onChange={(e) => setNewKey(e.target.value)}
+    className="vitals-input"
+  />:
+  <input
+    type="text"
+    placeholder="Enter.."
+    value={newValue}
+    onChange={(e) => setNewValue(e.target.value)}
+    className="vitals-input"
+  />
+  <button className="add-other-button" onClick={handleAddOther}>
+    <Plus size={16} /> Add
+  </button>
+</div>
       </div>
 
       {/* <div className="vitals-section">
