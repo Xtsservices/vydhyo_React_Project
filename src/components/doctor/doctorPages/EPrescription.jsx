@@ -1,6 +1,4 @@
-
 import React, { useEffect, useState } from "react";
-
 import {
   Home,
   Calendar,
@@ -28,12 +26,8 @@ import "../../stylings/EPrescription.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 import { apiGet, apiPost } from "../../api";
-
-
 import { useSelector } from "react-redux";
-
 
 const EPrescription = () => {
   const location = useLocation();
@@ -41,52 +35,52 @@ const EPrescription = () => {
   const [activeTab, setActiveTab] = useState("doctor-clinic");
   const [showPreview, setShowPreview] = useState(false);
   const user = useSelector((state) => state.currentUserData);
-  const navigate = useNavigate()
-  console.log("user====", user)
+  const navigate = useNavigate();
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [clinicDetails, setClinicDetails] = useState(null);
   const [formData, setFormData] = useState({
-  doctorInfo: {
-   doctorId: doctorId || '',
-   doctorName: user ? `${user.firstname || ""} ${user.lastname || ""}`.trim() : "",
+    doctorInfo: {
+      doctorId: doctorId || "",
+      doctorName: user
+        ? `${user.firstname || ""} ${user.lastname || ""}`.trim()
+        : "",
       qualifications: user?.specialization?.degree || "",
       specialization: user?.specialization?.name || "",
       medicalRegistrationNumber: user?.medicalRegistrationNumber || "",
-    selectedClinicId: '',
-    clinicAddress: '',
-    contactNumber: '',
-    appointmentDate: '',
-    appointmentStartTime: '',
-    appointmentEndTime: ''
-  },
-  patientInfo: {
-    patientId: '',
-    patientName: '',
-    age: '',
-    gender: '',
-    mobileNumber: '',
-    chiefComplaint: '',
-    pastMedicalHistory: '',
-    familyMedicalHistory: '',
-    physicalExamination: ''
-  },
-  vitals: {},
-  diagnosis: {},
-  advice: {}
-});
+      selectedClinicId: "",
+      clinicAddress: "",
+      contactNumber: "",
+      appointmentDate: "",
+      appointmentStartTime: "",
+      appointmentEndTime: "",
+    },
+    patientInfo: {
+      patientId: "",
+      patientName: "",
+      age: "",
+      gender: "",
+      mobileNumber: "",
+      chiefComplaint: "",
+      pastMedicalHistory: "",
+      familyMedicalHistory: "",
+      physicalExamination: "",
+    },
+    vitals: {},
+    diagnosis: {},
+    advice: {},
+  });
 
-
-// Initialize formData with patientData
+  // Initialize formData with patientData
   useEffect(() => {
     if (patientData) {
       setFormData((prev) => ({
         ...prev,
         doctorInfo: {
           ...prev.doctorInfo,
-          appointmentDate: patientData.appointmentDate || "", // e.g., "2039-06-19"
-          appointmentStartTime: patientData.appointmentTime || "", // e.g., "18:30"
-          selectedClinicId: patientData.addressId || "", // Set clinic ID
+          appointmentDate: patientData.appointmentDate || "",
+          appointmentStartTime: patientData.appointmentTime || "",
+          selectedClinicId: patientData.addressId || "",
         },
         patientInfo: {
           ...prev.patientInfo,
@@ -99,7 +93,6 @@ const EPrescription = () => {
       }));
     }
   }, [patientData]);
-
 
   const tabs = [
     { id: "doctor-clinic", label: "Doctor & Clinic Info", icon: UserCheck },
@@ -121,13 +114,15 @@ const EPrescription = () => {
     try {
       const formattedData = transformEprescriptionData(formData);
       const response = await apiPost("/pharmacy/addPrescription", formattedData);
-      
+
       if (response?.status === 201) {
-        const prescriptionId = response?.data?.prescriptionId;
- toast.success("Prescription submitted successfully");
+        toast.success("Prescription successfully added");
+        navigate("/doctor/doctorPages/Appointments");
+
         if (type === "print") {
           window.print();
         } else if (type === "whatsapp" && pdfBlob) {
+          const prescriptionId = response?.data?.prescriptionId;
           const formData = new FormData();
           formData.append("file", pdfBlob, "e-prescription.pdf");
           formData.append("prescriptionId", prescriptionId);
@@ -142,12 +137,8 @@ const EPrescription = () => {
             }
           );
 
-           if (uploadResponse?.status === 200) {
-   toast.success("Attachment uploaded successfully");
-   navigate('doctor/doctorPages/Appointments')
-          }
-          return
           if (uploadResponse?.status === 200) {
+            toast.success("Attachment uploaded successfully");
             const message = `Here's my medical prescription from ${formData.doctorInfo?.clinicName}\n` +
               `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
               `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
@@ -156,9 +147,12 @@ const EPrescription = () => {
             window.open(url, "_blank");
           }
         }
+      } else {
+        toast.error(response?.data?.message || "Failed to add prescription");
       }
     } catch (error) {
       console.error("Error in handlePrescriptionAction:", error);
+      toast.error(error.response?.data?.message || "Failed to add prescription");
     }
   };
 
@@ -230,6 +224,7 @@ const EPrescription = () => {
       setShowPreview(true);
     } catch (error) {
       console.error("erroraddPrescription", error);
+      toast.error("Failed to generate preview");
     }
   };
 
@@ -343,7 +338,10 @@ const EPrescription = () => {
                 marginTop: "24px",
               }}
             >
-              <button className="common-button common-cancel-button">
+              <button 
+                className="common-button common-cancel-button"
+                onClick={() => navigate(-1)}
+              >
                 Cancel
               </button>
 

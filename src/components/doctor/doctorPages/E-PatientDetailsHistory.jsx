@@ -3,6 +3,11 @@ import { User, FileText, Heart, Users, Stethoscope } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import '../../stylings/EPrescription.css';
 
+const capitalizeFirstLetter = (str) => {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
 const PatientDetailsHistory = ({ formData, updateFormData }) => {
   console.log("formData====", formData, updateFormData);
   const location = useLocation();
@@ -16,35 +21,36 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
     physicalExamination: formData?.physicalExamination || ''
   });
 
-// In PatientDetailsHistory component
-useEffect(() => {
-  if (location.state?.patientData) {
-    const patientData = location.state.patientData;
-    const updatedData = {
-      patientId: patientData.patientId || '',
-      patientName: patientData.patientName || '',
-      age: patientData.age || '',
-      gender: patientData.gender || '',
-      mobileNumber: patientData.mobileNumber || '',
-      chiefComplaint: patientData.appointmentReason || '',
-      pastMedicalHistory: formData?.pastMedicalHistory || '',
-      familyMedicalHistory: formData?.familyMedicalHistory || '',
-      physicalExamination: formData?.physicalExamination || ''
-    };
-    setLocalData(updatedData);
-    if (updateFormData) {
-      updateFormData(updatedData);
+  // In PatientDetailsHistory component
+  useEffect(() => {
+    if (location.state?.patientData) {
+      const patientData = location.state.patientData;
+      const updatedData = {
+        patientId: patientData.patientId || '',
+        patientName: patientData.patientName || '',
+        age: patientData.age || '',
+        gender: patientData.gender || '',
+        mobileNumber: patientData.mobileNumber || '',
+        chiefComplaint: capitalizeFirstLetter(patientData.appointmentReason) || '',
+        pastMedicalHistory: capitalizeFirstLetter(formData?.pastMedicalHistory) || '',
+        familyMedicalHistory: capitalizeFirstLetter(formData?.familyMedicalHistory) || '',
+        physicalExamination: capitalizeFirstLetter(formData?.physicalExamination) || ''
+      };
+      setLocalData(updatedData);
+      if (updateFormData) {
+        updateFormData(updatedData);
+      }
     }
-  }
-}, [location.state]);
+  }, [location.state]);
 
   // Only allow changes to fields other than chiefComplaint
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name !== 'chiefComplaint') { // Prevent editing chiefComplaint
+      const capitalizedValue = capitalizeFirstLetter(value);
       const updatedData = {
         ...localData,
-        [name]: value
+        [name]: capitalizedValue
       };
       setLocalData(updatedData);
       if (updateFormData) {
@@ -74,7 +80,7 @@ useEffect(() => {
             <label className="patient-details-label">Patient Name</label>
             <input
               type="text"
-              value={patientData.patientName || ''}
+              value={patientData.patientName ? capitalizeFirstLetter(patientData.patientName) : ''}
               className="patient-details-input"
               readOnly
             />
@@ -152,9 +158,9 @@ useEffect(() => {
             <textarea
               name="chiefComplaint"
               value={localData.chiefComplaint}
-              onChange={handleChange} // Still included but won't allow changes
-              readOnly // Makes the field uneditable
-              className="history-textarea readonly-textarea" // Add a class for styling
+              onChange={handleChange}
+              readOnly
+              className="history-textarea readonly-textarea"
               placeholder="Enter Here..."
               rows={4}
             />

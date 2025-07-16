@@ -4,7 +4,7 @@ import { FaWhatsapp } from "react-icons/fa";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { apiGet } from "../../api";
-import "../../stylings/Preview.css"; // Import the CSS file
+import "../../stylings/Preview.css"; 
 
 const Preview = ({ formData, handlePrescriptionAction }) => {
   const [selectedClinic, setSelectedClinic] = useState(null);
@@ -455,7 +455,8 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             Print Prescription
           </button>
           <button className="whatsapp-button" onClick={handleWhatsAppClick}>
-            <FaWhatsapp className="whatsapp-icon" /> Share via WhatsApp
+            {/* <FaWhatsapp className="whatsapp-icon" />  */}
+            Save
           </button>
         </div>
       </div>
