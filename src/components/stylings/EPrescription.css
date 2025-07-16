@@ -744,6 +744,117 @@
   gap: 16px;
 }
 
+.other-vitals-section {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #f8fafc;
+}
+
+.other-vitals-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+
+.other-vitals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.other-vital-item {
+  display: flex;
+  flex-direction: column; 
+  align-items: flex-start; 
+  padding: 0; 
+  border: none;
+  background-color: transparent; 
+  margin-bottom: 8px;
+  margin-top: 20px;
+  width: 100%; 
+}
+.other-vital-key {
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.other-vital-value {
+  flex-grow: 1;
+  width: 100%; 
+}
+
+.other-vital-value input {
+  width: 100%; 
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.other-vital-value input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.remove-other-vital {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  margin-top: 8px; /* Move the remove button below the value */
+  align-self: flex-end; /* Align the remove button to the right */
+}
+
+.add-other-vital {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.add-other-vital input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  flex-grow: 1;
+}
+
+.other-vital-input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  flex-grow: 1;
+}
+
+.add-other-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.add-other-button:hover {
+  background-color: #1d4ed8;
+}
+
 .vital-item {
   text-align: center;
   font-size: 12px;
