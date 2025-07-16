@@ -35,7 +35,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
   useEffect(() => {
     if (formData && Object.keys(formData).length > 0) {
       setLocalData(formData);
-      validateAllFields(formData);
+      // validateAllFields(formData);
     }
   }, [formData]);
 
@@ -58,7 +58,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
   };
 
   const handleVitalChange = (field, value) => {
-    const normalizedValue = value === '' ? '' : String(value).trim();
+    const normalizedValue = value === '' ? '' : Number(value) < 0 ? '' : String(value).trim();
     const updatedData = { ...localData, [field]: normalizedValue };
 
     if (field === 'weight' || field === 'height') {
@@ -179,7 +179,7 @@ const handleBlur = (field) => {
                 placeholder="Systolic"
                 value={localData.bpSystolic}
                 onChange={(e) => handleVitalChange('bpSystolic', e.target.value)}
-                onBlur={() => handleBlur('bpSystolic')}
+                // onBlur={() => handleBlur('bpSystolic')}
                 className={`vitals-input bp-input ${errors.bpSystolic ? 'error' : ''}`}
               />
               <span className="bp-slash">/</span>
@@ -188,7 +188,7 @@ const handleBlur = (field) => {
                 placeholder="Diastolic"
                 value={localData.bpDiastolic}
                 onChange={(e) => handleVitalChange('bpDiastolic', e.target.value)}
-                onBlur={() => handleBlur('bpDiastolic')}
+                // onBlur={() => handleBlur('bpDiastolic')}
                 className={`vitals-input bp-input ${errors.bpDiastolic ? 'error' : ''}`}
               />
             </div>
@@ -209,7 +209,7 @@ const handleBlur = (field) => {
                 type="number"
                 value={localData[field]}
                 onChange={(e) => handleVitalChange(field, e.target.value)}
-                onBlur={() => handleBlur(field)}
+                // onBlur={() => handleBlur(field)}
                 className={`vitals-input ${errors[field] ? 'error' : ''}`}
               />
               {errors[field] && <div className="error-message">{errors[field]}</div>}
