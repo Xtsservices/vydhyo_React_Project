@@ -155,11 +155,10 @@
   text-align: justify;
 }
 
-.clinic-name {
-  color: #111827 !important;
-  font-weight: 500 !important;
-  font-size: 15px !important;
-  text-align: justify;
+.clinic-table-td.clinic-name {
+  font-weight: 600;
+  color: #000000 !important; 
+  font-size: 17px !important;
 }
 
 .no-clinics {

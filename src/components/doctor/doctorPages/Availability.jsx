@@ -45,9 +45,8 @@ const AvailabilityScreen = () => {
     "Sunday",
   ];
   
-  
-const todayDate = moment();
- const todayName = todayDate.format("dddd"); 
+  const todayDate = moment();
+  const todayName = todayDate.format("dddd"); 
   const startIndex = fullWeek.indexOf(todayName);
   const orderedDays = [...fullWeek.slice(startIndex), ...fullWeek.slice(0, startIndex)];
 
@@ -283,7 +282,6 @@ const todayDate = moment();
   };
 
   const handleAddAvailableSlots = async () => {
-    console.log(selectedDate, selectedEndDate, "selectedDate");
     try {
       setLoading(true);
 
@@ -563,25 +561,8 @@ const todayDate = moment();
     }
   };
 
-  const renderTimeControls = (section) => {
-    const isAvailable = section === "available";
-    const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
-    const startTime = isAvailable ? availableStartTime : unavailableStartTime;
-    const startPeriod = isAvailable
-      ? availableStartPeriod
-      : unavailableStartPeriod;
-    const endTime = isAvailable ? availableEndTime : unavailableEndTime;
-    const endPeriod = isAvailable ? availableEndPeriod : unavailableEndPeriod;
-    const duration = isAvailable ? availableDuration : unavailableDuration;
-    const addHandler = isAvailable
-      ? handleAddAvailableSlots
-      : handleAddUnavailableSlots;
-    const deleteHandler = isAvailable
-      ? handleDeleteAllAvailable
-      : handleDeleteAllUnavailable;
-    const title = isAvailable
-      ? "Available Time Slots"
-      : "Unavailable Time Slots";
+  const renderAvailableTimeControls = () => {
+    const { availableSlots } = getCurrentClinicSlots();
 
     return (
       <>
@@ -589,10 +570,10 @@ const todayDate = moment();
           level={4}
           style={{
             marginBottom: 16,
-            color: isAvailable ? "#16A34A" : "#FF3B30",
+            color: "#16A34A",
           }}
         >
-          {title}
+          Available Time Slots
         </Title>
 
         <Row gutter={[24, 24]} align="middle" style={{ marginBottom: 16 }}>
@@ -610,13 +591,13 @@ const todayDate = moment();
                   fontWeight: "bold",
                 }}
               >
-                {startTime}
+                {availableStartTime}
               </span>
               <div style={{ marginLeft: 8 }}>
                 <Button
                   size="small"
                   icon={<UpOutlined />}
-                  onClick={() => adjustTime("start", "up", section)}
+                  onClick={() => adjustTime("start", "up", "available")}
                   style={{
                     display: "block",
                     marginBottom: 2,
@@ -627,31 +608,25 @@ const todayDate = moment();
                 <Button
                   size="small"
                   icon={<DownOutlined />}
-                  onClick={() => adjustTime("start", "down", section)}
+                  onClick={() => adjustTime("start", "down", "available")}
                   style={{ display: "block", width: 30, height: 20 }}
                 />
               </div>
               <Button
                 size="small"
                 onClick={() =>
-                  isAvailable
-                    ? setAvailableStartPeriod(
-                        startPeriod === "AM" ? "PM" : "AM"
-                      )
-                    : setUnavailableStartPeriod(
-                        startPeriod === "AM" ? "PM" : "AM"
-                      )
+                  setAvailableStartPeriod(availableStartPeriod === "AM" ? "PM" : "AM")
                 }
                 style={{
                   marginLeft: 8,
-                  backgroundColor: startPeriod === "AM" ? "#fff" : "#ffeaa7",
+                  backgroundColor: availableStartPeriod === "AM" ? "#fff" : "#ffeaa7",
                   border: "1px solid #ddd",
                   borderRadius: 4,
                   minWidth: 35,
                   height: 24,
                 }}
               >
-                {startPeriod}
+                {availableStartPeriod}
               </Button>
             </div>
           </Col>
@@ -670,13 +645,13 @@ const todayDate = moment();
                   fontWeight: "bold",
                 }}
               >
-                {endTime}
+                {availableEndTime}
               </span>
               <div style={{ marginLeft: 8 }}>
                 <Button
                   size="small"
                   icon={<UpOutlined />}
-                  onClick={() => adjustTime("end", "up", section)}
+                  onClick={() => adjustTime("end", "up", "available")}
                   style={{
                     display: "block",
                     marginBottom: 2,
@@ -687,128 +662,326 @@ const todayDate = moment();
                 <Button
                   size="small"
                   icon={<DownOutlined />}
-                  onClick={() => adjustTime("end", "down", section)}
+                  onClick={() => adjustTime("end", "down", "available")}
                   style={{ display: "block", width: 30, height: 20 }}
                 />
               </div>
               <Button
                 size="small"
                 onClick={() =>
-                  isAvailable
-                    ? setAvailableEndPeriod(endPeriod === "AM" ? "PM" : "AM")
-                    : setUnavailableEndPeriod(endPeriod === "AM" ? "PM" : "AM")
+                  setAvailableEndPeriod(availableEndPeriod === "AM" ? "PM" : "AM")
                 }
                 style={{
                   marginLeft: 8,
-                  backgroundColor: endPeriod === "AM" ? "#fff" : "#ffeaa7",
+                  backgroundColor: availableEndPeriod === "AM" ? "#fff" : "#ffeaa7",
                   border: "1px solid #ddd",
                   borderRadius: 4,
                   minWidth: 35,
                   height: 24,
                 }}
               >
-                {endPeriod}
+                {availableEndPeriod}
               </Button>
             </div>
           </Col>
 
           {/* Duration */}
-          {isAvailable && (
-            <Col xs={12} sm={6}>
-              <Text strong>Duration (minutes):</Text>
-              <div
-                style={{ display: "flex", alignItems: "center", marginTop: 8 }}
+          <Col xs={12} sm={6}>
+            <Text strong>Duration (minutes):</Text>
+            <div
+              style={{ display: "flex", alignItems: "center", marginTop: 8 }}
+            >
+              <span
+                style={{
+                  minWidth: 30,
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                }}
               >
-                <span
+                {availableDuration}
+              </span>
+              <div style={{ marginLeft: 8 }}>
+                <Button
+                  size="small"
+                  icon={<UpOutlined />}
+                  onClick={() => adjustDuration("up", "available")}
                   style={{
-                    minWidth: 30,
-                    textAlign: "center",
-                    fontSize: 16,
-                    fontWeight: "bold",
+                    display: "block",
+                    marginBottom: 2,
+                    width: 30,
+                    height: 20,
                   }}
-                >
-                  {duration}
-                </span>
-                <div style={{ marginLeft: 8 }}>
-                  <Button
-                    size="small"
-                    icon={<UpOutlined />}
-                    onClick={() => adjustDuration("up", section)}
-                    style={{
-                      display: "block",
-                      marginBottom: 2,
-                      width: 30,
-                      height: 20,
-                    }}
-                  />
-                  <Button
-                    size="small"
-                    icon={<DownOutlined />}
-                    onClick={() => adjustDuration("down", section)}
-                    style={{ display: "block", width: 30, height: 20 }}
-                  />
-                </div>
+                />
+                <Button
+                  size="small"
+                  icon={<DownOutlined />}
+                  onClick={() => adjustDuration("down", "available")}
+                  style={{ display: "block", width: 30, height: 20 }}
+                />
               </div>
-            </Col>
-          )}
+            </div>
+          </Col>
 
           {/* Action Buttons */}
           <Col xs={12} sm={6}>
             <Space>
               <Button
                 type="primary"
-                onClick={addHandler}
+                onClick={handleAddAvailableSlots}
                 icon={<PlusOutlined />}
                 style={{ fontWeight: "bold" }}
               >
-                Add Slots
+                Add Available Slots
               </Button>
+              
             </Space>
           </Col>
         </Row>
 
-        {/* Reason Input for Unavailable */}
-        {!isAvailable && (
-          <div style={{ marginBottom: 16 }}>
-            <Text strong>Reason for Unavailability:</Text>
-            <Input
-              placeholder="Enter reason..."
-              value={unavailableReason}
-              onChange={(e) => setUnavailableReason(e.target.value)}
-              style={{ marginTop: 8 }}
-            />
-          </div>
-        )}
+        {/* Slots Display */}
+        <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
+          {availableSlots.map((slot, index) => (
+            <Col key={index} xs={12} sm={8} md={6} lg={4}>
+              <Button
+                block
+                style={{
+                  height: 48,
+                  borderRadius: 8,
+                  border: "1px solid #52c41a",
+                  backgroundColor: "#DCFCE7",
+                  color: "#52c41a",
+                  fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                icon={<ClockCircleOutlined />}
+              >
+                {slot.time}
+              </Button>
+            </Col>
+          ))}
+        </Row>
+
+        <Divider />
+      </>
+    );
+  };
+
+  const renderUnavailableTimeControls = () => {
+    const { unavailableSlots } = getCurrentClinicSlots();
+
+    return (
+      <>
+        <Title
+          level={4}
+          style={{
+            marginBottom: 16,
+            color: "#FF3B30",
+          }}
+        >
+          Unavailable Time Slots
+        </Title>
+
+        <Row gutter={[24, 24]} align="middle" style={{ marginBottom: 16 }}>
+          {/* Start Time */}
+          <Col xs={12} sm={6}>
+            <Text strong>Start Time:</Text>
+            <div
+              style={{ display: "flex", alignItems: "center", marginTop: 8 }}
+            >
+              <span
+                style={{
+                  minWidth: 30,
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                }}
+              >
+                {unavailableStartTime}
+              </span>
+              <div style={{ marginLeft: 8 }}>
+                <Button
+                  size="small"
+                  icon={<UpOutlined />}
+                  onClick={() => adjustTime("start", "up", "unavailable")}
+                  style={{
+                    display: "block",
+                    marginBottom: 2,
+                    width: 30,
+                    height: 20,
+                  }}
+                />
+                <Button
+                  size="small"
+                  icon={<DownOutlined />}
+                  onClick={() => adjustTime("start", "down", "unavailable")}
+                  style={{ display: "block", width: 30, height: 20 }}
+                />
+              </div>
+              <Button
+                size="small"
+                onClick={() =>
+                  setUnavailableStartPeriod(unavailableStartPeriod === "AM" ? "PM" : "AM")
+                }
+                style={{
+                  marginLeft: 8,
+                  backgroundColor: unavailableStartPeriod === "AM" ? "#fff" : "#ffeaa7",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  minWidth: 35,
+                  height: 24,
+                }}
+              >
+                {unavailableStartPeriod}
+              </Button>
+            </div>
+          </Col>
+
+          {/* End Time */}
+          <Col xs={12} sm={6}>
+            <Text strong>End Time:</Text>
+            <div
+              style={{ display: "flex", alignItems: "center", marginTop: 8 }}
+            >
+              <span
+                style={{
+                  minWidth: 30,
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                }}
+              >
+                {unavailableEndTime}
+              </span>
+              <div style={{ marginLeft: 8 }}>
+                <Button
+                  size="small"
+                  icon={<UpOutlined />}
+                  onClick={() => adjustTime("end", "up", "unavailable")}
+                  style={{
+                    display: "block",
+                    marginBottom: 2,
+                    width: 30,
+                    height: 20,
+                  }}
+                />
+                <Button
+                  size="small"
+                  icon={<DownOutlined />}
+                  onClick={() => adjustTime("end", "down", "unavailable")}
+                  style={{ display: "block", width: 30, height: 20 }}
+                />
+              </div>
+              <Button
+                size="small"
+                onClick={() =>
+                  setUnavailableEndPeriod(unavailableEndPeriod === "AM" ? "PM" : "AM")
+                }
+                style={{
+                  marginLeft: 8,
+                  backgroundColor: unavailableEndPeriod === "AM" ? "#fff" : "#ffeaa7",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  minWidth: 35,
+                  height: 24,
+                }}
+              >
+                {unavailableEndPeriod}
+              </Button>
+            </div>
+          </Col>
+
+          {/* Duration */}
+          <Col xs={12} sm={6}>
+            <Text strong>Duration (minutes):</Text>
+            <div
+              style={{ display: "flex", alignItems: "center", marginTop: 8 }}
+            >
+              <span
+                style={{
+                  minWidth: 30,
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                }}
+              >
+                {unavailableDuration}
+              </span>
+              <div style={{ marginLeft: 8 }}>
+                <Button
+                  size="small"
+                  icon={<UpOutlined />}
+                  onClick={() => adjustDuration("up", "unavailable")}
+                  style={{
+                    display: "block",
+                    marginBottom: 2,
+                    width: 30,
+                    height: 20,
+                  }}
+                />
+                <Button
+                  size="small"
+                  icon={<DownOutlined />}
+                  onClick={() => adjustDuration("down", "unavailable")}
+                  style={{ display: "block", width: 30, height: 20 }}
+                />
+              </div>
+            </div>
+          </Col>
+
+          {/* Action Buttons */}
+          <Col xs={12} sm={6}>
+            <Space>
+              <Button
+                type="primary"
+                danger
+                onClick={handleAddUnavailableSlots}
+                icon={<StopOutlined />}
+                style={{ fontWeight: "bold" }}
+              >
+                Add Unavailable Slots
+              </Button>
+              
+            </Space>
+          </Col>
+        </Row>
+
+        {/* Reason Input */}
+        <div style={{ marginBottom: 16 }}>
+          <Text strong>Reason for Unavailability:</Text>
+          <Input
+            placeholder="Enter reason..."
+            value={unavailableReason}
+            onChange={(e) => setUnavailableReason(e.target.value)}
+            style={{ marginTop: 8 }}
+          />
+        </div>
 
         {/* Slots Display */}
         <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
-          {(isAvailable ? availableSlots : unavailableSlots).map(
-            (slot, index) => (
-              <Col key={index} xs={12} sm={8} md={6} lg={4}>
-                <Button
-                  block
-                  style={{
-                    height: 48,
-                    borderRadius: 8,
-                    border: isAvailable
-                      ? "1px solid #52c41a"
-                      : "1px solid #ff4d4f",
-                    backgroundColor: isAvailable ? "#DCFCE7" : "#FEE2E2",
-                    color: isAvailable ? "#52c41a" : "#ff4d4f",
-                    fontWeight: "bold",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  icon={
-                    isAvailable ? <ClockCircleOutlined /> : <StopOutlined />
-                  }
-                >
-                  {slot.time}
-                </Button>
-              </Col>
-            )
-          )}
+          {unavailableSlots.map((slot, index) => (
+            <Col key={index} xs={12} sm={8} md={6} lg={4}>
+              <Button
+                block
+                style={{
+                  height: 48,
+                  borderRadius: 8,
+                  border: "1px solid #ff4d4f",
+                  backgroundColor: "#FEE2E2",
+                  color: "#ff4d4f",
+                  fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                icon={<StopOutlined />}
+              >
+                {slot.time}
+              </Button>
+            </Col>
+          ))}
         </Row>
 
         <Divider />
@@ -824,20 +997,13 @@ const todayDate = moment();
     setSelectedEndDate(date);
   };
 
-   const handleDayClick = (day) => {
+  const handleDayClick = (day) => {
     setSelectedDay(day);
-
-    console.log("Selected Day:", day);
-
-    // Calculate the date for selected day in this week
     const todayIndex = moment().isoWeekday(); // Monday=1, Sunday=7
     const selectedIndex = fullWeek.indexOf(day) + 1; // Make it 1-based like isoWeekday
     const diff = selectedIndex - todayIndex;
     const date = moment().add(diff, "days");
-    console.log("Calculated Date for Selected Day:", date);
-
-    setSelectedDate(date); // You can format if needed
-    console.log("Selected Date for API:", date.format("YYYY-MM-DD"));
+    setSelectedDate(date);
   };
 
   return (
@@ -930,10 +1096,10 @@ const todayDate = moment();
             </div>
 
             {/* Available Slots Section */}
-            {renderTimeControls("available")}
+            {renderAvailableTimeControls()}
 
             {/* Unavailable Slots Section */}
-            {renderTimeControls("unavailable")}
+            {renderUnavailableTimeControls()}
 
             {/* Legend */}
             <div style={{ marginBottom: 16 }}>
@@ -946,24 +1112,19 @@ const todayDate = moment();
                 </Tag>
               </Space>
             </div>
-          </Card>
 
-          {/* Action Buttons */}
-          <div style={{ textAlign: "right" }}>
-            <Space size="large">
-              <Button size="large" style={{ minWidth: 100 }}>
-                Cancel
-              </Button>
+            {/* Save Button */}
+            <div style={{ textAlign: "right", marginTop: 24 }}>
               <Button
                 type="primary"
                 size="large"
-                style={{ minWidth: 120, borderRadius: 8 }}
                 onClick={handleUpdateSlots}
+                style={{ width: 150, fontWeight: "bold" }}
               >
                 Save Changes
               </Button>
-            </Space>
-          </div>
+            </div>
+          </Card>
         </Spin>
       </div>
     </div>
