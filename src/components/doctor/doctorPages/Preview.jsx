@@ -10,6 +10,7 @@ import "../../stylings/Preview.css";
 
 const Preview = ({ formData, handlePrescriptionAction }) => {
   const [selectedClinic, setSelectedClinic] = useState(null);
+  const [isSaving, setIsSaving] = useState(false); 
 
   const formatDate = (dateString) => {
     if (!dateString) return "Not specified";
@@ -205,6 +206,19 @@ const handlePrintClick = async () => {
       getCurrentUserData();
     }
   }, [formData?.doctorInfo?.doctorId]);
+
+    const handleSaveClick = async () => {
+      console.log("Saving prescription...", isSaving);
+    // prevent double click
+if (isSaving === false){
+setIsSaving(true); // disable the button
+    await handlePrescriptionAction("save"); // call the parent function
+}
+     if (isSaving) return;
+    // If needed, you can re-enable it later:
+    // setIsSaving(false);
+  };
+
 
   return (
     <div>
@@ -534,9 +548,10 @@ const handlePrintClick = async () => {
             <FaWhatsapp className="whatsapp-icon" style={{ marginRight: "8px" }} />
             Share via WhatsApp
           </button>
-          <button className="save-button" onClick={() => handlePrescriptionAction("save")}>
-            Save
+          <button className="save-button" onClick={handleSaveClick} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save"}
           </button>
+            
         </div>
       </div>
     </div>
