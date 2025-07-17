@@ -22,17 +22,17 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     diagnosisList: "",
     selectedTests: [],
     medications: [
-      {
-        id: Date.now(),
-        medName: "",
-        quantity: null,
-         medicineType: null,
-        dosage: "",
-        duration: null,
-        timings: [],
-        frequency: null,
-        notes: "",
-      },
+      // {
+      //   id: Date.now(),
+      //   medName: "",
+      //   quantity: null,
+      //    medicineType: null,
+      //   dosage: "",
+      //   duration: null,
+      //   timings: [],
+      //   frequency: null,
+      //   notes: "",
+      // },
     ],
   });
 
