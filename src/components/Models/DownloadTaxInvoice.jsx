@@ -1,6 +1,8 @@
 import React from "react";
 
 const DownloadTaxInvoice = ({ patient, disabled }) => {
+
+  console.log("patient===", patient);
   const calculateTotals = (patient) => {
     const completedMedicines =
       patient.medicines?.filter(
@@ -273,7 +275,6 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
                   <div>
                     <p><strong>DOB:</strong> ${invoiceData.DOB}</p>
                     <p><strong>Gender:</strong> ${invoiceData.gender}</p>
-                    <p><strong>Blood Group:</strong> ${invoiceData.bloodgroup}</p>
                   </div>
                 </div>
               </div>
@@ -347,6 +348,8 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
               }
 
               <div class="grand-total-section">
+
+              <div class="total-row"><span>Appointment Fee:</span><span>₹${patient.totalAppointmentFees.toFixed(2)}</span></div>
                 ${
                   completedMedicines.length > 0
                     ? `<div class="total-row"><span>Medicine Total:</span><span>₹${invoiceData.totals.medicineTotal.toFixed(2)}</span></div>`
@@ -359,7 +362,7 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
                 }
                 <div class="grand-total-row">
                   <span>Grand Total:</span>
-                  <span>₹${invoiceData.totals.grandTotal.toFixed(2)}</span>
+                  <span>₹${patient.grandTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>

@@ -25,43 +25,120 @@ const BillingSystem = () => {
           const result = response.data.data;
 
           console.log("Fetched patient data:", result);
-const filteredData = result.filter((patient) => {
-            return patient?.tests?.length > 0 || patient?.medicines?.length > 0;
-          });
+const transformedData = result.map((patient, index) => {
+  const appointments = Array.isArray(patient.appointments) ? patient.appointments : [];
+  const tests = Array.isArray(patient.tests) ? patient.tests : [];
+  const medicines = Array.isArray(patient.medicines) ? patient.medicines : [];
 
+  const appointmentDetails = appointments.map((appointment, idx) => ({
+    id: `A${index}${idx}`,
+    appointmentId: appointment.appointmentId,
+    appointmentType: appointment.appointmentType,
+    appointmentFees: appointment?.feeDetails?.finalAmount || 0,
+  }));
 
-          // Transform API data to match component structure
-          const transformedData = filteredData.map((patient, index) => ({
+  // Calculate totals
+  const totalTestAmount = tests.reduce((sum, test) => sum + (test?.price || 0), 0);
+  const totalMedicineAmount = medicines.reduce((sum, med) => sum + (med?.price*med?.quantity || 0), 0);
+  const totalAppointmentFees = appointmentDetails.reduce((sum, appt) => sum + (appt?.appointmentFees || 0), 0);
 
-            id: index + 1,
-            patientId: patient.patientId,
-            name: `${patient.firstname} ${patient.lastname}`.trim(),
-            firstname: patient.firstname,
-            lastname: patient.lastname,
-            DOB: patient.DOB,
-            gender: patient.gender,
-            mobile: patient.mobile || "Not Provided", // Fallback for missing mobile
-            bloodgroup: patient.bloodgroup || "Not Specified",
-            tests: patient.tests.map((test, idx) => ({
-              id: `T${index}${idx}`, // Kept for internal use, not displayed
-              testId: test.testId, // MongoDB _id
-              labTestID: test.labTestID,
-              name: test.testName,
-              price: test.price || 0,
-              status:
-                test.status.charAt(0).toUpperCase() + test.status.slice(1),
-              createdDate: new Date(test.createdAt).toLocaleDateString(),
-            })),
-            medicines: patient.medicines.map((med, idx) => ({
-              id: `M${index}${idx}`, // Kept for internal use, not displayed
-              medicineId: med.medicineId, // MongoDB _id
-              pharmacyMedID: med.pharmacyMedID,
-              name: med.medName,
-              quantity: med.quantity || 1,
-              price: med.price || 0,
-              status: med.status.charAt(0).toUpperCase() + med.status.slice(1),
-            })),
-          }));
+  return {
+    id: index + 1,
+    patientId: patient.patientId,
+    name: `${patient.firstname} ${patient.lastname}`.trim(),
+    firstname: patient.firstname,
+    lastname: patient.lastname,
+    DOB: patient.DOB,
+    gender: patient.gender,
+    mobile: patient.mobile || "Not Provided",
+    bloodgroup: patient.bloodgroup || "Not Specified",
+
+    appointmentDetails,
+
+    tests: tests.map((test, idx) => ({
+      id: `T${index}${idx}`,
+      testId: test.testId,
+      labTestID: test.labTestID,
+      name: test.testName,
+      price: test?.price || 0,
+      status:
+        test.status?.charAt(0).toUpperCase() +
+          test.status?.slice(1) || "Unknown",
+      createdDate: test.createdAt
+        ? new Date(test.createdAt).toLocaleDateString()
+        : "N/A",
+    })),
+
+    medicines: medicines.map((med, idx) => ({
+      id: `M${index}${idx}`,
+      medicineId: med.medicineId,
+      pharmacyMedID: med.pharmacyMedID,
+      name: med.medName,
+      quantity: med.quantity || 1,
+      price: med.price || 0,
+      status:
+        med.status?.charAt(0).toUpperCase() +
+          med.status?.slice(1) || "Unknown",
+    })),
+
+    totalTestAmount,
+    totalMedicineAmount,
+    totalAppointmentFees,
+    grandTotal: totalTestAmount + totalMedicineAmount + totalAppointmentFees,
+  };
+});
+
+        
+          // const transformedData = result.map((patient, index) => ({
+          //   id: index + 1,
+          //   patientId: patient.patientId,
+          //   name: `${patient.firstname} ${patient.lastname}`.trim(),
+          //   firstname: patient.firstname,
+          //   lastname: patient.lastname,
+          //   DOB: patient.DOB,
+          //   gender: patient.gender,
+          //   mobile: patient.mobile || "Not Provided", // Fallback for missing mobile
+          //   bloodgroup: patient.bloodgroup || "Not Specified",
+          //   appointmentDetails: Array.isArray(patient.appointments)
+          //     ? patient.appointments.map((appointment, idx) => ({
+          //         id: `A${index}${idx}`,
+          //         appointmentId: appointment.appointmentId,
+          //         appointmentType: appointment.appointmentType,
+          //         appointmentFees: appointment?.feeDetails?.finalAmount,
+          //       }))
+          //     : [],
+          //   tests: Array.isArray(patient.tests)
+          //   ? patient.tests.map((test, idx) => ({
+          //       id: `T${index}${idx}`,
+          //       testId: test.testId,
+          //       labTestID: test.labTestID,
+          //       name: test.testName,
+          //       price: test?.price || 0,
+          //       status:
+          //         test.status?.charAt(0).toUpperCase() +
+          //           test.status?.slice(1) || "Unknown",
+          //       createdDate: test.createdAt
+          //         ? new Date(test.createdAt).toLocaleDateString()
+          //         : "N/A",
+          //     }))
+          //   : [],
+
+          // medicines: Array.isArray(patient.medicines)
+          //   ? patient.medicines.map((med, idx) => ({
+          //       id: `M${index}${idx}`,
+          //       medicineId: med.medicineId,
+          //       pharmacyMedID: med.pharmacyMedID,
+          //       name: med.medName,
+          //       quantity: med.quantity || 1,
+          //       price: med.price || 0,
+          //       status:
+          //         med.status?.charAt(0).toUpperCase() +
+          //           med.status?.slice(1) || "Unknown",
+          //     }))
+          //   : [],
+          // }));
+
+          console.log("Transformed patient data:", transformedData);
           setPatients(transformedData);
           setLoading(false);
         } else {
@@ -300,7 +377,7 @@ const filteredData = result.filter((patient) => {
               >
                 Gender
               </th>
-              <th
+              {/* <th
                 style={{
                   padding: "12px 15px",
                   textAlign: "left",
@@ -309,7 +386,7 @@ const filteredData = result.filter((patient) => {
                 }}
               >
                 Blood Group
-              </th>
+              </th> */}
             </tr>
           </thead>
           <tbody>
@@ -349,7 +426,7 @@ const filteredData = result.filter((patient) => {
                     <td style={{ padding: "12px 15px" }}>{patient.mobile}</td>
                     <td style={{ padding: "12px 15px" }}>{patient.DOB}</td>
                     <td style={{ padding: "12px 15px" }}>{patient.gender}</td>
-                    <td style={{ padding: "12px 15px" }}>{patient.bloodgroup}</td>
+                    {/* <td style={{ padding: "12px 15px" }}>{patient.bloodgroup}</td> */}
                   </tr>
 
                   {expandedPatients[patient.id] && (
@@ -438,6 +515,70 @@ const filteredData = result.filter((patient) => {
                               </p>
                             </div>
                           </div>
+
+                          {/* Appointment Details Section */}
+                          {patient.appointmentDetails.length > 0 && (
+                            <div
+                              style={{
+                                backgroundColor: "white",
+                                padding: "15px",
+                                borderRadius: "4px",
+                                marginBottom: "20px",
+                                border: "1px solid #ddd",
+                              }}
+                            >
+                              <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
+                                Appointment Details
+                              </h4>
+                              <table
+                                style={{
+                                  width: "100%",
+                                  borderCollapse: "collapse",
+                                }}
+                              >
+                                <thead>
+                                  <tr>
+                                    <th
+                                      style={{
+                                        padding: "12px 15px",
+                                        borderBottom: "1px solid #ddd",
+                                        textAlign: "left",
+                                      }}
+                                    >
+                                      AppointmentId
+                                    </th>
+                                    <th
+                                      style={{
+                                        padding: "12px 15px",
+                                        borderBottom: "1px solid #ddd",
+                                        textAlign: "left",
+                                      }}
+                                    >
+                                      Appointment Type
+                                    </th>
+                                    <th
+                                      style={{
+                                        padding: "12px 15px",
+                                        borderBottom: "1px solid #ddd",
+                                        textAlign: "left",
+                                      }}
+                                    >
+                                      price (₹)
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {patient.appointmentDetails.map((appointment, index) => (
+                                    <tr key={index}>
+                                      <td style={{ padding: "12px 15px" }}>{appointment.appointmentId}</td>
+                                      <td style={{ padding: "12px 15px" }}>{appointment.appointmentType}</td>
+                                      <td style={{ padding: "12px 15px" }}>{appointment.appointmentFees}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
 
                           {/* Medicines Section */}
                           {patient.medicines.length > 0 && (
@@ -586,7 +727,7 @@ const filteredData = result.filter((patient) => {
                               >
                                 <strong>
                                   Medicine Total: ₹
-                                  {totals.medicineTotal.toFixed(2)}
+                                  {patient.totalMedicineAmount.toFixed(2)}
                                 </strong>
                               </div>
                             </div>
@@ -733,8 +874,8 @@ const filteredData = result.filter((patient) => {
                               style={{ textAlign: "right", marginTop: "10px" }}
                             >
                               <strong>
-                                Test Total: ₹
-                                {totals.testTotal.toFixed(2)}
+                                Test Total: ₹ {patient.totalTestAmount.toFixed(2)}
+                                {/* {totals.testTotal.toFixed(2)} */}
                               </strong>
                             </div>
                           </div>
@@ -757,7 +898,7 @@ const filteredData = result.filter((patient) => {
                               }}
                             >
                               Grand Total: ₹
-                              {totals.grandTotal.toFixed(2)}
+                              {patient.grandTotal.toFixed(2)}
                             </div>
                             <div>
                               <DownloadTaxInvoice
