@@ -8,6 +8,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  color: #000000; /* Added to make all text black by default */
 }
 
 .print-button-container {
@@ -62,6 +63,28 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+.save-button {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.save-button:hover {
+  background-color: #0d9f6e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
 .whatsapp-icon {
   font-size: 18px;
 }
@@ -81,10 +104,10 @@
 }
 
 .clinic-name {
-  color: white !important;
   font-size: 25px !important;
   font-weight: bold;
   margin-bottom: 4px;
+  color: #ffffff !important; /* Changed from white to black */
 }
 
 .contact-info {
@@ -92,19 +115,26 @@
   flex-direction: column;
   gap: 4px;
   font-size: 14px;
+  color: #ffffff; /* Changed from white to black */
 }
 
 .prescription-content {
   font-size: 14px;
   flex: 1;
+  color: #000000; /* Added to ensure all text is black */
 }
 
 .section-header {
   font-weight: bold;
   font-size: 16px;
   margin-bottom: 8px;
-  margin-top: 4px;
+  margin-top: 16px;
   color: #2563eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: none;
+  padding-left: 0;
 }
 
 .prescription-section {
@@ -114,14 +144,14 @@
 .detail-item {
   margin-top: -10px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 0;
   flex-wrap: wrap;
 }
 
 .detail-label {
-  color: #6b7280;
+  color: #000000; /* Changed from gray to black */
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -130,6 +160,8 @@
 .detail-value {
   font-weight: 500;
   flex: 1;
+  font-size: 13px;
+  color: #000000; /* Added to ensure black text */
 }
 
 .history-row {
@@ -162,7 +194,7 @@
 }
 
 .vital-label {
-  color: #6b7280;
+  color: #000000; /* Changed from gray to black */
   font-size: 12px;
   font-weight: 500;
 }
@@ -170,10 +202,11 @@
 .vital-value {
   font-weight: 500;
   font-size: 13px;
+  color: #000000; /* Added to ensure black text */
 }
 
 .vital-separator {
-  color: #d1d5db;
+  color: #000000; /* Changed from light gray to black */
 }
 
 .investigation-row {
@@ -188,6 +221,8 @@
   padding: 8px;
   background-color: #f9fafb;
   border-radius: 6px;
+  font-size: 13px;
+  color: #000000; /* Added to ensure black text */
 }
 
 .diagnosis-row {
@@ -198,7 +233,7 @@
 
 .diagnosis-tag {
   background-color: #f0f0f0;
-  color: #000;
+  color: #000000; /* Changed from default to explicit black */
   padding: 6px 12px;
   border-radius: 4px;
   font-size: 12px;
@@ -211,6 +246,7 @@
   border-collapse: collapse;
   margin-bottom: 16px;
   font-size: 13px;
+  color: #000000; /* Added to ensure black text */
 }
 
 .medication-table th,
@@ -218,56 +254,69 @@
   border: 1px solid #e5e7eb;
   padding: 8px;
   text-align: left;
+  color: #000000; /* Added to ensure black text */
 }
 
 .medication-table th {
   background-color: #f9fafb;
   font-weight: 600;
+  color: #000000; /* Added to ensure black text */
 }
 
 .table-header {
   font-weight: 600;
   font-size: 13px;
+  color: #000000; /* Added to ensure black text */
 }
 
 .table-cell {
   font-size: 13px;
+  color: #000000; /* Added to ensure black text */
 }
 
 .advice-list {
   list-style-type: none;
   padding-left: 0;
+  margin-top: -10px;
 }
 
 .advice-item {
   display: flex;
   margin-bottom: 8px;
+  align-items: flex-start;
+  color: #000000; /* Added to ensure black text */
 }
 
 .bullet {
   margin-right: 8px;
-  color: #2563eb;
+  color: #000000; /* Changed from blue to black */
+  font-size: 16px;
 }
 
 .follow-up-container {
   background-color: #f8f9fa;
   padding: 12px;
   border-radius: 6px;
-  border-left: 3px solid #6c757d;
 }
 
 .follow-up-date {
   font-weight: bold;
   margin-bottom: 4px;
+  font-size: 14px;
+  color: #000000; /* Added to ensure black text */
 }
 
 .emergency-contact {
   font-size: 13px;
+  color: #000000; /* Added to ensure black text */
 }
 
 .signature {
   text-align: right;
   margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px dashed #d1d5db;
+  color: #000000; /* Added to ensure black text */
 }
 
 .prescription-footer {
@@ -275,7 +324,7 @@
   margin-top: auto;
   padding: 16px 0;
   border-top: 1px solid #e5e7eb;
-  color: #6b7280;
+  color: #000000; /* Changed from gray to black */
   font-size: 12px;
 }
 
@@ -284,15 +333,25 @@
   padding: 12px;
   border-radius: 6px;
   margin-top: 12px;
-  border-left: 3px solid #8b5cf6;
 }
 
 .notes-label {
   font-weight: 600;
   margin-bottom: 4px;
+  font-size: 13px;
+  color: #000000; /* Added to ensure black text */
+}
+
+.notes-content {
+  font-size: 13px;
+  color: #000000; /* Added to ensure black text */
 }
 
 @media (max-width: 768px) {
+  .prescription-container {
+    padding: 16px;
+  }
+  
   .prescription-header {
     flex-direction: column;
     gap: 16px;
@@ -311,6 +370,7 @@
 
   .vitals-row {
     flex-wrap: wrap;
+    gap: 4px;
   }
 
   .vital-separator {
@@ -324,29 +384,60 @@
   }
 }
 
+/* Ensure consistent styling for print */
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  #print-clone,
-  #print-clone * {
-    visibility: visible;
-  }
-  #print-clone {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    max-width: 100%;
-    box-shadow: none;
-    padding: 0;
+  body {
     margin: 0;
+    padding: 0;
+    background: #ffffff;
+    font-size: 12pt; /* Match your screen font size */
   }
+
+  .prescription-container {
+    box-shadow: none !important; /* Remove shadow for print */
+    margin: 0 !important;
+    padding: 10mm; /* Adjust padding to fit A4 page */
+    width: 210mm; /* A4 width */
+    min-height: 297mm; /* A4 height */
+    overflow: visible !important;
+    background: #ffffff;
+  }
+
   .print-button-container {
-    display: none !important;
+    display: none !important; /* Hide buttons during print */
   }
-  .history-row,
-  .diagnosis-row {
-    flex-direction: column;
+
+  /* Ensure fonts and spacing match screen */
+  .prescription-header,
+  .prescription-content,
+  .prescription-footer {
+    font-family: inherit; /* Use same font as screen */
+    line-height: 1.5; /* Match your screen line height */
+  }
+
+  /* Prevent page breaks within critical sections */
+  .prescription-section,
+  .medication-table,
+  .signature {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure table layout is consistent */
+  .medication-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .medication-table th,
+  .medication-table td {
+    border: 1px solid #000; /* Match your screen border style */
+    padding: 8px;
+    text-align: left;
+  }
+
+  /* Ensure no scaling issues */
+  @page {
+    size: A4;
+    margin: 10mm; /* Adjust margin as needed */
   }
 }

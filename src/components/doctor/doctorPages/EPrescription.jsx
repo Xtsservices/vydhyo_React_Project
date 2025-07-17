@@ -24,7 +24,7 @@ import AdviceFollowUp from "./E-AdviceFollowUp";
 import Preview from "./Preview";
 import "../../stylings/EPrescription.css";
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
@@ -39,6 +39,7 @@ const EPrescription = () => {
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [clinicDetails, setClinicDetails] = useState(null);
+  const [selectedClinic, setSelectedClinic] = useState(null);
   const [formData, setFormData] = useState({
     doctorInfo: {
       doctorId: doctorId || "",
@@ -71,7 +72,6 @@ const EPrescription = () => {
     advice: {},
   });
 
-  // Initialize formData with patientData
   useEffect(() => {
     if (patientData) {
       setFormData((prev) => ({
@@ -110,51 +110,36 @@ const EPrescription = () => {
     }));
   };
 
-  const handlePrescriptionAction = async (type, pdfBlob) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not specified";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const getCurrentUserData = async () => {
     try {
-      const formattedData = transformEprescriptionData(formData);
-      const response = await apiPost("/pharmacy/addPrescription", formattedData);
-
-      if (response?.status === 201) {
-        toast.success("Prescription successfully added");
-        navigate("/doctor/doctorPages/Appointments");
-
-        if (type === "print") {
-          window.print();
-        } else if (type === "whatsapp" && pdfBlob) {
-          const prescriptionId = response?.data?.prescriptionId;
-          const formData = new FormData();
-          formData.append("file", pdfBlob, "e-prescription.pdf");
-          formData.append("prescriptionId", prescriptionId);
-
-          const uploadResponse = await apiPost(
-            "/pharmacy/addattachprescription",
-            formData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
-          );
-
-          if (uploadResponse?.status === 200) {
-            toast.success("Attachment uploaded successfully");
-            const message = `Here's my medical prescription from ${formData.doctorInfo?.clinicName}\n` +
-              `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
-              `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
-              `Date: ${formData.doctorInfo?.appointmentDate || "N/A"}`;
-            const url = "https://wa.me/?text=" + encodeURIComponent(message);
-            window.open(url, "_blank");
-          }
-        }
-      } else {
-        toast.error(response?.data?.message || "Failed to add prescription");
-      }
+      const response = await apiGet("/users/getUser");
+      const userData = response.data?.data;
+      const selectedClinic2 =
+        userData?.addresses?.find(
+          (address) =>
+            address.addressId === formData.doctorInfo?.selectedClinicId
+        ) || {};
+      setSelectedClinic(selectedClinic2);
     } catch (error) {
-      console.error("Error in handlePrescriptionAction:", error);
-      toast.error(error.response?.data?.message || "Failed to add prescription");
+      console.error("Error fetching user data:", error);
     }
   };
+
+  useEffect(() => {
+    if (formData?.doctorInfo?.doctorId) {
+      getCurrentUserData();
+    }
+  }, [formData?.doctorInfo?.doctorId]);
 
   function transformEprescriptionData(formData) {
     const { doctorInfo, patientInfo, vitals, diagnosis, advice } = formData;
@@ -218,12 +203,96 @@ const EPrescription = () => {
     };
   }
 
+  const handlePrescriptionAction = async (type, pdfBlob) => {
+    try {
+      const formattedData = transformEprescriptionData(formData);
+      const response = await apiPost("/pharmacy/addPrescription", formattedData);
+
+      if (response?.status === 201) {
+        toast.success("Prescription successfully added");
+        console.log("Prescription Response:", response);
+
+        if (type === "print") {
+          window.print();
+        } else if (type === "whatsapp") {
+          if (!(pdfBlob instanceof Blob)) {
+            console.error("Invalid pdfBlob: Not a Blob", pdfBlob);
+            toast.error("Failed to upload attachment: Invalid file format");
+            return;
+          }
+          if (pdfBlob.type !== "application/pdf") {
+            console.error("Invalid pdfBlob: Not a PDF", { type: pdfBlob.type });
+            toast.error("Failed to upload attachment: Only PDF files are allowed");
+            return;
+          }
+
+          console.log("PDF Blob:", {
+            type: pdfBlob.type,
+            size: pdfBlob.size,
+            name: pdfBlob.name || "e-prescription.pdf",
+          });
+
+          const prescriptionId = response?.data?.prescriptionId;
+          if (!prescriptionId) {
+            console.error("Prescription ID is missing");
+            toast.error("Failed to upload attachment: Prescription ID missing");
+            return;
+          }
+          console.log("Prescription ID:", prescriptionId);
+
+          const formData = new FormData();
+          formData.append("file", pdfBlob, "e-prescription.pdf");
+          formData.append("prescriptionId", prescriptionId);
+
+          console.log("Form Data for Upload:");
+          for (const [key, value] of formData.entries()) {
+            console.log(`${key}:`, value);
+          }
+
+          const uploadResponse = await apiPost(
+            "/pharmacy/addattachprescription",
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+
+          console.log("Upload Response:", uploadResponse);
+
+          if (uploadResponse?.status === 200) {
+            toast.success("Attachment uploaded successfully");
+            const message = `Here's my medical prescription from ${formData.doctorInfo?.clinicName || "Clinic"}\n` +
+              `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
+              `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
+              `Date: ${formData.doctorInfo?.appointmentDate || "N/A"}`;
+            const url = "https://wa.me/?text=" + encodeURIComponent(message);
+            window.open(url, "_blank");
+          } else {
+            toast.error(uploadResponse?.data?.message || "Failed to upload attachment");
+          }
+        } else if (type === "save") {
+          toast.success("Prescription successfully saved");
+          setTimeout(() => {
+            navigate("/doctor/doctorPages/Appointments");
+          }, 3000);
+        }
+      } else {
+        toast.error(response?.data?.message || "Failed to add prescription");
+      }
+    } catch (error) {
+      console.error("Error in handlePrescriptionAction:", error);
+      toast.error(error.response?.data?.message || "Failed to add prescription");
+    }
+  };
+
   const handleConfirm = async () => {
     try {
       setActiveTab("preview");
       setShowPreview(true);
     } catch (error) {
-      console.error("erroraddPrescription", error);
+      console.error("Error generating preview:", error);
       toast.error("Failed to generate preview");
     }
   };
@@ -302,6 +371,7 @@ const EPrescription = () => {
 
   return (
     <div id="eprescription-container" className="eprescription-container">
+      <ToastContainer />
       <div className="eprescription-main">
         <div className="eprescription-tabs">
           <nav style={{ display: "flex", gap: "8px" }}>
@@ -338,7 +408,7 @@ const EPrescription = () => {
                 marginTop: "24px",
               }}
             >
-              <button 
+              <button
                 className="common-button common-cancel-button"
                 onClick={() => navigate(-1)}
               >

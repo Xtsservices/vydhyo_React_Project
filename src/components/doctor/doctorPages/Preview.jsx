@@ -4,7 +4,9 @@ import { FaWhatsapp } from "react-icons/fa";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { apiGet } from "../../api";
-import "../../stylings/Preview.css"; 
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "../../stylings/Preview.css";
 
 const Preview = ({ formData, handlePrescriptionAction }) => {
   const [selectedClinic, setSelectedClinic] = useState(null);
@@ -53,9 +55,28 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
       input.style.padding = originalStyles.padding;
       input.style.margin = originalStyles.margin;
 
-      return canvas.toDataURL("image/png");
+      // Convert canvas to PDF
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, null, "FAST");
+      const pdfBlob = pdf.output("blob");
+
+      console.log("Generated PDF Blob:", {
+        type: pdfBlob.type,
+        size: pdfBlob.size,
+      });
+
+      return pdfBlob;
     } catch (error) {
       console.error("Error generating PDF:", error);
+      toast.error("Failed to generate prescription PDF");
       throw error;
     }
   };
@@ -63,13 +84,50 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
   const handleWhatsAppClick = async () => {
     try {
       const pdfBlob = await generatePDF();
-      handlePrescriptionAction("whatsapp", pdfBlob);
+      if (!pdfBlob) {
+        throw new Error("PDF Blob generation failed");
+      }
+      await handlePrescriptionAction("whatsapp", pdfBlob);
     } catch (error) {
       console.error("Failed to generate PDF for WhatsApp:", error);
+      toast.error("Failed to generate prescription for WhatsApp");
     }
   };
 
-  const handlePrintClick = async () => {
+  const handlePrintClick2 = async () => {
+    try {
+      const pdfBlob = await generatePDF();
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const printWindow = window.open(pdfUrl);
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+      printWindow.onbeforeunload = () => URL.revokeObjectURL(pdfUrl);
+    } catch (error) {
+      console.error("Error printing prescription:", error);
+      toast.error("Failed to print prescription");
+    }
+  };
+
+//   const handlePrintClick = () => {
+//   try {
+//     // Temporarily hide the print, WhatsApp, and save buttons for printing
+//     const buttons = document.querySelectorAll(".print-button-container");
+//     buttons.forEach((button) => (button.style.display = "none"));
+
+//     // Trigger the browser's print dialog
+//     window.print();
+
+//     // Restore the buttons after printing
+//     buttons.forEach((button) => (button.style.display = "flex"));
+//   } catch (error) {
+//     console.error("Error printing prescription:", error);
+//     toast.error("Failed to print prescription");
+//   }
+// };
+
+const handlePrintClick = async () => {
     try {
       // Create a clone of the prescription container
       const originalElement = document.getElementById("prescription-container");
@@ -111,6 +169,22 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     }
   };
 
+
+
+  const handleWhatsAppClick2 = async () => {
+    try {
+      const message = `Here's my medical prescription from ${selectedClinic?.clinicName || "Clinic"}\n` +
+        `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
+        `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
+        `Date: ${formatDate(formData.doctorInfo?.appointmentDate) || "N/A"}`;
+      
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    } catch (error) {
+      console.error("Failed to open WhatsApp:", error);
+      toast.error("Failed to open WhatsApp");
+    }
+  };
+
   const getCurrentUserData = async () => {
     try {
       const response = await apiGet("/users/getUser");
@@ -134,6 +208,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
 
   return (
     <div>
+      <ToastContainer />
       <div id="prescription-container" className="prescription-container">
         <div className="prescription-header">
           <div className="clinic-info">
@@ -228,8 +303,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
               <div className="detail-item">
                 <div className="detail-label">Family History:</div>
                 <div className="detail-value">
-                  {formData.patientInfo?.familyMedicalHistory ||
-                    "Not specified"}
+                  {formData.patientInfo?.familyMedicalHistory || "Not specified"}
                 </div>
               </div>
               <div className="detail-item">
@@ -454,8 +528,13 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             <Printer size={16} style={{ marginRight: "8px" }} />
             Print Prescription
           </button>
-          <button className="whatsapp-button" onClick={handleWhatsAppClick}>
-            {/* <FaWhatsapp className="whatsapp-icon" />  */}
+          <button className="whatsapp-button" 
+          // onClick={handleWhatsAppClick}
+          >
+            <FaWhatsapp className="whatsapp-icon" style={{ marginRight: "8px" }} />
+            Share via WhatsApp
+          </button>
+          <button className="save-button" onClick={() => handlePrescriptionAction("save")}>
             Save
           </button>
         </div>
