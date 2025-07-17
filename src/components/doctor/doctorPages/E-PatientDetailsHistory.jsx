@@ -9,7 +9,7 @@ const capitalizeFirstLetter = (str) => {
 };
 
 const PatientDetailsHistory = ({ formData, updateFormData }) => {
-  console.log("formData====", formData, updateFormData);
+ 
   const location = useLocation();
   
   // Initialize with appointmentReason, but don't allow changes
