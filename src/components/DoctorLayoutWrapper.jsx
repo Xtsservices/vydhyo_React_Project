@@ -3,7 +3,7 @@ import { Layout, Menu, Avatar, Badge, Dropdown } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faRupeeSign,
-  faReceipt ,
+  faReceipt,
   faBars,
   faTachometerAlt,
   faCalendarCheck,
@@ -79,9 +79,7 @@ const DoctorLayoutWrapper = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userID");
         localStorage.removeItem("role");
-        localStorage.removeItem("appointments");
-
-        // console.log("Logout successful:", response.data.message);
+        localStorage.removeItem("appointmwents");
       } catch (error) {
         console.error(
           "Logout API failed:",
@@ -172,7 +170,9 @@ const DoctorLayoutWrapper = () => {
     {
       key: "e_prescription",
       accessKey: "e_prescription",
-      label: <Link to="/doctor/doctorPages/EPrescription">Digital-Prescription</Link>,
+      label: (
+        <Link to="/doctor/doctorPages/EPrescription">Digital-Prescription</Link>
+      ),
       icon: (
         <FontAwesomeIcon
           icon={faFileInvoice} // Changed from faPills to faFileInvoice
@@ -223,7 +223,7 @@ const DoctorLayoutWrapper = () => {
       label: <Link to="/doctor/doctorPages/Billing">Billing</Link>,
       icon: (
         <FontAwesomeIcon
-          icon={faReceipt } // This is actually good for billing as it represents invoices
+          icon={faReceipt} // This is actually good for billing as it represents invoices
           style={{ color: "#ffffff", fontSize: "16px" }}
         />
       ),
@@ -270,7 +270,6 @@ const DoctorLayoutWrapper = () => {
       if (!user.access || !Array.isArray(user.access)) {
         return [];
       }
-      // console.log("accesssssss", user.access);
 
       // Filter menu items based on user access
       return allMenuItems.filter((item) =>
@@ -283,7 +282,6 @@ const DoctorLayoutWrapper = () => {
   };
 
   const menuItems = getFilteredMenuItems();
-  // console.log("Filtered menu items:", menuItems);
 
   // Dropdown menu for profile
   const profileMenu = (
@@ -443,7 +441,7 @@ const DoctorLayoutWrapper = () => {
             position: "fixed",
             left: 0,
             top: 64,
-            zIndex: 1000,
+            zIndex: 1002, // Increase z-index to ensure Sider is above Header
             display: isMobile && collapsed ? "none" : "block",
             background: "#2E4861",
             boxShadow: "2px 0 8px rgba(0,0,0,0.15)",

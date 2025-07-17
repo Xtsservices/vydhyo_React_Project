@@ -14,6 +14,24 @@ const BillingSystem = () => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
+  // Function to calculate age from DOB
+  const calculateAge = (dob) => {
+    if (!dob) return "N/A";
+    try {
+      const [day, month, year] = dob.split("-").map(Number);
+      const dobDate = new Date(year, month - 1, day);
+      const today = new Date(2025, 6, 17); // July 17, 2025
+      let age = today.getFullYear() - dobDate.getFullYear();
+      const monthDiff = today.getMonth() - dobDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+        age--;
+      }
+      return age >= 0 ? age : "N/A";
+    } catch (err) {
+      return "N/A";
+    }
+  };
+
   // Fetch patient data from API
   useEffect(() => {
     const fetchPatients = async () => {
@@ -24,121 +42,69 @@ const BillingSystem = () => {
         if (response.status === 200 && response?.data?.data) {
           const result = response.data.data;
 
-          console.log("Fetched patient data:", result);
-const transformedData = result.map((patient, index) => {
-  const appointments = Array.isArray(patient.appointments) ? patient.appointments : [];
-  const tests = Array.isArray(patient.tests) ? patient.tests : [];
-  const medicines = Array.isArray(patient.medicines) ? patient.medicines : [];
+          const transformedData = result.map((patient, index) => {
+            const appointments = Array.isArray(patient.appointments) ? patient.appointments : [];
+            const tests = Array.isArray(patient.tests) ? patient.tests : [];
+            const medicines = Array.isArray(patient.medicines) ? patient.medicines : [];
 
-  const appointmentDetails = appointments.map((appointment, idx) => ({
-    id: `A${index}${idx}`,
-    appointmentId: appointment.appointmentId,
-    appointmentType: appointment.appointmentType,
-    appointmentFees: appointment?.feeDetails?.finalAmount || 0,
-  }));
+            const appointmentDetails = appointments.map((appointment, idx) => ({
+              id: `A${index}${idx}`,
+              appointmentId: appointment.appointmentId,
+              appointmentType: appointment.appointmentType,
+              appointmentFees: appointment?.feeDetails?.finalAmount || 0,
+            }));
 
-  // Calculate totals
-  const totalTestAmount = tests.reduce((sum, test) => sum + (test?.price || 0), 0);
-  const totalMedicineAmount = medicines.reduce((sum, med) => sum + (med?.price*med?.quantity || 0), 0);
-  const totalAppointmentFees = appointmentDetails.reduce((sum, appt) => sum + (appt?.appointmentFees || 0), 0);
+            // Calculate totals
+            const totalTestAmount = tests.reduce((sum, test) => sum + (test?.price || 0), 0);
+            const totalMedicineAmount = medicines.reduce((sum, med) => sum + (med?.price * med?.quantity || 0), 0);
+            const totalAppointmentFees = appointmentDetails.reduce((sum, appt) => sum + (appt?.appointmentFees || 0), 0);
 
-  return {
-    id: index + 1,
-    patientId: patient.patientId,
-    name: `${patient.firstname} ${patient.lastname}`.trim(),
-    firstname: patient.firstname,
-    lastname: patient.lastname,
-    DOB: patient.DOB,
-    gender: patient.gender,
-    mobile: patient.mobile || "Not Provided",
-    bloodgroup: patient.bloodgroup || "Not Specified",
+            return {
+              id: index + 1,
+              patientId: patient.patientId,
+              name: `${patient.firstname} ${patient.lastname}`.trim(),
+              firstname: patient.firstname,
+              lastname: patient.lastname,
+              age: calculateAge(patient.DOB),
+              gender: patient.gender,
+              mobile: patient.mobile || "Not Provided",
+              bloodgroup: patient.bloodgroup || "Not Specified",
 
-    appointmentDetails,
+              appointmentDetails,
 
-    tests: tests.map((test, idx) => ({
-      id: `T${index}${idx}`,
-      testId: test.testId,
-      labTestID: test.labTestID,
-      name: test.testName,
-      price: test?.price || 0,
-      status:
-        test.status?.charAt(0).toUpperCase() +
-          test.status?.slice(1) || "Unknown",
-      createdDate: test.createdAt
-        ? new Date(test.createdAt).toLocaleDateString()
-        : "N/A",
-    })),
+              tests: tests.map((test, idx) => ({
+                id: `T${index}${idx}`,
+                testId: test.testId,
+                labTestID: test.labTestID,
+                name: test.testName,
+                price: test?.price || 0,
+                status:
+                  test.status?.charAt(0).toUpperCase() +
+                    test.status?.slice(1) || "Unknown",
+                createdDate: test.createdAt
+                  ? new Date(test.createdAt).toLocaleDateString()
+                  : "N/A",
+              })),
 
-    medicines: medicines.map((med, idx) => ({
-      id: `M${index}${idx}`,
-      medicineId: med.medicineId,
-      pharmacyMedID: med.pharmacyMedID,
-      name: med.medName,
-      quantity: med.quantity || 1,
-      price: med.price || 0,
-      status:
-        med.status?.charAt(0).toUpperCase() +
-          med.status?.slice(1) || "Unknown",
-    })),
+              medicines: medicines.map((med, idx) => ({
+                id: `M${index}${idx}`,
+                medicineId: med.medicineId,
+                pharmacyMedID: med.pharmacyMedID,
+                name: med.medName,
+                quantity: med.quantity || 1,
+                price: med.price || 0,
+                status:
+                  med.status?.charAt(0).toUpperCase() +
+                    med.status?.slice(1) || "Unknown",
+              })),
 
-    totalTestAmount,
-    totalMedicineAmount,
-    totalAppointmentFees,
-    grandTotal: totalTestAmount + totalMedicineAmount + totalAppointmentFees,
-  };
-});
+              totalTestAmount,
+              totalMedicineAmount,
+              totalAppointmentFees,
+              grandTotal: totalTestAmount + totalMedicineAmount + totalAppointmentFees,
+            };
+          });
 
-        
-          // const transformedData = result.map((patient, index) => ({
-          //   id: index + 1,
-          //   patientId: patient.patientId,
-          //   name: `${patient.firstname} ${patient.lastname}`.trim(),
-          //   firstname: patient.firstname,
-          //   lastname: patient.lastname,
-          //   DOB: patient.DOB,
-          //   gender: patient.gender,
-          //   mobile: patient.mobile || "Not Provided", // Fallback for missing mobile
-          //   bloodgroup: patient.bloodgroup || "Not Specified",
-          //   appointmentDetails: Array.isArray(patient.appointments)
-          //     ? patient.appointments.map((appointment, idx) => ({
-          //         id: `A${index}${idx}`,
-          //         appointmentId: appointment.appointmentId,
-          //         appointmentType: appointment.appointmentType,
-          //         appointmentFees: appointment?.feeDetails?.finalAmount,
-          //       }))
-          //     : [],
-          //   tests: Array.isArray(patient.tests)
-          //   ? patient.tests.map((test, idx) => ({
-          //       id: `T${index}${idx}`,
-          //       testId: test.testId,
-          //       labTestID: test.labTestID,
-          //       name: test.testName,
-          //       price: test?.price || 0,
-          //       status:
-          //         test.status?.charAt(0).toUpperCase() +
-          //           test.status?.slice(1) || "Unknown",
-          //       createdDate: test.createdAt
-          //         ? new Date(test.createdAt).toLocaleDateString()
-          //         : "N/A",
-          //     }))
-          //   : [],
-
-          // medicines: Array.isArray(patient.medicines)
-          //   ? patient.medicines.map((med, idx) => ({
-          //       id: `M${index}${idx}`,
-          //       medicineId: med.medicineId,
-          //       pharmacyMedID: med.pharmacyMedID,
-          //       name: med.medName,
-          //       quantity: med.quantity || 1,
-          //       price: med.price || 0,
-          //       status:
-          //         med.status?.charAt(0).toUpperCase() +
-          //           med.status?.slice(1) || "Unknown",
-          //     }))
-          //   : [],
-          // }));
-
-          console.log("Transformed patient data:", transformedData);
           setPatients(transformedData);
           setLoading(false);
         } else {
@@ -168,10 +134,6 @@ const transformedData = result.map((patient, index) => {
         (med.status === "Pending" && med.price ? med.quantity * med.price : 0),
       0
     );
-    // const testTotal = patient.tests.reduce(
-    //   (sum, test) => sum + (test.status === "Completed" && test.price ? test.price : 0),
-    //   0
-    // );
     const testTotal = patient.tests.reduce(
       (sum, test) =>
         sum + (test.status === "Pending" && test.price ? test.price : 0),
@@ -180,10 +142,6 @@ const transformedData = result.map((patient, index) => {
     const grandTotal = medicineTotal + testTotal;
     return { medicineTotal, testTotal, grandTotal };
   };
-
-  // const handleMarkAsPaid = (patientId) => {
-  //   setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
-  // };
 
   const handleMarkAsPaid = async (patientId) => {
     const patient = patients.find((p) => p.id === patientId);
@@ -207,24 +165,24 @@ const transformedData = result.map((patient, index) => {
       patientId: patient.patientId,
       doctorId: doctorId,
       tests: pendingTests
-        .filter((test) => test.price > 0) // ✅ Only include tests with price > 0
+        .filter((test) => test.price > 0)
         .map((test) => ({
-          testId: test.testId, // MongoDB _id
+          testId: test.testId,
           labTestID: test.labTestID,
           status: "pending",
           price: test.price,
         })),
       medicines: pendingMedicines
-       .filter((test) => test.price > 0)
-       .map((med) => ({
-        medicineId: med.medicineId, // MongoDB _id
-        pharmacyMedID: med.pharmacyMedID,
-        quantity: med.quantity,
-        status: "pending",
-        price: med.price,
-      })),
+        .filter((med) => med.price > 0)
+        .map((med) => ({
+          medicineId: med.medicineId,
+          pharmacyMedID: med.pharmacyMedID,
+          quantity: med.quantity,
+          status: "pending",
+          price: med.price,
+        })),
     };
-    //validate atleast one test or one medicine
+    //validate at least one test or one medicine
     if (payload?.medicines?.length === 0 && payload?.tests?.length === 0) {
       toast.error("at least one of tests or medicines is provided");
     }
@@ -262,7 +220,6 @@ const transformedData = result.map((patient, index) => {
         throw new Error("Failed to process payment");
       }
     } catch (err) {
-      console.error("Error processing payment:", err);
       setError("Failed to process payment. Please try again.");
     }
   };
@@ -278,7 +235,6 @@ const transformedData = result.map((patient, index) => {
       </div>
     );
 
-  console.log("patients====", patients);
   return (
     <div
       style={{
@@ -365,7 +321,7 @@ const transformedData = result.map((patient, index) => {
                   fontWeight: "bold",
                 }}
               >
-                DOB
+                Age
               </th>
               <th
                 style={{
@@ -377,16 +333,6 @@ const transformedData = result.map((patient, index) => {
               >
                 Gender
               </th>
-              {/* <th
-                style={{
-                  padding: "12px 15px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #ddd",
-                  fontWeight: "bold",
-                }}
-              >
-                Blood Group
-              </th> */}
             </tr>
           </thead>
           <tbody>
@@ -424,9 +370,8 @@ const transformedData = result.map((patient, index) => {
                       {patient.name}
                     </td>
                     <td style={{ padding: "12px 15px" }}>{patient.mobile}</td>
-                    <td style={{ padding: "12px 15px" }}>{patient.DOB}</td>
+                    <td style={{ padding: "12px 15px" }}>{patient.age}</td>
                     <td style={{ padding: "12px 15px" }}>{patient.gender}</td>
-                    {/* <td style={{ padding: "12px 15px" }}>{patient.bloodgroup}</td> */}
                   </tr>
 
                   {expandedPatients[patient.id] && (
@@ -502,16 +447,13 @@ const transformedData = result.map((patient, index) => {
                                 <strong>Last Name:</strong> {patient.lastname}
                               </p>
                               <p style={{ margin: "5px 0" }}>
-                                <strong>DOB:</strong> {patient.DOB}
+                                <strong>Age:</strong> {patient.age}
                               </p>
                               <p style={{ margin: "5px 0" }}>
                                 <strong>Gender:</strong> {patient.gender}
                               </p>
                               <p style={{ margin: "5px 0" }}>
                                 <strong>Mobile:</strong> {patient.mobile}
-                              </p>
-                              <p style={{ margin: "5px 0" }}>
-                                <strong>Blood Group:</strong> {patient.bloodgroup}
                               </p>
                             </div>
                           </div>
@@ -875,7 +817,6 @@ const transformedData = result.map((patient, index) => {
                             >
                               <strong>
                                 Test Total: ₹ {patient.totalTestAmount.toFixed(2)}
-                                {/* {totals.testTotal.toFixed(2)} */}
                               </strong>
                             </div>
                           </div>
@@ -903,7 +844,6 @@ const transformedData = result.map((patient, index) => {
                             <div>
                               <DownloadTaxInvoice
                                 patient={patient}
-                                // disabled={!billingCompleted[patient.id]}
                               />
                               <button
                                 onClick={() => handleMarkAsPaid(patient.id)}
