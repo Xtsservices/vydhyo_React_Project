@@ -94,11 +94,11 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     }
   };
 
-  const handlePrintClick = async () => {
+  const handlePrintClick2 = async () => {
     try {
       const pdfBlob = await generatePDF();
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      const printWindow = window.open(pdfUrl, "_blank");
+      const printWindow = window.open(pdfUrl);
       printWindow.onload = () => {
         printWindow.focus();
         printWindow.print();
@@ -109,6 +109,67 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
       toast.error("Failed to print prescription");
     }
   };
+
+//   const handlePrintClick = () => {
+//   try {
+//     // Temporarily hide the print, WhatsApp, and save buttons for printing
+//     const buttons = document.querySelectorAll(".print-button-container");
+//     buttons.forEach((button) => (button.style.display = "none"));
+
+//     // Trigger the browser's print dialog
+//     window.print();
+
+//     // Restore the buttons after printing
+//     buttons.forEach((button) => (button.style.display = "flex"));
+//   } catch (error) {
+//     console.error("Error printing prescription:", error);
+//     toast.error("Failed to print prescription");
+//   }
+// };
+
+const handlePrintClick = async () => {
+    try {
+      // Create a clone of the prescription container
+      const originalElement = document.getElementById("prescription-container");
+      const clone = originalElement.cloneNode(true);
+
+      // Remove the print button container from the clone
+      const printButtonContainer = clone.querySelector(
+        ".print-button-container"
+      );
+      if (printButtonContainer) {
+        printButtonContainer.remove();
+      }
+
+      // Hide the original element temporarily
+      originalElement.style.visibility = "hidden";
+
+      // Add the clone to the body with print-specific styles
+      clone.style.position = "absolute";
+      clone.style.left = "0";
+      clone.style.top = "0";
+      clone.style.width = "100%";
+      clone.style.maxWidth = "100%";
+      clone.style.boxShadow = "none";
+      clone.style.padding = "0";
+      clone.style.margin = "0";
+      clone.id = "print-clone";
+      document.body.appendChild(clone);
+
+      // Trigger the print dialog
+      window.print();
+
+      // Clean up after printing
+      setTimeout(() => {
+        document.body.removeChild(clone);
+        originalElement.style.visibility = "visible";
+      }, 500);
+    } catch (error) {
+      console.error("Error printing prescription:", error);
+    }
+  };
+
+
 
   const handleWhatsAppClick2 = async () => {
     try {
