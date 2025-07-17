@@ -736,7 +736,7 @@ console.log("999")
           <div className="note-header">General Notes:</div>
           <textarea
             className="note-textarea"
-            placeholder="Enter general notes for all medications..."
+            placeholder="Enter general notes..."
             value={localData.medicationNotes || ""}
             onChange={(e) => {
               const updatedData = {
