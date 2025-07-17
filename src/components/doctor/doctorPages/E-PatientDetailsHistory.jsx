@@ -9,13 +9,13 @@ const capitalizeFirstLetter = (str) => {
 };
 
 const PatientDetailsHistory = ({ formData, updateFormData }) => {
-  console.log("formData====", formData, updateFormData);
+ 
   const location = useLocation();
   
   // Initialize with appointmentReason, but don't allow changes
   const [localData, setLocalData] = useState({
     patientId: location.state?.patientData?.patientId || '',
-    chiefComplaint: location.state?.patientData?.appointmentReason || '', // Prefill and lock
+    chiefComplaint: formData?.chiefComplaint|| '', // Prefill and lock
     pastMedicalHistory: formData?.pastMedicalHistory || '',
     familyMedicalHistory: formData?.familyMedicalHistory || '',
     physicalExamination: formData?.physicalExamination || ''
@@ -31,7 +31,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
         age: patientData.age || '',
         gender: patientData.gender || '',
         mobileNumber: patientData.mobileNumber || '',
-        chiefComplaint: capitalizeFirstLetter(patientData.appointmentReason) || '',
+        chiefComplaint: capitalizeFirstLetter(formData?.chiefComplaint) || '',
         pastMedicalHistory: capitalizeFirstLetter(formData?.pastMedicalHistory) || '',
         familyMedicalHistory: capitalizeFirstLetter(formData?.familyMedicalHistory) || '',
         physicalExamination: capitalizeFirstLetter(formData?.physicalExamination) || ''
@@ -45,8 +45,8 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
 
   // Only allow changes to fields other than chiefComplaint
   const handleChange = (e) => {
+    console.log("handleChange called", e.target.name, e.target.value);
     const { name, value } = e.target;
-    if (name !== 'chiefComplaint') { // Prevent editing chiefComplaint
       const capitalizedValue = capitalizeFirstLetter(value);
       const updatedData = {
         ...localData,
@@ -56,10 +56,11 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
       if (updateFormData) {
         updateFormData(updatedData);
       }
-    }
+    
   };
 
   const patientData = location.state?.patientData || {};
+  console.log(formData, "formData in PatientDetailsHistory");
 
   return (
     <div className="patient-details-container">
@@ -159,7 +160,6 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               name="chiefComplaint"
               value={localData.chiefComplaint}
               onChange={handleChange}
-              readOnly
               className="history-textarea readonly-textarea"
               placeholder="Enter Here..."
               rows={4}

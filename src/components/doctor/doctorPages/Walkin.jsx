@@ -124,7 +124,7 @@ useEffect(() => {
         monthDiff < 0 ||
         (monthDiff === 0 && today.getDate() < dobDate.getDate())
       ) {
-        return age - 1;
+        return String(age - 1);
       }
       return String(age);
     },
