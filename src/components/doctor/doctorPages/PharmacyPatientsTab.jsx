@@ -34,6 +34,7 @@ const PatientsTab = ({ status, updateCount }) => {
   const [editablePrices, setEditablePrices] = useState([]);
   const [saving, setSaving] = useState({});
   const [paying, setPaying] = useState({});
+  const [isPaymentDone, setIsPaymentDone] = useState(false);
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
@@ -210,6 +211,7 @@ async function filterPatientsDAta(data) {
 };
 
   const handlePayment = async (patientId) => {
+    setIsPaymentDone(true)
     try {
       setPaying((prev) => ({ ...prev, [patientId]: true }));
       const patient = patientData.find((p) => p.patientId === patientId);
@@ -254,6 +256,7 @@ async function filterPatientsDAta(data) {
       }
     } catch (error) {
       console.error("Error processing payment:", error);
+      setIsPaymentDone(false);
       message.error(
         error.response?.data?.message || "Failed to process payment"
       );
@@ -515,6 +518,7 @@ async function filterPatientsDAta(data) {
                           onConfirm={() => handlePayment(record.patientId)}
                           okText="Payment Done"
                           cancelText="Cancel"
+                          disabled={isPaymentDone ? true : false}
                         >
                           <Button
                             type="primary"
