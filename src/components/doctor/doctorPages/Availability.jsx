@@ -1112,18 +1112,6 @@ const AvailabilityScreen = () => {
                 </Tag>
               </Space>
             </div>
-
-            {/* Save Button */}
-            <div style={{ textAlign: "right", marginTop: 24 }}>
-              <Button
-                type="primary"
-                size="large"
-                onClick={handleUpdateSlots}
-                style={{ width: 150, fontWeight: "bold" }}
-              >
-                Save Changes
-              </Button>
-            </div>
           </Card>
         </Spin>
       </div>
