@@ -18,7 +18,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const [testOptions, setTestOptions] = useState([]);
   const [testInputValue, setTestInputValue] = useState("");
 
-  const [localData, setLocalData] = useState({
+  const [localData2, setLocalData2] = useState({
     diagnosisList: "",
     selectedTests: [],
     medications: [
@@ -35,6 +35,17 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       // },
     ],
   });
+
+   const [localData, setLocalData] = useState({
+    diagnosisList: formData?.diagnosisList || "",
+    selectedTests: formData?.selectedTests || [],
+    medications: formData?.medications && formData.medications.length > 0
+      ? formData.medications
+      : [],
+    testNotes: formData?.testNotes || "",
+    medicationNotes: formData?.medicationNotes || "",
+  });
+
 
   const timingOptions = [
     "Before Breakfast",
@@ -736,7 +747,7 @@ console.log("999")
           <div className="note-header">General Notes:</div>
           <textarea
             className="note-textarea"
-            placeholder="Enter general notes for all medications..."
+            placeholder="Enter general notes..."
             value={localData.medicationNotes || ""}
             onChange={(e) => {
               const updatedData = {

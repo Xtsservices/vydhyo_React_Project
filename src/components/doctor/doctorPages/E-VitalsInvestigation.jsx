@@ -61,6 +61,12 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
     const normalizedValue = value === '' ? '' : Number(value) < 0 ? '' : String(value).trim();
     const updatedData = { ...localData, [field]: normalizedValue };
 
+    // Combine bpSystolic and bpDiastolic into bp
+  if (field === 'bpSystolic' || field === 'bpDiastolic') {
+    const systolic = field === 'bpSystolic' ? normalizedValue : localData.bpSystolic;
+    const diastolic = field === 'bpDiastolic' ? normalizedValue : localData.bpDiastolic;
+    updatedData.bp = (systolic && diastolic) ? `${systolic}/${diastolic}` : '';
+  }
     if (field === 'weight' || field === 'height') {
       updatedData.bmi = calculateBMI(
         field === 'weight' ? normalizedValue : updatedData.weight,
