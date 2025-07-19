@@ -72,6 +72,82 @@ const EPrescription = () => {
     advice: {},
   });
 
+    const fetchPrescription = async () => {
+    if (!patientData?.appointmentId) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await apiGet(`/pharmacy/getEPrescriptionByAppointmentId/${patientData.appointmentId}`);
+      if (response.data.success && response.data.data) {
+        const prescription2 = response.data.data;
+        const prescription = response.data.data[0]; // Select the first prescription
+        console.log("response====",response)
+        console.log("prescription2====",prescription2)
+        console.log("prescription====",prescription)
+        setFormData({
+          doctorInfo: {
+            ...formData.doctorInfo,
+            doctorId: prescription.doctorId || doctorId,
+            selectedClinicId: prescription.addressId || "",
+            appointmentDate: patientData.appointmentDate || "",
+            appointmentStartTime: patientData.appointmentTime || "",
+          },
+          patientInfo: {
+            patientId: prescription.userId || patientData.patientId || "",
+            patientName: prescription.patientInfo?.patientName || patientData.patientName || "",
+            age: prescription.patientInfo?.age || patientData.age || "",
+            gender: prescription.patientInfo?.gender || patientData.gender || "",
+            mobileNumber: prescription.patientInfo?.mobileNumber || patientData.mobileNumber || "",
+            chiefComplaint: prescription.patientInfo?.chiefComplaint || patientData.appointmentReason || "",
+            pastMedicalHistory: prescription.patientInfo?.pastMedicalHistory || "",
+            familyMedicalHistory: prescription.patientInfo?.familyMedicalHistory || "",
+            physicalExamination: prescription.patientInfo?.physicalExamination || "",
+          },
+          vitals: {
+            bp: prescription.vitals?.bp || "",
+            pulseRate: prescription.vitals?.pulseRate || "",
+            respiratoryRate: prescription.vitals?.respiratoryRate || "",
+            temperature: prescription.vitals?.temperature || "",
+            spo2: prescription.vitals?.spo2 || "",
+            height: prescription.vitals?.height || "",
+            weight: prescription.vitals?.weight || "",
+            bmi: prescription.vitals?.bmi || "",
+            investigationFindings: prescription.vitals?.investigationFindings || "",
+          },
+          diagnosis: {
+            diagnosisList: prescription.diagnosis?.diagnosisNote || "",
+            selectedTests: prescription.diagnosis?.selectedTests || [],
+            medications: prescription.diagnosis?.medications.map(med => ({
+              ...med,
+              id: Date.now() + Math.random(), // Add unique ID for UI rendering
+              timings: typeof med.timings === "string" ? med.timings.split(", ") : med.timings,
+            })) || [],
+            testNotes: prescription.diagnosis?.testsNote || "",
+            medicationNotes: prescription.diagnosis?.PrescribeMedNotes || "",
+          },
+          advice: {
+            advice: prescription.advice?.advice || "",
+            followUpDate: prescription.advice?.followUpDate || "",
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching prescription:", error);
+      toast.error("Failed to load existing prescription");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if(user){
+
+      fetchPrescription()
+    }
+  },[user])
+
   useEffect(() => {
     if (patientData) {
       setFormData((prev) => ({
