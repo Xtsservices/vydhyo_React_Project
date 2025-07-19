@@ -237,12 +237,12 @@ const { Dragger } = Upload;
     {
       key: "1",
       label: "Pending Patients",
-      children: <PatientsTab status={"pending"} updateCount={updateCount} />,
+      children: <PatientsTab status={"pending"} updateCount={updateCount} searchQuery={searchQuery} />,
     },
     {
       key: "2",
       label: "Completed Patients",
-      children: <PatientsTab status={"completed"} updateCount={updateCount} />,
+      children: <PatientsTab status={"completed"} updateCount={updateCount} searchQuery={searchQuery} />,
     },
     {
       key: "3",
@@ -300,10 +300,12 @@ const { Dragger } = Upload;
           </div>
 
           <Input
-            placeholder="Search Patient by Mobile Number"
+            placeholder="Search PatientId"
             prefix={<SearchOutlined />}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+
+              value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value.trim())}
+  allowClear
             className="pharmacy-search"
           />
         </Header>

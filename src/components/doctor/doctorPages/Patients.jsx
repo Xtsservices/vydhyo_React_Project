@@ -54,7 +54,7 @@ const MyPatients = () => {
     return moment().diff(moment(dob, "DD-MM-YYYY"), "years").toString();
   };
 
-  const fetchPatients = useCallback(async () => {
+const fetchPatients = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
@@ -64,7 +64,7 @@ const MyPatients = () => {
       }
 
       const response = await apiGet(
-        `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
+       `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
       );
       const data = response.data;
 
@@ -72,57 +72,64 @@ const MyPatients = () => {
 
       let patientsData = [];
 
-      if (response.status === 200 && data.data) {
-        const appointmentsData = Array.isArray(data.data)
-          ? data.data
-          : [data.data];
+     if (response.status === 200 && data.data) {
+  const appointmentsData = Array.isArray(data.data)
+    ? data.data
+    : [data.data];
 
-        const patientsDataUnsorted = appointmentsData.map((appointment) => ({
-          id:
-            appointment.userId ||
-            `P-${Math.random().toString(36).substr(2, 6)}`,
-          appointmentId: appointment.appointmentId || "N/A",
-          name: appointment.patientName || "N/A",
-          gender: appointment.patientDetails?.gender || "N/A",
-          age: appointment.patientDetails?.dob
-            ? calculateAge(appointment.patientDetails.dob)
-            : "N/A",
-          phone: appointment.patientDetails?.mobile || "N/A",
-          lastVisit: appointment.appointmentDate
-            ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
-            : "N/A",
-          appointmentType: appointment.appointmentType || "N/A",
-          status:
-            appointment.appointmentType === "New-Walkin" ||
-            appointment.appointmentType === "new-walkin"
-              ? "New Patient"
-              : "Follow-up",
-          department: appointment.appointmentDepartment || "N/A",
-          appointmentTime: appointment.appointmentTime || "N/A",
-          appointmentStatus: appointment.appointmentStatus || "N/A",
-          appointmentReason: appointment.appointmentReason || "N/A",
-          appointmentCount: 1,
-          allAppointments: [appointment],
-          ePrescription: appointment.ePrescription || null,
-        }));
+  const patientsDataUnsorted = appointmentsData.map((appointment) => ({
+    id: appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`,
+    appointmentId: appointment.appointmentId || "N/A",
+    name: appointment.patientName || "N/A",
+    gender: appointment.patientDetails?.gender || "N/A",
+    age: appointment.patientDetails?.dob
+      ? calculateAge(appointment.patientDetails.dob)
+      : "N/A",
+    phone: appointment.patientDetails?.mobile || "N/A",
+    lastVisit: appointment.appointmentDate
+      ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
+      : "N/A",
+    appointmentType: appointment.appointmentType || "N/A",
+    status:
+      appointment.appointmentType === "New-Walkin" ||
+      appointment.appointmentType === "new-walkin"
+        ? "New Patient"
+        : "Follow-up",
+    department: appointment.appointmentDepartment || "N/A",
+    appointmentTime: appointment.appointmentTime || "N/A",
+    appointmentStatus: appointment.appointmentStatus || "N/A",
+    appointmentReason: appointment.appointmentReason || "N/A",
+    appointmentCount: 1,
+    allAppointments: [appointment],
+  }));
 
-        // Sorting by date (desc) then by userId (desc)
-        patientsDataUnsorted.sort((a, b) => {
-          const dateA = moment(a.lastVisit, "DD MMMM YYYY");
-          const dateB = moment(b.lastVisit, "DD MMMM YYYY");
+  // 🔽 Sorting by date (desc) then by userId (desc)
+  patientsDataUnsorted.sort((a, b) => {
 
-          if (dateA.isBefore(dateB)) return 1;
-          if (dateA.isAfter(dateB)) return -1;
+    const getNumericId = (id) => parseInt(id.replace(/\D/g, ''), 10);
 
-          // Dates are same, now compare ID (assuming alphanumeric)
-          return b.id.localeCompare(a.id); // latest (higher) id first
-        });
+  const numA = getNumericId(a.id);
+  const numB = getNumericId(b.id);
 
-        patientsData = patientsDataUnsorted;
+  return numB - numA;
+    // const dateA = moment(a.lastVisit, "DD MMMM YYYY");
+    // const dateB = moment(b.lastVisit, "DD MMMM YYYY");
 
-        setPatients(patientsData);
-        setFilteredPatients(patientsData);
-      }
+    // if (dateA.isBefore(dateB)) return 1;
+    // if (dateA.isAfter(dateB)) return -1;
+
+    // // Dates are same, now compare ID (assuming alphanumeric)
+    // return b.id.localeCompare(a.id); // latest (higher) id first
+  });
+
+  patientsData = patientsDataUnsorted;
+
+  setPatients(patientsData);
+  setFilteredPatients(patientsData);
+}
+
+
+      
     } catch (error) {
       console.error("Error fetching patients:", error);
       message.error("Failed to fetch patients data. Please try again.");
@@ -383,6 +390,7 @@ const MyPatients = () => {
     setCurrentPage(1);
   }, [patients, searchText, searchField, sortBy]);
 
+  console.log("ePrescriptionData",ePrescriptionData)
   return (
     <div style={styles.container}>
       <div style={styles.header}>

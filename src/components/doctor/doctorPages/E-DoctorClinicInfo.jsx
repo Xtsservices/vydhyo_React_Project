@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import '../../stylings/EPrescription.css';
+import {apiGet} from "../../api"
 
 const DoctorClinicInfo = ({ formData, updateFormData }) => {
   const user = useSelector((state) => state.currentUserData);
@@ -9,11 +10,9 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
 
   console.log("user data==========",user)
   // Get only active clinic addresses
-  const allClinics = (user?.addresses?.filter(address => 
-    address.type === "Clinic" && address.status === "Active"
-  ) || []);
+const [allClinics, setAllClinics] = useState()
   
-  console.log("allClinics====", allClinics)
+  
   const [localData, setLocalData] = useState({
     doctorId: doctorId,
     selectedClinicId: '',
@@ -22,7 +21,30 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
     appointmentEndTime: ''
   });
 
+   const fetchDoctorData = async () => {
+      console.log(doctorId, "curetnuserid")
+      try {
+        const response = await apiGet(`/users/getUser?userId=${doctorId}`);
+        const userData = response.data?.data;
+  console.log(userData, "userdetais")
+        if (userData) {
+  const allClinics = (userData?.addresses?.filter(address => 
+    address.type === "Clinic" && address.status === "Active"
+  ) || []);
+
+  setAllClinics(allClinics)
+        }
+      } catch (error) {
+        console.error("Error fetching doctor data:", error);
+       
+      } 
+    };
+
+  
+
   useEffect(() => {
+
+fetchDoctorData()
     if (formData && Object.keys(formData).length > 0) {
       setLocalData(formData);
     } else if (user) {
@@ -46,7 +68,10 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
       setLocalData(initialData);
       updateFormData(initialData);
     }
+    
   }, [user, formData]);
+
+  console.log("allClinics====", allClinics)
 
   // In DoctorClinicInfo component
 const handleClinicChange = (clinicId) => {
@@ -85,7 +110,7 @@ const handleClinicChange = (clinicId) => {
   };
 
   // Get the selected clinic for display purposes
-  const selectedClinic = allClinics.find(clinic => clinic.addressId === localData.selectedClinicId);
+  const selectedClinic = allClinics?.find(clinic => clinic.addressId === localData.selectedClinicId);
 
   console.log("local====", localData)
   return (

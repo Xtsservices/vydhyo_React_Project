@@ -16,6 +16,8 @@ import {
 import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -139,36 +141,93 @@ const LabPatientManagement = ({ status, updateCount, searchValue}) => {
     );
   };
 
-  const handlePriceSave = async (patientId, testId, testName) => {
-    try {
-      setSaving((prev) => ({ ...prev, [testId]: true }));
-      const patient = patients.find((p) => p.patientId === patientId);
-      const test = patient.tests.find((t) => t._id === testId);
-      const timmeredtestName = testName.trim();
-      const price = test.price;
+//   const handlePriceSave = async (patientId, testId, testName) => {
+//     try {
+//       setSaving((prev) => ({ ...prev, [testId]: true }));
+//       const patient = patients.find((p) => p.patientId === patientId);
+//       const test = patient.tests.find((t) => t._id === testId);
+//       const timmeredtestName = testName.trim();
+//       const price = test.price;
 
-      if (price === null || price === undefined) {
-        message.error("Please enter a valid price");
-        return;
-      }
+//       if (price === null || price === undefined) {
+//         message.error("Please enter a valid price");
+//         return;
+//       }
     
-      await apiPost(`/lab/updatePatientTestPrice`, {
-        testId,
-        patientId,
-        price,
-        doctorId,
-        testName:timmeredtestName,
-      });
+//       await apiPost(`/lab/updatePatientTestPrice`, {
+//         testId,
+//         patientId,
+//         price,
+//         doctorId,
+//         testName:timmeredtestName,
+//       });
+// toast.success("Price updated successfully")
+//       message.success("Price updated successfully");
+//       setEditablePrices((prev) => prev.filter((id) => id !== testId));
+//     } catch (error) {
+//       console.error("Error updating test price:", error);
+//       toast.error("Failed to update Price")
+//       message.error("Failed to update price");
+//     } finally {
+//       setSaving((prev) => ({ ...prev, [testId]: false }));
+//     }
+//   };
+const handlePriceSave = async (patientId, testId, testName) => {
+  try {
+    setSaving((prev) => ({ ...prev, [testId]: true }));
 
-      message.success("Price updated successfully");
-      setEditablePrices((prev) => prev.filter((id) => id !== testId));
-    } catch (error) {
-      console.error("Error updating test price:", error);
-      message.error("Failed to update price");
-    } finally {
-      setSaving((prev) => ({ ...prev, [testId]: false }));
+    const patient = patients.find((p) => p.patientId === patientId);
+    if (!patient) {
+      toast.error("Patient not found");
+      return;
     }
-  };
+
+    const test = patient.tests.find((t) => t._id === testId);
+    if (!test) {
+      toast.error("Test not found");
+      return;
+    }
+
+    const trimmedTestName = testName?.trim();
+    const price = test.price;
+
+    if (price === null || price === undefined || isNaN(price) || price < 0) {
+      toast.error("Please enter a valid price");
+      return;
+    }
+
+    const response = await apiPost(`/lab/updatePatientTestPrice`, {
+      testId,
+      patientId,
+      price,
+      doctorId,
+      testName: trimmedTestName,
+    });
+
+    
+
+    // Optional: check if API returned success status
+    if (response?.success || response?.status === 200) {
+      console.log(response, " test price update")
+      toast.success("Price updated successfully");
+    } else {
+      throw new Error(response?.message || "Unknown server error");
+    }
+
+    setEditablePrices((prev) => prev.filter((id) => id !== testId));
+  } catch (error) {
+    console.error("Error updating test price:", error);
+    
+    const errorMessage =
+      error?.response?.data?.message ||
+      error?.message ||
+      "Failed to update price";
+
+    toast.error(errorMessage);
+  } finally {
+    setSaving((prev) => ({ ...prev, [testId]: false }));
+  }
+};
 
   const handlePayment = async (patientId) => {
     try {
@@ -200,6 +259,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue}) => {
       if (response.status === 200) {
         updateCount();
         message.success("Payment processed successfully");
+        toast.success("Payment done successfully")
         await getAllTestsPatientsByDoctorID();
       }
     } catch (error) {
