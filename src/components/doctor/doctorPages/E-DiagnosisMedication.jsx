@@ -18,34 +18,16 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const [testOptions, setTestOptions] = useState([]);
   const [testInputValue, setTestInputValue] = useState("");
 
-  const [localData2, setLocalData2] = useState({
-    diagnosisList: "",
-    selectedTests: [],
-    medications: [
-      // {
-      //   id: Date.now(),
-      //   medName: "",
-      //   quantity: null,
-      //    medicineType: null,
-      //   dosage: "",
-      //   duration: null,
-      //   timings: [],
-      //   frequency: null,
-      //   notes: "",
-      // },
-    ],
-  });
-
-   const [localData, setLocalData] = useState({
+  const [localData, setLocalData] = useState({
     diagnosisList: formData?.diagnosisList || "",
     selectedTests: formData?.selectedTests || [],
-    medications: formData?.medications && formData.medications.length > 0
-      ? formData.medications
-      : [],
+    medications:
+      formData?.medications && formData.medications.length > 0
+        ? formData.medications
+        : [],
     testNotes: formData?.testNotes || "",
     medicationNotes: formData?.medicationNotes || "",
   });
-
 
   const timingOptions = [
     "Before Breakfast",
@@ -76,12 +58,19 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const fetchInventory = async () => {
     try {
       const response = await apiGet("/pharmacy/getAllMedicinesByDoctorID");
-      setMedInventory(response.data.data || []);
+      const medicines = response.data.data || [];
+
+      // Sort medicines alphabetically by medName
+      const sortedMedicines = [...medicines].sort((a, b) =>
+        a.medName.localeCompare(b.medName)
+      );
+
+      setMedInventory(sortedMedicines);
       setMedicineOptions(
-        response.data.data?.map((med) => ({
+        sortedMedicines.map((med) => ({
           value: med.medName,
           label: med.medName,
-        })) || []
+        }))
       );
     } catch (error) {
       console.error("Error fetching inventory:", error);
@@ -95,12 +84,19 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     }
     try {
       const response = await apiGet(`/lab/getTestsByDoctorId/${doctorId}`);
-      setTestList(response.data.data || []);
+      const tests = response.data.data || [];
+      
+      // Sort tests alphabetically by testName
+      const sortedTests = [...tests].sort((a, b) => 
+        a.testName.localeCompare(b.testName)
+      );
+      
+      setTestList(sortedTests);
       setTestOptions(
-        response.data.data?.map((test) => ({
+        sortedTests.map((test) => ({
           value: test.testName,
           label: test.testName,
-        })) || []
+        }))
       );
     } catch (error) {
       console.error("Error fetching tests:", error);
@@ -115,40 +111,13 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   }, [user, doctorId]);
 
   const handleDiagnosisChange = (e) => {
-  const capitalizedValue = e.target.value.toUpperCase(); 
+    const capitalizedValue = e.target.value.toUpperCase();
     const updatedData = {
       ...localData,
-    diagnosisList: capitalizedValue,
+      diagnosisList: capitalizedValue,
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
-  };
-
-  const addTest2 = (testName) => {
-    if (!testName.trim()) {
-      toast.error("Please enter a valid test name");
-      return;
-    }
-
-    if (localData.selectedTests.some((test) => test.testName === testName)) {
-      toast.error("This test is already added");
-      return;
-    }
-
-    const selectedTest = testList.find((test) => test.testName === testName);
-    const newTest = {
-      testName: testName,
-      testInventoryId: selectedTest ? selectedTest.id : null,
-    };
-
-    const updatedData = {
-      ...localData,
-      selectedTests: [...localData.selectedTests, newTest],
-    };
-    setLocalData(updatedData);
-    updateFormData(updatedData);
-    setTestInputValue("");
-    toast.success("Test added successfully");
   };
 
   const addTest = () => {
@@ -157,12 +126,16 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       return;
     }
 
-    if (localData.selectedTests.some((test) => test.testName === testInputValue)) {
+    if (
+      localData.selectedTests.some((test) => test.testName === testInputValue)
+    ) {
       toast.error("This test is already added");
       return;
     }
 
-    const selectedTest = testList.find((test) => test.testName === testInputValue);
+    const selectedTest = testList.find(
+      (test) => test.testName === testInputValue
+    );
     const newTest = {
       testName: testInputValue,
       testInventoryId: selectedTest ? selectedTest.id : null,
@@ -190,7 +163,8 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   };
 
   const validateDosage = (dosage) => {
-    const dosageRegex = /^\d+\s*(mg|ml|g|tablet|tab|capsule|cap|spoon|drop)s?$/i;
+    const dosageRegex =
+      /^\d+\s*(mg|ml|g|tablet|tab|capsule|cap|spoon|drop)s?$/i;
     return dosageRegex.test(dosage);
   };
 
@@ -203,7 +177,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       toast.error("Please enter a valid quantity greater than 0");
       return false;
     }
-     if (!medication.medicineType) {
+    if (!medication.medicineType) {
       toast.error("Please select a medicine type");
       return false;
     }
@@ -219,11 +193,18 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       toast.error("Please select a frequency");
       return false;
     }
-    if (medication.frequency !== "SOS" && 
-        medication.timings.length !== medication.frequency.split('-').filter(x => x === '1').length) {
+    if (
+      medication.frequency !== "SOS" &&
+      medication.timings.length !==
+        medication.frequency.split("-").filter((x) => x === "1").length
+    ) {
       toast.error(
-        `Please select exactly ${medication.frequency.split('-').filter(x => x === '1').length} timing${
-          medication.frequency.split('-').filter(x => x === '1').length > 1 ? "s" : ""
+        `Please select exactly ${
+          medication.frequency.split("-").filter((x) => x === "1").length
+        } timing${
+          medication.frequency.split("-").filter((x) => x === "1").length > 1
+            ? "s"
+            : ""
         } to match the frequency`
       );
       return false;
@@ -232,23 +213,20 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   };
 
   const addMedication = () => {
-    console.log("first")
     const lastMedication =
       localData.medications[localData.medications.length - 1];
-      console.log("localData==",localData)
     if (
       localData.medications.length > 0 &&
       !validateMedication(lastMedication)
     ) {
-      console.log("222")
       return;
     }
-console.log("999")
+
     const newMedication = {
       id: Date.now(),
       medName: "",
       quantity: null,
-        medicineType: null,
+      medicineType: null,
       dosage: "",
       duration: null,
       timings: [],
@@ -287,21 +265,22 @@ console.log("999")
             updatedMed = {
               ...updatedMed,
               medInventoryId: selectedMed ? selectedMed._id : null,
-              // id: selectedMed._id,
               price: selectedMed.price,
             };
           } else {
             updatedMed.medInventoryId = null;
-            // updatedMed.id = null;
             updatedMed.price = null;
           }
         }
 
-          // Update quantity based on duration and timings
+        // Update quantity based on duration and timings
         if (field === "duration" || field === "timings") {
           const newDuration = field === "duration" ? value : med.duration;
           const newTimings = field === "timings" ? value : med.timings;
-          updatedMed.quantity = newDuration && newTimings.length ? newDuration * newTimings.length : null;
+          updatedMed.quantity =
+            newDuration && newTimings.length
+              ? newDuration * newTimings.length
+              : null;
         }
 
         return updatedMed;
@@ -325,20 +304,22 @@ console.log("999")
           return {
             ...med,
             frequency: value,
-            timings: []
+            timings: [],
           };
         }
 
         // Calculate how many timings we need based on frequency
-        const requiredTimingsCount = value.split('-').filter(x => x === '1').length;
-        
+        const requiredTimingsCount = value
+          .split("-")
+          .filter((x) => x === "1").length;
+
         // Filter existing timings to keep only the first X that match the new frequency count
         const filteredTimings = med.timings.slice(0, requiredTimingsCount);
-        
+
         return {
           ...med,
           frequency: value,
-          timings: filteredTimings
+          timings: filteredTimings,
         };
       }
       return med;
@@ -352,8 +333,14 @@ console.log("999")
     updateFormData(updatedData);
   };
 
- const medicineTypeOptions = ["Tablet", "Capsule", "Syrup", "Injection", "Cream", "Drops"];
-  
+  const medicineTypeOptions = [
+    "Tablet",
+    "Capsule",
+    "Syrup",
+    "Injection",
+    "Cream",
+    "Drops",
+  ];
 
   return (
     <div className="common-container">
@@ -377,11 +364,7 @@ console.log("999")
         <div style={{ marginBottom: "16px" }}>
           <AutoComplete
             options={testOptions}
-            style={{ width: "80%", marginRight:'10px' }}
-            // onSelect={(value) => {
-            //   addTest(value);
-            //   setTestInputValue("");
-            // }}
+            style={{ width: "80%", marginRight: "10px" }}
             onChange={(value) => setTestInputValue(value)}
             value={testInputValue}
             placeholder="Enter or search test name"
@@ -495,13 +478,6 @@ console.log("999")
             </div>
             <h3 className="medications-title">PRESCRIBED MEDICATIONS</h3>
           </div>
-
-          <button onClick={addMedication} className="add-medication-button">
-            <Plus
-              style={{ width: "16px", height: "16px", marginRight: "4px" }}
-            />
-            Add Medicine
-          </button>
         </div>
 
         {/* Medications List */}
@@ -510,7 +486,6 @@ console.log("999")
             <div key={medication.id} className="medication-item">
               {/* First Row - Medicine Name, Quantity */}
               <div className="medication-row">
-                
                 <div>
                   <label
                     style={{
@@ -540,35 +515,35 @@ console.log("999")
                   />
                 </div>
 
-<div style={{ flex: 1 }}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                }}
-              >
-                Medicine Type
-              </label>
-              <Select
-                value={medication.medicineType || undefined}
-                onChange={(value) =>
-                  updateMedication(medication.id, "medicineType", value)
-                }
-                style={{ width: "100%" }}
-                placeholder="Select type"
-                allowClear
-              >
-                {medicineTypeOptions.map((option) => (
-                  <Option key={option} value={option}>
-                    {option}
-                  </Option>
-                ))}
-              </Select>
-            </div>
-            
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                      color: "#6b7280",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Medicine Type
+                  </label>
+                  <Select
+                    value={medication.medicineType || undefined}
+                    onChange={(value) =>
+                      updateMedication(medication.id, "medicineType", value)
+                    }
+                    style={{ width: "100%" }}
+                    placeholder="Select type"
+                    allowClear
+                  >
+                    {medicineTypeOptions.map((option) => (
+                      <Option key={option} value={option}>
+                        {option}
+                      </Option>
+                    ))}
+                  </Select>
+                </div>
+
                 <div>
                   <label
                     style={{
@@ -582,19 +557,15 @@ console.log("999")
                     Quantity
                   </label>
                   <InputNumber
-                    // value={medication.quantity}
-                     value={medication.duration && medication.timings ? medication.duration * medication.timings.length : 0}
- 
-                    // onChange={(value) =>
-                    //   updateMedication(medication.id, "quantity", value)
-                    // }
+                    value={
+                      medication.duration && medication.timings
+                        ? medication.duration * medication.timings.length
+                        : 0
+                    }
                     style={{ width: "100%" }}
-                    // min={1}
-                     disabled
+                    disabled
                   />
                 </div>
-
-                  
 
                 {localData.medications.length > 1 && (
                   <button
@@ -678,7 +649,13 @@ console.log("999")
                     style={{ width: "100%" }}
                     allowClear
                     disabled={medication.frequency === "SOS"}
-                    maxTagCount={medication.frequency ? medication.frequency.split('-').filter(x => x === '1').length : 3}
+                    maxTagCount={
+                      medication.frequency
+                        ? medication.frequency
+                            .split("-")
+                            .filter((x) => x === "1").length
+                        : 3
+                    }
                   >
                     {timingOptions.map((option) => (
                       <Option key={option} value={option}>
@@ -702,7 +679,9 @@ console.log("999")
                   </label>
                   <Select
                     value={medication.frequency}
-                    onChange={(value) => updateMedicationFrequency(medication.id, value)}
+                    onChange={(value) =>
+                      updateMedicationFrequency(medication.id, value)
+                    }
                     style={{ width: "100%" }}
                     placeholder="Select frequency"
                   >
@@ -723,12 +702,14 @@ console.log("999")
                   placeholder="Enter specific notes for this medication..."
                   value={medication.notes || ""}
                   onChange={(e) => {
-                    const updatedMedications = localData.medications.map(med => {
-                      if (med.id === medication.id) {
-                        return { ...med, notes: e.target.value };
+                    const updatedMedications = localData.medications.map(
+                      (med) => {
+                        if (med.id === medication.id) {
+                          return { ...med, notes: e.target.value };
+                        }
+                        return med;
                       }
-                      return med;
-                    });
+                    );
                     const updatedData = {
                       ...localData,
                       medications: updatedMedications,
@@ -740,6 +721,17 @@ console.log("999")
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Add Medicine Button - Now placed below all medication forms */}
+        <div style={{ marginTop: "16px", textAlign: "right" }}>
+          <Button 
+            type="primary" 
+            onClick={addMedication}
+            icon={<Plus style={{ width: "16px", height: "16px" }} />}
+          >
+            Add Medicine
+          </Button>
         </div>
 
         {/* General Notes Box for Medications */}

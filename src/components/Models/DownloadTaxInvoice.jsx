@@ -1,5 +1,7 @@
 import React from "react";
 
+const logo = "../assets/logo.png"; // Path to your logo image
+
 const DownloadTaxInvoice = ({ patient, user }) => {
   const calculateTotals = (patient) => {
     const completedMedicines =
@@ -437,6 +439,7 @@ const DownloadTaxInvoice = ({ patient, user }) => {
               <p>Thank you for choosing Vydhyo</p>
               <div class="powered-by">
                 <img src="/logooo.png" alt="Vydhyo Logo" class="footer-logo">
+                <img src={logo} alt="Vydhyo Logo" class="footer-logo">
                 <span>Powered by Vydhyo</span>
               </div>
             </div>
