@@ -34,7 +34,26 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
 
   useEffect(() => {
     if (formData && Object.keys(formData).length > 0) {
-      setLocalData(formData);
+      const [bpSystolic, bpDiastolic] = formData.bp && formData.bp !== 'undefined/undefined'
+      ? formData.bp.split('/')
+      : ['', ''];
+    
+const updatedData = {
+      bpSystolic: formData.bpSystolic || bpSystolic || '',
+      bpDiastolic: formData.bpDiastolic || bpDiastolic || '',
+      pulseRate: formData.pulseRate || '',
+      respiratoryRate: formData.respiratoryRate || '',
+      temperature: formData.temperature || '',
+      spo2: formData.spo2 || '',
+      height: formData.height || '',
+      weight: formData.weight || '',
+      bmi: formData.bmi || '',
+      investigationFindings: formData.investigationFindings || '',
+      other: formData.other || {}
+    };
+
+    setLocalData(updatedData);
+      // setLocalData(formData);
       // validateAllFields(formData);
     }
   }, [formData]);

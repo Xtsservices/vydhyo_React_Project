@@ -390,6 +390,7 @@ const fetchPatients = useCallback(async () => {
     setCurrentPage(1);
   }, [patients, searchText, searchField, sortBy]);
 
+  console.log("ePrescriptionData",ePrescriptionData)
   return (
     <div style={styles.container}>
       <div style={styles.header}>
