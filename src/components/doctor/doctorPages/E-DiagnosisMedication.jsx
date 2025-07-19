@@ -18,7 +18,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const [testOptions, setTestOptions] = useState([]);
   const [testInputValue, setTestInputValue] = useState("");
 
-  const [localData, setLocalData] = useState({
+  const [localData2, setLocalData2] = useState({
     diagnosisList: "",
     selectedTests: [],
     medications: [
@@ -35,6 +35,17 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       // },
     ],
   });
+
+   const [localData, setLocalData] = useState({
+    diagnosisList: formData?.diagnosisList || "",
+    selectedTests: formData?.selectedTests || [],
+    medications: formData?.medications && formData.medications.length > 0
+      ? formData.medications
+      : [],
+    testNotes: formData?.testNotes || "",
+    medicationNotes: formData?.medicationNotes || "",
+  });
+
 
   const timingOptions = [
     "Before Breakfast",
