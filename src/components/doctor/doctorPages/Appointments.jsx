@@ -65,7 +65,7 @@ const Appointment = () => {
     clinic: "all",
     type: "all",
     status: "all",
-    date: null,
+    date: moment()
   });
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
