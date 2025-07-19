@@ -335,6 +335,7 @@ export default function ClinicManagement() {
 
         if (response.status === 200 && response.data?.status === "success") {
           toast.success(response.data?.message || "Clinic updated successfully");
+           setShowModal(false);
         } else {
           toast.error(response.data?.message || "Failed to update clinic");
           throw new Error(response.data?.message || "Failed to update clinic");
@@ -350,8 +351,9 @@ export default function ClinicManagement() {
         response = await apiPost("/users/addAddress", newClinicData);
         console.log("Add API Response:", response);
 
-        if (response.status === 200) {
+        if (response.status === 200 ||response.status ===201) {
           toast.success(response.data?.message || "Clinic added successfully");
+           setShowModal(false);
         } else {
           toast.error(response.data?.message || "Failed to add clinic");
           throw new Error(response.data?.message || "Failed to add clinic");

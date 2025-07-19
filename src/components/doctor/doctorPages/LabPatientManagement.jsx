@@ -17,6 +17,7 @@ import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const { Title } = Typography;
 const { Panel } = Collapse;

@@ -1052,7 +1052,7 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
             type="number"
             min={0}
             max={discountType === "percentage" ? 100 : undefined}
-            step={0.01}
+            step={1}
             style={{ marginTop: 8 }}
           />
           {fieldErrors.discount && (
