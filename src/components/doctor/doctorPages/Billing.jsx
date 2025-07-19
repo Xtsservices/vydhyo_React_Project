@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import DownloadTaxInvoice from "../../Models/DownloadTaxInvoice";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { address } from "framer-motion/client";
 
 const BillingSystem = () => {
   const [patients, setPatients] = useState([]);
@@ -23,7 +24,10 @@ const BillingSystem = () => {
       const today = new Date(2025, 6, 17); // July 17, 2025
       let age = today.getFullYear() - dobDate.getFullYear();
       const monthDiff = today.getMonth() - dobDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < dobDate.getDate())
+      ) {
         age--;
       }
       return age >= 0 ? age : "N/A";
@@ -40,24 +44,44 @@ const BillingSystem = () => {
           `/receptionist/fetchMyDoctorPatients/${doctorId}`
         );
         if (response.status === 200 && response?.data?.data) {
-          const result = response.data.data;
+          const result = response.data.data.reverse();
 
           const transformedData = result.map((patient, index) => {
-            const appointments = Array.isArray(patient.appointments) ? patient.appointments : [];
+            const appointments = Array.isArray(patient.appointments)
+              ? patient.appointments
+              : [];
             const tests = Array.isArray(patient.tests) ? patient.tests : [];
-            const medicines = Array.isArray(patient.medicines) ? patient.medicines : [];
+            const medicines = Array.isArray(patient.medicines)
+              ? patient.medicines
+              : [];
 
             const appointmentDetails = appointments.map((appointment, idx) => ({
               id: `A${index}${idx}`,
               appointmentId: appointment.appointmentId,
               appointmentType: appointment.appointmentType,
               appointmentFees: appointment?.feeDetails?.finalAmount || 0,
+              addressId: appointment.addressId,
+              clinicName: appointment.addressId
+                ? // Find the clinic name from the doctor's addresses array
+                  user.addresses.find(
+                    (addr) => addr.addressId === appointment.addressId
+                  )?.clinicName || "N/A"
+                : "N/A",
             }));
 
             // Calculate totals
-            const totalTestAmount = tests.reduce((sum, test) => sum + (test?.price || 0), 0);
-            const totalMedicineAmount = medicines.reduce((sum, med) => sum + (med?.price * med?.quantity || 0), 0);
-            const totalAppointmentFees = appointmentDetails.reduce((sum, appt) => sum + (appt?.appointmentFees || 0), 0);
+            const totalTestAmount = tests.reduce(
+              (sum, test) => sum + (test?.price || 0),
+              0
+            );
+            const totalMedicineAmount = medicines.reduce(
+              (sum, med) => sum + (med?.price * med?.quantity || 0),
+              0
+            );
+            const totalAppointmentFees = appointmentDetails.reduce(
+              (sum, appt) => sum + (appt?.appointmentFees || 0),
+              0
+            );
 
             return {
               id: index + 1,
@@ -94,14 +118,15 @@ const BillingSystem = () => {
                 quantity: med.quantity || 1,
                 price: med.price || 0,
                 status:
-                  med.status?.charAt(0).toUpperCase() +
-                    med.status?.slice(1) || "Unknown",
+                  med.status?.charAt(0).toUpperCase() + med.status?.slice(1) ||
+                  "Unknown",
               })),
 
               totalTestAmount,
               totalMedicineAmount,
               totalAppointmentFees,
-              grandTotal: totalTestAmount + totalMedicineAmount + totalAppointmentFees,
+              grandTotal:
+                totalTestAmount + totalMedicineAmount + totalAppointmentFees,
             };
           });
 
@@ -365,7 +390,9 @@ const BillingSystem = () => {
                         {expandedPatients[patient.id] ? "−" : "+"}
                       </button>
                     </td>
-                    <td style={{ padding: "12px 15px" }}>{patient.patientId}</td>
+                    <td style={{ padding: "12px 15px" }}>
+                      {patient.patientId}
+                    </td>
                     <td style={{ padding: "12px 15px", fontWeight: "500" }}>
                       {patient.name}
                     </td>
@@ -469,7 +496,9 @@ const BillingSystem = () => {
                                 border: "1px solid #ddd",
                               }}
                             >
-                              <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
+                              <h4
+                                style={{ margin: "0 0 15px 0", color: "#333" }}
+                              >
                                 Appointment Details
                               </h4>
                               <table
@@ -505,23 +534,42 @@ const BillingSystem = () => {
                                         textAlign: "left",
                                       }}
                                     >
-                                      price (₹)
+                                      Clinic Name
+                                    </th>
+                                    <th
+                                      style={{
+                                        padding: "12px 15px",
+                                        borderBottom: "1px solid #ddd",
+                                        textAlign: "left",
+                                      }}
+                                    >
+                                      Price (₹)
                                     </th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {patient.appointmentDetails.map((appointment, index) => (
-                                    <tr key={index}>
-                                      <td style={{ padding: "12px 15px" }}>{appointment.appointmentId}</td>
-                                      <td style={{ padding: "12px 15px" }}>{appointment.appointmentType}</td>
-                                      <td style={{ padding: "12px 15px" }}>{appointment.appointmentFees}</td>
-                                    </tr>
-                                  ))}
+                                  {patient.appointmentDetails.map(
+                                    (appointment, index) => (
+                                      <tr key={index}>
+                                        <td style={{ padding: "12px 15px" }}>
+                                          {appointment.appointmentId}
+                                        </td>
+                                        <td style={{ padding: "12px 15px" }}>
+                                          {appointment.appointmentType}
+                                        </td>
+                                        <td style={{ padding: "12px 15px" }}>
+                                          {appointment.clinicName}
+                                        </td>
+                                        <td style={{ padding: "12px 15px" }}>
+                                          {appointment.appointmentFees}
+                                        </td>
+                                      </tr>
+                                    )
+                                  )}
                                 </tbody>
                               </table>
                             </div>
                           )}
-
                           {/* Medicines Section */}
                           {patient.medicines.length > 0 && (
                             <div
@@ -533,7 +581,9 @@ const BillingSystem = () => {
                                 border: "1px solid #ddd",
                               }}
                             >
-                              <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
+                              <h4
+                                style={{ margin: "0 0 15px 0", color: "#333" }}
+                              >
                                 Medicines Prescribed
                               </h4>
                               <table
@@ -665,7 +715,10 @@ const BillingSystem = () => {
                                 </tbody>
                               </table>
                               <div
-                                style={{ textAlign: "right", marginTop: "10px" }}
+                                style={{
+                                  textAlign: "right",
+                                  marginTop: "10px",
+                                }}
                               >
                                 <strong>
                                   Medicine Total: ₹
@@ -816,7 +869,8 @@ const BillingSystem = () => {
                               style={{ textAlign: "right", marginTop: "10px" }}
                             >
                               <strong>
-                                Test Total: ₹ {patient.totalTestAmount.toFixed(2)}
+                                Test Total: ₹{" "}
+                                {patient.totalTestAmount.toFixed(2)}
                               </strong>
                             </div>
                           </div>
@@ -838,12 +892,12 @@ const BillingSystem = () => {
                                 color: "#333",
                               }}
                             >
-                              Grand Total: ₹
-                              {patient.grandTotal.toFixed(2)}
+                              Grand Total: ₹{patient.grandTotal.toFixed(2)}
                             </div>
                             <div>
                               <DownloadTaxInvoice
                                 patient={patient}
+                                user={user} // Add this line
                               />
                               <button
                                 onClick={() => handleMarkAsPaid(patient.id)}
@@ -853,7 +907,10 @@ const BillingSystem = () => {
                                   border: "none",
                                   borderRadius: "4px",
                                   padding: "10px 20px",
-                                  cursor: totals.grandTotal > 0 ? "pointer" : "not-allowed",
+                                  cursor:
+                                    totals.grandTotal > 0
+                                      ? "pointer"
+                                      : "not-allowed",
                                   fontSize: "16px",
                                   fontWeight: "bold",
                                   marginLeft: "10px",

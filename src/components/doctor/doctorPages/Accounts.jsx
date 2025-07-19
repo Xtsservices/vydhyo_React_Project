@@ -54,7 +54,7 @@ const AccountsPage = () => {
   // Modal state
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [transactionDetails, setTransactionDetails] = useState(null);
+  const [transactionDetails, setTransactionDetails] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
   // Summary data
@@ -65,18 +65,57 @@ const AccountsPage = () => {
     recentTransactions: [],
   });
 
+  // Function to group transactions by patient and service for the same day
+  const groupTransactions = (transactions) => {
+    const grouped = {};
+    
+    transactions.forEach((txn) => {
+      const date = txn.paidAt ? dayjs(txn.paidAt).format("YYYY-MM-DD") : "unknown";
+      const key = `${txn.patientName || "unknown"}_${txn.paymentFrom || "unknown"}_${date}`;
+      
+      if (!grouped[key]) {
+        grouped[key] = {
+          count: 0,
+          totalAmount: 0,
+          latestTxn: txn,
+          allTxns: [],
+        };
+      }
+      
+      grouped[key].count++;
+      grouped[key].totalAmount += txn.finalAmount || txn.actualAmount || 0;
+      grouped[key].allTxns.push(txn);
+      
+      const currentDate = txn.paidAt ? new Date(txn.paidAt) : new Date(0);
+      const latestDate = grouped[key].latestTxn.paidAt ? new Date(grouped[key].latestTxn.paidAt) : new Date(0);
+      
+      if (currentDate > latestDate) {
+        grouped[key].latestTxn = txn;
+      }
+    });
+    
+    return Object.values(grouped).map((group) => ({
+      ...group.latestTxn,
+      groupedCount: group.count,
+      groupedAmount: group.totalAmount,
+      allTransactions: group.allTxns,
+    }));
+  };
+
   // Memoized function to map transactions
-  const mappedTransactions = transactions.map((txn) => ({
+  const mappedTransactions = groupTransactions(transactions).map((txn) => ({
     id: txn.paymentId || txn._id,
     patient: txn.patientName || "-",
     date: txn.paidAt ? dayjs(txn.paidAt).format("DD-MMM-YYYY") : "-",
     service: getServiceName(txn.paymentFrom),
-    amount: txn.finalAmount || txn.actualAmount || 0,
+    amount: txn.groupedAmount || txn.finalAmount || txn.actualAmount || 0,
     status: txn.paymentStatus || "-",
     paymentMethod: txn.paymentMethod
       ? txn.paymentMethod.charAt(0).toUpperCase() + txn.paymentMethod.slice(1)
       : "-",
     raw: txn,
+    count: txn.groupedCount || 1,
+    allTransactions: txn.allTransactions || [txn],
   }));
 
   function getServiceName(paymentFrom) {
@@ -128,8 +167,8 @@ const AccountsPage = () => {
       status: filterStatus,
       search: searchText,
       page: currentPage,
-      limit: 10,
-      doctorId: doctorId // Include doctorId in the payload
+      limit: 100,
+      doctorId: doctorId,
     };
 
     if (filterDate && filterDate.length === 2) {
@@ -154,21 +193,29 @@ const AccountsPage = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  // Fetch transaction details
+  // Fetch transaction details for all transactions in the group
   const fetchTransactionDetails = useCallback(async () => {
     if (!selectedTransaction || !doctorId) return;
 
     setLoadingDetails(true);
     try {
-      const paymentId =
-        selectedTransaction.paymentId || selectedTransaction._id;
-      const response = await apiGet(
-        `/finance/getPatientHistory?paymentId=${paymentId}&doctorId=${doctorId}`
+      const paymentIds = selectedTransaction.allTransactions.map(
+        (txn) => txn.paymentId || txn._id
       );
-      setTransactionDetails(response.data.data);
+      
+      // Assuming the API can handle multiple payment IDs
+      // If not, you may need to make individual API calls for each payment ID
+      const response = await Promise.all(
+        paymentIds.map((paymentId) =>
+          apiGet(`/finance/getPatientHistory?paymentId=${paymentId}&doctorId=${doctorId}`)
+        )
+      );
+      
+      const details = response.map((res) => res.data.data);
+      setTransactionDetails(details);
     } catch (error) {
       console.error("Error fetching transaction details:", error);
-      setTransactionDetails(null);
+      setTransactionDetails([]);
     } finally {
       setLoadingDetails(false);
     }
@@ -182,32 +229,36 @@ const AccountsPage = () => {
 
   const handleExport = async () => {
     try {
-      const exportData = mappedTransactions.map(txn => ({
+      const exportData = mappedTransactions.map((txn) => ({
         "Transaction ID": txn.id,
         "Patient Name": txn.patient,
         "Date": txn.date,
         "Service": txn.service,
-        "Amount": txn.amount, 
+        "Amount": txn.amount,
         "Status": txn.status === "paid" ? "Paid" : txn.status === "pending" ? "Pending" : "Refunded",
-        "Payment Method": txn.paymentMethod
+        "Payment Method": txn.paymentMethod,
+        "Transactions Count": txn.count,
       }));
 
-      const headers = Object.keys(exportData[0]).join(',');
-      const rows = exportData.map(obj => 
-        Object.values(obj).map(value => {
-          const stringValue = String(value || '');
-          return `"${stringValue.replace(/"/g, '""')}"`;
-        }).join(',')
-      ).join('\r\n');
+      const headers = Object.keys(exportData[0]).join(",");
+      const rows = exportData
+        .map((obj) =>
+          Object.values(obj)
+            .map((value) => {
+              const stringValue = String(value || "");
+              return `"${stringValue.replace(/"/g, '""')}"`;
+            })
+            .join(",")
+        )
+        .join("\r\n");
       
-      const csvContent = '\uFEFF' + `${headers}\r\n${rows}`;
+      const csvContent = "\uFEFF" + `${headers}\r\n${rows}`;
 
-      // Create a download link
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', `transactions_${dayjs().format('YYYYMMDD_HHmmss')}.csv`);
+      link.setAttribute("download", `transactions_${dayjs().format("YYYYMMDD_HHmmss")}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -225,6 +276,14 @@ const AccountsPage = () => {
       dataIndex: "id",
       key: "id",
       width: 120,
+      render: (id, record) => (
+        <div>
+          {id}
+          {record.count > 1 && (
+            <Tag style={{ marginLeft: 5 }}>{record.count} transactions</Tag>
+          )}
+        </div>
+      ),
     },
     {
       title: "Patient Name",
@@ -250,7 +309,7 @@ const AccountsPage = () => {
       dataIndex: "amount",
       key: "amount",
       width: 100,
-      render: (amount) => `₹${amount}`,
+      render: (amount) => <div>₹{amount}</div>,
       sorter: (a, b) => a.amount - b.amount,
     },
     {
@@ -304,76 +363,95 @@ const AccountsPage = () => {
 
   // Render transaction details based on service type
   const renderTransactionDetails = () => {
-    if (!transactionDetails) return <Text>No details available</Text>;
+    if (!selectedTransaction || !transactionDetails.length) {
+      return <Text>No details available</Text>;
+    }
 
-    const { paymentFrom } = transactionDetails;
+    const groupedTransactions = selectedTransaction.allTransactions || [selectedTransaction.raw];
 
     return (
-      <Descriptions bordered column={1} size="small">
-        <Descriptions.Item label="Transaction ID">
-          {transactionDetails.paymentId || transactionDetails._id}
-        </Descriptions.Item>
-        <Descriptions.Item label="Patient Name">
-          {transactionDetails.userDetails?.firstname}{" "}
-          {transactionDetails.userDetails?.lastname}
-        </Descriptions.Item>
-        <Descriptions.Item label="Service">
-          {getServiceName(paymentFrom)}
-        </Descriptions.Item>
-        <Descriptions.Item label="Amount">
-          ₹{transactionDetails.finalAmount || transactionDetails.actualAmount}
-        </Descriptions.Item>
-        <Descriptions.Item label="Status">
-          {transactionDetails.paymentStatus}
-        </Descriptions.Item>
-        <Descriptions.Item label="Payment Method">
-          {transactionDetails.paymentMethod}
-        </Descriptions.Item>
-        <Descriptions.Item label="Paid At">
-          {transactionDetails.paidAt
-            ? dayjs(transactionDetails.paidAt).format("DD-MMM-YYYY HH:mm")
-            : "-"}
-        </Descriptions.Item>
-
-        {/* Service-specific details */}
-        {paymentFrom === "appointments" && (
-          <>
-            <Descriptions.Item label="Appointment Type">
-              {transactionDetails.appointmentDetails?.appointmentType || "N/A"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Department">
-              {transactionDetails.appointmentDetails?.appointmentDepartment ||
-                "N/A"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Date & Time">
-              {transactionDetails.appointmentDetails?.appointmentDate
-                ? dayjs(
-                    transactionDetails.appointmentDetails.appointmentDate
-                  ).format("DD-MMM-YYYY")
-                : "N/A"}{" "}
-              at{" "}
-              {transactionDetails.appointmentDetails?.appointmentTime || "N/A"}
-            </Descriptions.Item>
-          </>
-        )}
-
-        {paymentFrom === "lab" && (
-          <Descriptions.Item label="Test Name">
-            {transactionDetails.labDetails?.testName || "N/A"}
+      <div>
+        <Descriptions bordered column={1} size="small">
+          <Descriptions.Item label="Patient Name">
+            {transactionDetails[0]?.userDetails?.firstname}{" "}
+            {transactionDetails[0]?.userDetails?.lastname}
           </Descriptions.Item>
-        )}
+          <Descriptions.Item label="Service">
+            {getServiceName(selectedTransaction.paymentFrom)}
+          </Descriptions.Item>
+          <Descriptions.Item label="Total Amount">
+            ₹{selectedTransaction.groupedAmount || selectedTransaction.finalAmount || selectedTransaction.actualAmount}
+          </Descriptions.Item>
+          <Descriptions.Item label="Number of Transactions">
+            {selectedTransaction.count || 1}
+          </Descriptions.Item>
+          <Descriptions.Item label="Status">
+            {transactionDetails[0]?.paymentStatus}
+          </Descriptions.Item>
+          <Descriptions.Item label="Payment Method">
+            {transactionDetails[0]?.paymentMethod}
+          </Descriptions.Item>
+        </Descriptions>
 
-        {paymentFrom === "pharmacy" && (
-          <>
-            <Descriptions.Item label="Medicine Name">
-              {transactionDetails.pharmacyDetails?.medName || "N/A"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Quantity">
-              {transactionDetails.pharmacyDetails?.quantity || "N/A"}
-            </Descriptions.Item>
-          </>
-        )}
-      </Descriptions>
+        <Divider orientation="left" style={{ marginTop: 20 }}>
+          Individual Transactions
+        </Divider>
+
+        {groupedTransactions.map((txn, index) => {
+          const txnDetails = transactionDetails[index] || {};
+
+          return (
+            <Descriptions
+              key={index}
+              bordered
+              column={1}
+              size="small"
+              style={{ marginBottom: 16 }}
+            >
+              <Descriptions.Item label="Transaction ID">
+                {txn.paymentId || txn._id}
+              </Descriptions.Item>
+              <Descriptions.Item label="Amount">
+                ₹{txn.finalAmount || txn.actualAmount}
+              </Descriptions.Item>
+              <Descriptions.Item label="Paid At">
+                {txn.paidAt
+                  ? dayjs(txn.paidAt).format("DD-MMM-YYYY HH:mm")
+                  : "-"}
+              </Descriptions.Item>
+
+              {/* Service-specific details */}
+              {selectedTransaction.paymentFrom === "appointments" && (
+                <>
+                  <Descriptions.Item label="Appointment Type">
+                    {txnDetails.appointmentDetails?.appointmentType || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Department">
+                    {txnDetails.appointmentDetails?.appointmentDepartment || "N/A"}
+                  </Descriptions.Item>
+                </>
+              )}
+
+              {selectedTransaction.paymentFrom === "lab" && (
+                <Descriptions.Item label="Test Name">
+                  {txnDetails.labDetails?.testName || "N/A"}
+                </Descriptions.Item>
+              )}
+
+              {selectedTransaction.paymentFrom === "pharmacy" && (
+                <>
+                  <Descriptions.Item label="Medicine Name">
+                    {txnDetails.pharmacyDetails?.medName || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Quantity">
+                    {txnDetails.pharmacyDetails?.quantity || "N/A"}
+                  </Descriptions.Item>
+                </>
+              )}
+            </Descriptions>
+          );
+        })}
+      </div>
     );
   };
 
@@ -568,10 +646,10 @@ const AccountsPage = () => {
           title="Transaction Details"
           onCancel={() => {
             setViewModalVisible(false);
-            setTransactionDetails(null);
+            setTransactionDetails([]);
           }}
           footer={null}
-          width={600}
+          width={800}
           className="transaction-modal"
         >
           {loadingDetails ? (

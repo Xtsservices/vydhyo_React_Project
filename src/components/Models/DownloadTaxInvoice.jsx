@@ -1,8 +1,6 @@
 import React from "react";
 
-const DownloadTaxInvoice = ({ patient, disabled }) => {
-
-  console.log("patient===", patient);
+const DownloadTaxInvoice = ({ patient, user }) => {
   const calculateTotals = (patient) => {
     const completedMedicines =
       patient.medicines?.filter(
@@ -43,6 +41,13 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
 
     const totals = calculateTotals(patient);
 
+    // Find the clinic details by matching the appointment's addressId with user addresses
+    const appointment = patient.appointmentDetails?.[0];
+    const clinic =
+      user?.addresses?.find(
+        (addr) => addr.addressId === appointment?.addressId
+      ) || {};
+
     const invoiceData = {
       ...patient,
       invoiceNumber,
@@ -55,35 +60,59 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Tax Invoice</title>
+          <title>Invoice</title>
           <style>
             html, body {
-              height: 100%;
               margin: 0;
               padding: 0;
               font-family: Arial, sans-serif;
               background: white;
+              font-size: 14px;
             }
 
-            .page {
-              display: flex;
-              flex-direction: column;
-              min-height: 100vh;
-              justify-content: space-between;
+            @page {
+              margin: 15mm;
+              size: A4;
+            }
+
+            @media print {
+              @page {
+                margin: 15mm;
+                size: A4;
+              }
+              
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              
+              /* Hide browser default headers and footers */
+              @page {
+                margin-top: 0;
+                margin-bottom: 0;
+                margin-header: 0;
+                margin-footer: 0;
+              }
             }
 
             .invoice-container {
-              padding: 20px;
+    padding: 15px;
+    max-width: 210mm;
+    margin: 0 auto;
+  }
+
+            .invoice-content {
               flex: 1;
             }
 
             .invoice-title-section {
               text-align: center;
-              margin-bottom: 30px;
+              margin-top: 30px;
+              margin-bottom: 20px;
             }
 
             .main-invoice-title {
-              font-size: 32px;
+              font-size: 28px;
               font-weight: bold;
               color: #333;
               margin: 0;
@@ -91,47 +120,34 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
 
             .invoice-header-section {
               display: flex;
-              justify-content: space-between;
+              justify-content: flex-start;
               align-items: flex-start;
-              margin-bottom: 30px;
-              padding-bottom: 20px;
+              margin-bottom: 20px;
+              padding-bottom: 15px;
               border-bottom: 2px solid #eee;
             }
 
-            .vydhyo-logo {
-              width: 150px;
-              height: 64px;
-              background-color: #dbeafe;
-              border-radius: 8px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: #2563eb;
-              font-weight: bold;
-              font-size: 18px;
-            }
-
             .clinic-info {
-              text-align: right;
+              text-align: left;
             }
 
             .clinic-name {
-              font-size: 24px;
+              font-size: 20px;
               font-weight: bold;
               color: #333;
-              margin-bottom: 10px;
+              margin-bottom: 8px;
             }
 
             .contact-info p {
-              margin: 5px 0;
+              margin: 3px 0;
               color: #666;
             }
 
             .invoice-details-top {
               display: flex;
               justify-content: space-between;
-              margin-bottom: 30px;
-              padding: 15px;
+              margin-bottom: 20px;
+              padding: 12px;
               background-color: #f8f9fa;
               border-radius: 5px;
             }
@@ -141,15 +157,15 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
             }
 
             .section {
-              margin-bottom: 30px;
+              margin-bottom: 20px;
             }
 
             .section-title {
-              font-size: 18px;
+              font-size: 16px;
               font-weight: bold;
               color: #333;
-              margin-bottom: 15px;
-              padding-bottom: 10px;
+              margin-bottom: 10px;
+              padding-bottom: 5px;
               border-bottom: 1px solid #ddd;
             }
 
@@ -157,23 +173,23 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
               display: flex;
               justify-content: space-between;
               background-color: #f8f9fa;
-              padding: 15px;
+              padding: 12px;
               border-radius: 5px;
             }
 
             .patient-info p {
-              margin: 5px 0;
+              margin: 3px 0;
             }
 
             .data-table {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 15px;
+              margin-bottom: 10px;
             }
 
             .data-table th, .data-table td {
               border: 1px solid #ddd;
-              padding: 10px;
+              padding: 8px;
               text-align: left;
             }
 
@@ -188,18 +204,18 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
 
             .section-total {
               text-align: right;
-              margin-top: 10px;
+              margin-top: 8px;
             }
 
             .total-text {
               font-weight: bold;
-              font-size: 16px;
+              font-size: 14px;
               color: #333;
             }
 
             .grand-total-section {
-              margin-top: 30px;
-              padding: 20px;
+              margin-top: 20px;
+              padding: 15px;
               background-color: #f8f9fa;
               border-radius: 5px;
             }
@@ -207,64 +223,103 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
             .total-row {
               display: flex;
               justify-content: space-between;
-              margin-bottom: 10px;
-              font-size: 16px;
+              margin-bottom: 8px;
+              font-size: 14px;
             }
 
             .grand-total-row {
               display: flex;
               justify-content: space-between;
-              font-size: 20px;
+              font-size: 16px;
               font-weight: bold;
               color: #333;
               border-top: 2px solid #333;
-              padding-top: 10px;
-              margin-top: 15px;
+              padding-top: 8px;
+              margin-top: 10px;
             }
 
             .footer {
-              flex-shrink: 0;
               text-align: center;
-              padding: 20px 0;
+              padding: 15px 0;
               border-top: 1px solid #ddd;
               color: #666;
               background: white;
             }
 
+            .powered-by {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-top: 8px;
+              gap: 6px;
+              color: #666;
+              font-size: 12px;
+            }
+
+            .footer-logo {
+              width: 18px;
+              height: 18px;
+              object-fit: contain;
+            }
+
+            /* Compact spacing for better space utilization */
+            .compact-spacing {
+              margin-bottom: 15px;
+            }
+
+            .compact-spacing:last-child {
+              margin-bottom: 0;
+            }
+
+            /* Print specific styles */
             @media print {
+              .invoice-container {
+                min-height: 100vh;
+              }
+              
               .footer {
-                page-break-before: avoid;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                margin-top: 0;
               }
             }
           </style>
         </head>
         <body>
-          <div class="page">
-            <div class="invoice-container">
-              <div class="invoice-title-section">
+          <div class="invoice-container">
+            <div class="invoice-content">
+              <div class="invoice-title-section compact-spacing">
                 <h1 class="main-invoice-title">TAX INVOICE</h1>
               </div>
 
-              <div class="invoice-header-section">
-                <div class="vydhyo-logo">Vydhyo</div>
+              <div class="invoice-header-section compact-spacing">
                 <div class="clinic-info">
-                  <div class="clinic-name">Vydhyo</div>
+                  <div class="clinic-name">${clinic.clinicName || "NA"}</div>
                   <div class="contact-info">
-                    <p>123 Medical Center Drive</p>
-                    <p>New York, NY 10001</p>
-                    <p>Phone: (555) 123-4567</p>
-                    <p>Email: contact@healthcare.com</p>
+                    <p>${clinic.address || "NA"}</p>
+                    <p>${clinic.city || "NA"}, ${clinic.state || "NA"} ${
+      clinic.pincode || "NA"
+    }</p>
+                    <p>Phone: ${clinic.mobile || "NA"}</p>
                   </div>
                 </div>
               </div>
 
-              <div class="invoice-details-top">
-                <div class="invoice-detail-item"><strong>Invoice No:</strong> #${invoiceData.invoiceNumber}</div>
-                <div class="invoice-detail-item"><strong>Date:</strong> ${invoiceData.billingDate}</div>
-                <div class="invoice-detail-item"><strong>Time:</strong> ${invoiceData.billingTime}</div>
+              <div class="invoice-details-top compact-spacing">
+                <div class="invoice-detail-item"><strong>Invoice No:</strong> #${
+                  invoiceData.invoiceNumber
+                }</div>
+                <div class="invoice-detail-item"><strong>Date:</strong> ${
+                  invoiceData.billingDate
+                }</div>
+                <div class="invoice-detail-item"><strong>Time:</strong> ${
+                  invoiceData.billingTime
+                }</div>
               </div>
 
-              <div class="section">
+              <div class="section compact-spacing">
                 <h3 class="section-title">Patient Information</h3>
                 <div class="patient-info">
                   <div>
@@ -273,7 +328,7 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
                     <p><strong>Last Name:</strong> ${invoiceData.lastname}</p>
                   </div>
                   <div>
-                    <p><strong>DOB:</strong> ${invoiceData.DOB}</p>
+                    <p><strong>Age:</strong> ${invoiceData.age}</p>
                     <p><strong>Gender:</strong> ${invoiceData.gender}</p>
                   </div>
                 </div>
@@ -282,7 +337,7 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
               ${
                 completedMedicines.length > 0
                   ? `
-              <div class="section">
+              <div class="section compact-spacing">
                 <h3 class="section-title">Medicines</h3>
                 <table class="data-table">
                   <thead>
@@ -310,15 +365,18 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
                   </tbody>
                 </table>
                 <div class="section-total">
-                  <p class="total-text">Medicine Total: ₹${invoiceData.totals.medicineTotal.toFixed(2)}</p>
+                  <p class="total-text">Medicine Total: ₹${invoiceData.totals.medicineTotal.toFixed(
+                    2
+                  )}</p>
                 </div>
-              </div>` : ""
+              </div>`
+                  : ""
               }
 
               ${
                 completedTests.length > 0
                   ? `
-              <div class="section">
+              <div class="section compact-spacing">
                 <h3 class="section-title">Tests</h3>
                 <table class="data-table">
                   <thead>
@@ -342,22 +400,30 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
                   </tbody>
                 </table>
                 <div class="section-total">
-                  <p class="total-text">Test Total: ₹${invoiceData.totals.testTotal.toFixed(2)}</p>
+                  <p class="total-text">Test Total: ₹${invoiceData.totals.testTotal.toFixed(
+                    2
+                  )}</p>
                 </div>
-              </div>` : ""
+              </div>`
+                  : ""
               }
 
               <div class="grand-total-section">
-
-              <div class="total-row"><span>Appointment Fee:</span><span>₹${patient.totalAppointmentFees.toFixed(2)}</span></div>
+                <div class="total-row"><span>Appointment Fee:</span><span>₹${patient.totalAppointmentFees.toFixed(
+                  2
+                )}</span></div>
                 ${
                   completedMedicines.length > 0
-                    ? `<div class="total-row"><span>Medicine Total:</span><span>₹${invoiceData.totals.medicineTotal.toFixed(2)}</span></div>`
+                    ? `<div class="total-row"><span>Medicine Total:</span><span>₹${invoiceData.totals.medicineTotal.toFixed(
+                        2
+                      )}</span></div>`
                     : ""
                 }
                 ${
                   completedTests.length > 0
-                    ? `<div class="total-row"><span>Test Total:</span><span>₹${invoiceData.totals.testTotal.toFixed(2)}</span></div>`
+                    ? `<div class="total-row"><span>Test Total:</span><span>₹${invoiceData.totals.testTotal.toFixed(
+                        2
+                      )}</span></div>`
                     : ""
                 }
                 <div class="grand-total-row">
@@ -369,6 +435,10 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
 
             <div class="footer">
               <p>Thank you for choosing Vydhyo</p>
+              <div class="powered-by">
+                <img src="/logooo.png" alt="Vydhyo Logo" class="footer-logo">
+                <span>Powered by Vydhyo</span>
+              </div>
             </div>
           </div>
         </body>
@@ -386,16 +456,16 @@ const DownloadTaxInvoice = ({ patient, disabled }) => {
   return (
     <button
       onClick={handleDownload}
-      disabled={disabled}
+      disabled={patient.disabled}
       style={{
-        background: disabled ? "#6c757d" : "#28a745",
+        background: patient.disabled ? "#6c757d" : "#28a745",
         color: "white",
         border: "none",
         borderRadius: "4px",
         padding: "8px 16px",
-        cursor: disabled ? "not-allowed" : "pointer",
+        cursor: patient.disabled ? "not-allowed" : "pointer",
         fontSize: "14px",
-        opacity: disabled ? 0.6 : 1,
+        opacity: patient.disabled ? 0.6 : 1,
       }}
     >
       Print Invoice
