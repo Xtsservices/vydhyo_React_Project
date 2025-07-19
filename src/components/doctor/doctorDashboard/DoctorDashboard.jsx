@@ -23,17 +23,20 @@ const feedbacks = [
     name: "Rahul Sharma",
     avatar: "",
     rating: 5,
-    comment: "Dr. Arvind was very patient and explained everything clearly. Highly recommended!",
-    daysAgo: 2
+    comment:
+      "Dr. Arvind was very patient and explained everything clearly. Highly recommended!",
+    daysAgo: 2,
   },
   {
     name: "Priya Patel",
     avatar: "",
     rating: 4,
-    comment: "Good consultation but had to wait longer than expected. Otherwise satisfied with the treatment.",
-    daysAgo: 5
-  }
+    comment:
+      "Good consultation but had to wait longer than expected. Otherwise satisfied with the treatment.",
+    daysAgo: 5,
+  },
 ];
+
 
 const PercentageChangeIndicator = ({
   value,
@@ -304,7 +307,8 @@ const Header = ({ user, navigate }) => {
   );
 };
 
-const AppointmentsCard = ({ dashboardData }) => (
+const AppointmentsCard = ({ dashboardData, setNewAppointments,
+  setNewFollowups, }) => (
   <Card
     style={{
       borderRadius: "16px",
@@ -348,7 +352,7 @@ const AppointmentsCard = ({ dashboardData }) => (
     </div>
 
     <div
-      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}
+      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" } }
     >
       <div
         style={{
@@ -358,6 +362,7 @@ const AppointmentsCard = ({ dashboardData }) => (
           textAlign: "center",
           backdropFilter: "blur(10px)",
         }}
+        onClick={setNewAppointments(true)}
       >
         <Title
           level={2}
@@ -398,6 +403,7 @@ const AppointmentsCard = ({ dashboardData }) => (
           textAlign: "center",
           backdropFilter: "blur(10px)",
         }}
+        onClick={setNewFollowups(true)}
       >
         <Title
           level={2}
@@ -538,13 +544,24 @@ const PatientAppointments = ({
   getStatusColor,
   getTypeColor,
   getAppointmentTypeDisplay,
+  newAppointments,
+  newFollowups
 }) => {
   const navigate = useNavigate();
+console.log(newAppointments, "newappointments ")
+
+
   const filteredAppointments = appointments.filter(
     (appt) =>
       new Date(appt.appointmentDate).toISOString().split("T")[0] ===
       selectedDate
   );
+
+  if (newAppointments) {
+console.log("new appointments")
+
+
+}
 
   // Show only first 5 appointments if there are more
   const displayedAppointments = filteredAppointments.slice(0, 5);
@@ -897,7 +914,11 @@ const PatientFeedback = () => (
   </Card>
 );
 
-const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorId }) => {
+const ClinicAvailability = ({
+  currentClinicIndex,
+  setCurrentClinicIndex,
+  doctorId,
+}) => {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [nextAvailableSlot, setNextAvailableSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -908,11 +929,13 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
   useEffect(() => {
     const fetchClinics = async () => {
       try {
-        const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`);
+        const response = await apiGet(
+          `/users/getClinicAddress?doctorId=${doctorId}`
+        );
         if (response.data.status === "success") {
           // Filter to only show active clinics
           const activeClinics = response.data.data.filter(
-            clinic => clinic.status === "Active"
+            (clinic) => clinic.status === "Active"
           );
           setClinics(activeClinics || []);
         } else {
@@ -933,11 +956,15 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
   useEffect(() => {
     const fetchAvailableSlots = async () => {
       if (!doctorId || clinics.length === 0) return;
-      
+
       try {
         setIsLoading(true);
         const currentClinic = clinics[currentClinicIndex];
-        console.log("Current Clinic for Slots:", currentClinic.addressId, doctorId);
+        console.log(
+          "Current Clinic for Slots:",
+          currentClinic.addressId,
+          doctorId
+        );
         const response = await apiGet(
           `/appointment/getNextAvailableSlotsByDoctor?doctorId=${doctorId}`
         );
@@ -946,12 +973,15 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
           const slotsData = response.data.data;
           console.log("Available Slots Data:", slotsData);
 
-           const today = moment().format("YYYY-MM-DD");
-           const tomorrow = moment().add(1, 'day').format("YYYY-MM-DD");
+          const today = moment().format("YYYY-MM-DD");
+          const tomorrow = moment().add(1, "day").format("YYYY-MM-DD");
 
-
-   const todaySlotsData = slotsData.filter(item => item.date === today);
-   const tomorrowSlotsData = slotsData.filter(item => item.date === tomorrow);
+          const todaySlotsData = slotsData.filter(
+            (item) => item.date === today
+          );
+          const tomorrowSlotsData = slotsData.filter(
+            (item) => item.date === tomorrow
+          );
 
           // Today's available slots
           // const todaySlots = slotsData[0]?.slots
@@ -961,11 +991,11 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
           //     endTime: calculateEndTime(slot.time)
           //   })) || [];
 
-            console.log("Today's Available Slots:", tomorrowSlotsData);
-          
+          console.log("Today's Available Slots:", tomorrowSlotsData);
+
           setAvailableSlots(todaySlotsData);
-          setNextAvailableSlot(tomorrowSlotsData)
-          
+          setNextAvailableSlot(tomorrowSlotsData);
+
           // Next available slot (first available from next day)
           // if (slotsData.length > 1) {
           //   const nextDay = slotsData[1];
@@ -989,10 +1019,13 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
     };
 
     const calculateEndTime = (startTime) => {
-      const [hours, minutes] = startTime.split(':').map(Number);
+      const [hours, minutes] = startTime.split(":").map(Number);
       const date = new Date();
       date.setHours(hours, minutes + 15, 0, 0);
-      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      return `${date.getHours().toString().padStart(2, "0")}:${date
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}`;
     };
 
     if (clinics.length > 0) {
@@ -1063,9 +1096,8 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
         marginBottom: "-2rem",
         position: "relative",
         height: "250px",
-        // paddingBottom:"2rem"
       }}
-      bodyStyle={{ padding: "14px"}}
+      bodyStyle={{ padding: "14px" }}
     >
       {isLoading ? (
         <div style={{ textAlign: "center", padding: "40px 0" }}>
@@ -1095,7 +1127,14 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
             >
               Clinic Availability
             </Title>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                marginBottom: "12px",
+              }}
+            >
               <Title
                 level={5}
                 style={{
@@ -1150,90 +1189,94 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
                 marginBottom: "16px",
               }}
             >
+              {availableSlots.length > 0 ? (
+                (() => {
+                  const matchedSlotGroup = availableSlots.find(
+                    (slotGroup) =>
+                      slotGroup.addressId === currentClinic.addressId
+                  );
 
-  {availableSlots.length > 0 ? (
-  (() => {
-    const matchedSlotGroup = availableSlots.find(
-      (slotGroup) => slotGroup.addressId === currentClinic.addressId
-    );
+                  if (!matchedSlotGroup) {
+                    // No matching clinic found
+                    return (
+                      <Text
+                        style={{
+                          fontSize: "12px",
+                          color: "#8c8c8c",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      >
+                        No available slots for this clinic
+                      </Text>
+                    );
+                  }
 
-    if (!matchedSlotGroup) {
-      // No matching clinic found
-      return (
-        <Text
-          style={{
-            fontSize: "12px",
-            color: "#8c8c8c",
-            fontFamily: "Poppins, sans-serif",
-          }}
-        >
-          No available slots for this clinic
-        </Text>
-      );
-    }
+                  const available = matchedSlotGroup.slots
+                    .filter((slot) => slot.status === "available")
+                    .slice(0, 5);
 
-    const available = matchedSlotGroup.slots
-      .filter((slot) => slot.status === "available")
-      .slice(0, 5);
+                  console.log(
+                    `Matched Address ID: ${matchedSlotGroup.addressId}`
+                  );
+                  console.log("Available slots:", available);
 
-    console.log(`Matched Address ID: ${matchedSlotGroup.addressId}`);
-    console.log("Available slots:", available);
+                  if (available.length === 0) {
+                    // No available slots for this clinic
+                    return (
+                      <Text
+                        style={{
+                          fontSize: "12px",
+                          color: "#8c8c8c",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      >
+                        No available slots today
+                      </Text>
+                    );
+                  }
 
-    if (available.length === 0) {
-      // No available slots for this clinic
-      return (
-        <Text
-          style={{
-            fontSize: "12px",
-            color: "#8c8c8c",
-            fontFamily: "Poppins, sans-serif",
-          }}
-        >
-          No available slots today
-        </Text>
-      );
-    }
-
-    // Render up to 5 available slots
-    return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        {available.map((slot, index) => (
-          <div
-            key={index}
-             style={{
-        padding: "4px 10px",
-        backgroundColor: "#f0f8f0",
-        color: "#16A34A",
-        borderRadius: "12px",
-        fontSize: "11px",
-        fontWeight: 500,
-        fontFamily: "Poppins, sans-serif",
-        lineHeight: "1.2",
-        height: "24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minWidth: "80px",
-      }}
-          >
-            {formatTime(slot.time)}
-          </div>
-        ))}
-      </div>
-    );
-  })()
-) : (
-  // availableSlots is empty
-  <Text
-    style={{
-      fontSize: "12px",
-      color: "#8c8c8c",
-      fontFamily: "Poppins, sans-serif",
-    }}
-  >
-    No available slots today
-  </Text>
-)}            
+                  // Render up to 5 available slots
+                  return (
+                    <div
+                      style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
+                    >
+                      {available.map((slot, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            padding: "4px 10px",
+                            backgroundColor: "#f0f8f0",
+                            color: "#16A34A",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            fontWeight: 500,
+                            fontFamily: "Poppins, sans-serif",
+                            lineHeight: "1.2",
+                            height: "24px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: "80px",
+                          }}
+                        >
+                          {formatTime(slot.time)}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              ) : (
+                // availableSlots is empty
+                <Text
+                  style={{
+                    fontSize: "12px",
+                    color: "#8c8c8c",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
+                  No available slots today
+                </Text>
+              )}
               {/* {availableSlots.length > 0 ? (
                 availableSlots.map((slot, index) => (
                 slot.slice(0, 5).map((slot, index) => (
@@ -1300,84 +1343,89 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
               }}
             >
               {nextAvailableSlot?.length > 0 ? (
-  (() => {
-    const matchedSlotGroup = nextAvailableSlot.find(
-      (slotGroup) => slotGroup.addressId === currentClinic.addressId
-    );
+                (() => {
+                  const matchedSlotGroup = nextAvailableSlot.find(
+                    (slotGroup) =>
+                      slotGroup.addressId === currentClinic.addressId
+                  );
 
-    if (!matchedSlotGroup) {
-      return (
-        <Text
-          style={{
-            fontSize: "12px",
-            color: "#8c8c8c",
-            fontFamily: "Poppins, sans-serif",
-          }}
-        >
-          No available slots Tomorrow
-        </Text>
-      );
-    }
+                  if (!matchedSlotGroup) {
+                    return (
+                      <Text
+                        style={{
+                          fontSize: "12px",
+                          color: "#8c8c8c",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      >
+                        No available slots Tomorrow
+                      </Text>
+                    );
+                  }
 
-    const available = matchedSlotGroup.slots
-      .filter((slot) => slot.status === "available")
-      .slice(0, 5);
+                  const available = matchedSlotGroup.slots
+                    .filter((slot) => slot.status === "available")
+                    .slice(0, 5);
 
-    console.log(`Matched Address ID: ${matchedSlotGroup.addressId}`);
-    console.log("Available slots (Tomorrow):", available);
+                  console.log(
+                    `Matched Address ID: ${matchedSlotGroup.addressId}`
+                  );
+                  console.log("Available slots (Tomorrow):", available);
 
-    if (available.length === 0) {
-      return (
-        <Text
-          style={{
-            fontSize: "12px",
-            color: "#8c8c8c",
-            fontFamily: "Poppins, sans-serif",
-          }}
-        >
-          No available slots Tomorrow
-        </Text>
-      );
-    }
+                  if (available.length === 0) {
+                    return (
+                      <Text
+                        style={{
+                          fontSize: "12px",
+                          color: "#8c8c8c",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      >
+                        No available slots Tomorrow
+                      </Text>
+                    );
+                  }
 
-    return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        {available.map((slot, index) => (
-          <div
-            key={index}
-            style={{
-              padding: "4px 10px",
-              backgroundColor: "#f0f8f0",
-              color: "#16A34A",
-              borderRadius: "12px",
-              fontSize: "11px",
-              fontWeight: 500,
-              fontFamily: "Poppins, sans-serif",
-              lineHeight: "1.2",
-              height: "24px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minWidth: "80px",
-            }}
-          >
-            {formatTime(slot.time)}
-          </div>
-        ))}
-      </div>
-    );
-  })()
-) : (
-  <Text
-    style={{
-      fontSize: "12px",
-      color: "#8c8c8c",
-      fontFamily: "Poppins, sans-serif",
-    }}
-  >
-    No available slots Tomorrow
-  </Text>
-)}
+                  return (
+                    <div
+                      style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
+                    >
+                      {available.map((slot, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            padding: "4px 10px",
+                            backgroundColor: "#f0f8f0",
+                            color: "#16A34A",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            fontWeight: 500,
+                            fontFamily: "Poppins, sans-serif",
+                            lineHeight: "1.2",
+                            height: "24px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: "80px",
+                          }}
+                        >
+                          {formatTime(slot.time)}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              ) : (
+                <Text
+                  style={{
+                    fontSize: "12px",
+                    color: "#8c8c8c",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
+                  No available slots Tomorrow
+                </Text>
+              )}
 
               {/* {nextAvailableSlot ? (
                 <>
@@ -1393,22 +1441,25 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
             <div
               style={{
                 position: "absolute",
-                bottom: "42px",
-                right: "1px", 
+                top: "50%",
+                left: "12px",
+                right: "12px",
                 display: "flex",
-                gap: "16rem", 
+                justifyContent: "space-between",
+                transform: "translateY(-50%)",
               }}
             >
               <div
                 style={{
-                  width: "27px", 
-                  height: "28px", 
+                  width: "28px",
+                  height: "28px",
                   borderRadius: "50%",
                   backgroundColor: "#9EBEFF",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 }}
                 onClick={handlePreviousClinic}
               >
@@ -1424,6 +1475,7 @@ const ClinicAvailability = ({ currentClinicIndex, setCurrentClinicIndex, doctorI
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 }}
                 onClick={handleNextClinic}
               >
@@ -1515,6 +1567,10 @@ const DoctorDashboard = () => {
     { label: "Pharmacy", value: 0, color: "#fbbc04" },
   ]);
 
+   const [newAppointments, setNewAppointments] = useState(false);
+  const [newFollowups, setNewFollowups] = useState(false);
+ 
+
   const isReceptionist = user?.role === "receptionist";
 
   const formatDateForComparison = (dateString) => {
@@ -1561,24 +1617,22 @@ const DoctorDashboard = () => {
       console.log("Appointments API response:", response.data.data);
 
       if (
-  response.data.status === "success" &&
-  Array.isArray(response.data.data)
-) {
-  const appointmentsList = response.data.data;
+        response.data.status === "success" &&
+        Array.isArray(response.data.data)
+      ) {
+        const appointmentsList = response.data.data;
 
-  // Sort by appointmentTime in descending order (latest first)
-  appointmentsList.sort((a, b) => {
-    const timeA = moment(a.appointmentTime, "HH:mm");
-    const timeB = moment(b.appointmentTime, "HH:mm");
-    return timeB.diff(timeA); // descending
-  });
+        // Sort by appointmentTime in descending order (latest first)
+        appointmentsList.sort((a, b) => {
+          const timeA = moment(a.appointmentTime, "HH:mm");
+          const timeB = moment(b.appointmentTime, "HH:mm");
+          return timeB.diff(timeA); // descending
+        });
 
-  console.log("Sorted Appointments List:", appointmentsList);
+        console.log("Sorted Appointments List:", appointmentsList);
 
-  setAppointments(appointmentsList);
-}
-
-      else {
+        setAppointments(appointmentsList);
+      } else {
         console.warn("Unexpected API response structure:", response.data);
         setAppointments([]);
         if (formattedDate === moment().format("YYYY-MM-DD")) {
@@ -1599,7 +1653,9 @@ const DoctorDashboard = () => {
 
   const getTodayAppointmentCount = async () => {
     try {
-      const response = await apiGet(`/appointment/getTodayAppointmentCount?doctorId=${doctorId}`);
+      const response = await apiGet(
+        `/appointment/getTodayAppointmentCount?doctorId=${doctorId}`
+      );
       if (response.data.status === "success") {
         setDashboardData((prev) => ({
           ...prev,
@@ -1728,11 +1784,11 @@ const DoctorDashboard = () => {
   };
 
   useEffect(() => {
-    if(user && doctorId){
+    if (user && doctorId) {
       getAppointments();
       getTodayAppointmentCount();
     }
-  
+
     getTodayRevenue();
     getRevenueSummary();
   }, [user, doctorId]);
@@ -1762,8 +1818,10 @@ const DoctorDashboard = () => {
             marginBottom: "24px",
           }}
         >
+
           <AppointmentsCard dashboardData={dashboardData} />
-          
+
+
           {user?.role === "doctor" && (
             <RevenueCard dashboardData={dashboardData} />
           )}
@@ -1785,6 +1843,8 @@ const DoctorDashboard = () => {
               getStatusColor={getStatusColor}
               getTypeColor={getTypeColor}
               getAppointmentTypeDisplay={getAppointmentTypeDisplay}
+              newAppointments={newAppointments}
+              newFollowups={newFollowups}
             />
             <PatientFeedback />
           </div>

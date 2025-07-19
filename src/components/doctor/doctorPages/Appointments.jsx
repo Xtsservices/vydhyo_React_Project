@@ -65,7 +65,7 @@ const Appointment = () => {
     clinic: "all",
     type: "all",
     status: "all",
-    date: null,
+    date: moment()
   });
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
@@ -370,9 +370,27 @@ console.log(filters.date, "selectedDate")
         const response = await apiGet(
               `/appointment/getSlotsByDoctorIdAndDate?doctorId=${currentUserID}&date=${selectedDate}&addressId=${clinicId}`
             );
+
             const data = response.data;
             if (data.status === "success"){
-              setAvailableTimeSlots(data?.data?.slots)
+             const today = moment().format("YYYY-MM-DD"); // today's date
+  console.log(selectedDate, "selected date");
+  console.log(today, "today");
+
+  const avilableSlots = data?.data?.slots
+    .filter((slot) => slot?.status === "available")
+    .filter((slot) => {
+      // Check only future times if selectedDate is today
+      if (selectedDate === today) {
+        const slotDateTime = moment(`${selectedDate} ${slot.time}`, "YYYY-MM-DD HH:mm");
+        return slotDateTime.isAfter(moment());
+      }
+      return true; // keep all slots for future dates
+    })
+    .map((slot) => slot); // keep formatted as 'HH:mm'
+
+  console.log(avilableSlots, "availableslots data");
+  setAvailableTimeSlots(avilableSlots);
             }else{
               toast.error(data?.message?.message || "Failed to fetch timeslots");
             }
@@ -627,7 +645,7 @@ console.log(filters.date, "selectedDate")
                 />
               </Col>
 
-              <Col xs={24} sm={12} md={4}>
+              {/* <Col xs={24} sm={12} md={4}>
                 <Select
                   className="filters-select"
                   value={filters.clinic}
@@ -639,7 +657,7 @@ console.log(filters.date, "selectedDate")
                   <Option value="orthopedics">Orthopedics</Option>
                   <Option value="General Physician">General Physician</Option>
                 </Select>
-              </Col>
+              </Col> */}
 
               <Col xs={24} sm={12} md={4}>
                 <Select
@@ -734,7 +752,7 @@ console.log(filters.date, "selectedDate")
                           style={{ width: "100%", marginTop: 8 }}
                         >
 {availableTimeSlots?.map((slot) => (
-  <Option key={slot._id} value={slot.time}>
+  <Option key={slot._id} value={slot.time}  >
     {slot.time}
   </Option>
 ))}

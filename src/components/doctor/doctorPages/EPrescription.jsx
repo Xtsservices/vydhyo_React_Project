@@ -352,7 +352,6 @@ const EPrescription = () => {
             toast.error(uploadResponse?.data?.message || "Failed to upload attachment");
           }
         } else if (type === "save") {
-          toast.success("Prescription successfully saved");
           setTimeout(() => {
             navigate("/doctor/doctorPages/Appointments");
           }, 3000);

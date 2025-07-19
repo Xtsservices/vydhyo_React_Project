@@ -87,6 +87,8 @@ const AddWalkInPatient = () => {
 
   const getAuthToken = () => localStorage.getItem("accessToken") || "";
   const currentUserID = localStorage.getItem("userID");
+ const doctorId = user?.role !== 'doctor' ? user?.createdBy || '' : currentUserID;
+
 
   // Update department once user is available
 useEffect(() => {
@@ -267,7 +269,7 @@ useEffect(() => {
 
       if (response.status === 200) {
         const data = response.data;
- toast.success(data.message || "Patient created successfully");
+//  toast.success(data.message || "Patient created successfully");
         return {
           success: true,
           data: data.data,
@@ -300,7 +302,7 @@ useEffect(() => {
         toast.error(data.message || "Failed to create appointment");
         // throw new Error(data.message || "Failed to create appointment");
       } else {
-        toast.success(data.message || "Appointment created successfully");
+        // toast.success(data.message || "Appointment created successfully");
          return {
         success: true,
         data: data.data,
@@ -505,10 +507,13 @@ useEffect(() => {
       const { success, message: msg } = await createAppointment(
         appointmentRequest
       );
+      console.log(success, message, "message success")
       if (success) {
+      console.log(success, message, "message====== success")
+       toast.success(`Appointment created successfully!`);
         message.success(`Appointment created successfully! ${msg}`);
 
-        toast.success(`Appointment created successfully! ${msg}`);
+       
 
     navigate("/Doctor/dashboard");
 
@@ -638,31 +643,29 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
 
 
     const fetchTimeSlots = useCallback(async (selectedDate, clinicId) => {
-      const doctorId = user?.role !== 'doctor' ? user?.createdBy || '' : currentUserID;
 
-      console.log("Fetching time slots for date:", selectedDate, "clinicId:", clinicId, "doctorId:", doctorId, currentUserID);
 
       if (!selectedDate || !clinicId || !doctorId) return;
     setIsFetchingSlots(true);
     
     try {
-      console.log(clinicId, currentUserID, selectedDate)
       const response = await apiGet(
         `/appointment/getSlotsByDoctorIdAndDate?doctorId=${doctorId}&date=${selectedDate}&addressId=${clinicId}`
       );
       const data = response.data;
 
-      console.log("Time Slots Response:=============",   data.data );
       if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
-        console.log("Time Slots Data:=============", data.data.slots);
-        const availableSlots = data.data.slots
-          .filter((slot) => slot.status === "available")
-          .map((slot) => formatTimeForAPI(slot.time));
+        const availableSlots = data.data.slots     
+        .filter((slot) => slot.status === "available")
+  .map((slot) => formatTimeForAPI(slot.time)) 
+  .filter((formattedTime) => {
+    const slotMoment = moment(`${selectedDate} ${formattedTime}`, 'YYYY-MM-DD HH:mm');
+    return slotMoment.isAfter(moment());
+  });
         setTimeSlots(availableSlots);
         if (!availableSlots.includes(patientData.selectedTimeSlot)) {
           setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
         }
-        console.log("availableSlots=====",availableSlots)
         if (availableSlots.length === 0) {
           setIsClinicModalVisible(true);
           setSlotAvailability(false)
@@ -691,7 +694,8 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
   }, [currentUserID, patientData.selectedTimeSlot, formatTimeForAPI]);
 
      useEffect(() => {
-    if (date && patientData.clinic) {
+    if (date && patientData.clinic && doctorId) {
+      console.log("patient")
       fetchTimeSlots(date, patientData.clinic);
     } else {
       setTimeSlots([]);
@@ -699,7 +703,6 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
     }
   }, [date, patientData.clinic, fetchTimeSlots]);
 
-  console.log("timeslots=====",timeSlots)
   const renderSearchCard = () => (
     <Card style={{ marginBottom: 16 }}>
       <Row gutter={16}>
