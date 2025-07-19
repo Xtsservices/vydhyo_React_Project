@@ -548,13 +548,13 @@ const AvailabilityScreen = () => {
   const adjustDuration = (direction, section) => {
     if (section === "available") {
       if (direction === "up") {
-        setAvailableDuration((prev) => Math.min(120, prev + 15));
+        setAvailableDuration((prev) => Math.min(60, prev + 15));
       } else {
         setAvailableDuration((prev) => Math.max(15, prev - 15));
       }
     } else {
       if (direction === "up") {
-        setUnavailableDuration((prev) => Math.min(120, prev + 15));
+        setUnavailableDuration((prev) => Math.min(60, prev + 15));
       } else {
         setUnavailableDuration((prev) => Math.max(15, prev - 15));
       }

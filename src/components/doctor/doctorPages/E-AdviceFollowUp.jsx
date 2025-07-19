@@ -54,7 +54,7 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
 
         <div className="advice-container">
           <textarea
-            placeholder="Enter findings from clinical examination..."
+            placeholder=""
             value={localData.advice}
             onChange={handleChange}
             name="advice"
