@@ -54,7 +54,7 @@ const MyPatients = () => {
     return moment().diff(moment(dob, "DD-MM-YYYY"), "years").toString();
   };
 
-  const fetchPatients = useCallback(async () => {
+const fetchPatients = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
@@ -64,14 +64,13 @@ const MyPatients = () => {
       }
 
       const response = await apiGet(
-        `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
+       `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
       );
       const data = response.data;
 
       console.log(response.data, "response.data from patients.jsx");
 
       let patientsData = [];
-
 
      if (response.status === 200 && data.data) {
   const appointmentsData = Array.isArray(data.data)
@@ -123,19 +122,14 @@ const MyPatients = () => {
     // return b.id.localeCompare(a.id); // latest (higher) id first
   });
 
+  patientsData = patientsDataUnsorted;
 
-          if (dateA.isBefore(dateB)) return 1;
-          if (dateA.isAfter(dateB)) return -1;
+  setPatients(patientsData);
+  setFilteredPatients(patientsData);
+}
 
-          // Dates are same, now compare ID (assuming alphanumeric)
-          return b.id.localeCompare(a.id); // latest (higher) id first
-        });
 
-        patientsData = patientsDataUnsorted;
-
-        setPatients(patientsData);
-        setFilteredPatients(patientsData);
-      }
+      
     } catch (error) {
       console.error("Error fetching patients:", error);
       message.error("Failed to fetch patients data. Please try again.");

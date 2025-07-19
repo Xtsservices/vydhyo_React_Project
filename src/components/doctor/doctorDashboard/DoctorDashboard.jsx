@@ -307,8 +307,7 @@ const Header = ({ user, navigate }) => {
   );
 };
 
-const AppointmentsCard = ({ dashboardData, setNewAppointments,
-  setNewFollowups, }) => (
+const AppointmentsCard = ({ dashboardData }) => (
   <Card
     style={{
       borderRadius: "16px",
@@ -362,7 +361,7 @@ const AppointmentsCard = ({ dashboardData, setNewAppointments,
           textAlign: "center",
           backdropFilter: "blur(10px)",
         }}
-        onClick={setNewAppointments(true)}
+        // onClick={setNewAppointments(true)}
       >
         <Title
           level={2}
@@ -403,7 +402,7 @@ const AppointmentsCard = ({ dashboardData, setNewAppointments,
           textAlign: "center",
           backdropFilter: "blur(10px)",
         }}
-        onClick={setNewFollowups(true)}
+        // onClick={setNewFollowups(true)}
       >
         <Title
           level={2}
