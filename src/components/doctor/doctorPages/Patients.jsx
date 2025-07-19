@@ -72,44 +72,57 @@ const MyPatients = () => {
 
       let patientsData = [];
 
-      if (response.status === 200 && data.data) {
-        const appointmentsData = Array.isArray(data.data)
-          ? data.data
-          : [data.data];
 
-        const patientsDataUnsorted = appointmentsData.map((appointment) => ({
-          id:
-            appointment.userId ||
-            `P-${Math.random().toString(36).substr(2, 6)}`,
-          appointmentId: appointment.appointmentId || "N/A",
-          name: appointment.patientName || "N/A",
-          gender: appointment.patientDetails?.gender || "N/A",
-          age: appointment.patientDetails?.dob
-            ? calculateAge(appointment.patientDetails.dob)
-            : "N/A",
-          phone: appointment.patientDetails?.mobile || "N/A",
-          lastVisit: appointment.appointmentDate
-            ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
-            : "N/A",
-          appointmentType: appointment.appointmentType || "N/A",
-          status:
-            appointment.appointmentType === "New-Walkin" ||
-            appointment.appointmentType === "new-walkin"
-              ? "New Patient"
-              : "Follow-up",
-          department: appointment.appointmentDepartment || "N/A",
-          appointmentTime: appointment.appointmentTime || "N/A",
-          appointmentStatus: appointment.appointmentStatus || "N/A",
-          appointmentReason: appointment.appointmentReason || "N/A",
-          appointmentCount: 1,
-          allAppointments: [appointment],
-          ePrescription: appointment.ePrescription || null,
-        }));
+     if (response.status === 200 && data.data) {
+  const appointmentsData = Array.isArray(data.data)
+    ? data.data
+    : [data.data];
 
-        // Sorting by date (desc) then by userId (desc)
-        patientsDataUnsorted.sort((a, b) => {
-          const dateA = moment(a.lastVisit, "DD MMMM YYYY");
-          const dateB = moment(b.lastVisit, "DD MMMM YYYY");
+  const patientsDataUnsorted = appointmentsData.map((appointment) => ({
+    id: appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`,
+    appointmentId: appointment.appointmentId || "N/A",
+    name: appointment.patientName || "N/A",
+    gender: appointment.patientDetails?.gender || "N/A",
+    age: appointment.patientDetails?.dob
+      ? calculateAge(appointment.patientDetails.dob)
+      : "N/A",
+    phone: appointment.patientDetails?.mobile || "N/A",
+    lastVisit: appointment.appointmentDate
+      ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
+      : "N/A",
+    appointmentType: appointment.appointmentType || "N/A",
+    status:
+      appointment.appointmentType === "New-Walkin" ||
+      appointment.appointmentType === "new-walkin"
+        ? "New Patient"
+        : "Follow-up",
+    department: appointment.appointmentDepartment || "N/A",
+    appointmentTime: appointment.appointmentTime || "N/A",
+    appointmentStatus: appointment.appointmentStatus || "N/A",
+    appointmentReason: appointment.appointmentReason || "N/A",
+    appointmentCount: 1,
+    allAppointments: [appointment],
+  }));
+
+  // 🔽 Sorting by date (desc) then by userId (desc)
+  patientsDataUnsorted.sort((a, b) => {
+
+    const getNumericId = (id) => parseInt(id.replace(/\D/g, ''), 10);
+
+  const numA = getNumericId(a.id);
+  const numB = getNumericId(b.id);
+
+  return numB - numA;
+    // const dateA = moment(a.lastVisit, "DD MMMM YYYY");
+    // const dateB = moment(b.lastVisit, "DD MMMM YYYY");
+
+    // if (dateA.isBefore(dateB)) return 1;
+    // if (dateA.isAfter(dateB)) return -1;
+
+    // // Dates are same, now compare ID (assuming alphanumeric)
+    // return b.id.localeCompare(a.id); // latest (higher) id first
+  });
+
 
           if (dateA.isBefore(dateB)) return 1;
           if (dateA.isAfter(dateB)) return -1;

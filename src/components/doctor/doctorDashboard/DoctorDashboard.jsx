@@ -37,6 +37,7 @@ const feedbacks = [
   },
 ];
 
+
 const PercentageChangeIndicator = ({
   value,
   positiveColor = "#16A34A",
@@ -306,7 +307,8 @@ const Header = ({ user, navigate }) => {
   );
 };
 
-const AppointmentsCard = ({ dashboardData }) => (
+const AppointmentsCard = ({ dashboardData, setNewAppointments,
+  setNewFollowups, }) => (
   <Card
     style={{
       borderRadius: "16px",
@@ -350,7 +352,7 @@ const AppointmentsCard = ({ dashboardData }) => (
     </div>
 
     <div
-      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}
+      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" } }
     >
       <div
         style={{
@@ -360,6 +362,7 @@ const AppointmentsCard = ({ dashboardData }) => (
           textAlign: "center",
           backdropFilter: "blur(10px)",
         }}
+        onClick={setNewAppointments(true)}
       >
         <Title
           level={2}
@@ -400,6 +403,7 @@ const AppointmentsCard = ({ dashboardData }) => (
           textAlign: "center",
           backdropFilter: "blur(10px)",
         }}
+        onClick={setNewFollowups(true)}
       >
         <Title
           level={2}
@@ -540,13 +544,24 @@ const PatientAppointments = ({
   getStatusColor,
   getTypeColor,
   getAppointmentTypeDisplay,
+  newAppointments,
+  newFollowups
 }) => {
   const navigate = useNavigate();
+console.log(newAppointments, "newappointments ")
+
+
   const filteredAppointments = appointments.filter(
     (appt) =>
       new Date(appt.appointmentDate).toISOString().split("T")[0] ===
       selectedDate
   );
+
+  if (newAppointments) {
+console.log("new appointments")
+
+
+}
 
   // Show only first 5 appointments if there are more
   const displayedAppointments = filteredAppointments.slice(0, 5);
@@ -1552,6 +1567,10 @@ const DoctorDashboard = () => {
     { label: "Pharmacy", value: 0, color: "#fbbc04" },
   ]);
 
+   const [newAppointments, setNewAppointments] = useState(false);
+  const [newFollowups, setNewFollowups] = useState(false);
+ 
+
   const isReceptionist = user?.role === "receptionist";
 
   const formatDateForComparison = (dateString) => {
@@ -1799,7 +1818,9 @@ const DoctorDashboard = () => {
             marginBottom: "24px",
           }}
         >
+
           <AppointmentsCard dashboardData={dashboardData} />
+
 
           {user?.role === "doctor" && (
             <RevenueCard dashboardData={dashboardData} />
@@ -1822,6 +1843,8 @@ const DoctorDashboard = () => {
               getStatusColor={getStatusColor}
               getTypeColor={getTypeColor}
               getAppointmentTypeDisplay={getAppointmentTypeDisplay}
+              newAppointments={newAppointments}
+              newFollowups={newFollowups}
             />
             <PatientFeedback />
           </div>
