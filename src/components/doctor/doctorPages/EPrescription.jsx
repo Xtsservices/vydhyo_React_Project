@@ -66,6 +66,7 @@ const EPrescription = () => {
       pastMedicalHistory: "",
       familyMedicalHistory: "",
       physicalExamination: "",
+        appointmentId: "",
     },
     vitals: {},
     diagnosis: {},
@@ -104,6 +105,7 @@ const EPrescription = () => {
             pastMedicalHistory: prescription.patientInfo?.pastMedicalHistory || "",
             familyMedicalHistory: prescription.patientInfo?.familyMedicalHistory || "",
             physicalExamination: prescription.patientInfo?.physicalExamination || "",
+            appointmentId: prescription.appointmentId || ""
           },
           vitals: {
             bp: prescription.vitals?.bp || "",
@@ -165,6 +167,7 @@ const EPrescription = () => {
           age: patientData.age || "",
           gender: patientData.gender || "",
           mobileNumber: patientData.mobileNumber || "",
+          appointmentId:patientData.appointmentId || ""
         },
       }));
     }

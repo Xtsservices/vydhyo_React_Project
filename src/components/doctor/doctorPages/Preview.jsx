@@ -67,7 +67,16 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, null, "FAST");
-      const pdfBlob = pdf.output("blob");
+      // const pdfBlob = pdf.output("blob");
+      console.log("formData===",formData)
+      const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
+      const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
+
+      console.log("Generated PDF Blob:", {
+        type: pdfBlob.type,
+        size: pdfBlob.size,
+        filename: `${appointmentId}.pdf`,
+      });
 
       console.log("Generated PDF Blob:", {
         type: pdfBlob.type,
@@ -219,7 +228,7 @@ setIsSaving(true); // disable the button
     // setIsSaving(false);
   };
 
-
+console.log("formdata===",formData)
   return (
     <div>
       <ToastContainer />
@@ -543,7 +552,7 @@ setIsSaving(true); // disable the button
             Print Prescription
           </button>
           <button className="whatsapp-button" 
-          // onClick={handleWhatsAppClick}
+          onClick={handleWhatsAppClick}
           >
             <FaWhatsapp className="whatsapp-icon" style={{ marginRight: "8px" }} />
             Share via WhatsApp
