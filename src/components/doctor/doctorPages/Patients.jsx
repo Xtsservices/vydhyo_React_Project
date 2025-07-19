@@ -104,14 +104,21 @@ const MyPatients = () => {
 
   // 🔽 Sorting by date (desc) then by userId (desc)
   patientsDataUnsorted.sort((a, b) => {
-    const dateA = moment(a.lastVisit, "DD MMMM YYYY");
-    const dateB = moment(b.lastVisit, "DD MMMM YYYY");
 
-    if (dateA.isBefore(dateB)) return 1;
-    if (dateA.isAfter(dateB)) return -1;
+    const getNumericId = (id) => parseInt(id.replace(/\D/g, ''), 10);
 
-    // Dates are same, now compare ID (assuming alphanumeric)
-    return b.id.localeCompare(a.id); // latest (higher) id first
+  const numA = getNumericId(a.id);
+  const numB = getNumericId(b.id);
+
+  return numB - numA;
+    // const dateA = moment(a.lastVisit, "DD MMMM YYYY");
+    // const dateB = moment(b.lastVisit, "DD MMMM YYYY");
+
+    // if (dateA.isBefore(dateB)) return 1;
+    // if (dateA.isAfter(dateB)) return -1;
+
+    // // Dates are same, now compare ID (assuming alphanumeric)
+    // return b.id.localeCompare(a.id); // latest (higher) id first
   });
 
   patientsData = patientsDataUnsorted;

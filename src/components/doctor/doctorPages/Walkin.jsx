@@ -87,6 +87,8 @@ const AddWalkInPatient = () => {
 
   const getAuthToken = () => localStorage.getItem("accessToken") || "";
   const currentUserID = localStorage.getItem("userID");
+ const doctorId = user?.role !== 'doctor' ? user?.createdBy || '' : currentUserID;
+
 
   // Update department once user is available
 useEffect(() => {
@@ -267,7 +269,7 @@ useEffect(() => {
 
       if (response.status === 200) {
         const data = response.data;
- toast.success(data.message || "Patient created successfully");
+//  toast.success(data.message || "Patient created successfully");
         return {
           success: true,
           data: data.data,
@@ -641,7 +643,6 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
 
 
     const fetchTimeSlots = useCallback(async (selectedDate, clinicId) => {
-      const doctorId = user?.role !== 'doctor' ? user?.createdBy || '' : currentUserID;
 
 
       if (!selectedDate || !clinicId || !doctorId) return;
@@ -693,7 +694,8 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
   }, [currentUserID, patientData.selectedTimeSlot, formatTimeForAPI]);
 
      useEffect(() => {
-    if (date && patientData.clinic) {
+    if (date && patientData.clinic && doctorId) {
+      console.log("patient")
       fetchTimeSlots(date, patientData.clinic);
     } else {
       setTimeSlots([]);

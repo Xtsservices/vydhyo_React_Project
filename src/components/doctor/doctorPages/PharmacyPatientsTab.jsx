@@ -24,7 +24,7 @@ import { apiGet, apiPost } from "../../api";
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
-const PatientsTab = ({ status, updateCount }) => {
+const PatientsTab = ({ status, updateCount, searchQuery }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(4);
   const [loading, setLoading] = useState(false);
@@ -89,12 +89,19 @@ async function filterPatientsDAta(data) {
     const getIdNumber = (id) => parseInt(id.replace(/\D/g, '')) || 0;
     return getIdNumber(b.patientId) - getIdNumber(a.patientId);
   });
+  if (searchQuery?.trim()) {
+  const lowerSearch = searchQuery.toLowerCase();
+  dataArray = dataArray.filter((patient) =>
+    patient.patientId?.toLowerCase().includes(lowerSearch)
+  );
+}
       }
 
       console.log("dataArray", dataArray);
 
       if (dataArray.length > 0) {
         const formattedData = dataArray.map((patient, index) => {
+
           const totalAmount =
             patient.medicines?.reduce((sum, med) => {
               const price = parseFloat(med.price) || 0;
@@ -409,6 +416,8 @@ async function filterPatientsDAta(data) {
 
   const startIndex = totalPatients > 0 ? (currentPage - 1) * pageSize + 1 : 0;
   const endIndex = Math.min(currentPage * pageSize, totalPatients);
+
+ 
 
   return (
     <Card

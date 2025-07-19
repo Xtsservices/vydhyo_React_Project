@@ -350,7 +350,7 @@ export default function ClinicManagement() {
         response = await apiPost("/users/addAddress", newClinicData);
         console.log("Add API Response:", response);
 
-        if (response.status === 201) {
+        if (response.status === 200) {
           toast.success(response.data?.message || "Clinic added successfully");
         } else {
           toast.error(response.data?.message || "Failed to add clinic");
@@ -390,8 +390,15 @@ export default function ClinicManagement() {
         addressId: "",
       });
     } catch (err) {
-      console.error("Submit error:", err);
-      toast.error(err?.response?.data?.message?.message || err.message);
+      const errorMessage =
+  err?.response?.data?.message?.message ||  // nested message
+  err?.response?.data?.message ||          // fallback if just a string
+  err?.message ||                          // generic JS error
+  "Something went wrong";                  // ultimate fallback
+
+toast.error(errorMessage);
+      console.error("Submit error:", err?.response?.data?.message?.message);
+      // toast.error(err?.response?.data?.message?.message || err.message);
     }
   };
 
