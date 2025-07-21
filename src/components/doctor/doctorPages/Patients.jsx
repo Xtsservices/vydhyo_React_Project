@@ -438,8 +438,8 @@ const MyPatients = () => {
         title="Patient Prescription Details"
         open={isPrescriptionModalVisible}
         onCancel={() => setIsPrescriptionModalVisible(false)}
-        width={800} // Reduced from 1000
-        style={{ marginLeft: "350px" }} // Push modal to the right
+        width={800}
+        className="prescription-modal"
         footer={[
           <Button
             key="close"
@@ -448,6 +448,7 @@ const MyPatients = () => {
             Close
           </Button>,
         ]}
+        style={{ transform: "translateX(90px)" }}
       >
         {selectedPatient && (
           <div style={{ padding: "20px 0" }}>
@@ -489,17 +490,11 @@ const MyPatients = () => {
                   <div style={styles.subSection}>
                     <h4 style={styles.subSectionTitle}>Patient Info</h4>
                     <div style={styles.infoGrid}>
-                     
-                      {shouldDisplayValue(
-                        ePrescriptionData.patientInfo?.age
-                      ) && (
+                      {shouldDisplayValue(ePrescriptionData.patientInfo?.age) && (
                         <div style={styles.infoItem}>
-                          <strong>Age:</strong>{" "}
-                          {ePrescriptionData.patientInfo.age}
+                          <strong>Age:</strong> {ePrescriptionData.patientInfo.age}
                         </div>
                       )}
-                      
-                     
                       {shouldDisplayValue(
                         ePrescriptionData.patientInfo?.chiefComplaint
                       ) && (
@@ -590,7 +585,7 @@ const MyPatients = () => {
                         ePrescriptionData.advice?.followUpDate
                       ) && (
                         <div style={styles.infoItem}>
-                          <strong>Follow-up Date:</strong>
+                          <strong>Follow-up Date:</strong>{" "}
                           {moment(ePrescriptionData.advice.followUpDate).format(
                             "DD MMMM YYYY"
                           )}

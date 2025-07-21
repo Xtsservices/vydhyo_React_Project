@@ -38,29 +38,28 @@ const TestManagement = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const doctorId = user?.role === 'doctor' ? user?.userId : user?.createdBy;
 
-  const fetchTests = async () => {
-    try {
-      setFetchLoading(true);
-      const response = await apiGet(`/lab/getTestsByDoctorId/${doctorId}`);
-      const fetchedTests = response.data.data.map(test => ({
-        testId: test.id,
-        testName: test.testName,
-        price: test.testPrice,
-      }));
-      setTests([...new Map(fetchedTests.map(test => [test.testId, test])).values()]);
-    } catch (error) {
-      notification.error({
-        message: 'Error Fetching Tests',
-        description: error.response?.data?.message || 'Failed to fetch tests',
-        duration: 5,
-      });
-    } finally {
-      setFetchLoading(false);
-    }
-  };
-
-  // Fetch tests on component mount and when doctorId changes
+  // Fetch tests on component mount
   useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        setFetchLoading(true);
+        const response = await apiGet(`/lab/getTestsByDoctorId/${doctorId}`);
+        const fetchedTests = response.data.data.map(test => ({
+          testId: test.id,
+          testName: test.testName,
+          price: test.testPrice,
+        }));
+        setTests([...new Map(fetchedTests.map(test => [test.testId, test])).values()]);
+      } catch (error) {
+        notification.error({
+          message: 'Error Fetching Tests',
+          description: error.response?.data?.message || 'Failed to fetch tests',
+          duration: 5,
+        });
+      } finally {
+        setFetchLoading(false);
+      }
+    };
     if (doctorId) {
       fetchTests();
     }
@@ -91,17 +90,24 @@ const TestManagement = () => {
 
       const response = await apiPost('/lab/addtest', testData);
 
+      const newTest = {
+        testId: response.data.data.id,
+        testName: response.data.data.testName,
+        price: response.data.data.testPrice,
+      };
+      setTests(prevTests => {
+        const updatedTests = [...prevTests, newTest];
+        return [...new Map(updatedTests.map(test => [test.testId, test])).values()];
+      });
+
       notification.success({
         message: 'Test Added Successfully',
-        description: `${values.testName} has been added successfully.`,
+        description: 'The test has been added to the database.',
         duration: 3,
       });
 
       form.resetFields();
       setIsModalVisible(false);
-      
-      // Refresh the tests list
-      await fetchTests();
     } catch (error) {
       console.error('Error adding test:', error);
       notification.error({
@@ -185,13 +191,13 @@ const TestManagement = () => {
         setBulkResults(response.data.data);
         message.success(`${response.data.data.insertedCount} tests added successfully!`);
         
-        // Refresh the tests list
-        await fetchTests();
-        
-        // Close the modal after successful upload
-        setIsBulkModalVisible(false);
-        setUploadedFile(null);
-        setBulkData([]);
+        const fetchResponse = await apiGet(`/lab/getTestsByDoctorId/${doctorId}`);
+        const fetchedTests = fetchResponse.data.data.map(test => ({
+          testId: test.id,
+          testName: test.testName,
+          price: test.testPrice,
+        }));
+        setTests([...new Map(fetchedTests.map(test => [test.testId, test])).values()]);
       }
     } catch (error) {
       console.error('Error uploading bulk data:', error);

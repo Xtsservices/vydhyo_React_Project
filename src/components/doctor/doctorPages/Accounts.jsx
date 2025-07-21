@@ -65,13 +65,16 @@ const AccountsPage = () => {
     recentTransactions: [],
   });
 
-  // Function to group transactions by patient and service for the same day
+  // Function to group transactions by patient name
   const groupTransactions = (transactions) => {
     const grouped = {};
     
     transactions.forEach((txn) => {
-      const date = txn.paidAt ? dayjs(txn.paidAt).format("YYYY-MM-DD") : "unknown";
-      const key = `${txn.patientName || "unknown"}_${txn.paymentFrom || "unknown"}_${date}`;
+      const patientName = txn.userDetails 
+        ? `${txn.userDetails.firstname || ''} ${txn.userDetails.lastname || ''}`.trim()
+        : txn.patientName || "unknown";
+      
+      const key = patientName;
       
       if (!grouped[key]) {
         grouped[key] = {
@@ -79,6 +82,10 @@ const AccountsPage = () => {
           totalAmount: 0,
           latestTxn: txn,
           allTxns: [],
+          patientName: patientName,
+          services: new Set(),
+          paymentMethods: new Set(),
+          statuses: new Set(),
         };
       }
       
@@ -86,6 +93,12 @@ const AccountsPage = () => {
       grouped[key].totalAmount += txn.finalAmount || txn.actualAmount || 0;
       grouped[key].allTxns.push(txn);
       
+      // Track unique services, payment methods, and statuses
+      if (txn.paymentFrom) grouped[key].services.add(txn.paymentFrom);
+      if (txn.paymentMethod) grouped[key].paymentMethods.add(txn.paymentMethod);
+      if (txn.paymentStatus) grouped[key].statuses.add(txn.paymentStatus);
+      
+      // Keep the latest transaction
       const currentDate = txn.paidAt ? new Date(txn.paidAt) : new Date(0);
       const latestDate = grouped[key].latestTxn.paidAt ? new Date(grouped[key].latestTxn.paidAt) : new Date(0);
       
@@ -99,20 +112,24 @@ const AccountsPage = () => {
       groupedCount: group.count,
       groupedAmount: group.totalAmount,
       allTransactions: group.allTxns,
+      patientName: group.patientName,
+      services: Array.from(group.services).join(", "),
+      paymentMethods: Array.from(group.paymentMethods).join(", "),
+      statuses: Array.from(group.statuses).join(", "),
     }));
   };
 
   // Memoized function to map transactions
   const mappedTransactions = groupTransactions(transactions).map((txn) => ({
     id: txn.paymentId || txn._id,
-    patient: txn.patientName || "-",
+    patient: txn.patientName,
     date: txn.paidAt ? dayjs(txn.paidAt).format("DD-MMM-YYYY") : "-",
-    service: getServiceName(txn.paymentFrom),
+    service: txn.services || getServiceName(txn.paymentFrom),
     amount: txn.groupedAmount || txn.finalAmount || txn.actualAmount || 0,
-    status: txn.paymentStatus || "-",
-    paymentMethod: txn.paymentMethod
+    status: txn.statuses || txn.paymentStatus || "-",
+    paymentMethod: txn.paymentMethods || (txn.paymentMethod
       ? txn.paymentMethod.charAt(0).toUpperCase() + txn.paymentMethod.slice(1)
-      : "-",
+      : "-"),
     raw: txn,
     count: txn.groupedCount || 1,
     allTransactions: txn.allTransactions || [txn],
@@ -203,8 +220,6 @@ const AccountsPage = () => {
         (txn) => txn.paymentId || txn._id
       );
       
-      // Assuming the API can handle multiple payment IDs
-      // If not, you may need to make individual API calls for each payment ID
       const response = await Promise.all(
         paymentIds.map((paymentId) =>
           apiGet(`/finance/getPatientHistory?paymentId=${paymentId}&doctorId=${doctorId}`)
@@ -318,22 +333,34 @@ const AccountsPage = () => {
       key: "status",
       width: 100,
       render: (status) => {
+        const statuses = status.split(", ");
+        const primaryStatus = statuses[0]; // Show the first status as primary
+        
         let color = "";
-        switch (status) {
+        switch (primaryStatus) {
           case "paid":
             color = "green";
+            break;
+          case "pending":
+            color = "orange";
             break;
           default:
             color = "default";
         }
+        
         return (
-          <Tag color={color}>
-            {status === "paid"
-              ? "Paid"
-              : status === "pending"
-              ? "Pending"
-              : "Refunded"}
-          </Tag>
+          <Space>
+            <Tag color={color}>
+              {primaryStatus === "paid"
+                ? "Paid"
+                : primaryStatus === "pending"
+                ? "Pending"
+                : "Refunded"}
+            </Tag>
+            {statuses.length > 1 && (
+              <Tag>+{statuses.length - 1}</Tag>
+            )}
+          </Space>
         );
       },
     },
@@ -373,11 +400,13 @@ const AccountsPage = () => {
       <div>
         <Descriptions bordered column={1} size="small">
           <Descriptions.Item label="Patient Name">
-            {transactionDetails[0]?.userDetails?.firstname}{" "}
-            {transactionDetails[0]?.userDetails?.lastname}
+            {selectedTransaction.patientName || 
+             (selectedTransaction.userDetails 
+              ? `${selectedTransaction.userDetails.firstname || ''} ${selectedTransaction.userDetails.lastname || ''}`.trim()
+              : "-")}
           </Descriptions.Item>
-          <Descriptions.Item label="Service">
-            {getServiceName(selectedTransaction.paymentFrom)}
+          <Descriptions.Item label="Services">
+            {selectedTransaction.services || getServiceName(selectedTransaction.paymentFrom)}
           </Descriptions.Item>
           <Descriptions.Item label="Total Amount">
             ₹{selectedTransaction.groupedAmount || selectedTransaction.finalAmount || selectedTransaction.actualAmount}
@@ -385,11 +414,11 @@ const AccountsPage = () => {
           <Descriptions.Item label="Number of Transactions">
             {selectedTransaction.count || 1}
           </Descriptions.Item>
-          <Descriptions.Item label="Status">
-            {transactionDetails[0]?.paymentStatus}
+          <Descriptions.Item label="Statuses">
+            {selectedTransaction.statuses || selectedTransaction.paymentStatus}
           </Descriptions.Item>
-          <Descriptions.Item label="Payment Method">
-            {transactionDetails[0]?.paymentMethod}
+          <Descriptions.Item label="Payment Methods">
+            {selectedTransaction.paymentMethods || selectedTransaction.paymentMethod}
           </Descriptions.Item>
         </Descriptions>
 
@@ -411,17 +440,40 @@ const AccountsPage = () => {
               <Descriptions.Item label="Transaction ID">
                 {txn.paymentId || txn._id}
               </Descriptions.Item>
-              <Descriptions.Item label="Amount">
-                ₹{txn.finalAmount || txn.actualAmount}
+              <Descriptions.Item label="Date">
+                {txn.paidAt ? dayjs(txn.paidAt).format("DD-MMM-YYYY") : "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Service">
+                {getServiceName(txn.paymentFrom)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Actual Amount">
+                ₹{txn.actualAmount || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Discount">
+                {txn.discount || 0} {txn.discountType === "percentage" ? "%" : "₹"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Final Amount">
+                ₹{txn.finalAmount || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Currency">
+                {txn.currency || "INR"}
               </Descriptions.Item>
               <Descriptions.Item label="Paid At">
                 {txn.paidAt
                   ? dayjs(txn.paidAt).format("DD-MMM-YYYY HH:mm")
                   : "-"}
               </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                {txn.paymentStatus}
+              </Descriptions.Item>
+              <Descriptions.Item label="Payment Method">
+                {txn.paymentMethod
+                  ? txn.paymentMethod.charAt(0).toUpperCase() + txn.paymentMethod.slice(1)
+                  : "-"}
+              </Descriptions.Item>
 
               {/* Service-specific details */}
-              {selectedTransaction.paymentFrom === "appointments" && (
+              {txn.paymentFrom === "appointments" && (
                 <>
                   <Descriptions.Item label="Appointment Type">
                     {txnDetails.appointmentDetails?.appointmentType || "N/A"}
@@ -432,13 +484,13 @@ const AccountsPage = () => {
                 </>
               )}
 
-              {selectedTransaction.paymentFrom === "lab" && (
+              {txn.paymentFrom === "lab" && (
                 <Descriptions.Item label="Test Name">
                   {txnDetails.labDetails?.testName || "N/A"}
                 </Descriptions.Item>
               )}
 
-              {selectedTransaction.paymentFrom === "pharmacy" && (
+              {txn.paymentFrom === "pharmacy" && (
                 <>
                   <Descriptions.Item label="Medicine Name">
                     {txnDetails.pharmacyDetails?.medName || "N/A"}

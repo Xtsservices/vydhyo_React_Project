@@ -263,62 +263,115 @@ const styles = {
     color: "#374151",
   },
   prescriptionSection: {
-    marginBottom: "16px",
-    padding: "0 16px 0 0", // Shift right with padding
-    backgroundColor: "transparent",
-    borderRadius: "0",
-    border: "none",
-    borderBottom: "1px solid #e5e7eb", // Horizontal line
+    marginBottom: "24px",
+    paddingBottom: "16px",
+    borderBottom: "1px solid #e5e7eb",
   },
   sectionTitle: {
-    marginBottom: "12px",
+    marginBottom: "16px",
     color: "#1f2937",
-    fontSize: "16px", // Smaller font size
+    fontSize: "18px",
     fontWeight: "600",
-    paddingBottom: "6px",
   },
   subSection: {
     marginBottom: "16px",
-    padding: "0 16px 0 0", // Shift right with padding
-    backgroundColor: "transparent",
-    borderRadius: "0",
-    border: "none",
-    borderBottom: "1px solid #e5e7eb", // Horizontal line
   },
   subSectionTitle: {
-    marginBottom: "10px",
+    marginBottom: "12px",
     color: "#374151",
-    fontSize: "14px", // Smaller font size
+    fontSize: "16px",
     fontWeight: "500",
   },
   infoGrid: {
-    display: "flex", // Horizontal layout
-    flexWrap: "wrap",
-    gap: "8px",
-    marginBottom: "8px",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+    gap: "16px",
+    marginBottom: "16px",
   },
   infoItem: {
-    padding: "0",
-    backgroundColor: "transparent",
-    borderRadius: "0",
-    fontSize: "12px", // Smaller font size
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "8px 12px",
+    backgroundColor: "#f9fafb",
+    borderRadius: "6px",
+    fontSize: "14px",
     color: "#4b5563",
-    flex: "1 1 auto", // Flexible width for horizontal layout
-    minWidth: "120px", // Minimum width to prevent overcrowding
   },
   loadingMessage: {
     textAlign: "center",
     padding: "20px",
     color: "#6b7280",
-    fontSize: "12px", // Smaller font size
+    fontSize: "14px",
   },
   noDataMessage: {
-    padding: "10px",
+    padding: "12px",
     backgroundColor: "#f3f4f6",
-    borderRadius: "4px",
+    borderRadius: "6px",
     color: "#6b7280",
     textAlign: "center",
-    fontSize: "12px", // Smaller font size
+    fontSize: "14px",
+    marginTop: "8px",
+  },
+
+  modalHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "16px",
+    paddingBottom: "12px",
+    borderBottom: "1px solid #e5e7eb",
+  },
+  modalTitle: {
+    fontSize: "20px",
+    fontWeight: "600",
+    color: "#1f2937",
+    margin: 0,
+  },
+  modalCloseButton: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "18px",
+    color: "#6b7280",
+  },
+  medicineTable: {
+    marginTop: "16px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "6px",
+  },
+  testTable: {
+    marginTop: "16px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "6px",
+  },
+  tableHeaderCell: {
+    backgroundColor: "#f9fafb",
+    fontWeight: "600",
+    color: "#374151",
+  },
+  tableRowCell: {
+    borderBottom: "1px solid #e5e7eb",
+  },
+  modalFooter: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: "24px",
+    paddingTop: "16px",
+    borderTop: "1px solid #e5e7eb",
+  },
+ 
+  closeButton: {
+    padding: "8px 16px",
+    backgroundColor: "#3b82f6",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontWeight: "500",
+    transition: "all 0.2s",
+    "&:hover": {
+      backgroundColor: "#2563eb",
+    },
   },
 };
 

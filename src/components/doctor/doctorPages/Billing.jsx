@@ -43,6 +43,7 @@ const BillingSystem = () => {
         const response = await apiGet(
           `/receptionist/fetchMyDoctorPatients/${doctorId}`
         );
+        console.log("API Response:", response);
         if (response.status === 200 && response?.data?.data) {
           const result = response.data.data.reverse();
 
@@ -249,16 +250,57 @@ const BillingSystem = () => {
     }
   };
 
-  if (loading)
-    return (
-      <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
-    );
-  if (error)
-    return (
-      <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
-        {error}
+if (loading)
+  return (
+    <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
+  );
+if (error)
+  return (
+    <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
+      {error}
+    </div>
+  );
+
+// Add this check for empty patients array
+if (patients.length === 0) {
+  return (
+    <div
+      style={{
+        fontFamily: "Arial, sans-serif",
+        padding: "20px",
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          backgroundColor: "white",
+          borderRadius: "8px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+          padding: "30px",
+          textAlign: "center",
+        }}
+      >
+        <h1
+          style={{
+            color: "#333",
+            marginBottom: "30px",
+            fontSize: "28px",
+            fontWeight: "bold",
+          }}
+        >
+          Patient Billing System
+        </h1>
+        <p style={{ fontSize: "18px", color: "#666" }}>No patients found</p>
       </div>
-    );
+    </div>
+  );
+}
 
   return (
     <div
