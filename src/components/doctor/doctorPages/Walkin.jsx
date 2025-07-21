@@ -83,12 +83,38 @@ const AddWalkInPatient = () => {
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   const [isClinicModalVisible, setIsClinicModalVisible] = useState(false);
   const [slotAvailability, setSlotAvailability] = useState(true);
-
+const [doctorData, setDoctorData] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("accessToken") || "";
   const currentUserID = localStorage.getItem("userID");
  const doctorId = user?.role !== 'doctor' ? user?.createdBy || '' : currentUserID;
 
+ // Map appointment types to consultation modes
+  const appointmentTypeToMode = {
+    "new-walkin": "In-Person",
+    "followup-walkin": "In-Person",
+    "new-homecare": "Home Visit",
+    "followup-homecare": "Home Visit",
+    "followup-video": "Video",
+  };
+
+  // Update consultation fee based on appointment type
+  useEffect(() => {
+    const sourceData = user?.role === "doctor" ? user : doctorData;
+    if (patientData.appointmentType && sourceData?.consultationModeFee) {
+      const consultationMode = appointmentTypeToMode[patientData.appointmentType];
+      const feeEntry = sourceData.consultationModeFee.find(
+        (mode) => mode.type === consultationMode
+      );
+      if (feeEntry) {
+        setConsultationFee(feeEntry.fee);
+      } else {
+        setConsultationFee(undefined); // Allow manual entry if no fee found
+      }
+    } else {
+      setConsultationFee(undefined); // Allow manual entry if no appointment type
+    }
+  }, [patientData.appointmentType, user?.consultationModeFee]);
 
   // Update department once user is available
 useEffect(() => {
@@ -593,6 +619,7 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
  console.log("Doctor Details:", doctorDetails?.data?.data);
  const doctorData = doctorDetails?.data?.data;
  if (doctorDetails?.data?.status === "success") {
+  setDoctorData(doctorData);
   setPatientData((prev) => ({
     ...prev,
     department: doctorData?.specialization?.name,
@@ -644,14 +671,16 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
 
     const fetchTimeSlots = useCallback(async (selectedDate, clinicId) => {
 
-
+console.log("first")
       if (!selectedDate || !clinicId || !doctorId) return;
     setIsFetchingSlots(true);
+console.log("first2")
     
     try {
       const response = await apiGet(
         `/appointment/getSlotsByDoctorIdAndDate?doctorId=${doctorId}&date=${selectedDate}&addressId=${clinicId}`
       );
+      console.log("response122334",response)
       const data = response.data;
 
       if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
@@ -1015,7 +1044,14 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Text strong>Consultation Fee (₹) *</Text>
-          <Input
+        {consultationFee !== undefined ? (
+    <Input
+      value={consultationFee}
+      disabled={true}
+      style={{ marginTop: 8 }}
+    />
+  ) : (
+  <Input
             placeholder="Enter consultation fee"
             value={consultationFee ?? ""}
             onChange={(e) =>
@@ -1025,9 +1061,13 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
             }
             type="number"
             min={0}
-            step={0.01}
+              step={1}
             style={{ marginTop: 8 }}
           />
+  )
+
+          }
+        
           {fieldErrors.consultationFee && (
             <Text type="danger">{fieldErrors.consultationFee}</Text>
           )}
@@ -1095,6 +1135,7 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
     </Card>
   );
 
+  console.log("patientData===",patientData)
   return (
     <div
       style={{

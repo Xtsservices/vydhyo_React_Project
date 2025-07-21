@@ -40,6 +40,7 @@ const EPrescription = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [clinicDetails, setClinicDetails] = useState(null);
   const [selectedClinic, setSelectedClinic] = useState(null);
+   const [doctorData, setDoctorData] = useState(null);
   const [formData, setFormData] = useState({
     doctorInfo: {
       doctorId: doctorId || "",
@@ -201,8 +202,21 @@ const EPrescription = () => {
 
   const getCurrentUserData = async () => {
     try {
-      const response = await apiGet("/users/getUser");
+      const response = await apiGet(`/users/getUser?userId=${doctorId}`);
       const userData = response.data?.data;
+        setDoctorData(userData);
+         setFormData((prev) => ({
+            ...prev,
+            doctorInfo: {
+              ...prev.doctorInfo,
+              doctorId: doctorId,
+              doctorName: `${userData.firstname || ""} ${userData.lastname || ""}`.trim(),
+              qualifications: userData.specialization?.degree || "",
+              specialization: userData.specialization?.name?.trim() || "",
+              medicalRegistrationNumber: userData.medicalRegistrationNumber || "",
+              contactNumber: userData.mobile ,
+            },
+          }));
       const selectedClinic2 =
         userData?.addresses?.find(
           (address) =>
@@ -277,8 +291,8 @@ const EPrescription = () => {
         advice: advice.advice || null,
         followUpDate: advice.followUpDate || null,
       },
-      createdBy: doctorInfo.doctorId,
-      updatedBy: doctorInfo.doctorId,
+      createdBy: user.userId || doctorInfo.doctorId,
+      updatedBy: user.userId ||doctorInfo.doctorId,
     };
   }
 

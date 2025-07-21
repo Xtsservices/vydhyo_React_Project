@@ -424,9 +424,10 @@ console.log(filters.date, "selectedDate")
     }));
   };
 
+  console.log("user appoi",user)
   const renderActionMenu = (record) => (
     <Menu>
-     {user?.role === "doctor" && (
+    {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
     <Menu.Item
       key="e-prescription"
       onClick={() => handleEPrescription(record)}

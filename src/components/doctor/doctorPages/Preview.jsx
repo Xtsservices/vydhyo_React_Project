@@ -223,7 +223,7 @@ const generatePDF = async () => {
 
   const getCurrentUserData = async () => {
     try {
-      const response = await apiGet("/users/getUser");
+      const response = await apiGet(`/users/getUser?userId=${doctorId}`);
       const userData = response.data?.data;
       const selectedClinic2 =
         userData?.addresses?.find(
