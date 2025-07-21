@@ -89,6 +89,31 @@ const AddWalkInPatient = () => {
   const currentUserID = localStorage.getItem("userID");
  const doctorId = user?.role !== 'doctor' ? user?.createdBy || '' : currentUserID;
 
+ // Map appointment types to consultation modes
+  const appointmentTypeToMode = {
+    "new-walkin": "In-Person",
+    "followup-walkin": "In-Person",
+    "new-homecare": "Home Visit",
+    "followup-homecare": "Home Visit",
+    "followup-video": "Video",
+  };
+
+  // Update consultation fee based on appointment type
+  useEffect(() => {
+    if (patientData.appointmentType && user?.consultationModeFee) {
+      const consultationMode = appointmentTypeToMode[patientData.appointmentType];
+      const feeEntry = user.consultationModeFee.find(
+        (mode) => mode.type === consultationMode
+      );
+      if (feeEntry) {
+        setConsultationFee(feeEntry.fee);
+      } else {
+        setConsultationFee(undefined); // Allow manual entry if no fee found
+      }
+    } else {
+      setConsultationFee(undefined); // Allow manual entry if no appointment type
+    }
+  }, [patientData.appointmentType, user?.consultationModeFee]);
 
   // Update department once user is available
 useEffect(() => {
@@ -1015,7 +1040,14 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Text strong>Consultation Fee (₹) *</Text>
-          <Input
+        {consultationFee !== undefined ? (
+    <Input
+      value={consultationFee}
+      disabled={true}
+      style={{ marginTop: 8 }}
+    />
+  ) : (
+  <Input
             placeholder="Enter consultation fee"
             value={consultationFee ?? ""}
             onChange={(e) =>
@@ -1025,9 +1057,13 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
             }
             type="number"
             min={0}
-            step={0.01}
+              step={1}
             style={{ marginTop: 8 }}
           />
+  )
+
+          }
+        
           {fieldErrors.consultationFee && (
             <Text type="danger">{fieldErrors.consultationFee}</Text>
           )}
