@@ -318,19 +318,24 @@ const EPrescription = () => {
             return;
           }
           console.log("Prescription ID:", prescriptionId);
+          console.log("formData ID:", patientData);
+          console.log("formData1234:", formData);
 
-          const formData = new FormData();
-          formData.append("file", pdfBlob, "e-prescription.pdf");
-          formData.append("prescriptionId", prescriptionId);
+          const uploadFormData  = new FormData();
+          uploadFormData .append("file", pdfBlob, "e-prescription.pdf");
+          uploadFormData .append("prescriptionId", prescriptionId);
+          uploadFormData .append("appointmentId", patientData?.appointmentId || "");
+          uploadFormData .append("patientId", patientData?.patientId || "");
+          uploadFormData .append("mobileNumber", formData.patientInfo?.mobileNumber || "");
 
           console.log("Form Data for Upload:");
-          for (const [key, value] of formData.entries()) {
+          for (const [key, value] of uploadFormData.entries()) {
             console.log(`${key}:`, value);
           }
 
           const uploadResponse = await apiPost(
             "/pharmacy/addattachprescription",
-            formData,
+            uploadFormData ,
             {
               headers: {
                 "Content-Type": "multipart/form-data",
