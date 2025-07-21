@@ -190,7 +190,8 @@ const handlePrintClick = async () => {
       
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
     } catch (error) {
-      console.error("Failed to open WhatsApp:", error);
+      console.error("Failed to open WhatsApp:", 
+        error);
       toast.error("Failed to open WhatsApp");
     }
   };
@@ -284,7 +285,7 @@ console.log("formdata===",formData)
             </div>
           </div>
 
-          <div style={{ flex: 1, textAlign: "right" }}>
+          <div style={{ flex: 1, textAlign: "right" }}>Patient Details :
             <div style={{ fontSize: "12px", marginBottom: "4px" }}>
               {formData.patientInfo?.patientName || "Not provided"}
             </div>

@@ -262,54 +262,63 @@ const styles = {
     fontWeight: "500",
     color: "#374151",
   },
-  
-// Replace these styles in your styles object
- prescriptionSection: {
-    marginBottom: "20px",
-    padding: "0",
+  prescriptionSection: {
+    marginBottom: "16px",
+    padding: "0 16px 0 0", // Shift right with padding
     backgroundColor: "transparent",
     borderRadius: "0",
     border: "none",
+    borderBottom: "1px solid #e5e7eb", // Horizontal line
   },
-sectionTitle: {
-    marginBottom: "16px",
+  sectionTitle: {
+    marginBottom: "12px",
     color: "#1f2937",
-    fontSize: "18px",
+    fontSize: "16px", // Smaller font size
     fontWeight: "600",
-    borderBottom: "2px solid #e5e7eb",
-    paddingBottom: "8px",
+    paddingBottom: "6px",
   },
   subSection: {
-    marginBottom: "20px",
-    padding: "0",
+    marginBottom: "16px",
+    padding: "0 16px 0 0", // Shift right with padding
     backgroundColor: "transparent",
     borderRadius: "0",
     border: "none",
+    borderBottom: "1px solid #e5e7eb", // Horizontal line
   },
   subSectionTitle: {
-    marginBottom: "12px",
+    marginBottom: "10px",
     color: "#374151",
-    fontSize: "16px",
+    fontSize: "14px", // Smaller font size
     fontWeight: "500",
   },
-infoItem: {
-  padding: "0",
-  backgroundColor: "transparent",
-  borderRadius: "0",
-  fontSize: "14px",
-  color: "#4b5563",
-},
+  infoGrid: {
+    display: "flex", // Horizontal layout
+    flexWrap: "wrap",
+    gap: "8px",
+    marginBottom: "8px",
+  },
+  infoItem: {
+    padding: "0",
+    backgroundColor: "transparent",
+    borderRadius: "0",
+    fontSize: "12px", // Smaller font size
+    color: "#4b5563",
+    flex: "1 1 auto", // Flexible width for horizontal layout
+    minWidth: "120px", // Minimum width to prevent overcrowding
+  },
   loadingMessage: {
     textAlign: "center",
-    padding: "24px",
+    padding: "20px",
     color: "#6b7280",
+    fontSize: "12px", // Smaller font size
   },
   noDataMessage: {
-    padding: "12px",
+    padding: "10px",
     backgroundColor: "#f3f4f6",
     borderRadius: "4px",
     color: "#6b7280",
     textAlign: "center",
+    fontSize: "12px", // Smaller font size
   },
 };
 
