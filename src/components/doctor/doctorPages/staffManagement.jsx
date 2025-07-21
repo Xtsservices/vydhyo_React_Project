@@ -49,6 +49,7 @@ const StaffModal = ({
   resetForm,
 }) => {
   const [form] = Form.useForm();
+  const [selectedRole, setSelectedRole] = useState(initialData?.role || initialData?.type || null); // Track selected role
 
   useEffect(() => {
     if (modalMode === "edit" && initialData) {
@@ -62,6 +63,7 @@ const StaffModal = ({
         role: initialData.type,
         access: initialData.access || [],
       });
+      setSelectedRole(initialData.type); // Set role for edit mode
     } else if (modalMode === "add" && initialData) {
       form.setFieldsValue({
         firstName: initialData.firstname || "",
@@ -73,10 +75,14 @@ const StaffModal = ({
         role: initialData.role,
         access: initialData.access || [],
       });
+     setSelectedRole(initialData.role);
     } else {
       form.resetFields();
+      setSelectedRole(null);
     }
   }, [modalMode, initialData, form]);
+
+
 
   const handleOk = async () => {
     try {
@@ -115,11 +121,28 @@ const StaffModal = ({
     { value: "reviews", label: "Reviews" },
   ];
 
+  // Dynamically include ePrescription for receptionist role
+  const getAccessOptions = (role) => {
+    if (role === "receptionist") {
+      return [
+        ...accessOptions,
+        { value: "eprescription", label: "ePrescription" },
+      ];
+    }
+    return accessOptions;
+  };
+
   const preventNumberInput = (e) => {
     const charCode = e.which ? e.which : e.keyCode;
     if (charCode >= 48 && charCode <= 57) {
       e.preventDefault();
     }
+  };
+
+  const handleRoleChange = (value) => {
+    setSelectedRole(value);
+    // Clear access field when role changes to avoid invalid selections
+    form.setFieldsValue({ access: [] });
   };
 
   return (
@@ -266,7 +289,7 @@ const StaffModal = ({
                 name="role"
                 rules={[{ required: true, message: "Please select role" }]}
               >
-                <Select placeholder="Select role">
+                <Select placeholder="Select role" onChange={handleRoleChange}>
                   <Option value="lab-Assistant">Lab Assistant</Option>
                   <Option value="pharmacy-Assistant">Pharmacy Assistant</Option>
                   <Option value="receptionist">Receptionist</Option>
@@ -289,7 +312,9 @@ const StaffModal = ({
                   mode="multiple"
                   placeholder="Select access permissions"
                   allowClear
-                  options={accessOptions}
+                  options={getAccessOptions(selectedRole)}
+                  // options={accessOptions}
+                  
                 />
               </Form.Item>
             </Col>

@@ -83,7 +83,7 @@ const AddWalkInPatient = () => {
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   const [isClinicModalVisible, setIsClinicModalVisible] = useState(false);
   const [slotAvailability, setSlotAvailability] = useState(true);
-
+const [doctorData, setDoctorData] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("accessToken") || "";
   const currentUserID = localStorage.getItem("userID");
@@ -100,9 +100,10 @@ const AddWalkInPatient = () => {
 
   // Update consultation fee based on appointment type
   useEffect(() => {
-    if (patientData.appointmentType && user?.consultationModeFee) {
+    const sourceData = user?.role === "doctor" ? user : doctorData;
+    if (patientData.appointmentType && sourceData?.consultationModeFee) {
       const consultationMode = appointmentTypeToMode[patientData.appointmentType];
-      const feeEntry = user.consultationModeFee.find(
+      const feeEntry = sourceData.consultationModeFee.find(
         (mode) => mode.type === consultationMode
       );
       if (feeEntry) {
@@ -618,6 +619,7 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
  console.log("Doctor Details:", doctorDetails?.data?.data);
  const doctorData = doctorDetails?.data?.data;
  if (doctorDetails?.data?.status === "success") {
+  setDoctorData(doctorData);
   setPatientData((prev) => ({
     ...prev,
     department: doctorData?.specialization?.name,
@@ -669,14 +671,16 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
 
     const fetchTimeSlots = useCallback(async (selectedDate, clinicId) => {
 
-
+console.log("first")
       if (!selectedDate || !clinicId || !doctorId) return;
     setIsFetchingSlots(true);
+console.log("first2")
     
     try {
       const response = await apiGet(
         `/appointment/getSlotsByDoctorIdAndDate?doctorId=${doctorId}&date=${selectedDate}&addressId=${clinicId}`
       );
+      console.log("response122334",response)
       const data = response.data;
 
       if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
@@ -1131,6 +1135,7 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
     </Card>
   );
 
+  console.log("patientData===",patientData)
   return (
     <div
       style={{

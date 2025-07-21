@@ -168,8 +168,8 @@ const DoctorLayoutWrapper = () => {
       ),
     },
     {
-      key: "e_prescription",
-      accessKey: "e_prescription",
+      key: "eprescription",
+      accessKey: "eprescription",
       label: (
         <Link to="/doctor/doctorPages/EPrescription">Digital-Prescription</Link>
       ),
@@ -262,8 +262,8 @@ const DoctorLayoutWrapper = () => {
     // If user is a doctor, show all menu items
     if (user.role === "doctor" || user.role === "Doctor") {
       return allMenuItems;
-    }
-
+    } 
+console.log("user====",user.access)
     // If user is a receptionist, filter based on access
     if (user.role !== "doctor" || user.role !== "doctor") {
       // If user.access is not available, return empty array

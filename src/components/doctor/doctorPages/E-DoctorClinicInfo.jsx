@@ -8,9 +8,10 @@ const DoctorClinicInfo = ({ formData, updateFormData }) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-  console.log("user data==========",user)
+  console.log("user data123==========",doctorId)
   // Get only active clinic addresses
 const [allClinics, setAllClinics] = useState()
+ const [doctorData, setDoctorData] = useState(null);
   
   
   const [localData, setLocalData] = useState({
@@ -28,6 +29,7 @@ const [allClinics, setAllClinics] = useState()
         const userData = response.data?.data;
   console.log(userData, "userdetais")
         if (userData) {
+            setDoctorData(userData);
   const allClinics = (userData?.addresses?.filter(address => 
     address.type === "Clinic" && address.status === "Active"
   ) || []);
@@ -50,12 +52,15 @@ fetchDoctorData()
     } else if (user) {
       const currentDate = new Date();
       const formattedDate = currentDate.toISOString().split('T')[0];
-
+ const sourceData = user?.role === "doctor" ? user : doctorData;
       const initialData = {
         doctorId: doctorId,
         appointmentDate: formattedDate,
         appointmentStartTime: '',
-        appointmentEndTime: ''
+        appointmentEndTime: '',
+         doctorName: sourceData ? `${sourceData.firstname || ''} ${sourceData.lastname || ''}` : '',
+        qualifications: sourceData?.specialization?.degree || '',
+        specialization: sourceData?.specialization?.name?.trim() || '',
       };
 
       // Set first active clinic as default if available
@@ -134,7 +139,7 @@ const handleClinicChange = (clinicId) => {
             </label>
             <input
               type="text"
-              value={`${user?.firstname || ''} ${user?.lastname || ''}`}
+              value={`${doctorData?.firstname || ''} ${doctorData?.lastname || ''}`}
               className="doctor-clinic-input"
               readOnly
             />
@@ -146,7 +151,7 @@ const handleClinicChange = (clinicId) => {
             </label>
             <input
               type="text"
-              value={user?.specialization?.degree || ''}
+              value={doctorData?.specialization?.degree || ''}
               className="doctor-clinic-input"
               readOnly
             />
@@ -158,7 +163,7 @@ const handleClinicChange = (clinicId) => {
             </label>
             <input
               type="text"
-              value={user?.specialization?.name?.trim() || ''}
+              value={doctorData?.specialization?.name?.trim() || ''}
               className="doctor-clinic-input"
               readOnly
             />
