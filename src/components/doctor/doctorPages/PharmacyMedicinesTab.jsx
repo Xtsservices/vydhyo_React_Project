@@ -18,7 +18,7 @@ import { apiGet } from "../../api";
 
 const { Text } = Typography;
 
-const MedicinesTab = () => {
+const MedicinesTab = ({ refreshTrigger }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [medicines, setMedicines] = useState([]);
@@ -101,7 +101,7 @@ const MedicinesTab = () => {
     } else {
       console.log('No doctorId found, user:', user);
     }
-  }, [doctorId]);
+  }, [doctorId, refreshTrigger]); 
 
   const handleEdit = (record) => {
     setEditingMedicine(record);

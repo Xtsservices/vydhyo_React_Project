@@ -3,7 +3,6 @@ import {
   Table,
   Typography,
   Spin,
-  message,
   Card,
   Row,
   Col,
@@ -20,6 +19,8 @@ import {
 import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { apiGet, apiPost } from "../../api";
+import { toast, ToastContainer } from "react-toastify"; // Add toast imports
+import "react-toastify/dist/ReactToastify.css"; // Import toast styles
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -39,34 +40,34 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-async function filterPatientsDAta(data) {
-  console.log(data, "filter");
-  console.log(status, "filter");
+  async function filterPatientsDAta(data) {
+    console.log(data, "filter");
+    console.log(status, "filter");
 
-  const isPending = status === "pending";
+    const isPending = status === "pending";
 
-  const filtered = data
-    .map((patient) => {
-      const filteredMeds = patient.medicines.filter((med) =>
-        isPending ? med.status === "pending" : med.status !== "pending"
-      );
+    const filtered = data
+      .map((patient) => {
+        const filteredMeds = patient.medicines.filter((med) =>
+          isPending ? med.status === "pending" : med.status !== "pending"
+        );
 
-      if (filteredMeds.length > 0) {
-        const { medicines, ...rest } = patient; 
-        return {
-          ...rest,
-          medicines: filteredMeds,
-        };
-      }
+        if (filteredMeds.length > 0) {
+          const { medicines, ...rest } = patient;
+          return {
+            ...rest,
+            medicines: filteredMeds,
+          };
+        }
 
-      return null;
-    })
-    .filter(Boolean);
+        return null;
+      })
+      .filter(Boolean);
 
-  console.log(`${isPending ? "pending" : "completed"} filtered`, filtered);
+    console.log(`${isPending ? "pending" : "completed"} filtered`, filtered);
 
-  return filtered;
-}
+    return filtered;
+  }
 
   const fetchPharmacyPatients = async () => {
     try {
@@ -85,23 +86,22 @@ async function filterPatientsDAta(data) {
         dataArray = await filterPatientsDAta(response.data.data);
 
         // Sort by patientId numeric part descending
-  dataArray.sort((a, b) => {
-    const getIdNumber = (id) => parseInt(id.replace(/\D/g, '')) || 0;
-    return getIdNumber(b.patientId) - getIdNumber(a.patientId);
-  });
-  if (searchQuery?.trim()) {
-  const lowerSearch = searchQuery.toLowerCase();
-  dataArray = dataArray.filter((patient) =>
-    patient.patientId?.toLowerCase().includes(lowerSearch)
-  );
-}
+        dataArray.sort((a, b) => {
+          const getIdNumber = (id) => parseInt(id.replace(/\D/g, "")) || 0;
+          return getIdNumber(b.patientId) - getIdNumber(a.patientId);
+        });
+        if (searchQuery?.trim()) {
+          const lowerSearch = searchQuery.toLowerCase();
+          dataArray = dataArray.filter((patient) =>
+            patient.patientId?.toLowerCase().includes(lowerSearch)
+          );
+        }
       }
 
       console.log("dataArray", dataArray);
 
       if (dataArray.length > 0) {
         const formattedData = dataArray.map((patient, index) => {
-
           const totalAmount =
             patient.medicines?.reduce((sum, med) => {
               const price = parseFloat(med.price) || 0;
@@ -135,8 +135,12 @@ async function filterPatientsDAta(data) {
       }
     } catch (error) {
       console.error("Error fetching pharmacy patients:", error);
-      message.error(
-        error.response?.data?.message || "Error fetching pharmacy patients"
+      toast.error(
+        error.response?.data?.message || "Error fetching pharmacy patients",
+        {
+          position: "top-right",
+          autoClose: 5000,
+        }
       );
       setPatientData([]);
       setTotalPatients(0);
@@ -175,50 +179,62 @@ async function filterPatientsDAta(data) {
   };
 
   const handlePriceSave = async (patientId, medicineId) => {
-  try {
-    setSaving((prev) => ({ ...prev, [medicineId]: true }));
-    const patient = patientData.find((p) => p.patientId === patientId);
-    const medicine = patient.medicines.find((m) => m._id === medicineId);
-    const price = medicine.price;
+    try {
+      setSaving((prev) => ({ ...prev, [medicineId]: true }));
+      const patient = patientData.find((p) => p.patientId === patientId);
+      const medicine = patient.medicines.find((m) => m._id === medicineId);
+      const price = medicine.price;
 
-    if (price === null || price === undefined) {
-      message.error("Please enter a valid price");
-      return;
+      if (price === null || price === undefined) {
+        toast.error("Please enter a valid price", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+        return;
+      }
+
+      await apiPost(`/pharmacy/updatePatientMedicinePrice`, {
+        medicineId,
+        patientId,
+        price,
+        doctorId,
+      });
+
+      toast.success("Price updated successfully", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setEditablePrices((prev) => prev.filter((id) => id !== medicineId));
+
+      // Update local state instead of refetching
+      setPatientData((prev) =>
+        prev.map((p) =>
+          p.patientId === patientId
+            ? {
+                ...p,
+                medicines: p.medicines.map((m) =>
+                  m._id === medicineId ? { ...m, price } : m
+                ),
+              }
+            : p
+        )
+      );
+    } catch (error) {
+      console.error("Error updating medicine price:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to update price",
+        {
+          position: "top-right",
+          autoClose: 5000,
+        }
+      );
+    } finally {
+      setSaving((prev) => ({ ...prev, [medicineId]: false }));
     }
-
-    await apiPost(`/pharmacy/updatePatientMedicinePrice`, {
-      medicineId,
-      patientId,
-      price,
-      doctorId,
-    });
-
-    message.success("Price updated successfully");
-    setEditablePrices((prev) => prev.filter((id) => id !== medicineId));
-    
-    // Update local state instead of refetching
-    setPatientData(prev => 
-      prev.map(p => 
-        p.patientId === patientId
-          ? {
-              ...p,
-              medicines: p.medicines.map(m => 
-                m._id === medicineId ? { ...m, price } : m
-              )
-            }
-          : p
-      )
-    );
-  } catch (error) {
-    console.error("Error updating medicine price:", error);
-    message.error(error.response?.data?.message || "Failed to update price");
-  } finally {
-    setSaving((prev) => ({ ...prev, [medicineId]: false }));
-  }
-};
+  };
 
   const handlePayment = async (patientId) => {
-    setIsPaymentDone(true)
+    setIsPaymentDone(true);
     try {
       setPaying((prev) => ({ ...prev, [patientId]: true }));
       const patient = patientData.find((p) => p.patientId === patientId);
@@ -228,7 +244,10 @@ async function filterPatientsDAta(data) {
       );
 
       if (totalAmount <= 0) {
-        message.error("No valid prices set for payment");
+        toast.error("No valid prices set for payment", {
+          position: "top-right",
+          autoClose: 5000,
+        });
         return;
       }
       const data = {
@@ -258,14 +277,21 @@ async function filterPatientsDAta(data) {
 
       updateCount();
       if (response.status === 200) {
-        message.success("Payment processed successfully");
+        toast.success("Payment processed successfully", {
+          position: "top-right",
+          autoClose: 3000,
+        });
         await fetchPharmacyPatients();
       }
     } catch (error) {
       console.error("Error processing payment:", error);
       setIsPaymentDone(false);
-      message.error(
-        error.response?.data?.message || "Failed to process payment"
+      toast.error(
+        error.response?.data?.message || "Failed to process payment",
+        {
+          position: "top-right",
+          autoClose: 5000,
+        }
       );
     } finally {
       setPaying((prev) => ({ ...prev, [patientId]: false }));
@@ -407,7 +433,7 @@ async function filterPatientsDAta(data) {
     if (doctorId) {
       fetchPharmacyPatients();
     }
-  }, [doctorId]);
+  }, [doctorId, searchQuery]); // Added searchQuery to dependencies
 
   const currentPageData = patientData.slice(
     (currentPage - 1) * pageSize,
@@ -417,171 +443,172 @@ async function filterPatientsDAta(data) {
   const startIndex = totalPatients > 0 ? (currentPage - 1) * pageSize + 1 : 0;
   const endIndex = Math.min(currentPage * pageSize, totalPatients);
 
- 
-
   return (
-    <Card
-      style={{
-        borderRadius: "8px",
-        marginBottom: "24px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-      }}
-    >
-      <Row
-        justify="space-between"
-        align="middle"
-        style={{ marginBottom: "16px" }}
+    <div>
+      <ToastContainer /> {/* Add ToastContainer to render toasts */}
+      <Card
+        style={{
+          borderRadius: "8px",
+          marginBottom: "24px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        }}
       >
-        <Col>
-          <Title level={4} style={{ margin: 0, color: "#1A3C6A" }}>
-            Pharmacy Patients
-          </Title>
-        </Col>
-      </Row>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: "16px" }}
+        >
+          <Col>
+            <Title level={4} style={{ margin: 0, color: "#1A3C6A" }}>
+              Pharmacy Patients
+            </Title>
+          </Col>
+        </Row>
 
-      <Spin spinning={loading}>
-        <Table
-          columns={columns}
-          dataSource={currentPageData}
-          pagination={false}
-          size="middle"
-          showHeader={true}
-          scroll={{ x: "max-content" }}
-          locale={{
-            emptyText: (
-              <Empty
-                description={loading ? "Loading..." : "No patients found"}
-              />
-            ),
-          }}
-          expandable={{
-            expandedRowKeys: expandedKeys,
-            onExpand: (_, record) => toggleCollapse(record.patientId),
-            expandedRowRender: (record) => {
-              const totalAmount = record.medicines.reduce(
-                (sum, med) => sum + (med.price || 0) * (med.quantity || 1),
-                0
-              );
-              const hasPending = record.medicines.some(
-                (med) => med.status === "pending"
-              );
+        <Spin spinning={loading}>
+          <Table
+            columns={columns}
+            dataSource={currentPageData}
+            pagination={false}
+            size="middle"
+            showHeader={true}
+            scroll={{ x: "max-content" }}
+            locale={{
+              emptyText: (
+                <Empty
+                  description={loading ? "Loading..." : "No patients found"}
+                />
+              ),
+            }}
+            expandable={{
+              expandedRowKeys: expandedKeys,
+              onExpand: (_, record) => toggleCollapse(record.patientId),
+              expandedRowRender: (record) => {
+                const totalAmount = record.medicines.reduce(
+                  (sum, med) => sum + (med.price || 0) * (med.quantity || 1),
+                  0
+                );
+                const hasPending = record.medicines.some(
+                  (med) => med.status === "pending"
+                );
 
-              return (
-                <Collapse
-                  defaultActiveKey={["1"]}
-                  style={{
-                    background: "#f9fafb",
-                    borderRadius: "6px",
-                    border: "1px solid #e5e7eb",
-                  }}
-                >
-                  <Panel
-                    header="Medicine Details"
-                    key="1"
+                return (
+                  <Collapse
+                    defaultActiveKey={["1"]}
                     style={{
-                      background: "#ffffff",
+                      background: "#f9fafb",
                       borderRadius: "6px",
-                      border: "none",
+                      border: "1px solid #e5e7eb",
                     }}
                   >
-                    <Table
-                      columns={medicineColumns.map((col) => ({
-                        ...col,
-                        render: (text, medicine, index) =>
-                          col.render
-                            ? col.render(
-                                text,
-                                medicine,
-                                index,
-                                record.patientId
-                              )
-                            : text,
-                      }))}
-                      dataSource={record.medicines}
-                      rowKey="_id"
-                      pagination={false}
-                      style={{ marginBottom: "16px" }}
-                    />
-                    <Row
-                      justify="end"
+                    <Panel
+                      header="Medicine Details"
+                      key="1"
                       style={{
-                        padding: "12px",
-                        background: "#f1f5f9",
+                        background: "#ffffff",
                         borderRadius: "6px",
+                        border: "none",
                       }}
                     >
-                      <Col>
-                        <Text strong style={{ marginRight: "16px" }}>
-                          Total Amount: ₹ {totalAmount.toFixed(2)}
-                        </Text>
+                      <Table
+                        columns={medicineColumns.map((col) => ({
+                          ...col,
+                          render: (text, medicine, index) =>
+                            col.render
+                              ? col.render(
+                                  text,
+                                  medicine,
+                                  index,
+                                  record.patientId
+                                )
+                              : text,
+                        }))}
+                        dataSource={record.medicines}
+                        rowKey="_id"
+                        pagination={false}
+                        style={{ marginBottom: "16px" }}
+                      />
+                      <Row
+                        justify="end"
+                        style={{
+                          padding: "12px",
+                          background: "#f1f5f9",
+                          borderRadius: "6px",
+                        }}
+                      >
+                        <Col>
+                          <Text strong style={{ marginRight: "16px" }}>
+                            Total Amount: ₹ {totalAmount.toFixed(2)}
+                          </Text>
 
-                        <Popconfirm
-                          title="Confirm Payment"
-                          description={
-                            <div style={{ textAlign: "center" }}>
-                              <Typography.Text>
-                                Cash ₹{totalAmount.toFixed(2)}
-                              </Typography.Text>
-                            </div>
-                          }
-                          onConfirm={() => handlePayment(record.patientId)}
-                          okText="Payment Done"
-                          cancelText="Cancel"
-                          disabled={isPaymentDone ? true : false}
-                        >
-                          <Button
-                            type="primary"
-                            icon={<CreditCardOutlined />}
-                            loading={paying[record.patientId]}
-                            disabled={
-                              totalAmount <= 0 ||
-                              paying[record.patientId] ||
-                              !hasPending
+                          <Popconfirm
+                            title="Confirm Payment"
+                            description={
+                              <div style={{ textAlign: "center" }}>
+                                <Typography.Text>
+                                  Cash ₹{totalAmount.toFixed(2)}
+                                </Typography.Text>
+                              </div>
                             }
-                            style={{
-                              background: "#1A3C6A",
-                              borderColor: "#1A3C6A",
-                              color: "white",
-                              marginTop: 8,
-                            }}
+                            onConfirm={() => handlePayment(record.patientId)}
+                            okText="Payment Done"
+                            cancelText="Cancel"
+                            disabled={isPaymentDone}
                           >
-                            {hasPending ? "Process Payment" : "Paid"}
-                          </Button>
-                        </Popconfirm>
-                      </Col>
-                    </Row>
-                  </Panel>
-                </Collapse>
-              );
-            },
-          }}
-        />
+                            <Button
+                              type="primary"
+                              icon={<CreditCardOutlined />}
+                              loading={paying[record.patientId]}
+                              disabled={
+                                totalAmount <= 0 ||
+                                paying[record.patientId] ||
+                                !hasPending
+                              }
+                              style={{
+                                background: "#1A3C6A",
+                                borderColor: "#1A3C6A",
+                                color: "white",
+                                marginTop: 8,
+                              }}
+                            >
+                              {hasPending ? "Process Payment" : "Paid"}
+                            </Button>
+                          </Popconfirm>
+                        </Col>
+                      </Row>
+                    </Panel>
+                  </Collapse>
+                );
+              },
+            }}
+          />
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: 16,
-          }}
-        >
-          <span style={{ lineHeight: "32px" }}>
-            {totalPatients > 0
-              ? `Showing ${startIndex} to ${endIndex} of ${totalPatients} results`
-              : "No results found"}
-          </span>
-          {totalPatients > pageSize && (
-            <Pagination
-              current={currentPage}
-              total={totalPatients}
-              pageSize={pageSize}
-              showSizeChanger={false}
-              showQuickJumper={false}
-              onChange={(page) => setCurrentPage(page)}
-            />
-          )}
-        </div>
-      </Spin>
-    </Card>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: 16,
+            }}
+          >
+            <span style={{ lineHeight: "32px" }}>
+              {totalPatients > 0
+                ? `Showing ${startIndex} to ${endIndex} of ${totalPatients} results`
+                : "No results found"}
+            </span>
+            {totalPatients > pageSize && (
+              <Pagination
+                current={currentPage}
+                total={totalPatients}
+                pageSize={pageSize}
+                showSizeChanger={false}
+                showQuickJumper={false}
+                onChange={(page) => setCurrentPage(page)}
+              />
+            )}
+          </div>
+        </Spin>
+      </Card>
+    </div>
   );
 };
 
