@@ -11,7 +11,6 @@ import {
   Modal,
   InputNumber,
   Upload,
-  message,
   Table,
   Alert,
   Divider,
@@ -27,6 +26,8 @@ import {
   DownloadOutlined,
 } from "@ant-design/icons";
 import * as XLSX from "xlsx";
+import { toast, ToastContainer } from "react-toastify"; // Add toast imports
+import "react-toastify/dist/ReactToastify.css"; // Import toast styles
 
 // Import the tab components
 import PatientsTab from "./PharmacyPatientsTab";
@@ -40,8 +41,8 @@ import { useSelector } from "react-redux";
 export default function Pharmacy() {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-const {Header, Content} = Layout
-const { Dragger } = Upload;
+  const { Header, Content } = Layout;
+  const { Dragger } = Upload;
 
   const [activeTab, setActiveTab] = useState("1");
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,6 +60,7 @@ const { Dragger } = Upload;
   const [bulkResults, setBulkResults] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -102,26 +104,33 @@ const { Dragger } = Upload;
 
     try {
       const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-
       form.quantity = 100;
       await apiPost("pharmacy/addMedInventory", {
         ...form,
         doctorId: doctorId,
       });
+
       setForm({ medName: "", quantity: "", price: "" });
       setErrors({});
       setIsModalVisible(false);
-      Modal.success({
-        title: "Success",
-        content: "Medicine added to inventory successfully",
+      toast.success("Medicine added successfully", {
+        position: "top-right",
+        autoClose: 3000,
       });
       updateCount();
+      setRefreshTrigger((prev) => prev + 1);
+      setActiveTab("3"); // Switch to Medicines tab
+      return true; // Return success status
     } catch (error) {
       console.error("Error adding medicine:", error);
-      Modal.error({
-        title: "Error",
-        content: "Failed to add medicine to inventory",
-      });
+      toast.error(
+        error.response?.data?.message || "Failed to add medicine. Please try again.",
+        {
+          position: "top-right",
+          autoClose: 5000,
+        }
+      );
+      return false; // Return failure status
     }
   };
 
@@ -162,12 +171,16 @@ const { Dragger } = Upload;
         setBulkData(processedData);
         setBulkErrors([]);
         setBulkResults(null);
-        message.success(
-          "File processed successfully! Preview your data before uploading."
-        );
+        toast.success("File processed successfully! Preview your data before uploading.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       } catch (error) {
         console.error("Error reading file:", error);
-        message.error("Error reading file. Please check the file format.");
+        toast.error("Error reading file. Please check the file format.", {
+          position: "top-right",
+          autoClose: 5000,
+        });
       }
     };
     reader.readAsArrayBuffer(file);
@@ -176,7 +189,10 @@ const { Dragger } = Upload;
 
   const handleBulkUpload = async () => {
     if (!uploadedFile) {
-      message.error("Please upload a file first");
+      toast.error("Please upload a file first", {
+        position: "top-right",
+        autoClose: 5000,
+      });
       return;
     }
 
@@ -196,16 +212,44 @@ const { Dragger } = Upload;
         }
       );
 
-      if (response.status === 200) {
+      if (response.data.data.insertedCount > 0) {
         setBulkResults(response.data.data);
-        message.success(
-          `${response.data.data.insertedCount} medicines added successfully!`
+        toast.success(
+          `${response.data.data.insertedCount} medicines added successfully!`,
+          {
+            position: "top-right",
+            autoClose: 3000,
+          }
         );
         updateCount();
+        // Close modal after 2 seconds if there are no errors
+        if (
+          !response.data.data.errors ||
+          response.data.data.errors.length === 0
+        ) {
+          setTimeout(() => {
+            setIsBulkModalVisible(false);
+          }, 2000);
+        }
+      } else if (
+        response.data.data.errors &&
+        response.data.data.errors.length > 0
+      ) {
+        setBulkResults(response.data.data);
+        toast.error("All medicines already exist in inventory", {
+          position: "top-right",
+          autoClose: 5000,
+        });
       }
     } catch (error) {
       console.error("Error uploading bulk data:", error);
-      message.error("Failed to upload medicines");
+      toast.error(
+        error.response?.data?.message || "Failed to upload medicines",
+        {
+          position: "top-right",
+          autoClose: 5000,
+        }
+      );
 
       if (error.response && error.response.data && error.response.data.errors) {
         setBulkResults({
@@ -237,17 +281,29 @@ const { Dragger } = Upload;
     {
       key: "1",
       label: "Pending Patients",
-      children: <PatientsTab status={"pending"} updateCount={updateCount} searchQuery={searchQuery} />,
+      children: (
+        <PatientsTab
+          status={"pending"}
+          updateCount={updateCount}
+          searchQuery={searchQuery}
+        />
+      ),
     },
     {
       key: "2",
       label: "Completed Patients",
-      children: <PatientsTab status={"completed"} updateCount={updateCount} searchQuery={searchQuery} />,
+      children: (
+        <PatientsTab
+          status={"completed"}
+          updateCount={updateCount}
+          searchQuery={searchQuery}
+        />
+      ),
     },
     {
       key: "3",
       label: "Medicines",
-      children: <MedicinesTab />,
+      children: <MedicinesTab refreshTrigger={refreshTrigger} />,
     },
   ];
 
@@ -292,6 +348,7 @@ const { Dragger } = Upload;
 
   return (
     <div>
+      <ToastContainer /> {/* Add ToastContainer to render toasts */}
       <Layout className="pharmacy-layout">
         <Header className="pharmacy-header">
           <div className="pharmacy-logo">
@@ -302,10 +359,9 @@ const { Dragger } = Upload;
           <Input
             placeholder="Search PatientId"
             prefix={<SearchOutlined />}
-
-              value={searchQuery}
+            value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value.trim())}
-  allowClear
+            allowClear
             className="pharmacy-search"
           />
         </Header>
@@ -488,16 +544,18 @@ const { Dragger } = Upload;
               {bulkResults && (
                 <div style={{ marginTop: "16px" }}>
                   <Divider>Upload Results</Divider>
-                  <Alert
-                    message={`Successfully added ${bulkResults.insertedCount} medicines`}
-                    type="success"
-                    showIcon
-                    style={{ marginBottom: "16px" }}
-                  />
+                  {bulkResults.insertedCount > 0 && (
+                    <Alert
+                      message={`Successfully added ${bulkResults.insertedCount} medicines`}
+                      type="success"
+                      showIcon
+                      style={{ marginBottom: "16px" }}
+                    />
+                  )}
 
                   {bulkResults.errors && bulkResults.errors.length > 0 && (
                     <Alert
-                      message={`${bulkResults.errors.length} errors encountered`}
+                      message={`${bulkResults.errors.length} warnings encountered`}
                       type="warning"
                       showIcon
                       style={{ marginBottom: "16px" }}
@@ -506,10 +564,10 @@ const { Dragger } = Upload;
 
                   {bulkResults.errors && bulkResults.errors.length > 0 && (
                     <div>
-                      <Text strong>Errors:</Text>
+                      <Typography.Text strong>Warnings:</Typography.Text>
                       <ul style={{ marginTop: "8px" }}>
                         {bulkResults.errors.map((error, index) => (
-                          <li key={index} style={{ color: "red" }}>
+                          <li key={index} style={{ color: "orange" }}>
                             Row {error.row}: {error.message}
                           </li>
                         ))}
