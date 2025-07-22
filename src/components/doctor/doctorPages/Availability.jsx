@@ -375,95 +375,103 @@ const AvailabilityScreen = () => {
     }
   };
 
-  const handleAddUnavailableSlots = async () => {
-    try {
-      setLoading(true);
-      const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
+ const handleAddUnavailableSlots = async () => {
+  try {
+    setLoading(true);
+    const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
 
-      const startTime = moment(
-        `${unavailableStartTime}:00 ${unavailableStartPeriod}`,
-        "hh:mm A"
-      ).format("HH:mm");
+    const startTime = moment(
+      `${unavailableStartTime}:00 ${unavailableStartPeriod}`,
+      "hh:mm A"
+    ).format("HH:mm");
 
-      const endTime = moment(
-        `${unavailableEndTime}:00 ${unavailableEndPeriod}`,
-        "hh:mm A"
-      ).format("HH:mm");
+    const endTime = moment(
+      `${unavailableEndTime}:00 ${unavailableEndPeriod}`,
+      "hh:mm A"
+    ).format("HH:mm");
 
-      const slotsToMarkUnavailable = generateTimeSlots(
-        startTime,
-        endTime,
-        unavailableDuration
-      );
+    console.log(startTime, endTime, "1234")
 
-      const existingUnavailableTimes = unavailableSlots.map(
-        (slot) => slot.originalTime
-      );
-      const newSlotsToMark = slotsToMarkUnavailable.filter(
-        (time) => !existingUnavailableTimes.includes(time)
-      );
+    const slotsToMarkUnavailable = generateTimeSlots(
+      startTime,
+      endTime,
+      unavailableDuration
+    );
 
-      if (newSlotsToMark.length === 0) {
-        message.info("All selected slots are already marked as unavailable");
-        return;
-      }
+    const existingUnavailableTimes = unavailableSlots.map(
+      (slot) => slot.originalTime
+    );
 
-      const overlappingAvailableSlots = availableSlots.filter((slot) =>
-        newSlotsToMark.includes(slot.originalTime)
-      );
+    const newSlotsToMark = slotsToMarkUnavailable.filter(
+      (time) => !existingUnavailableTimes.includes(time)
+    );
 
-      const newUnavailableSlots = [
-        ...unavailableSlots,
-        ...newSlotsToMark
-          .filter(
-            (time) => !availableSlots.some((slot) => slot.originalTime === time)
-          )
-          .map((time) => ({
-            time: moment(time, "HH:mm").format("hh:mm A"),
-            available: false,
-            id: `temp-${Date.now()}-${time}`,
-            reason: unavailableReason || "Not available",
-            originalTime: time,
-          })),
-      ];
-
-      const updatedAvailableSlots = availableSlots.filter(
-        (slot) => !newSlotsToMark.includes(slot.originalTime)
-      );
-
-      if (overlappingAvailableSlots.length > 0) {
-        overlappingAvailableSlots.forEach((slot) => {
-          newUnavailableSlots.push({
-            ...slot,
-            available: false,
-            reason: unavailableReason || "Not available",
-          });
-        });
-      }
-
-      setCurrentClinicSlots({
-        availableSlots: updatedAvailableSlots,
-        unavailableSlots: newUnavailableSlots,
-      });
-
-      const response = await apiPut("/appointment/updateDoctorSlots", {
-        doctorId: doctorId,
-        date: selectedDate.format("YYYY-MM-DD"),
-        addressId: selectedClinic,
-      });
-
-      if (response.data && response.data.status === "success") {
-        message.success("Slots marked as unavailable successfully");
-      } else {
-        throw new Error(response.data?.message || "Failed to update slots");
-      }
-    } catch (error) {
-      console.error("Error creating unavailable slots:", error);
-      message.error("Failed to create unavailable slots");
-    } finally {
-      setLoading(false);
+    if (newSlotsToMark.length === 0) {
+      message.info("All selected slots are already marked as unavailable");
+      return;
     }
-  };
+
+    const overlappingAvailableSlots = availableSlots.filter((slot) =>
+      newSlotsToMark.includes(slot.originalTime)
+    );
+
+    const newUnavailableSlots = [
+      ...unavailableSlots,
+      ...newSlotsToMark
+        .filter(
+          (time) => !availableSlots.some((slot) => slot.originalTime === time)
+        )
+        .map((time) => ({
+          time: moment(time, "HH:mm").format("hh:mm A"),
+          available: false,
+          id: `temp-${Date.now()}-${time}`,
+          reason: unavailableReason || "Not available",
+          originalTime: time,
+        })),
+    ];
+
+    const updatedAvailableSlots = availableSlots.filter(
+      (slot) => !newSlotsToMark.includes(slot.originalTime)
+    );
+
+    if (overlappingAvailableSlots.length > 0) {
+      overlappingAvailableSlots.forEach((slot) => {
+        newUnavailableSlots.push({
+          ...slot,
+          available: false,
+          reason: unavailableReason || "Not available",
+        });
+      });
+    }
+
+    console.log(newUnavailableSlots, "unavailable slots")
+
+    setCurrentClinicSlots({
+      availableSlots: updatedAvailableSlots,
+      unavailableSlots: newUnavailableSlots,
+    });
+
+    // ✅ Sending only time string array like ["10:00", "10:30"]
+    const response = await apiPut("/appointment/updateDoctorSlots", {
+      doctorId: doctorId,
+      date: selectedDate.format("YYYY-MM-DD"),
+      timeSlots: newUnavailableSlots.map((slot) => slot.originalTime),
+      addressId: selectedClinic,
+    });
+
+    if (response.data && response.data.status === "success") {
+      message.success("Slots marked as unavailable successfully");
+    } else {
+      throw new Error(response.data?.message || "Failed to update slots");
+    }
+  } catch (error) {
+    console.error("Error creating unavailable slots:", error);
+    message.error("Failed to create unavailable slots");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleDeleteAllUnavailable = async () => {
     try {
@@ -515,6 +523,7 @@ const AvailabilityScreen = () => {
 
   const adjustTime = (type, direction, section) => {
     if (section === "available") {
+      console.log("available")
       if (type === "start") {
         if (direction === "up") {
           setAvailableStartTime((prev) => (prev === 12 ? 1 : prev + 1));
@@ -529,6 +538,7 @@ const AvailabilityScreen = () => {
         }
       }
     } else {
+      console.log("unavailable")
       if (type === "start") {
         if (direction === "up") {
           setUnavailableStartTime((prev) => (prev === 12 ? 1 : prev + 1));
@@ -894,42 +904,7 @@ const AvailabilityScreen = () => {
           </Col>
 
           {/* Duration */}
-          <Col xs={12} sm={6}>
-            <Text strong>Duration (minutes):</Text>
-            <div
-              style={{ display: "flex", alignItems: "center", marginTop: 8 }}
-            >
-              <span
-                style={{
-                  minWidth: 30,
-                  textAlign: "center",
-                  fontSize: 16,
-                  fontWeight: "bold",
-                }}
-              >
-                {unavailableDuration}
-              </span>
-              <div style={{ marginLeft: 8 }}>
-                <Button
-                  size="small"
-                  icon={<UpOutlined />}
-                  onClick={() => adjustDuration("up", "unavailable")}
-                  style={{
-                    display: "block",
-                    marginBottom: 2,
-                    width: 30,
-                    height: 20,
-                  }}
-                />
-                <Button
-                  size="small"
-                  icon={<DownOutlined />}
-                  onClick={() => adjustDuration("down", "unavailable")}
-                  style={{ display: "block", width: 30, height: 20 }}
-                />
-              </div>
-            </div>
-          </Col>
+         
 
           {/* Action Buttons */}
           <Col xs={12} sm={6}>
