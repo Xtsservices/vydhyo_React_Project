@@ -401,6 +401,8 @@
     min-height: 297mm; /* A4 height */
     overflow: visible !important;
     background: #ffffff;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .print-button-container {
@@ -420,6 +422,7 @@
   .medication-table,
   .signature {
     page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   /* Ensure table layout is consistent */

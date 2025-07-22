@@ -1440,12 +1440,13 @@ const ClinicAvailability = ({
             <div
               style={{
                 position: "absolute",
-                top: "50%",
+                top: "65%",
                 left: "12px",
                 right: "12px",
                 display: "flex",
                 justifyContent: "space-between",
                 transform: "translateY(-50%)",
+                gap: "44px", 
               }}
             >
               <div
@@ -1459,6 +1460,9 @@ const ClinicAvailability = ({
                   justifyContent: "center",
                   cursor: "pointer",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                         marginLeft: "-12px", 
+                          
+ 
                 }}
                 onClick={handlePreviousClinic}
               >
@@ -1475,6 +1479,7 @@ const ClinicAvailability = ({
                   justifyContent: "center",
                   cursor: "pointer",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  marginRight: "-14px", 
                 }}
                 onClick={handleNextClinic}
               >

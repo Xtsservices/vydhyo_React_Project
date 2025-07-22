@@ -10,7 +10,7 @@ import "../../stylings/Preview.css";
 
 const Preview = ({ formData, handlePrescriptionAction }) => {
   const [selectedClinic, setSelectedClinic] = useState(null);
-  const [isSaving, setIsSaving] = useState(false); 
+  const [isSaving, setIsSaving] = useState(false);
 
   const formatDate = (dateString) => {
     if (!dateString) return "Not specified";
@@ -22,75 +22,97 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     });
   };
 
-  const generatePDF = async () => {
-    try {
-      const input = document.getElementById("prescription-container");
-      if (!input) {
-        throw new Error("Could not find the prescription container element");
-      }
-
-      // Apply print-specific styles before capturing
-      const originalStyles = {
-        boxShadow: input.style.boxShadow,
-        padding: input.style.padding,
-        margin: input.style.margin,
-      };
-
-      input.style.boxShadow = "none";
-      input.style.padding = "0";
-      input.style.margin = "0";
-
-      const canvas = await html2canvas(input, {
-        scale: 2,
-        useCORS: true,
-        logging: true,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: input.scrollWidth,
-        windowHeight: input.scrollHeight,
-      });
-
-      // Restore original styles
-      input.style.boxShadow = originalStyles.boxShadow;
-      input.style.padding = originalStyles.padding;
-      input.style.margin = originalStyles.margin;
-
-      // Convert canvas to PDF
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, null, "FAST");
-      // const pdfBlob = pdf.output("blob");
-      console.log("formData===",formData)
-      const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
-      const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
-
-      console.log("Generated PDF Blob:", {
-        type: pdfBlob.type,
-        size: pdfBlob.size,
-        filename: `${appointmentId}.pdf`,
-      });
-
-      console.log("Generated PDF Blob:", {
-        type: pdfBlob.type,
-        size: pdfBlob.size,
-      });
-
-      return pdfBlob;
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate prescription PDF");
-      throw error;
+const generatePDF = async () => {
+  try {
+    const input = document.getElementById("prescription-container");
+    if (!input) {
+      throw new Error("Could not find the prescription container element");
     }
-  };
 
+    // Store original styles and button visibility
+    const originalStyles = {
+      boxShadow: input.style.boxShadow,
+      padding: input.style.padding,
+      margin: input.style.margin,
+      overflow: input.style.overflow,
+    };
+
+    // Hide the print button container
+    const printButtonContainer = input.querySelector(".print-button-container");
+    const originalButtonDisplay = printButtonContainer?.style.display;
+    if (printButtonContainer) {
+      printButtonContainer.style.display = "none";
+    }
+
+    // Apply print-specific styles
+    input.style.boxShadow = "none";
+    input.style.padding = "0";
+    input.style.margin = "0";
+    input.style.overflow = "visible";
+
+    // Capture the full content
+    const canvas = await html2canvas(input, {
+      scale: 2,
+      useCORS: true,
+      logging: true,
+      backgroundColor: "#ffffff",
+      scrollY: -window.scrollY, // Adjust for scroll position
+    });
+
+    // Restore original styles and button visibility
+    Object.assign(input.style, originalStyles);
+    if (printButtonContainer) {
+      printButtonContainer.style.display = originalButtonDisplay;
+    }
+
+    // Convert canvas to PDF
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth() - 20; // Subtract 10mm margin from both sides
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    // Add multiple pages if content exceeds A4 height
+    const pageHeight = 297; // A4 height in mm
+    let heightLeft = pdfHeight;
+    let position = 0;
+
+    while (heightLeft > 0) {
+      pdf.addImage(
+        imgData,
+        "PNG",
+        10, // Start x-coordinate with 10mm margin
+        position,
+        pdfWidth,
+        pdfHeight,
+        null,
+        "FAST"
+      );
+      heightLeft -= pageHeight;
+      position -= pageHeight;
+      if (heightLeft > 0) pdf.addPage();
+    }
+
+    const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
+    const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
+
+    console.log("Generated PDF Blob:", {
+      type: pdfBlob.type,
+      size: pdfBlob.size,
+      filename: `${appointmentId}.pdf`,
+    });
+
+    return pdfBlob;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    toast.error("Failed to generate prescription PDF");
+    throw error;
+  }
+};
   const handleWhatsAppClick = async () => {
     try {
       const pdfBlob = await generatePDF();
@@ -120,24 +142,24 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     }
   };
 
-//   const handlePrintClick = () => {
-//   try {
-//     // Temporarily hide the print, WhatsApp, and save buttons for printing
-//     const buttons = document.querySelectorAll(".print-button-container");
-//     buttons.forEach((button) => (button.style.display = "none"));
+  //   const handlePrintClick = () => {
+  //   try {
+  //     // Temporarily hide the print, WhatsApp, and save buttons for printing
+  //     const buttons = document.querySelectorAll(".print-button-container");
+  //     buttons.forEach((button) => (button.style.display = "none"));
 
-//     // Trigger the browser's print dialog
-//     window.print();
+  //     // Trigger the browser's print dialog
+  //     window.print();
 
-//     // Restore the buttons after printing
-//     buttons.forEach((button) => (button.style.display = "flex"));
-//   } catch (error) {
-//     console.error("Error printing prescription:", error);
-//     toast.error("Failed to print prescription");
-//   }
-// };
+  //     // Restore the buttons after printing
+  //     buttons.forEach((button) => (button.style.display = "flex"));
+  //   } catch (error) {
+  //     console.error("Error printing prescription:", error);
+  //     toast.error("Failed to print prescription");
+  //   }
+  // };
 
-const handlePrintClick = async () => {
+  const handlePrintClick = async () => {
     try {
       // Create a clone of the prescription container
       const originalElement = document.getElementById("prescription-container");
@@ -179,16 +201,20 @@ const handlePrintClick = async () => {
     }
   };
 
-
-
   const handleWhatsAppClick2 = async () => {
     try {
-      const message = `Here's my medical prescription from ${selectedClinic?.clinicName || "Clinic"}\n` +
+      const message =
+        `Here's my medical prescription from ${
+          selectedClinic?.clinicName || "Clinic"
+        }\n` +
         `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
         `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
         `Date: ${formatDate(formData.doctorInfo?.appointmentDate) || "N/A"}`;
-      
-      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+
+      window.open(
+        `https://wa.me/?text=${encodeURIComponent(message)}`,
+        "_blank"
+      );
     } catch (error) {
       console.error("Failed to open WhatsApp:", error);
       toast.error("Failed to open WhatsApp");
@@ -216,19 +242,19 @@ const handlePrintClick = async () => {
     }
   }, [formData?.doctorInfo?.doctorId]);
 
-    const handleSaveClick = async () => {
-      console.log("Saving prescription...", isSaving);
+  const handleSaveClick = async () => {
+    console.log("Saving prescription...", isSaving);
     // prevent double click
-if (isSaving === false){
-setIsSaving(true); // disable the button
-    await handlePrescriptionAction("save"); // call the parent function
-}
-     if (isSaving) return;
+    if (isSaving === false) {
+      setIsSaving(true); // disable the button
+      await handlePrescriptionAction("save"); // call the parent function
+    }
+    if (isSaving) return;
     // If needed, you can re-enable it later:
     // setIsSaving(false);
   };
 
-console.log("formdata===",formData)
+  console.log("formdata===", formData);
   return (
     <div>
       <ToastContainer />
@@ -285,6 +311,7 @@ console.log("formdata===",formData)
           </div>
 
           <div style={{ flex: 1, textAlign: "right" }}>
+            Patient Details :
             <div style={{ fontSize: "12px", marginBottom: "4px" }}>
               {formData.patientInfo?.patientName || "Not provided"}
             </div>
@@ -326,7 +353,8 @@ console.log("formdata===",formData)
               <div className="detail-item">
                 <div className="detail-label">Family History:</div>
                 <div className="detail-value">
-                  {formData.patientInfo?.familyMedicalHistory || "Not specified"}
+                  {formData.patientInfo?.familyMedicalHistory ||
+                    "Not specified"}
                 </div>
               </div>
               <div className="detail-item">
@@ -429,7 +457,7 @@ console.log("formdata===",formData)
               </div>
               {formData.diagnosis?.testNotes && (
                 <div className="notes-display">
-                  <div className="notes-label">Test Instructions:</div>
+                  <div className="notes-label">Test Findings:</div>
                   <div className="notes-content">
                     {formData.diagnosis.testNotes}
                   </div>
@@ -551,16 +579,20 @@ console.log("formdata===",formData)
             <Printer size={16} style={{ marginRight: "8px" }} />
             Print Prescription
           </button>
-          <button className="whatsapp-button" 
-          onClick={handleWhatsAppClick}
-          >
-            <FaWhatsapp className="whatsapp-icon" style={{ marginRight: "8px" }} />
+          <button className="whatsapp-button" onClick={handleWhatsAppClick}>
+            <FaWhatsapp
+              className="whatsapp-icon"
+              style={{ marginRight: "8px" }}
+            />
             Share via WhatsApp
           </button>
-          <button className="save-button" onClick={handleSaveClick} disabled={isSaving}>
+          <button
+            className="save-button"
+            onClick={handleSaveClick}
+            disabled={isSaving}
+          >
             {isSaving ? "Saving..." : "Save"}
           </button>
-            
         </div>
       </div>
     </div>

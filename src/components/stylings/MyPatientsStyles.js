@@ -262,29 +262,19 @@ const styles = {
     fontWeight: "500",
     color: "#374151",
   },
-  
-// Replace these styles in your styles object
- prescriptionSection: {
-    marginBottom: "20px",
-    padding: "0",
-    backgroundColor: "transparent",
-    borderRadius: "0",
-    border: "none",
+  prescriptionSection: {
+    marginBottom: "24px",
+    paddingBottom: "16px",
+    borderBottom: "1px solid #e5e7eb",
   },
-sectionTitle: {
+  sectionTitle: {
     marginBottom: "16px",
     color: "#1f2937",
     fontSize: "18px",
     fontWeight: "600",
-    borderBottom: "2px solid #e5e7eb",
-    paddingBottom: "8px",
   },
   subSection: {
-    marginBottom: "20px",
-    padding: "0",
-    backgroundColor: "transparent",
-    borderRadius: "0",
-    border: "none",
+    marginBottom: "16px",
   },
   subSectionTitle: {
     marginBottom: "12px",
@@ -292,24 +282,96 @@ sectionTitle: {
     fontSize: "16px",
     fontWeight: "500",
   },
-infoItem: {
-  padding: "0",
-  backgroundColor: "transparent",
-  borderRadius: "0",
-  fontSize: "14px",
-  color: "#4b5563",
-},
+  infoGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+    gap: "16px",
+    marginBottom: "16px",
+  },
+  infoItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "8px 12px",
+    backgroundColor: "#f9fafb",
+    borderRadius: "6px",
+    fontSize: "14px",
+    color: "#4b5563",
+  },
   loadingMessage: {
     textAlign: "center",
-    padding: "24px",
+    padding: "20px",
     color: "#6b7280",
+    fontSize: "14px",
   },
   noDataMessage: {
     padding: "12px",
     backgroundColor: "#f3f4f6",
-    borderRadius: "4px",
+    borderRadius: "6px",
     color: "#6b7280",
     textAlign: "center",
+    fontSize: "14px",
+    marginTop: "8px",
+  },
+
+  modalHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "16px",
+    paddingBottom: "12px",
+    borderBottom: "1px solid #e5e7eb",
+  },
+  modalTitle: {
+    fontSize: "20px",
+    fontWeight: "600",
+    color: "#1f2937",
+    margin: 0,
+  },
+  modalCloseButton: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "18px",
+    color: "#6b7280",
+  },
+  medicineTable: {
+    marginTop: "16px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "6px",
+  },
+  testTable: {
+    marginTop: "16px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "6px",
+  },
+  tableHeaderCell: {
+    backgroundColor: "#f9fafb",
+    fontWeight: "600",
+    color: "#374151",
+  },
+  tableRowCell: {
+    borderBottom: "1px solid #e5e7eb",
+  },
+  modalFooter: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: "24px",
+    paddingTop: "16px",
+    borderTop: "1px solid #e5e7eb",
+  },
+ 
+  closeButton: {
+    padding: "8px 16px",
+    backgroundColor: "#3b82f6",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontWeight: "500",
+    transition: "all 0.2s",
+    "&:hover": {
+      backgroundColor: "#2563eb",
+    },
   },
 };
 

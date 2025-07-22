@@ -54,7 +54,7 @@ const MyPatients = () => {
     return moment().diff(moment(dob, "DD-MM-YYYY"), "years").toString();
   };
 
-const fetchPatients = useCallback(async () => {
+  const fetchPatients = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
@@ -64,7 +64,7 @@ const fetchPatients = useCallback(async () => {
       }
 
       const response = await apiGet(
-       `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
+        `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
       );
       const data = response.data;
 
@@ -72,64 +72,57 @@ const fetchPatients = useCallback(async () => {
 
       let patientsData = [];
 
-     if (response.status === 200 && data.data) {
-  const appointmentsData = Array.isArray(data.data)
-    ? data.data
-    : [data.data];
+      if (response.status === 200 && data.data) {
+        const appointmentsData = Array.isArray(data.data)
+          ? data.data
+          : [data.data];
 
-  const patientsDataUnsorted = appointmentsData.map((appointment) => ({
-    id: appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`,
-    appointmentId: appointment.appointmentId || "N/A",
-    name: appointment.patientName || "N/A",
-    gender: appointment.patientDetails?.gender || "N/A",
-    age: appointment.patientDetails?.dob
-      ? calculateAge(appointment.patientDetails.dob)
-      : "N/A",
-    phone: appointment.patientDetails?.mobile || "N/A",
-    lastVisit: appointment.appointmentDate
-      ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
-      : "N/A",
-    appointmentType: appointment.appointmentType || "N/A",
-    status:
-      appointment.appointmentType === "New-Walkin" ||
-      appointment.appointmentType === "new-walkin"
-        ? "New Patient"
-        : "Follow-up",
-    department: appointment.appointmentDepartment || "N/A",
-    appointmentTime: appointment.appointmentTime || "N/A",
-    appointmentStatus: appointment.appointmentStatus || "N/A",
-    appointmentReason: appointment.appointmentReason || "N/A",
-    appointmentCount: 1,
-    allAppointments: [appointment],
-  }));
+        const patientsDataUnsorted = appointmentsData.map((appointment) => ({
+          id:
+            appointment.userId ||
+            `P-${Math.random().toString(36).substr(2, 6)}`,
+          appointmentId: appointment.appointmentId || "N/A",
+          name: appointment.patientName || "N/A",
+          gender: appointment.patientDetails?.gender || "N/A",
+          age: appointment.patientDetails?.dob
+            ? calculateAge(appointment.patientDetails.dob)
+            : "N/A",
+          phone: appointment.patientDetails?.mobile || "N/A",
+          lastVisit: appointment.appointmentDate
+            ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
+            : "N/A",
+          appointmentType: appointment.appointmentType || "N/A",
+          status:
+            appointment.appointmentType === "New-Walkin" ||
+            appointment.appointmentType === "new-walkin"
+              ? "New Patient"
+              : "Follow-up",
+          department: appointment.appointmentDepartment || "N/A",
+          appointmentTime: appointment.appointmentTime || "N/A",
+          appointmentStatus: appointment.appointmentStatus || "N/A",
+          appointmentReason: appointment.appointmentReason || "N/A",
+          appointmentCount: 1,
+          allAppointments: [appointment],
+          ePrescription: appointment.ePrescription || null,
+        }));
 
-  // 🔽 Sorting by date (desc) then by userId (desc)
-  patientsDataUnsorted.sort((a, b) => {
+        // Sorting by date (desc) then by userId (desc)
+        patientsDataUnsorted.sort((a, b) => {
+          const dateA = moment(a.lastVisit, "DD MMMM YYYY");
+          const dateB = moment(b.lastVisit, "DD MMMM YYYY");
 
-    const getNumericId = (id) => parseInt(id.replace(/\D/g, ''), 10);
+          if (dateA.isBefore(dateB)) return 1;
+          if (dateA.isAfter(dateB)) return -1;
 
-  const numA = getNumericId(a.id);
-  const numB = getNumericId(b.id);
+          // Dates are same, now compare ID (assuming alphanumeric)
+          return b.id.localeCompare(a.id); // latest (higher) id first
+        });
 
-  return numB - numA;
-    // const dateA = moment(a.lastVisit, "DD MMMM YYYY");
-    // const dateB = moment(b.lastVisit, "DD MMMM YYYY");
+        patientsData = patientsDataUnsorted;
 
-    // if (dateA.isBefore(dateB)) return 1;
-    // if (dateA.isAfter(dateB)) return -1;
-
-    // // Dates are same, now compare ID (assuming alphanumeric)
-    // return b.id.localeCompare(a.id); // latest (higher) id first
-  });
-
-  patientsData = patientsDataUnsorted;
-
-  setPatients(patientsData);
-  setFilteredPatients(patientsData);
-}
-
-
-      
+        setPatients(patientsData);
+        setFilteredPatients(patientsData);
+      }
     } catch (error) {
       console.error("Error fetching patients:", error);
       message.error("Failed to fetch patients data. Please try again.");
@@ -390,7 +383,13 @@ const fetchPatients = useCallback(async () => {
     setCurrentPage(1);
   }, [patients, searchText, searchField, sortBy]);
 
-  console.log("ePrescriptionData",ePrescriptionData)
+  // Helper function to check if a value should be displayed
+  const shouldDisplayValue = (value) => {
+    return (
+      value && value !== "N/A" && value !== "undefined" && value !== undefined
+    );
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -440,6 +439,7 @@ const fetchPatients = useCallback(async () => {
         open={isPrescriptionModalVisible}
         onCancel={() => setIsPrescriptionModalVisible(false)}
         width={800}
+        className="prescription-modal"
         footer={[
           <Button
             key="close"
@@ -448,95 +448,35 @@ const fetchPatients = useCallback(async () => {
             Close
           </Button>,
         ]}
-        style={{
-          top: "5px",
-          right: "100px",
-          left: "auto", // This ensures it doesn't stick to the left
-          transform: "none", // Remove default centering transform
-          position: "absolute",
-        }}
-        bodyStyle={{
-          maxHeight: "calc(100vh - 150px)",
-          overflowY: "auto",
-          padding: "16px",
-        }}
+        style={{ transform: "translateX(90px)" }}
       >
         {selectedPatient && (
-          <div style={{ padding: "12px 0" }}>
-            {/* Patient Information Section - Now in a single row */}
+          <div style={{ padding: "20px 0" }}>
+            {/* Patient Information Section */}
             <div style={styles.prescriptionSection}>
               <h3 style={styles.sectionTitle}>Patient Information</h3>
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "16px",
-                  alignItems: "center",
-                }}
-              >
-                {selectedPatient.id &&
-                  selectedPatient.id !== "N/A" &&
-                  selectedPatient.id !== null &&
-                  selectedPatient.id !== undefined &&
-                  selectedPatient.id !== "" && (
-                    <div style={styles.infoItem}>
-                      <strong>Patient ID:</strong> {selectedPatient.id}
-                    </div>
-                  )}
-                {selectedPatient.name &&
-                  selectedPatient.name !== "N/A" &&
-                  selectedPatient.name !== null &&
-                  selectedPatient.name !== undefined &&
-                  selectedPatient.name !== "" && (
-                    <div style={styles.infoItem}>
-                      <strong>Name:</strong> {selectedPatient.name}
-                    </div>
-                  )}
-                {selectedPatient.gender &&
-                  selectedPatient.gender !== "N/A" &&
-                  selectedPatient.gender !== null &&
-                  selectedPatient.gender !== undefined &&
-                  selectedPatient.gender !== "" && (
-                    <div style={styles.infoItem}>
-                      <strong>Gender:</strong> {selectedPatient.gender}
-                    </div>
-                  )}
-                {selectedPatient.phone &&
-                  selectedPatient.phone !== "N/A" &&
-                  selectedPatient.phone !== null &&
-                  selectedPatient.phone !== undefined &&
-                  selectedPatient.phone !== "" && (
-                    <div style={styles.infoItem}>
-                      <strong>Phone:</strong> {selectedPatient.phone}
-                    </div>
-                  )}
-                {selectedPatient.lastVisit &&
-                  selectedPatient.lastVisit !== "N/A" &&
-                  selectedPatient.lastVisit !== null &&
-                  selectedPatient.lastVisit !== undefined &&
-                  selectedPatient.lastVisit !== "" && (
-                    <div style={styles.infoItem}>
-                      <strong>Last Visit:</strong> {selectedPatient.lastVisit}
-                    </div>
-                  )}
-                {selectedPatient.department &&
-                  selectedPatient.department !== "N/A" &&
-                  selectedPatient.department !== null &&
-                  selectedPatient.department !== undefined &&
-                  selectedPatient.department !== "" && (
-                    <div style={styles.infoItem}>
-                      <strong>Department:</strong> {selectedPatient.department}
-                    </div>
-                  )}
-                {selectedPatient.status &&
-                  selectedPatient.status !== "N/A" &&
-                  selectedPatient.status !== null &&
-                  selectedPatient.status !== undefined &&
-                  selectedPatient.status !== "" && (
-                    <div style={styles.infoItem}>
-                      <strong>Status:</strong> {selectedPatient.status}
-                    </div>
-                  )}
+              <div style={styles.infoGrid}>
+                <div style={styles.infoItem}>
+                  <strong>Patient ID:</strong> {selectedPatient.id}
+                </div>
+                <div style={styles.infoItem}>
+                  <strong>Name:</strong> {selectedPatient.name}
+                </div>
+                <div style={styles.infoItem}>
+                  <strong>Gender:</strong> {selectedPatient.gender}
+                </div>
+                <div style={styles.infoItem}>
+                  <strong>Phone:</strong> {selectedPatient.phone}
+                </div>
+                <div style={styles.infoItem}>
+                  <strong>Last Visit:</strong> {selectedPatient.lastVisit}
+                </div>
+                <div style={styles.infoItem}>
+                  <strong>Department:</strong> {selectedPatient.department}
+                </div>
+                <div style={styles.infoItem}>
+                  <strong>Status:</strong> {selectedPatient.status}
+                </div>
               </div>
             </div>
 
@@ -545,195 +485,123 @@ const fetchPatients = useCallback(async () => {
               <>
                 {/* Patient Info Section */}
                 <div style={styles.prescriptionSection}>
-                  <br/>
                   <h3 style={styles.sectionTitle}>ePrescription Details</h3>
+
                   <div style={styles.subSection}>
                     <h4 style={styles.subSectionTitle}>Patient Info</h4>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "16px",
-                        alignItems: "center",
-                      }}
-                    >
-                      {ePrescriptionData.patientInfo?.age &&
-                        ePrescriptionData.patientInfo.age !== "N/A" &&
-                        ePrescriptionData.patientInfo.age !== null &&
-                        ePrescriptionData.patientInfo.age !== undefined &&
-                        ePrescriptionData.patientInfo.age !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>Age:</strong>{" "}
-                            {ePrescriptionData.patientInfo.age}
-                          </div>
-                        )}
-                      {ePrescriptionData.patientInfo?.chiefComplaint &&
-                        ePrescriptionData.patientInfo.chiefComplaint !==
-                          "N/A" &&
-                        ePrescriptionData.patientInfo.chiefComplaint !== null &&
-                        ePrescriptionData.patientInfo.chiefComplaint !==
-                          undefined &&
-                        ePrescriptionData.patientInfo.chiefComplaint !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>Chief Complaint:</strong>{" "}
-                            {ePrescriptionData.patientInfo.chiefComplaint}
-                          </div>
-                        )}
+                    <div style={styles.infoGrid}>
+                      {shouldDisplayValue(ePrescriptionData.patientInfo?.age) && (
+                        <div style={styles.infoItem}>
+                          <strong>Age:</strong> {ePrescriptionData.patientInfo.age}
+                        </div>
+                      )}
+                      {shouldDisplayValue(
+                        ePrescriptionData.patientInfo?.chiefComplaint
+                      ) && (
+                        <div style={styles.infoItem}>
+                          <strong>Chief Complaint:</strong>{" "}
+                          {ePrescriptionData.patientInfo.chiefComplaint}
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Vitals Section */}
                   <div style={styles.subSection}>
                     <h4 style={styles.subSectionTitle}>Vitals</h4>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "16px",
-                        alignItems: "center",
-                      }}
-                    >
-                      {ePrescriptionData.vitals?.bp &&
-                        ePrescriptionData.vitals.bp !== "N/A" &&
-                        ePrescriptionData.vitals.bp !== null &&
-                        ePrescriptionData.vitals.bp !== undefined &&
-                        ePrescriptionData.vitals.bp !== "undefined" &&
-                        ePrescriptionData.vitals.bp !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>BP:</strong> {ePrescriptionData.vitals.bp}
-                          </div>
-                        )}
-                      {ePrescriptionData.vitals?.pulseRate &&
-                        ePrescriptionData.vitals.pulseRate !== "N/A" &&
-                        ePrescriptionData.vitals.pulseRate !== null &&
-                        ePrescriptionData.vitals.pulseRate !== undefined &&
-                        ePrescriptionData.vitals.pulseRate !== "undefined" &&
-                        ePrescriptionData.vitals.pulseRate !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>Pulse Rate:</strong>{" "}
-                            {ePrescriptionData.vitals.pulseRate}
-                          </div>
-                        )}
-                      {ePrescriptionData.vitals?.respiratoryRate &&
-                        ePrescriptionData.vitals.respiratoryRate !== "N/A" &&
-                        ePrescriptionData.vitals.respiratoryRate !== null &&
-                        ePrescriptionData.vitals.respiratoryRate !==
-                          undefined &&
-                        ePrescriptionData.vitals.respiratoryRate !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>Respiratory Rate:</strong>{" "}
-                            {ePrescriptionData.vitals.respiratoryRate}
-                          </div>
-                        )}
-                      {ePrescriptionData.vitals?.temperature &&
-                        ePrescriptionData.vitals.temperature !== "N/A" &&
-                        ePrescriptionData.vitals.temperature !== null &&
-                        ePrescriptionData.vitals.temperature !== undefined &&
-                        ePrescriptionData.vitals.temperature !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>Temperature:</strong>{" "}
-                            {ePrescriptionData.vitals.temperature}
-                          </div>
-                        )}
-                      {ePrescriptionData.vitals?.spo2 &&
-                        ePrescriptionData.vitals.spo2 !== "N/A" &&
-                        ePrescriptionData.vitals.spo2 !== null &&
-                        ePrescriptionData.vitals.spo2 !== undefined &&
-                        ePrescriptionData.vitals.spo2 !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>SPO2:</strong>{" "}
-                            {ePrescriptionData.vitals.spo2}
-                          </div>
-                        )}
-                      {ePrescriptionData.vitals?.height &&
-                        ePrescriptionData.vitals.height !== "N/A" &&
-                        ePrescriptionData.vitals.height !== null &&
-                        ePrescriptionData.vitals.height !== undefined &&
-                        ePrescriptionData.vitals.height !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>Height:</strong>{" "}
-                            {ePrescriptionData.vitals.height}
-                          </div>
-                        )}
-                      {ePrescriptionData.vitals?.weight &&
-                        ePrescriptionData.vitals.weight !== "N/A" &&
-                        ePrescriptionData.vitals.weight !== null &&
-                        ePrescriptionData.vitals.weight !== undefined &&
-                        ePrescriptionData.vitals.weight !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>Weight:</strong>{" "}
-                            {ePrescriptionData.vitals.weight}
-                          </div>
-                        )}
-                      {ePrescriptionData.vitals?.bmi &&
-                        ePrescriptionData.vitals.bmi !== "N/A" &&
-                        ePrescriptionData.vitals.bmi !== null &&
-                        ePrescriptionData.vitals.bmi !== undefined &&
-                        ePrescriptionData.vitals.bmi !== "" && (
-                          <div style={styles.infoItem}>
-                            <strong>BMI:</strong> {ePrescriptionData.vitals.bmi}
-                          </div>
-                        )}
+                    <div style={styles.infoGrid}>
+                      {shouldDisplayValue(ePrescriptionData.vitals?.bp) && (
+                        <div style={styles.infoItem}>
+                          <strong>BP:</strong> {ePrescriptionData.vitals.bp}
+                        </div>
+                      )}
+                      {shouldDisplayValue(
+                        ePrescriptionData.vitals?.pulseRate
+                      ) && (
+                        <div style={styles.infoItem}>
+                          <strong>Pulse Rate:</strong>{" "}
+                          {ePrescriptionData.vitals.pulseRate}
+                        </div>
+                      )}
+                      {shouldDisplayValue(
+                        ePrescriptionData.vitals?.respiratoryRate
+                      ) && (
+                        <div style={styles.infoItem}>
+                          <strong>Respiratory Rate:</strong>{" "}
+                          {ePrescriptionData.vitals.respiratoryRate}
+                        </div>
+                      )}
+                      {shouldDisplayValue(
+                        ePrescriptionData.vitals?.temperature
+                      ) && (
+                        <div style={styles.infoItem}>
+                          <strong>Temperature:</strong>{" "}
+                          {ePrescriptionData.vitals.temperature}
+                        </div>
+                      )}
+                      {shouldDisplayValue(ePrescriptionData.vitals?.spo2) && (
+                        <div style={styles.infoItem}>
+                          <strong>SPO2:</strong> {ePrescriptionData.vitals.spo2}
+                        </div>
+                      )}
+                      {shouldDisplayValue(ePrescriptionData.vitals?.height) && (
+                        <div style={styles.infoItem}>
+                          <strong>Height:</strong>{" "}
+                          {ePrescriptionData.vitals.height}
+                        </div>
+                      )}
+                      {shouldDisplayValue(ePrescriptionData.vitals?.weight) && (
+                        <div style={styles.infoItem}>
+                          <strong>Weight:</strong>{" "}
+                          {ePrescriptionData.vitals.weight}
+                        </div>
+                      )}
+                      {shouldDisplayValue(ePrescriptionData.vitals?.bmi) && (
+                        <div style={styles.infoItem}>
+                          <strong>BMI:</strong> {ePrescriptionData.vitals.bmi}
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Diagnosis Section */}
-                  {ePrescriptionData.diagnosis?.diagnosisNote &&
-                    ePrescriptionData.diagnosis.diagnosisNote !== "N/A" &&
-                    ePrescriptionData.diagnosis.diagnosisNote !== null &&
-                    ePrescriptionData.diagnosis.diagnosisNote !== undefined &&
-                    ePrescriptionData.diagnosis.diagnosisNote !== "" && (
-                      <div style={styles.subSection}>
-                        <h4 style={styles.subSectionTitle}>Diagnosis</h4>
-                        <div style={styles.infoItem}>
-                          <strong>Diagnosis Note:</strong>{" "}
-                          {ePrescriptionData.diagnosis.diagnosisNote}
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Advice Section */}
-                  {(ePrescriptionData.advice?.followUpDate ||
-                    ePrescriptionData.advice?.advice) && (
+                  {shouldDisplayValue(
+                    ePrescriptionData.diagnosis?.diagnosisNote
+                  ) && (
                     <div style={styles.subSection}>
-                      <h4 style={styles.subSectionTitle}>Advice</h4>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "16px",
-                          alignItems: "center",
-                        }}
-                      >
-                        {ePrescriptionData.advice?.followUpDate &&
-                          ePrescriptionData.advice.followUpDate !== "N/A" &&
-                          ePrescriptionData.advice.followUpDate !== null &&
-                          ePrescriptionData.advice.followUpDate !== undefined &&
-                          ePrescriptionData.advice.followUpDate !== "" && (
-                            <div style={styles.infoItem}>
-                              <strong>Follow-up Date:</strong>{" "}
-                              {moment(
-                                ePrescriptionData.advice.followUpDate
-                              ).format("DD MMMM YYYY")}
-                            </div>
-                          )}
-                        {ePrescriptionData.advice?.advice &&
-                          ePrescriptionData.advice.advice !== "N/A" &&
-                          ePrescriptionData.advice.advice !== null &&
-                          ePrescriptionData.advice.advice !== undefined &&
-                          ePrescriptionData.advice.advice !== "" && (
-                            <div style={styles.infoItem}>
-                              <strong>Advice:</strong>{" "}
-                              {ePrescriptionData.advice.advice}
-                            </div>
-                          )}
+                      <h4 style={styles.subSectionTitle}>Diagnosis</h4>
+                      <div style={styles.infoItem}>
+                        <strong>Diagnosis Note:</strong>{" "}
+                        {ePrescriptionData.diagnosis.diagnosisNote}
                       </div>
                     </div>
                   )}
+
+                  {/* Advice Section */}
+                  <div style={styles.subSection}>
+                    <h4 style={styles.subSectionTitle}>Advice</h4>
+                    <div style={styles.infoGrid}>
+                      {shouldDisplayValue(
+                        ePrescriptionData.advice?.followUpDate
+                      ) && (
+                        <div style={styles.infoItem}>
+                          <strong>Follow-up Date:</strong>{" "}
+                          {moment(ePrescriptionData.advice.followUpDate).format(
+                            "DD MMMM YYYY"
+                          )}
+                        </div>
+                      )}
+                      {shouldDisplayValue(ePrescriptionData.advice?.advice) && (
+                        <div style={styles.infoItem}>
+                          <strong>Advice:</strong>{" "}
+                          {ePrescriptionData.advice.advice}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </>
             )}
-            <br />
 
             {/* Prescribed Medicines Section */}
             <div style={styles.prescriptionSection}>
@@ -755,11 +623,7 @@ const fetchPatients = useCallback(async () => {
                       columns={medicineColumns}
                       pagination={false}
                       size="small"
-                      style={{
-                        marginTop: "16px",
-                        maxWidth: "100%",
-                        overflowX: "auto",
-                      }}
+                      style={{ marginTop: "16px" }}
                     />
                   ) : prescriptionData.medicines.length > 0 ? (
                     <Table
