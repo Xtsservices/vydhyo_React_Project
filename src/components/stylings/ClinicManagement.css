@@ -199,6 +199,23 @@
   color: #1d4ed8;
 }
 
+.clinic-upload-button {
+  padding: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+  border: none;
+  background-color: transparent;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9333ea;
+}
+
+.clinic-upload-button:hover {
+  color: #7e22ce;
+}
+
 .clinic-delete-button {
   padding: 4px;
   cursor: pointer;
@@ -228,6 +245,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  margin-left: 12rem;
 }
 
 .clinic-modal {
@@ -348,4 +366,73 @@
 
 .clinic-confirm-button:hover {
   background-color: #1d4ed8;
+}
+
+.clinic-confirm-button:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+}
+
+/* Header upload styles */
+.header-upload-container {
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.header-upload-container:hover {
+  border-color: #3b82f6;
+}
+
+.header-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #6b7280;
+}
+
+.header-upload-placeholder p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.header-preview-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-preview-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.header-change-button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.header-change-button:hover {
+  background-color: #1d4ed8;
+}
+
+.header-upload-note {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 8px;
+  font-style: italic;
 }

@@ -8,7 +8,6 @@ import {
   InputNumber,
   Button,
   Collapse,
-  message,
   Popconfirm,
   QRCode,
   Tag,
@@ -19,10 +18,10 @@ import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
-const LabPatientManagement = ({ status, updateCount, searchValue}) => {
+const LabPatientManagement = ({ status, updateCount, searchValue }) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   console.log(status, "status");
@@ -32,9 +31,9 @@ const LabPatientManagement = ({ status, updateCount, searchValue}) => {
   const [expandedKeys, setExpandedKeys] = useState([]);
   const [paying, setPaying] = useState({});
   const [loadingPatients, setLoadingPatients] = useState(false);
+  const [isPaymentDone, setIsPaymentDone] = useState({}); // New state to track payment completion per patient
 
   // Fetch data
-
   async function filterPatientsDAta(data) {
     if (status === "pending") {
       const filtered = data
@@ -50,7 +49,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue}) => {
           }
           return null;
         })
-        .filter(Boolean); // remove null entries (patients with no pending tests)
+        .filter(Boolean);
 
       return filtered;
     } else {
@@ -67,7 +66,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue}) => {
           }
           return null;
         })
-        .filter(Boolean); // remove null entries (patients with no pending tests)
+        .filter(Boolean);
 
       return filtered;
     }
@@ -82,39 +81,43 @@ const LabPatientManagement = ({ status, updateCount, searchValue}) => {
 
       console.log("getAllTestsPatientsByDoctorID", response);
       if (response.status === 200 && response?.data?.data) {
+        let filteredData = await filterPatientsDAta(response.data.data);
 
-        // if (searchValue) {
-        //   const filteredData = response?.data?.data?.filter((patient) =>
-        //     patient?.patientId?.toLowerCase().includes(searchValue.toLowerCase())
-        //   );
-        //   setPatients((filteredData));
-        //   return;
-        // }
-        // const pendingData = await filterPatientsDAta(response.data.data);
-  let filteredData = await filterPatientsDAta(response.data.data);
+        // Apply search filtering by patientId
+        if (searchValue) {
+          filteredData = filteredData.filter((patient) =>
+            patient?.patientId
+              ?.toLowerCase()
+              .includes(searchValue.toLowerCase())
+          );
+        }
 
-      // ✅ Apply search filtering by patientId
-      if (searchValue) {
-        filteredData = filteredData.filter((patient) =>
-          patient?.patientId
-            ?.toLowerCase()
-            .includes(searchValue.toLowerCase())
-        );
-      }
-
-
-         //  Sort by patientId descending
-      filteredData.sort((a, b) => {
-        const idA = parseInt(a.patientId.replace(/\D/g, '')) || 0;
-        const idB = parseInt(b.patientId.replace(/\D/g, '')) || 0;
-        return idB - idA; // latest on top
-      });
+        // Sort by patientId descending
+        filteredData.sort((a, b) => {
+          const idA = parseInt(a.patientId.replace(/\D/g, "")) || 0;
+          const idB = parseInt(b.patientId.replace(/\D/g, "")) || 0;
+          return idB - idA; // latest on top
+        });
         setPatients(filteredData);
-        message.success("Patients data loaded successfully");
+        // Initialize isPaymentDone for each patient
+        const paymentDoneState = {};
+        filteredData.forEach((patient) => {
+          paymentDoneState[patient.patientId] = !patient.tests.some(
+            (test) => test.status === "pending"
+          );
+        });
+        setIsPaymentDone(paymentDoneState);
+    
       }
     } catch (error) {
       console.error("Error fetching patient tests:", error);
-      message.error("Failed to load patient data");
+      toast.error(
+        error.response?.data?.message || "Failed to load patient data",
+        {
+          position: "top-right",
+          autoClose: 5000,
+        }
+      );
     } finally {
       setLoadingPatients(false);
     }
@@ -141,93 +144,72 @@ const LabPatientManagement = ({ status, updateCount, searchValue}) => {
     );
   };
 
-//   const handlePriceSave = async (patientId, testId, testName) => {
-//     try {
-//       setSaving((prev) => ({ ...prev, [testId]: true }));
-//       const patient = patients.find((p) => p.patientId === patientId);
-//       const test = patient.tests.find((t) => t._id === testId);
-//       const timmeredtestName = testName.trim();
-//       const price = test.price;
+  const handlePriceSave = async (patientId, testId, testName) => {
+    try {
+      setSaving((prev) => ({ ...prev, [testId]: true }));
 
-//       if (price === null || price === undefined) {
-//         message.error("Please enter a valid price");
-//         return;
-//       }
-    
-//       await apiPost(`/lab/updatePatientTestPrice`, {
-//         testId,
-//         patientId,
-//         price,
-//         doctorId,
-//         testName:timmeredtestName,
-//       });
-// toast.success("Price updated successfully")
-//       message.success("Price updated successfully");
-//       setEditablePrices((prev) => prev.filter((id) => id !== testId));
-//     } catch (error) {
-//       console.error("Error updating test price:", error);
-//       toast.error("Failed to update Price")
-//       message.error("Failed to update price");
-//     } finally {
-//       setSaving((prev) => ({ ...prev, [testId]: false }));
-//     }
-//   };
-const handlePriceSave = async (patientId, testId, testName) => {
-  try {
-    setSaving((prev) => ({ ...prev, [testId]: true }));
+      const patient = patients.find((p) => p.patientId === patientId);
+      if (!patient) {
+        toast.error("Patient not found", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+        return;
+      }
 
-    const patient = patients.find((p) => p.patientId === patientId);
-    if (!patient) {
-      toast.error("Patient not found");
-      return;
+      const test = patient.tests.find((t) => t._id === testId);
+      if (!test) {
+        toast.error("Test not found", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+        return;
+      }
+
+      const trimmedTestName = testName?.trim();
+      const price = test.price;
+
+      if (price === null || price === undefined || isNaN(price) || price < 0) {
+        toast.error("Please enter a valid price", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+        return;
+      }
+
+      const response = await apiPost(`/lab/updatePatientTestPrice`, {
+        testId,
+        patientId,
+        price,
+        doctorId,
+        testName: trimmedTestName,
+      });
+
+      if (response?.success || response?.status === 200) {
+        console.log(response, "test price update");
+        toast.success("Price updated successfully", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      } else {
+        throw new Error(response?.message || "Unknown server error");
+      }
+
+      setEditablePrices((prev) => prev.filter((id) => id !== testId));
+    } catch (error) {
+      console.error("Error updating test price:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update price";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+      });
+    } finally {
+      setSaving((prev) => ({ ...prev, [testId]: false }));
     }
-
-    const test = patient.tests.find((t) => t._id === testId);
-    if (!test) {
-      toast.error("Test not found");
-      return;
-    }
-
-    const trimmedTestName = testName?.trim();
-    const price = test.price;
-
-    if (price === null || price === undefined || isNaN(price) || price < 0) {
-      toast.error("Please enter a valid price");
-      return;
-    }
-
-    const response = await apiPost(`/lab/updatePatientTestPrice`, {
-      testId,
-      patientId,
-      price,
-      doctorId,
-      testName: trimmedTestName,
-    });
-
-    
-
-    // Optional: check if API returned success status
-    if (response?.success || response?.status === 200) {
-      console.log(response, " test price update")
-      toast.success("Price updated successfully");
-    } else {
-      throw new Error(response?.message || "Unknown server error");
-    }
-
-    setEditablePrices((prev) => prev.filter((id) => id !== testId));
-  } catch (error) {
-    console.error("Error updating test price:", error);
-    
-    const errorMessage =
-      error?.response?.data?.message ||
-      error?.message ||
-      "Failed to update price";
-
-    toast.error(errorMessage);
-  } finally {
-    setSaving((prev) => ({ ...prev, [testId]: false }));
-  }
-};
+  };
 
   const handlePayment = async (patientId) => {
     try {
@@ -238,13 +220,14 @@ const handlePriceSave = async (patientId, testId, testName) => {
         0
       );
 
-      
-
       if (totalAmount <= 0) {
-        message.error("No valid prices set for payment");
+        toast.error("No valid prices set for payment", {
+          position: "top-right",
+          autoClose: 5000,
+        });
         return;
       }
-      console.log("totalAmount", totalAmount);
+
       const response = await apiPost(`/lab/processPayment`, {
         patientId,
         doctorId,
@@ -257,14 +240,23 @@ const handlePriceSave = async (patientId, testId, testName) => {
       });
 
       if (response.status === 200) {
+        setIsPaymentDone((prev) => ({ ...prev, [patientId]: true })); // Mark payment as done
         updateCount();
-        message.success("Payment processed successfully");
-        toast.success("Payment done successfully")
-        await getAllTestsPatientsByDoctorID();
+        toast.success("Payment processed successfully", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        await getAllTestsPatientsByDoctorID(); // Refresh data
       }
     } catch (error) {
       console.error("Error processing payment:", error);
-      message.error("Failed to process payment");
+      toast.error(
+        error.response?.data?.message || "Failed to process payment",
+        {
+          position: "top-right",
+          autoClose: 5000,
+        }
+      );
     } finally {
       setPaying((prev) => ({ ...prev, [patientId]: false }));
     }
@@ -301,21 +293,20 @@ const handlePriceSave = async (patientId, testId, testName) => {
       dataIndex: "status",
       key: "status",
       render: (_, record) => {
-        // Determine overall patient status based on tests
-        const allCompleted = record.tests.every(test => test.status === 'completed');
-        const anyPending = record.tests.some(test => test.status === 'pending');
-        
-        let statusText = 'Partial';
-        let color = 'orange';
-        
+        const allCompleted = record.tests.every((test) => test.status === "completed");
+        const anyPending = record.tests.some((test) => test.status === "pending");
+
+        let statusText = "Partial";
+        let color = "orange";
+
         if (allCompleted) {
-          statusText = 'Completed';
-          color = 'green';
-        } else if (anyPending && !record.tests.some(test => test.status === 'completed')) {
-          statusText = 'Pending';
-          color = 'gold';
+          statusText = "Completed";
+          color = "green";
+        } else if (anyPending && !record.tests.some((test) => test.status === "completed")) {
+          statusText = "Pending";
+          color = "gold";
         }
-        
+
         return <Tag color={color}>{statusText}</Tag>;
       },
     },
@@ -389,27 +380,27 @@ const handlePriceSave = async (patientId, testId, testName) => {
       render: (status) => {
         let color, text;
         switch (status) {
-          case 'completed':
-            color = 'green';
-            text = 'Completed';
+          case "completed":
+            color = "green";
+            text = "Completed";
             break;
-          case 'pending':
-            color = 'gold';
-            text = 'Pending';
+          case "pending":
+            color = "gold";
+            text = "Pending";
             break;
-          case 'cancelled':
-            color = 'red';
-            text = 'Cancelled';
+          case "cancelled":
+            color = "red";
+            text = "Cancelled";
             break;
-          case 'in_progress':
-            color = 'blue';
-            text = 'In Progress';
+          case "in_progress":
+            color = "blue";
+            text = "In Progress";
             break;
           default:
-            color = 'gray';
-            text = 'Unknown';
+            color = "gray";
+            text = "Unknown";
         }
-        
+
         return <Tag color={color}>{text}</Tag>;
       },
     },
@@ -435,129 +426,136 @@ const handlePriceSave = async (patientId, testId, testName) => {
   console.log(patients, "patients");
 
   return (
-    <Card
-      style={{
-        borderRadius: "8px",
-        marginBottom: "24px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-      }}
-    >
-      <Row
-        justify="space-between"
-        align="middle"
-        style={{ marginBottom: "16px" }}
+    <div>
+      <ToastContainer />
+      <Card
+        style={{
+          borderRadius: "8px",
+          marginBottom: "24px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        }}
       >
-        <Col>
-          <Title level={4} style={{ margin: 0, color: "#1A3C6A" }}>
-            Patients {status === 'pending' ? 'Pending' : 'Completed'} Tests
-          </Title>
-        </Col>
-      </Row>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: "16px" }}
+        >
+          <Col>
+            <Title level={4} style={{ margin: 0, color: "#1A3C6A" }}>
+              Patients {status === "pending" ? "Pending" : "Completed"} Tests
+            </Title>
+          </Col>
+        </Row>
 
-      <Table
-        columns={columns}
-        dataSource={patients}
-        rowKey="patientId"
-        pagination={false}
-        loading={loadingPatients}
-        expandable={{
-          expandedRowKeys: expandedKeys,
-          onExpand: (_, record) => toggleCollapse(record.patientId),
-          expandedRowRender: (record) => {
-            const totalAmount = record.tests.reduce(
-              (sum, test) => sum + (test.price || 0),
-              0
-            );
-            const hasPendingTests = record.tests.some(
-              (test) => test.status === "pending"
-            );
+        <Table
+          columns={columns}
+          dataSource={patients}
+          rowKey="patientId"
+          pagination={false}
+          loading={loadingPatients}
+          expandable={{
+            expandedRowKeys: expandedKeys,
+            onExpand: (_, record) => toggleCollapse(record.patientId),
+            expandedRowRender: (record) => {
+              const totalAmount = record.tests.reduce(
+                (sum, test) => sum + (test.price || 0),
+                0
+              );
+              const hasPendingTests = record.tests.some(
+                (test) => test.status === "pending"
+              );
 
-            return (
-              <Collapse
-                defaultActiveKey={["1"]}
-                style={{
-                  background: "#f9fafb",
-                  borderRadius: "6px",
-                  border: "1px solid #e5e7eb",
-                }}
-              >
-                <Panel
-                  header="Test Details"
-                  key="1"
+              return (
+                <Collapse
+                  defaultActiveKey={["1"]}
                   style={{
-                    background: "#ffffff",
+                    background: "#f9fafb",
                     borderRadius: "6px",
-                    border: "none",
+                    border: "1px solid #e5e7eb",
                   }}
                 >
-                  <Table
-                    columns={testColumns.map((col) => ({
-                      ...col,
-                      render: (text, test, index) =>
-                        col.render
-                          ? col.render(text, test, index, record.patientId)
-                          : text,
-                    }))}
-                    dataSource={record.tests}
-                    rowKey="_id"
-                    pagination={false}
-                    style={{ marginBottom: "16px" }}
-                  />
-                  <Row
-                    justify="end"
+                  <Panel
+                    header="Test Details"
+                    key="1"
                     style={{
-                      padding: "12px",
-                      background: "#f1f5f9",
+                      background: "#ffffff",
                       borderRadius: "6px",
+                      border: "none",
                     }}
                   >
-                    <Col>
-                      <Typography.Text strong style={{ marginRight: "16px" }}>
-                        Total Amount: ₹ {totalAmount.toFixed(2)}
-                      </Typography.Text>
+                    <Table
+                      columns={testColumns.map((col) => ({
+                        ...col,
+                        render: (text, test, index) =>
+                          col.render
+                            ? col.render(text, test, index, record.patientId)
+                            : text,
+                      }))}
+                      dataSource={record.tests}
+                      rowKey="_id"
+                      pagination={false}
+                      style={{ marginBottom: "16px" }}
+                    />
+                    <Row
+                      justify="end"
+                      style={{
+                        padding: "12px",
+                        background: "#f1f5f9",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      <Col>
+                        <Typography.Text strong style={{ marginRight: "16px" }}>
+                          Total Amount: ₹ {totalAmount.toFixed(2)}
+                        </Typography.Text>
 
-                      <Popconfirm
-                        title="Confirm Payment"
-                        description={
-                          <div style={{ textAlign: "center" }}>
-                            <Typography.Text>
-                              Cash ₹{totalAmount.toFixed(2)}
-                            </Typography.Text>
-                          </div>
-                        }
-                        onConfirm={() => handlePayment(record.patientId)}
-                        okText="Payment Done"
-                        cancelText="Cancel"
-                      >
-                        <Button
-                          type="primary"
-                          icon={<CreditCardOutlined />}
-                          loading={paying[record.patientId]}
-                          disabled={
-                            totalAmount <= 0 ||
-                            paying[record.patientId] ||
-                            !hasPendingTests
+                        <Popconfirm
+                          title="Confirm Payment"
+                          description={
+                            <div style={{ textAlign: "center" }}>
+                              <Typography.Text>
+                                Cash ₹{totalAmount.toFixed(2)}
+                              </Typography.Text>
+                            </div>
                           }
-                          style={{
-                            background: "#1A3C6A",
-                            borderColor: "#1A3C6A",
-                            color: "white",
-                            marginTop: 8,
-                          }}
+                          onConfirm={() => handlePayment(record.patientId)}
+                          okText="Payment Done"
+                          cancelText="Cancel"
+                          disabled={isPaymentDone[record.patientId]} // Disable Popconfirm if payment is done
                         >
-                          {hasPendingTests ? "Process Payment" : "Paid"}
-                        </Button>
-                      </Popconfirm>
-                    </Col>
-                  </Row>
-                </Panel>
-              </Collapse>
-            );
-          },
-        }}
-        style={{ background: "#ffffff", borderRadius: "6px" }}
-      />
-    </Card>
+                          <Button
+                            type="primary"
+                            icon={<CreditCardOutlined />}
+                            loading={paying[record.patientId]}
+                            disabled={
+                              totalAmount <= 0 ||
+                              paying[record.patientId] ||
+                              !hasPendingTests ||
+                              isPaymentDone[record.patientId] // Disable button if payment is done
+                            }
+                            style={{
+                              background: "#1A3C6A",
+                              borderColor: "#1A3C6A",
+                              color: "white",
+                              marginTop: 8,
+                            }}
+                          >
+                            {hasPendingTests && !isPaymentDone[record.patientId]
+                              ? "Process Payment"
+                              : "Paid"}
+                          </Button>
+                        </Popconfirm>
+                      </Col>
+                    </Row>
+                  </Panel>
+                </Collapse>
+              );
+            },
+          }}
+          style={{ background: "#ffffff", borderRadius: "6px" }}
+        />
+      </Card>
+    </div>
   );
 };
 

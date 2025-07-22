@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { Edit, Plus, Search, X, Trash2 } from "lucide-react";
+import { Edit, Plus, Search, X, Trash2, Upload } from "lucide-react";
 import {
   GoogleMap,
   useLoadScript,
@@ -23,6 +23,7 @@ export default function ClinicManagement() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showHeaderModal, setShowHeaderModal] = useState(false);
   const [clinics, setClinics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,6 +42,9 @@ export default function ClinicManagement() {
     longitude: "",
     addressId: "",
   });
+  const [headerFile, setHeaderFile] = useState(null);
+  const [headerPreview, setHeaderPreview] = useState(null);
+  const [selectedClinicForHeader, setSelectedClinicForHeader] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 });
   const [markerPosition, setMarkerPosition] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -49,6 +53,7 @@ export default function ClinicManagement() {
 
   const autocompleteRef = useRef(null);
   const mapRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchClinics = async () => {
@@ -297,6 +302,61 @@ export default function ClinicManagement() {
     }
   };
 
+  const handleUploadHeader = (clinic) => {
+    setSelectedClinicForHeader(clinic);
+    setShowHeaderModal(true);
+    setHeaderFile(null);
+    setHeaderPreview(null);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setHeaderFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setHeaderPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleHeaderSubmit = async () => {
+    if (!headerFile || !selectedClinicForHeader) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", headerFile);
+      formData.append("addressId", selectedClinicForHeader.addressId);
+
+      const response = await apiPost("/users/uploadClinicHeader", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Header uploaded successfully");
+        setShowHeaderModal(false);
+        // Refresh clinics list
+        const refreshResponse = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
+        if (refreshResponse.status === 200 && refreshResponse.data?.status === "success") {
+          const allClinics = refreshResponse.data.data || [];
+          const activeClinics = allClinics.filter((clinic) => clinic.status === "Active");
+          const sortedClinics = [...activeClinics].sort((a, b) => {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          });
+          setClinics(sortedClinics);
+        }
+      } else {
+        toast.error(response.data?.message || "Failed to upload header");
+      }
+    } catch (err) {
+      console.error("Header upload error:", err);
+      toast.error(err.message || "Failed to upload header");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -400,7 +460,6 @@ export default function ClinicManagement() {
 
 toast.error(errorMessage);
       console.error("Submit error:", err?.response?.data?.message?.message);
-      // toast.error(err?.response?.data?.message?.message || err.message);
     }
   };
 
@@ -443,6 +502,13 @@ toast.error(errorMessage);
     });
     setMapCenter({ lat: 20.5937, lng: 78.9629 });
     setMarkerPosition(null);
+  };
+
+  const handleHeaderCancel = () => {
+    setShowHeaderModal(false);
+    setHeaderFile(null);
+    setHeaderPreview(null);
+    setSelectedClinicForHeader(null);
   };
 
   const filteredClinics = clinics.filter(
@@ -527,6 +593,13 @@ toast.error(errorMessage);
                           onClick={() => handleEditClinic(clinic)}
                         >
                           <Edit size={16} />
+                        </button>
+                        <button
+                          className="clinic-upload-button"
+                          title="Upload Header"
+                          onClick={() => handleUploadHeader(clinic)}
+                        >
+                          <Upload size={16} />
                         </button>
                         {user?.role === "doctor" && (
                           <button
@@ -712,6 +785,74 @@ toast.error(errorMessage);
                     {isEditing ? "Update" : "Confirm"}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showHeaderModal && (
+          <div className="clinic-modal-overlay" onClick={handleHeaderCancel}>
+            <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 className="clinic-modal-header">
+                Upload Header for {selectedClinicForHeader?.clinicName}
+              </h2>
+              
+              <div className="clinic-form-group">
+                <label className="clinic-form-label">Header Image</label>
+                <div className="header-upload-container">
+                  {headerPreview ? (
+                    <div className="header-preview-container">
+                      <img 
+                        src={headerPreview} 
+                        alt="Header preview" 
+                        className="header-preview-image"
+                      />
+                      <button
+                        className="header-change-button"
+                        onClick={() => fileInputRef.current.click()}
+                      >
+                        Change Image
+                      </button>
+                    </div>
+                  ) : (
+                    <div 
+                      className="header-upload-placeholder"
+                      onClick={() => fileInputRef.current.click()}
+                    >
+                      <Upload size={24} />
+                      <p>Click to upload header image</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                  />
+                </div>
+                <p className="header-upload-note">
+                  Note: This image will be used as the header for prescriptions from this clinic.
+                </p>
+              </div>
+
+              <div className="clinic-button-group">
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handleHeaderCancel}
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="clinic-confirm-button"
+                  onClick={handleHeaderSubmit}
+                  disabled={!headerFile}
+                >
+                  Upload
+                </button>
               </div>
             </div>
           </div>
