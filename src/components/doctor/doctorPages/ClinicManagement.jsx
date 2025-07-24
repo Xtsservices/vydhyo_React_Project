@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { Edit, Plus, Search, X, Trash2, Upload } from "lucide-react";
+import { Edit, Plus, Search, X, Trash2, Upload ,Image,Eye} from "lucide-react";
 import {
   GoogleMap,
   useLoadScript,
@@ -24,6 +24,11 @@ export default function ClinicManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showHeaderModal, setShowHeaderModal] = useState(false);
+  const [showImagePreviewModal, setShowImagePreviewModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+   const [previewTitle, setPreviewTitle] = useState("");
+    const [selectedHeaderImage, setSelectedHeaderImage] = useState(null);
+  const [selectedDigitalSignature, setSelectedDigitalSignature] = useState(null);
   const [clinics, setClinics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,6 +49,8 @@ export default function ClinicManagement() {
   });
   const [headerFile, setHeaderFile] = useState(null);
   const [headerPreview, setHeaderPreview] = useState(null);
+   const [signatureFile, setSignatureFile] = useState(null);
+  const [signaturePreview, setSignaturePreview] = useState(null);
   const [selectedClinicForHeader, setSelectedClinicForHeader] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 });
   const [markerPosition, setMarkerPosition] = useState(null);
@@ -54,6 +61,7 @@ export default function ClinicManagement() {
   const autocompleteRef = useRef(null);
   const mapRef = useRef(null);
   const fileInputRef = useRef(null);
+  const signatureFileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchClinics = async () => {
@@ -307,9 +315,11 @@ export default function ClinicManagement() {
     setShowHeaderModal(true);
     setHeaderFile(null);
     setHeaderPreview(null);
+     setSignatureFile(null);
+    setSignaturePreview(null);
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange2 = (e) => {
     const file = e.target.files[0];
     if (file) {
       setHeaderFile(file);
@@ -321,12 +331,32 @@ export default function ClinicManagement() {
     }
   };
 
+   const handleFileChange = (e, type) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (type === "header") {
+          setHeaderFile(file);
+          setHeaderPreview(reader.result);
+        } else if (type === "signature") {
+          setSignatureFile(file);
+          setSignaturePreview(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleHeaderSubmit = async () => {
     if (!headerFile || !selectedClinicForHeader) return;
 
     try {
       const formData = new FormData();
       formData.append("file", headerFile);
+       if (signatureFile) {
+        formData.append("signature", signatureFile);
+      }
       formData.append("addressId", selectedClinicForHeader.addressId);
 
       const response = await apiPost("/users/uploadClinicHeader", formData, {
@@ -525,6 +555,19 @@ toast.error(errorMessage);
     return <div>Loading...</div>;
   }
 
+   const handleViewImage = (headerImage, digitalSignature) => {
+     setSelectedHeaderImage(headerImage);
+    setSelectedDigitalSignature(digitalSignature);
+    // setSelectedImage(image);
+    //  setPreviewTitle(title);
+    setShowImagePreviewModal(true);
+  };
+   const handleCloseImagePreview = () => {
+    setShowImagePreviewModal(false);
+     setSelectedHeaderImage(null);
+    setSelectedDigitalSignature(null);
+  };
+
   return (
     <div className="clinic-management-container">
       <div className="clinic-management-main">
@@ -566,6 +609,7 @@ toast.error(errorMessage);
                 <th className="clinic-table-th">Type</th>
                 <th className="clinic-table-th">Address</th>
                 <th className="clinic-table-th">Contact</th>
+                  <th className="clinic-table-th">Header Image</th>
                 <th className="clinic-table-th">Status</th>
                 <th className="clinic-table-th">Action</th>
               </tr>
@@ -580,6 +624,26 @@ toast.error(errorMessage);
                       {clinic.address}, {clinic.city}, {clinic.state}, {clinic.country} {clinic.pincode}
                     </td>
                     <td className="clinic-table-td">{clinic.mobile}</td>
+                     <td className="clinic-table-td">
+                     {clinic.headerImage ? (
+                        <button
+                          className="clinic-view-image-button"
+                          title="View Header Image"
+                          
+                          onClick={() => handleViewImage(clinic.headerImage, clinic.digitalSignature)}
+                        >
+                          <Eye size={16} />
+                        </button>
+                      ) : (
+                         <button
+                          className="clinic-upload-button"
+                          title="Upload Header"
+                          onClick={() => handleUploadHeader(clinic)}
+                        >
+                          <Upload size={16} />
+                        </button>
+                      )}
+                    </td>
                     <td className="clinic-table-td">
                       <span className="clinic-status-badge" style={getStatusStyle(clinic.status)}>
                         {clinic.status}
@@ -594,13 +658,13 @@ toast.error(errorMessage);
                         >
                           <Edit size={16} />
                         </button>
-                        <button
+                        {/* <button
                           className="clinic-upload-button"
                           title="Upload Header"
                           onClick={() => handleUploadHeader(clinic)}
                         >
                           <Upload size={16} />
-                        </button>
+                        </button> */}
                         {user?.role === "doctor" && (
                           <button
                             className="clinic-delete-button"
@@ -794,7 +858,7 @@ toast.error(errorMessage);
           <div className="clinic-modal-overlay" onClick={handleHeaderCancel}>
             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
               <h2 className="clinic-modal-header">
-                Upload Header for {selectedClinicForHeader?.clinicName}
+                Upload Header  and Signature for {selectedClinicForHeader?.clinicName}
               </h2>
               
               <div className="clinic-form-group">
@@ -826,7 +890,7 @@ toast.error(errorMessage);
                   <input
                     type="file"
                     ref={fileInputRef}
-                    onChange={handleFileChange}
+                      onChange={(e) => handleFileChange(e, "header")}
                     accept="image/*"
                     style={{ display: 'none' }}
                   />
@@ -835,6 +899,46 @@ toast.error(errorMessage);
                   Note: This image will be used as the header for prescriptions from this clinic.
                 </p>
               </div>
+
+                <div className="clinic-form-group">
+                <label className="clinic-form-label">Digital Signature (Optional)</label>
+                <div className="header-upload-container">
+                  {signaturePreview ? (
+                    <div className="header-preview-container">
+                      <img 
+                        src={signaturePreview} 
+                        alt="Signature preview" 
+                        className="header-preview-image"
+                      />
+                      <button
+                        className="header-change-button"
+                        onClick={() => signatureFileInputRef.current.click()}
+                      >
+                        Change Signature
+                      </button>
+                    </div>
+                  ) : (
+                    <div 
+                      className="header-upload-placeholder"
+                      onClick={() => signatureFileInputRef.current.click()}
+                    >
+                      <Upload size={24} />
+                      <p>Click to upload digital signature</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={signatureFileInputRef}
+                    onChange={(e) => handleFileChange(e, "signature")}
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                  />
+                </div>
+                <p className="header-upload-note">
+                  Note: This signature will be used on prescriptions (optional).
+                </p>
+              </div>
+
 
               <div className="clinic-button-group">
                 <button
@@ -852,6 +956,48 @@ toast.error(errorMessage);
                   disabled={!headerFile}
                 >
                   Upload
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+          {showImagePreviewModal && (
+          <div className="clinic-modal-overlay" onClick={handleCloseImagePreview}>
+            <div className="clinic-modal image-preview-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 className="clinic-modal-header">Header and Signature Preview</h2>
+              <div className="image-preview-container">
+                <div className="image-preview-section">
+                  <h3>Header Image</h3>
+                  {selectedHeaderImage ? (
+                    <img
+                      src={selectedHeaderImage}
+                      alt="Header Preview"
+                      className="image-preview"
+                    />
+                  ) : (
+                    <p>No header image available</p>
+                  )}
+                </div>
+                {selectedDigitalSignature && (
+                  <div className="image-preview-section">
+                    <h3>Digital Signature</h3>
+                    <img
+                      src={selectedDigitalSignature}
+                      alt="Digital Signature Preview"
+                      className="image-preview"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="clinic-button-group">
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handleCloseImagePreview}
+                >
+                  <X size={16} />
+                  Close
                 </button>
               </div>
             </div>
