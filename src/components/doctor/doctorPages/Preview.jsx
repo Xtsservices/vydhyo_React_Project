@@ -11,9 +11,10 @@ import "../../stylings/Preview.css";
 const Preview = ({ formData, handlePrescriptionAction }) => {
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // New loading state
 
   const formatDate = (dateString) => {
-    if (!dateString) return "Not specified";
+    if (!dateString) return "Date not provided";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       day: "numeric",
@@ -22,97 +23,91 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     });
   };
 
-const generatePDF = async () => {
-  try {
-    const input = document.getElementById("prescription-container");
-    if (!input) {
-      throw new Error("Could not find the prescription container element");
+  const generatePDF = async () => {
+    try {
+      const input = document.getElementById("prescription-container");
+      if (!input) {
+        throw new Error("Could not find the prescription container element");
+      }
+
+      const originalStyles = {
+        boxShadow: input.style.boxShadow,
+        padding: input.style.padding,
+        margin: input.style.margin,
+        overflow: input.style.overflow,
+      };
+
+      const printButtonContainer = input.querySelector(".print-button-container");
+      const originalButtonDisplay = printButtonContainer?.style.display;
+      if (printButtonContainer) {
+        printButtonContainer.style.display = "none";
+      }
+
+      input.style.boxShadow = "none";
+      input.style.padding = "0";
+      input.style.margin = "0";
+      input.style.overflow = "visible";
+
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        logging: true,
+        backgroundColor: "#ffffff",
+        scrollY: -window.scrollY,
+      });
+
+      Object.assign(input.style, originalStyles);
+      if (printButtonContainer) {
+        printButtonContainer.style.display = originalButtonDisplay;
+      }
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      const pageHeight = 297;
+      let heightLeft = pdfHeight;
+      let position = 0;
+
+      while (heightLeft > 0) {
+        pdf.addImage(
+          imgData,
+          "PNG",
+          10,
+          position,
+          pdfWidth,
+          pdfHeight,
+          null,
+          "FAST"
+        );
+        heightLeft -= pageHeight;
+        position -= pageHeight;
+        if (heightLeft > 0) pdf.addPage();
+      }
+
+      const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
+      const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
+
+      console.log("Generated PDF Blob:", {
+        type: pdfBlob.type,
+        size: pdfBlob.size,
+        filename: `${appointmentId}.pdf`,
+      });
+
+      return pdfBlob;
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate prescription PDF");
+      throw error;
     }
+  };
 
-    // Store original styles and button visibility
-    const originalStyles = {
-      boxShadow: input.style.boxShadow,
-      padding: input.style.padding,
-      margin: input.style.margin,
-      overflow: input.style.overflow,
-    };
-
-    // Hide the print button container
-    const printButtonContainer = input.querySelector(".print-button-container");
-    const originalButtonDisplay = printButtonContainer?.style.display;
-    if (printButtonContainer) {
-      printButtonContainer.style.display = "none";
-    }
-
-    // Apply print-specific styles
-    input.style.boxShadow = "none";
-    input.style.padding = "0";
-    input.style.margin = "0";
-    input.style.overflow = "visible";
-
-    // Capture the full content
-    const canvas = await html2canvas(input, {
-      scale: 2,
-      useCORS: true,
-      logging: true,
-      backgroundColor: "#ffffff",
-      scrollY: -window.scrollY, // Adjust for scroll position
-    });
-
-    // Restore original styles and button visibility
-    Object.assign(input.style, originalStyles);
-    if (printButtonContainer) {
-      printButtonContainer.style.display = originalButtonDisplay;
-    }
-
-    // Convert canvas to PDF
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth() - 20; // Subtract 10mm margin from both sides
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-    // Add multiple pages if content exceeds A4 height
-    const pageHeight = 297; // A4 height in mm
-    let heightLeft = pdfHeight;
-    let position = 0;
-
-    while (heightLeft > 0) {
-      pdf.addImage(
-        imgData,
-        "PNG",
-        10, // Start x-coordinate with 10mm margin
-        position,
-        pdfWidth,
-        pdfHeight,
-        null,
-        "FAST"
-      );
-      heightLeft -= pageHeight;
-      position -= pageHeight;
-      if (heightLeft > 0) pdf.addPage();
-    }
-
-    const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
-    const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
-
-    console.log("Generated PDF Blob:", {
-      type: pdfBlob.type,
-      size: pdfBlob.size,
-      filename: `${appointmentId}.pdf`,
-    });
-
-    return pdfBlob;
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    toast.error("Failed to generate prescription PDF");
-    throw error;
-  }
-};
   const handleWhatsAppClick = async () => {
     try {
       const pdfBlob = await generatePDF();
@@ -126,57 +121,18 @@ const generatePDF = async () => {
     }
   };
 
-  const handlePrintClick2 = async () => {
-    try {
-      const pdfBlob = await generatePDF();
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      const printWindow = window.open(pdfUrl);
-      printWindow.onload = () => {
-        printWindow.focus();
-        printWindow.print();
-      };
-      printWindow.onbeforeunload = () => URL.revokeObjectURL(pdfUrl);
-    } catch (error) {
-      console.error("Error printing prescription:", error);
-      toast.error("Failed to print prescription");
-    }
-  };
-
-  //   const handlePrintClick = () => {
-  //   try {
-  //     // Temporarily hide the print, WhatsApp, and save buttons for printing
-  //     const buttons = document.querySelectorAll(".print-button-container");
-  //     buttons.forEach((button) => (button.style.display = "none"));
-
-  //     // Trigger the browser's print dialog
-  //     window.print();
-
-  //     // Restore the buttons after printing
-  //     buttons.forEach((button) => (button.style.display = "flex"));
-  //   } catch (error) {
-  //     console.error("Error printing prescription:", error);
-  //     toast.error("Failed to print prescription");
-  //   }
-  // };
-
   const handlePrintClick = async () => {
     try {
-      // Create a clone of the prescription container
       const originalElement = document.getElementById("prescription-container");
       const clone = originalElement.cloneNode(true);
 
-      // Remove the print button container from the clone
-      const printButtonContainer = clone.querySelector(
-        ".print-button-container"
-      );
+      const printButtonContainer = clone.querySelector(".print-button-container");
       if (printButtonContainer) {
         printButtonContainer.remove();
       }
 
-      // Hide the original element temporarily
       originalElement.style.visibility = "hidden";
 
-      // Add the clone to the body with print-specific styles
       clone.style.position = "absolute";
       clone.style.left = "0";
       clone.style.top = "0";
@@ -188,16 +144,15 @@ const generatePDF = async () => {
       clone.id = "print-clone";
       document.body.appendChild(clone);
 
-      // Trigger the print dialog
       window.print();
 
-      // Clean up after printing
       setTimeout(() => {
         document.body.removeChild(clone);
         originalElement.style.visibility = "visible";
       }, 500);
     } catch (error) {
       console.error("Error printing prescription:", error);
+      toast.error("Failed to print prescription");
     }
   };
 
@@ -207,9 +162,9 @@ const generatePDF = async () => {
         `Here's my medical prescription from ${
           selectedClinic?.clinicName || "Clinic"
         }\n` +
-        `Patient: ${formData.patientInfo?.patientName || "N/A"}\n` +
-        `Doctor: ${formData.doctorInfo?.doctorName || "N/A"}\n` +
-        `Date: ${formatDate(formData.doctorInfo?.appointmentDate) || "N/A"}`;
+        `Patient: ${formData.patientInfo?.patientName || "Unknown Patient"}\n` +
+        `Doctor: ${formData.doctorInfo?.doctorName || "Unknown Doctor"}\n` +
+        `Date: ${formatDate(formData.doctorInfo?.appointmentDate)}`;
 
       window.open(
         `https://wa.me/?text=${encodeURIComponent(message)}`,
@@ -223,80 +178,89 @@ const generatePDF = async () => {
 
   const getCurrentUserData = async () => {
     try {
-      const response = await apiGet(`/users/getUser?userId=${formData.doctorInfo?.doctorId}`);
+      setIsLoading(true); // Set loading to true before fetching
+      const response = await apiGet(
+        `/users/getUser?userId=${formData.doctorInfo?.doctorId}`
+      );
       const userData = response.data?.data;
       const selectedClinic2 =
         userData?.addresses?.find(
           (address) =>
             address.addressId === formData.doctorInfo?.selectedClinicId
         ) || {};
-        console.log("first selectedClinic2===", selectedClinic2);
+      console.log("selectedClinic2===", selectedClinic2);
       setSelectedClinic(selectedClinic2);
     } catch (error) {
       console.error("Error fetching user data:", error);
+    } finally {
+      setIsLoading(false); // Set loading to false after fetching
     }
   };
 
   useEffect(() => {
     if (formData?.doctorInfo?.doctorId) {
       getCurrentUserData();
+    } else {
+      setIsLoading(false); // If no doctorId, skip loading
     }
   }, [formData?.doctorInfo?.doctorId]);
 
   const handleSaveClick = async () => {
-    console.log("Saving prescription...", isSaving);
-    // prevent double click
-    if (isSaving === false) {
-      setIsSaving(true); // disable the button
-      await handlePrescriptionAction("save"); // call the parent function
-    }
     if (isSaving) return;
-    // If needed, you can re-enable it later:
-    // setIsSaving(false);
+    console.log("Saving prescription...", isSaving);
+    setIsSaving(true);
+    try {
+      await handlePrescriptionAction("save");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   console.log("formdata===", formData);
+
   return (
     <div>
       <ToastContainer />
       <div id="prescription-container" className="prescription-container">
-        <div className="prescription-header">
-          {selectedClinic?.headerImage ? (
-            <img
-              src={selectedClinic.headerImage}
-              alt="Clinic Header"
-              className="header-image"
-  //             style={{
-  //               width: "100%",
-  //               maxHeight: "120px",
-  //               objectFit: "contain",
-  //               marginBottom: "6px",
-  // display: "block",
-  // margin: "0 auto"
-  //             }}
-            />
-          ) : (
-            <>
-             <div className="clinic-info">
-            <div>
-              <div className="clinic-name">
-                {selectedClinic?.clinicName
-                  ? selectedClinic.clinicName.charAt(0).toUpperCase() +
-                    selectedClinic.clinicName.slice(1)
-                  : ""}
-              </div>
-            </div>
+        {isLoading ? (
+          <div>Loading...</div> // Show a loading indicator
+        ) : (
+          <div className="prescription-header">
+            {selectedClinic?.headerImage ? (
+              <img
+                src={selectedClinic.headerImage}
+                alt="Clinic Header"
+                className="header-image"
+                style={{
+                  width: "100%",
+                  maxHeight: "120px",
+                  objectFit: "contain",
+                  display: "block",
+                  margin: "0 auto",
+                }}
+              />
+            ) : (
+              selectedClinic && (
+                <>
+                  <div className="clinic-info">
+                    <div>
+                      <div className="clinic-name">
+                        {selectedClinic.clinicName
+                          ? selectedClinic.clinicName.charAt(0).toUpperCase() +
+                            selectedClinic.clinicName.slice(1)
+                          : "Clinic Name"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="contact-info">
+                    <div>📍 {selectedClinic.address || "Address not provided"}</div>
+                    <div>📞 {selectedClinic.mobile || "Contact not provided"}</div>
+                  </div>
+                </>
+              )
+            )}
           </div>
-          <div className="contact-info">
-            <div>📍{selectedClinic?.address || "Not specified"}</div>
-            <div>📞 {selectedClinic?.mobile || "Not specified"}</div>
-          </div>
-            </>
-          )
-
-          }
-         
-        </div>
+        )}
 
         <div
           style={{
@@ -314,7 +278,7 @@ const generatePDF = async () => {
                 marginBottom: "4px",
               }}
             >
-              DR. {formData.doctorInfo?.doctorName || "Name"}
+              DR. {formData.doctorInfo?.doctorName || "Unknown Doctor"}
             </div>
             <div
               style={{
@@ -323,19 +287,19 @@ const generatePDF = async () => {
                 marginBottom: "6px",
               }}
             >
-              {formData.doctorInfo?.qualifications || "MBBS, MD"} |{" "}
+              {formData.doctorInfo?.qualifications || "Qualifications not provided"} |{" "}
               {formData.doctorInfo?.specialization || "Specialist"}
             </div>
             <div style={{ fontSize: "13px", color: "#6c757d" }}>
               Medical Registration No:{" "}
-              {formData.doctorInfo?.medicalRegistrationNumber || ""}
+              {formData.doctorInfo?.medicalRegistrationNumber || "Not provided"}
             </div>
           </div>
 
           <div style={{ flex: 1, textAlign: "right" }}>
-            Patient Details :
+            Patient Details:
             <div style={{ fontSize: "12px", marginBottom: "4px" }}>
-              {formData.patientInfo?.patientName || "Not provided"}
+              {formData.patientInfo?.patientName || "Unknown Patient"}
             </div>
             <div
               style={{
@@ -344,14 +308,14 @@ const generatePDF = async () => {
                 marginBottom: "6px",
               }}
             >
-              {formData.patientInfo?.age || "N/A"} Years |{" "}
+              {formData.patientInfo?.age || "Age not provided"} Years |{" "}
               {formData.patientInfo?.gender
                 ? formData.patientInfo.gender.charAt(0).toUpperCase() +
                   formData.patientInfo.gender.slice(1)
-                : "Not specified"}
+                : "Gender not provided"}
             </div>
             <div style={{ fontSize: "12px", color: "#6c757d" }}>
-              {formData.patientInfo?.mobileNumber || "Not provided"}
+              {formData.patientInfo?.mobileNumber || "Contact not provided"}
             </div>
           </div>
         </div>
@@ -363,26 +327,25 @@ const generatePDF = async () => {
               <div className="detail-item">
                 <div className="detail-label">Chief Complaint:</div>
                 <div className="detail-value">
-                  {formData.patientInfo?.chiefComplaint || "Not specified"}
+                  {formData.patientInfo?.chiefComplaint || "Not provided"}
                 </div>
               </div>
               <div className="detail-item">
                 <div className="detail-label">Past History:</div>
                 <div className="detail-value">
-                  {formData.patientInfo?.pastMedicalHistory || "Not specified"}
+                  {formData.patientInfo?.pastMedicalHistory || "Not provided"}
                 </div>
               </div>
               <div className="detail-item">
                 <div className="detail-label">Family History:</div>
                 <div className="detail-value">
-                  {formData.patientInfo?.familyMedicalHistory ||
-                    "Not specified"}
+                  {formData.patientInfo?.familyMedicalHistory || "Not provided"}
                 </div>
               </div>
               <div className="detail-item">
                 <div className="detail-label">Examination:</div>
                 <div className="detail-value">
-                  {formData.patientInfo?.physicalExamination || "Not specified"}
+                  {formData.patientInfo?.physicalExamination || "Not provided"}
                 </div>
               </div>
             </div>
@@ -400,7 +363,7 @@ const generatePDF = async () => {
                       : formData.vitals?.bpSystolic &&
                         formData.vitals?.bpDiastolic
                       ? `${formData.vitals.bpSystolic}/${formData.vitals.bpDiastolic}`
-                      : "N/A"}{" "}
+                      : "Not provided"}{" "}
                     mmHg
                   </span>
                 </div>
@@ -408,49 +371,49 @@ const generatePDF = async () => {
                 <div className="vital-item">
                   <span className="vital-label">Pulse:</span>
                   <span className="vital-value">
-                    {formData.vitals?.pulseRate || "N/A"} BPM
+                    {formData.vitals?.pulseRate || "Not provided"} BPM
                   </span>
                 </div>
                 <div className="vital-separator">|</div>
                 <div className="vital-item">
                   <span className="vital-label">Temp:</span>
                   <span className="vital-value">
-                    {formData.vitals?.temperature || "N/A"}°F
+                    {formData.vitals?.temperature || "Not provided"}°F
                   </span>
                 </div>
                 <div className="vital-separator">|</div>
                 <div className="vital-item">
                   <span className="vital-label">SpO2:</span>
                   <span className="vital-value">
-                    {formData.vitals?.spo2 || "N/A"}%
+                    {formData.vitals?.spo2 || "Not provided"}%
                   </span>
                 </div>
                 <div className="vital-separator">|</div>
                 <div className="vital-item">
                   <span className="vital-label">RR:</span>
                   <span className="vital-value">
-                    {formData.vitals?.respiratoryRate || "N/A"} breaths/min
+                    {formData.vitals?.respiratoryRate || "Not provided"} breaths/min
                   </span>
                 </div>
                 <div className="vital-separator">|</div>
                 <div className="vital-item">
                   <span className="vital-label">Height:</span>
                   <span className="vital-value">
-                    {formData.vitals?.height || "N/A"} cm
+                    {formData.vitals?.height || "Not provided"} cm
                   </span>
                 </div>
                 <div className="vital-separator">|</div>
                 <div className="vital-item">
                   <span className="vital-label">Weight:</span>
                   <span className="vital-value">
-                    {formData.vitals?.weight || "N/A"} kg
+                    {formData.vitals?.weight || "Not provided"} kg
                   </span>
                 </div>
                 <div className="vital-separator">|</div>
                 <div className="vital-item">
                   <span className="vital-label">BMI:</span>
                   <span className="vital-value">
-                    {formData.vitals?.bmi || "N/A"}
+                    {formData.vitals?.bmi || "Not provided"}
                   </span>
                 </div>
                 {formData.vitals?.other &&
@@ -459,7 +422,7 @@ const generatePDF = async () => {
                       <div className="vital-separator">|</div>
                       <div className="vital-item" key={key}>
                         <span className="vital-label">{key}:</span>
-                        <span className="vital-value">{value}</span>
+                        <span className="vital-value">{value || "Not provided"}</span>
                       </div>
                     </>
                   ))}
@@ -521,21 +484,21 @@ const generatePDF = async () => {
                   {formData.diagnosis.medications.map((med, index) => (
                     <tr key={index}>
                       <td className="table-cell">
-                        {med.medicineType || "N/A"}
+                        {med.medicineType || "Not provided"}
                       </td>
                       <td className="table-cell">
-                        {med.medName || med.name || "Not specified"}
+                        {med.medName || med.name || "Not provided"}
                       </td>
                       <td className="table-cell">
                         {med.dosage || med.dosagePattern || "As directed"}
                       </td>
-                      <td className="table-cell">{med.frequency || "N/A"}</td>
+                      <td className="table-cell">{med.frequency || "Not provided"}</td>
                       <td className="table-cell">
                         {med.timings
                           ? med.timings.join(", ")
-                          : med.timing || "N/A"}
+                          : med.timing || "Not provided"}
                       </td>
-                      <td className="table-cell">{med.notes || "N/A"}</td>
+                      <td className="table-cell">{med.notes || "Not provided"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -580,7 +543,7 @@ const generatePDF = async () => {
           )}
 
           <div className="signature">
-           {selectedClinic?.digitalSignature ? (
+            {selectedClinic?.digitalSignature ? (
               <img
                 src={selectedClinic.digitalSignature}
                 alt="Digital Signature"
@@ -588,20 +551,16 @@ const generatePDF = async () => {
               />
             ) : (
               <>
-               <div style={{ height: "48px" }}></div>
-            <div style={{ fontWeight: "bold" }}>
-              DR. {formData.doctorInfo?.doctorName || "Name"}
-            </div>
-           
+                <div style={{ height: "48px" }}></div>
+                <div style={{ fontWeight: "bold" }}>
+                  DR. {formData.doctorInfo?.doctorName || "Unknown Doctor"}
+                </div>
               </>
-            )
-
-            }
-             <div style={{ fontSize: "12px", marginTop: "4px" }}>
+            )}
+            <div style={{ fontSize: "12px", marginTop: "4px" }}>
               <CheckCircle size={14} style={{ marginRight: "4px" }} />
               Digitally Signed
             </div>
-           
           </div>
         </div>
 

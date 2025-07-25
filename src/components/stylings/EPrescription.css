@@ -636,11 +636,18 @@
   background-color: white;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-
+/* Default gradient for prescription-header */
 .prescription-header {
   background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
   color: white;
   padding: 20px;
+}
+
+/* Remove gradient when header-image is present */
+.prescription-header:has(.header-image) {
+  background: none;
+  color: inherit; /* Reset text color to default */
+  padding: 0; /* Adjust padding as needed */
 }
 
 .clinic-info {

@@ -97,42 +97,53 @@ export default function Pharmacy() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleOk = async () => {
-    if (!validateForm()) {
-      return;
-    }
+const handleOk = async () => {
+  if (!validateForm()) {
+    return;
+  }
 
-    try {
-      const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-      form.quantity = 100;
-      await apiPost("pharmacy/addMedInventory", {
-        ...form,
-        doctorId: doctorId,
-      });
+  try {
+    const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+    form.quantity = 100;
+    await apiPost("pharmacy/addMedInventory", {
+      ...form,
+      doctorId: doctorId,
+    });
 
-      setForm({ medName: "", quantity: "", price: "" });
-      setErrors({});
-      setIsModalVisible(false);
-      toast.success("Medicine added successfully", {
+    setForm({ medName: "", quantity: "", price: "" });
+    setErrors({});
+    setIsModalVisible(false);
+    toast.success("Medicine added successfully", {
+      position: "top-right",
+      autoClose: 3000,
+    });
+    updateCount();
+    setRefreshTrigger((prev) => prev + 1);
+    setActiveTab("3"); // Switch to Medicines tab
+    return true; // Return success status
+  } catch (error) {
+    console.error("Error adding medicine:", error);
+    // Check for duplicate medicine error
+    if (
+      error.response?.status === 409 &&
+      error.response?.data?.message?.message === "Medicine already exists"
+    ) {
+      toast.error("Medicine already exists", {
         position: "top-right",
-        autoClose: 3000,
+        autoClose: 5000,
       });
-      updateCount();
-      setRefreshTrigger((prev) => prev + 1);
-      setActiveTab("3"); // Switch to Medicines tab
-      return true; // Return success status
-    } catch (error) {
-      console.error("Error adding medicine:", error);
+    } else {
       toast.error(
-        error.response?.data?.message || "Failed to add medicine. Please try again.",
+        error.response?.data?.message?.message || "Failed to add medicine. Please try again.",
         {
           position: "top-right",
           autoClose: 5000,
         }
       );
-      return false; // Return failure status
     }
-  };
+    return false; // Return failure status
+  }
+};
 
   const handleCancel = () => {
     setForm({ medName: "", quantity: "", price: "" });
