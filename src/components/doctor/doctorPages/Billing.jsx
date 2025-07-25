@@ -1,10 +1,108 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
 import DownloadTaxInvoice from "../../Models/DownloadTaxInvoice";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { address } from "framer-motion/client";
+
+// Utility function to calculate age from DOB
+const calculateAge = (dob) => {
+  if (!dob) return "N/A";
+  try {
+    const [day, month, year] = dob.split("-").map(Number);
+    const dobDate = new Date(year, month - 1, day);
+    const today = new Date(2025, 6, 17); // July 17, 2025
+    let age = today.getFullYear() - dobDate.getFullYear();
+    const monthDiff = today.getMonth() - dobDate.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < dobDate.getDate())
+    ) {
+      age--;
+    }
+    return age >= 0 ? age : "N/A";
+  } catch (err) {
+    console.error("Error calculating age:", err);
+    return "N/A";
+  }
+};
+
+// Utility function to transform patient data
+const transformPatientData = (result, user) => {
+  return result.map((patient, index) => {
+    const appointments = Array.isArray(patient.appointments)
+      ? patient.appointments
+      : [];
+    const tests = Array.isArray(patient.tests) ? patient.tests : [];
+    const medicines = Array.isArray(patient.medicines) ? patient.medicines : [];
+
+    const appointmentDetails = appointments.map((appointment, idx) => ({
+      id: `A${index}${idx}`,
+      appointmentId: appointment.appointmentId,
+      appointmentType: appointment.appointmentType,
+      appointmentFees: appointment?.feeDetails?.finalAmount || 0,
+      addressId: appointment.addressId,
+      clinicName: appointment.addressId
+        ? user.addresses.find((addr) => addr.addressId === appointment.addressId)
+            ?.clinicName || "N/A"
+        : "N/A",
+    }));
+
+    const totalTestAmount = tests.reduce(
+      (sum, test) => sum + (test?.price || 0),
+      0
+    );
+    const totalMedicineAmount = medicines.reduce(
+      (sum, med) => sum + (med?.price * med?.quantity || 0),
+      0
+    );
+    const totalAppointmentFees = appointmentDetails.reduce(
+      (sum, appt) => sum + (appt?.appointmentFees || 0),
+      0
+    );
+
+    return {
+      id: index + 1,
+      patientId: patient.patientId,
+      name: `${patient.firstname} ${patient.lastname}`.trim(),
+      firstname: patient.firstname,
+      lastname: patient.lastname,
+      age: calculateAge(patient.DOB),
+      gender: patient.gender,
+      mobile: patient.mobile || "Not Provided",
+      bloodgroup: patient.bloodgroup || "Not Specified",
+      appointmentDetails,
+      tests: tests.map((test, idx) => ({
+        id: `T${index}${idx}`,
+        testId: test.testId,
+        labTestID: test.labTestID,
+        name: test.testName,
+        price: test?.price || 0,
+        status:
+          test.status?.charAt(0).toUpperCase() + test.status?.slice(1) ||
+          "Unknown",
+        createdDate: test.createdAt
+          ? new Date(test.createdAt).toLocaleDateString()
+          : "N/A",
+      })),
+      medicines: medicines.map((med, idx) => ({
+        id: `M${index}${idx}`,
+        medicineId: med.medicineId,
+        pharmacyMedID: med.pharmacyMedID,
+        name: med.medName,
+        quantity: med.quantity || 1,
+        price: med.price || 0,
+        status:
+          med.status?.charAt(0).toUpperCase() + med.status?.slice(1) ||
+          "Unknown",
+      })),
+      totalTestAmount,
+      totalMedicineAmount,
+      totalAppointmentFees,
+      grandTotal: totalTestAmount + totalMedicineAmount + totalAppointmentFees,
+    };
+  });
+};
 
 const BillingSystem = () => {
   const [patients, setPatients] = useState([]);
@@ -12,138 +110,60 @@ const BillingSystem = () => {
   const [billingCompleted, setBillingCompleted] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-  // Function to calculate age from DOB
-  const calculateAge = (dob) => {
-    if (!dob) return "N/A";
+  // Memoize transformed patient data to avoid redundant calculations
+  const transformedPatients = useMemo(() => {
+    if (!patients.length || !user) return [];
+    return transformPatientData(patients, user);
+  }, [patients, user]);
+
+  // Fetch patient data with retry mechanism
+  const fetchPatients = async () => {
+    if (!user || !doctorId) {
+      // setError("User or doctor ID not available");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
-      const [day, month, year] = dob.split("-").map(Number);
-      const dobDate = new Date(year, month - 1, day);
-      const today = new Date(2025, 6, 17); // July 17, 2025
-      let age = today.getFullYear() - dobDate.getFullYear();
-      const monthDiff = today.getMonth() - dobDate.getMonth();
-      if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < dobDate.getDate())
-      ) {
-        age--;
+      const response = await apiGet(
+        `/receptionist/fetchMyDoctorPatients/${doctorId}`,
+        { timeout: 10000 } // Set a 10-second timeout
+      );
+      console.log("API Response:", response);
+
+      if (response.status === 200 && response?.data?.data) {
+        setPatients(response.data.data.reverse());
+        setLoading(false);
+      } else {
+        throw new Error("API response unsuccessful");
       }
-      return age >= 0 ? age : "N/A";
     } catch (err) {
-      return "N/A";
+      console.error("Error fetching patients:", err);
+      if (retryCount < maxRetries) {
+        setRetryCount(retryCount + 1);
+        setTimeout(() => fetchPatients(), 2000); // Retry after 2 seconds
+      } else {
+        setError(
+          `Failed to fetch patient data: ${
+            err.message || "Unknown error"
+          }. Please try again later.`
+        );
+        setLoading(false);
+      }
     }
   };
 
-  // Fetch patient data from API
   useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        const response = await apiGet(
-          `/receptionist/fetchMyDoctorPatients/${doctorId}`
-        );
-        console.log("API Response:", response);
-        if (response.status === 200 && response?.data?.data) {
-          const result = response.data.data.reverse();
-
-          const transformedData = result.map((patient, index) => {
-            const appointments = Array.isArray(patient.appointments)
-              ? patient.appointments
-              : [];
-            const tests = Array.isArray(patient.tests) ? patient.tests : [];
-            const medicines = Array.isArray(patient.medicines)
-              ? patient.medicines
-              : [];
-
-            const appointmentDetails = appointments.map((appointment, idx) => ({
-              id: `A${index}${idx}`,
-              appointmentId: appointment.appointmentId,
-              appointmentType: appointment.appointmentType,
-              appointmentFees: appointment?.feeDetails?.finalAmount || 0,
-              addressId: appointment.addressId,
-              clinicName: appointment.addressId
-                ? // Find the clinic name from the doctor's addresses array
-                  user.addresses.find(
-                    (addr) => addr.addressId === appointment.addressId
-                  )?.clinicName || "N/A"
-                : "N/A",
-            }));
-
-            // Calculate totals
-            const totalTestAmount = tests.reduce(
-              (sum, test) => sum + (test?.price || 0),
-              0
-            );
-            const totalMedicineAmount = medicines.reduce(
-              (sum, med) => sum + (med?.price * med?.quantity || 0),
-              0
-            );
-            const totalAppointmentFees = appointmentDetails.reduce(
-              (sum, appt) => sum + (appt?.appointmentFees || 0),
-              0
-            );
-
-            return {
-              id: index + 1,
-              patientId: patient.patientId,
-              name: `${patient.firstname} ${patient.lastname}`.trim(),
-              firstname: patient.firstname,
-              lastname: patient.lastname,
-              age: calculateAge(patient.DOB),
-              gender: patient.gender,
-              mobile: patient.mobile || "Not Provided",
-              bloodgroup: patient.bloodgroup || "Not Specified",
-
-              appointmentDetails,
-
-              tests: tests.map((test, idx) => ({
-                id: `T${index}${idx}`,
-                testId: test.testId,
-                labTestID: test.labTestID,
-                name: test.testName,
-                price: test?.price || 0,
-                status:
-                  test.status?.charAt(0).toUpperCase() +
-                    test.status?.slice(1) || "Unknown",
-                createdDate: test.createdAt
-                  ? new Date(test.createdAt).toLocaleDateString()
-                  : "N/A",
-              })),
-
-              medicines: medicines.map((med, idx) => ({
-                id: `M${index}${idx}`,
-                medicineId: med.medicineId,
-                pharmacyMedID: med.pharmacyMedID,
-                name: med.medName,
-                quantity: med.quantity || 1,
-                price: med.price || 0,
-                status:
-                  med.status?.charAt(0).toUpperCase() + med.status?.slice(1) ||
-                  "Unknown",
-              })),
-
-              totalTestAmount,
-              totalMedicineAmount,
-              totalAppointmentFees,
-              grandTotal:
-                totalTestAmount + totalMedicineAmount + totalAppointmentFees,
-            };
-          });
-
-          setPatients(transformedData);
-          setLoading(false);
-        } else {
-          throw new Error("API response unsuccessful");
-        }
-      } catch (err) {
-        setError("Failed to fetch patient data");
-        setLoading(false);
-      }
-    };
-    if (user && doctorId) {
-      fetchPatients();
-    }
+    fetchPatients();
   }, [user, doctorId]);
 
   const handlePatientExpand = (patientId) => {
@@ -170,10 +190,9 @@ const BillingSystem = () => {
   };
 
   const handleMarkAsPaid = async (patientId) => {
-    const patient = patients.find((p) => p.id === patientId);
+    const patient = transformedPatients.find((p) => p.id === patientId);
     if (!patient) return;
 
-    // Check if there are any Pending tests or medicines
     const pendingTests = patient.tests.filter(
       (test) => test.status === "Pending"
     );
@@ -182,11 +201,10 @@ const BillingSystem = () => {
     );
 
     if (pendingTests.length === 0 && pendingMedicines.length === 0) {
-      setError("No pending tests or medicines to pay for.");
+      toast.error("No pending tests or medicines to pay for.");
       return;
     }
 
-    // Construct the payload
     const payload = {
       patientId: patient.patientId,
       doctorId: doctorId,
@@ -208,19 +226,18 @@ const BillingSystem = () => {
           price: med.price,
         })),
     };
-    //validate at least one test or one medicine
-    if (payload?.medicines?.length === 0 && payload?.tests?.length === 0) {
-      toast.error("at least one of tests or medicines is provided");
+
+    if (payload.medicines.length === 0 && payload.tests.length === 0) {
+      toast.error("At least one test or medicine must be provided.");
+      return;
     }
 
     try {
-      // Send POST request to the API
       const response = await apiPost(
         "/receptionist/totalBillPayFromReception",
         payload
       );
       if (response.status === 200) {
-        // Update patient data to mark Pending items as Completed
         setPatients((prevPatients) =>
           prevPatients.map((p) =>
             p.id === patientId
@@ -240,67 +257,184 @@ const BillingSystem = () => {
               : p
           )
         );
-        // Mark billing as completed
         setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
+        toast.success("Payment processed successfully!");
       } else {
         throw new Error("Failed to process payment");
       }
     } catch (err) {
-      setError("Failed to process payment. Please try again.");
+      console.error("Error processing payment:", err);
+      toast.error("Failed to process payment. Please try again.");
     }
   };
 
-if (loading)
-  return (
-    <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
-  );
-if (error)
-  return (
-    <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
-      {error}
-    </div>
-  );
-
-// Add this check for empty patients array
-if (patients.length === 0) {
-  return (
-    <div
-      style={{
-        fontFamily: "Arial, sans-serif",
-        padding: "20px",
-        backgroundColor: "#f5f5f5",
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+  if (loading) {
+    return (
       <div
         style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          backgroundColor: "white",
-          borderRadius: "8px",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-          padding: "30px",
-          textAlign: "center",
+          fontFamily: "Arial, sans-serif",
+          padding: "20px",
+          backgroundColor: "#f5f5f5",
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        <h1
+        <div
           style={{
-            color: "#333",
-            marginBottom: "30px",
-            fontSize: "28px",
-            fontWeight: "bold",
+            maxWidth: "1200px",
+            margin: "0 auto",
+            backgroundColor: "white",
+            borderRadius: "8px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            padding: "30px",
+            textAlign: "center",
           }}
         >
-          Patient Billing System
-        </h1>
-        <p style={{ fontSize: "18px", color: "#666" }}>No patients found</p>
+          <div
+            style={{
+              border: "4px solid #007bff",
+              borderRadius: "50%",
+              width: "40px",
+              height: "40px",
+              borderTopColor: "transparent",
+              animation: "spin 1s linear infinite",
+              margin: "0 auto 20px",
+            }}
+          />
+          <p style={{ fontSize: "18px", color: "#666" }}>Loading patients...</p>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          fontFamily: "Arial, sans-serif",
+          padding: "20px",
+          backgroundColor: "#f5f5f5",
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            backgroundColor: "white",
+            borderRadius: "8px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            padding: "30px",
+            textAlign: "center",
+          }}
+        >
+          <h1
+            style={{
+              color: "#333",
+              marginBottom: "30px",
+              fontSize: "28px",
+              fontWeight: "bold",
+            }}
+          >
+            Patient Billing System
+          </h1>
+          <p style={{ fontSize: "18px", color: "#721c24", marginBottom: "20px" }}>
+            {error}
+          </p>
+          <button
+            onClick={() => {
+              setRetryCount(0);
+              fetchPatients();
+            }}
+            style={{
+              background: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              padding: "10px 20px",
+              cursor: "pointer",
+              fontSize: "16px",
+              fontWeight: "bold",
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (transformedPatients.length === 0) {
+    return (
+      <div
+        style={{
+          fontFamily: "Arial, sans-serif",
+          padding: "20px",
+          backgroundColor: "#f5f5f5",
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            backgroundColor: "white",
+            borderRadius: "8px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            padding: "30px",
+            textAlign: "center",
+          }}
+        >
+          <h1
+            style={{
+              color: "#333",
+              marginBottom: "30px",
+              fontSize: "28px",
+              fontWeight: "bold",
+            }}
+          >
+            Patient Billing System
+          </h1>
+          <p style={{ fontSize: "18px", color: "#666" }}>
+            No patients found for this doctor.
+          </p>
+          <button
+            onClick={() => {
+              setRetryCount(0);
+              fetchPatients();
+            }}
+            style={{
+              background: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              padding: "10px 20px",
+              cursor: "pointer",
+              fontSize: "16px",
+              fontWeight: "bold",
+              marginTop: "20px",
+            }}
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -403,7 +537,7 @@ if (patients.length === 0) {
             </tr>
           </thead>
           <tbody>
-            {patients.map((patient) => {
+            {transformedPatients.map((patient) => {
               const totals = calculateTotals(patient);
               return (
                 <React.Fragment key={patient.id}>
@@ -937,10 +1071,7 @@ if (patients.length === 0) {
                               Grand Total: ₹{patient.grandTotal.toFixed(2)}
                             </div>
                             <div>
-                              <DownloadTaxInvoice
-                                patient={patient}
-                                user={user} // Add this line
-                              />
+                              <DownloadTaxInvoice patient={patient} user={user} />
                               <button
                                 onClick={() => handleMarkAsPaid(patient.id)}
                                 style={{
@@ -959,6 +1090,13 @@ if (patients.length === 0) {
                                   opacity: totals.grandTotal > 0 ? 1 : 0.6,
                                 }}
                                 disabled={totals.grandTotal <= 0}
+                                onMouseOver={(e) => {
+                                  if (totals.grandTotal <= 0) {
+                                    toast.info(
+                                      "No pending payments available for this patient."
+                                    );
+                                  }
+                                }}
                               >
                                 Pay
                               </button>
