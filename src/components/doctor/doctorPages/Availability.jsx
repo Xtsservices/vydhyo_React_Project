@@ -451,10 +451,7 @@ const AvailabilityScreen = () => {
 
     console.log(newUnavailableSlots, "unavailable slots")
 
-    setCurrentClinicSlots({
-      availableSlots: updatedAvailableSlots,
-      unavailableSlots: newUnavailableSlots,
-    });
+
 
     // ✅ Sending only time string array like ["10:00", "10:30"]
     const response = await apiPut("/appointment/updateDoctorSlots", {
@@ -464,7 +461,19 @@ const AvailabilityScreen = () => {
       addressId: selectedClinic,
     });
 
+
     if (response.data && response.data.status === "success") {
+      if (response.data.updatedSlots.length === 0){
+      console.log("response data", response.data.message)
+        toast.error(response.data.message ||"first book available slots");
+return;
+      }
+    console.log(response.data, "response data")
+    setCurrentClinicSlots({
+      availableSlots: updatedAvailableSlots,
+      unavailableSlots: newUnavailableSlots,
+    });
+       message.error(response.data.message);
       message.success("Slots marked as unavailable successfully");
     } else {
       throw new Error(response.data?.message || "Failed to update slots");
