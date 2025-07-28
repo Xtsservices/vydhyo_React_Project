@@ -76,39 +76,50 @@ const TestManagement = () => {
     setUploadedFile(null);
   };
 
-  const handleOk = async () => {
-    try {
-      const values = await form.validateFields();
-      const testData = {
-        testName: values.testName,
-        testPrice: values.testPrice,
-        doctorId,
-      };
-      setLoading(true);
-      const response = await apiPost('/lab/addtest', testData);
-      const newTest = {
-        testId: response.data.data.id,
-        testName: response.data.data.testName,
-        price: response.data.data.testPrice,
-      };
-      setTests(prevTests => [...prevTests, newTest]);
-      toast.success('Test added successfully', {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-      form.resetFields();
-      setIsModalVisible(false);
-      setRefreshTrigger(prev => prev + 1); // Trigger refresh
-    } catch (error) {
-      console.error('Error adding test:', error);
-      toast.error(error.response?.data?.message || 'Failed to add test. Please try again.', {
+const handleOk = async () => {
+  try {
+    const values = await form.validateFields();
+    const testData = {
+      testName: values.testName,
+      testPrice: values.testPrice,
+      doctorId,
+    };
+    setLoading(true);
+    const response = await apiPost('/lab/addtest', testData);
+    const newTest = {
+      testId: response.data.data.id,
+      testName: response.data.data.testName,
+      price: response.data.data.testPrice,
+    };
+    setTests(prevTests => [...prevTests, newTest]);
+    toast.success('Test added successfully', {
+      position: 'top-right',
+      autoClose: 3000,
+    });
+    form.resetFields();
+    setIsModalVisible(false);
+    setRefreshTrigger(prev => prev + 1); // Trigger refresh
+  } catch (error) {
+    console.error('Error adding test:', error);
+    // Check for duplicate test name error
+    if (
+      error.response?.status === 400 &&
+      error.response?.data?.message?.message === 'A test with this name already exists'
+    ) {
+      toast.error('A test with this name already exists', {
         position: 'top-right',
         autoClose: 5000,
       });
-    } finally {
-      setLoading(false);
+    } else {
+      toast.error(error.response?.data?.message?.message || 'Failed to add test. Please try again.', {
+        position: 'top-right',
+        autoClose: 5000,
+      });
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleCancel = () => {
     setIsModalVisible(false);
