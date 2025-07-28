@@ -223,13 +223,14 @@ const generatePDF = async () => {
 
   const getCurrentUserData = async () => {
     try {
-      const response = await apiGet(`/users/getUser?userId=${doctorId}`);
+      const response = await apiGet(`/users/getUser?userId=${formData.doctorInfo?.doctorId}`);
       const userData = response.data?.data;
       const selectedClinic2 =
         userData?.addresses?.find(
           (address) =>
             address.addressId === formData.doctorInfo?.selectedClinicId
         ) || {};
+        console.log("first selectedClinic2===", selectedClinic2);
       setSelectedClinic(selectedClinic2);
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -260,7 +261,23 @@ const generatePDF = async () => {
       <ToastContainer />
       <div id="prescription-container" className="prescription-container">
         <div className="prescription-header">
-          <div className="clinic-info">
+          {selectedClinic?.headerImage ? (
+            <img
+              src={selectedClinic.headerImage}
+              alt="Clinic Header"
+              className="header-image"
+  //             style={{
+  //               width: "100%",
+  //               maxHeight: "120px",
+  //               objectFit: "contain",
+  //               marginBottom: "6px",
+  // display: "block",
+  // margin: "0 auto"
+  //             }}
+            />
+          ) : (
+            <>
+             <div className="clinic-info">
             <div>
               <div className="clinic-name">
                 {selectedClinic?.clinicName
@@ -274,6 +291,11 @@ const generatePDF = async () => {
             <div>📍{selectedClinic?.address || "Not specified"}</div>
             <div>📞 {selectedClinic?.mobile || "Not specified"}</div>
           </div>
+            </>
+          )
+
+          }
+         
         </div>
 
         <div
@@ -558,14 +580,28 @@ const generatePDF = async () => {
           )}
 
           <div className="signature">
-            <div style={{ height: "48px" }}></div>
+           {selectedClinic?.digitalSignature ? (
+              <img
+                src={selectedClinic.digitalSignature}
+                alt="Digital Signature"
+                className="digital-signature"
+              />
+            ) : (
+              <>
+               <div style={{ height: "48px" }}></div>
             <div style={{ fontWeight: "bold" }}>
               DR. {formData.doctorInfo?.doctorName || "Name"}
             </div>
-            <div style={{ fontSize: "12px", marginTop: "4px" }}>
+           
+              </>
+            )
+
+            }
+             <div style={{ fontSize: "12px", marginTop: "4px" }}>
               <CheckCircle size={14} style={{ marginRight: "4px" }} />
               Digitally Signed
             </div>
+           
           </div>
         </div>
 
