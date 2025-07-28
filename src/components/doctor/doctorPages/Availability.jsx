@@ -14,6 +14,7 @@ import {
   Collapse,
   message,
   Spin,
+  Modal,
 } from "antd";
 import {
   DownOutlined,
@@ -27,6 +28,10 @@ import {
 import { apiGet, apiPost, apiDelete, apiPut } from "../../api";
 import moment from "moment";
 import { useSelector } from "react-redux";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+import dayjs from 'dayjs';
+import { toast } from "react-toastify";
+
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -571,6 +576,92 @@ const AvailabilityScreen = () => {
     }
   };
 
+ const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedSlotTime, setSelectedSlotTime] = useState(null);
+
+  const showModal = (slotTime) => {
+    setSelectedSlotTime(slotTime);
+    setIsModalVisible(true);
+  };
+
+const handleOk = async () => {
+  const date = dayjs(selectedDate).format("YYYY-MM-DD");
+   const { availableSlots } = getCurrentClinicSlots(); 
+  console.log("Selected Slot Time:", selectedSlotTime);
+  console.log("Available Slots:", availableSlots);
+
+  // Convert 12-hour time (e.g., "09:15 AM") to 24-hour format ("09:15")
+  const convertTo24Hour = (time12h) => {
+    const [time, modifier] = time12h.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+
+    if (modifier === "PM" && hours !== 12) {
+      hours += 12;
+    }
+
+    if (modifier === "AM" && hours === 12) {
+      hours = 0;
+    }
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  };
+
+  // Prepare the payload
+  let payload = {
+    doctorId: doctorId,
+    addressId: selectedClinic,
+    date: date,
+    slotTimes: [],
+  };
+
+  if (selectedSlotTime) {
+    // Delete single slot
+    payload.slotTimes = [convertTo24Hour(selectedSlotTime)];
+  } else {
+    // Delete all available slots
+    payload.slotTimes =  availableSlots.map((item) =>
+      convertTo24Hour(item.time)
+    );
+  }
+
+  console.log("Payload for deleting slots:", payload);
+
+  try {
+
+    
+    const res = await apiDelete(
+      `appointment/deleteDoctorSlots?doctorId=${doctorId}&addressId=${selectedClinic}&date=${date}`,
+      payload
+    );
+    console.log(res, "complete response")
+    if (res.status === 200) {
+      toast.success(res.data.message|| "slot deleted successfully")
+      setSelectedSlotTime([])
+  fetchSlotsForDate(date)
+    }else{
+      toast.error(res.data.message)
+    }
+
+    // Update UI: remove deleted slots
+    // if (selectedSlotTime) {
+    //   setUnavailableSlots((prev) =>
+    //     prev.filter((slot) => slot.time !== selectedSlotTime)
+    //   );
+    // } else {
+    //   setUnavailableSlots([]);
+    // }
+
+    setIsModalVisible(false);
+  } catch (error) {
+    console.error("Error deleting slot:", error);
+  }
+};
+
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+
   const renderAvailableTimeControls = () => {
     const { availableSlots } = getCurrentClinicSlots();
 
@@ -747,6 +838,21 @@ const AvailabilityScreen = () => {
               
             </Space>
           </Col>
+
+           <Col xs={12} sm={6}>
+            <Space>
+              <Button
+                type="primary"
+                danger
+                onClick={handleOk}
+                icon={<PlusOutlined />}
+                style={{ fontWeight: "bold" }}
+              >
+                Delete Slots
+              </Button>
+              
+            </Space>
+          </Col>
         </Row>
 
         {/* Slots Display */}
@@ -754,6 +860,7 @@ const AvailabilityScreen = () => {
           {availableSlots.map((slot, index) => (
             <Col key={index} xs={12} sm={8} md={6} lg={4}>
               <Button
+ onClick={() => showModal(slot.time)}
                 block
                 style={{
                   height: 48,
@@ -773,6 +880,18 @@ const AvailabilityScreen = () => {
             </Col>
           ))}
         </Row>
+        
+      <Modal
+        title="Confirm Delete"
+        open={isModalVisible}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        okText="Yes, Delete"
+        okType="danger"
+        cancelText="Cancel"
+      >
+        <p>Are you sure you want to delete the slot: <strong>{selectedSlotTime}</strong>?</p>
+      </Modal>
 
         <Divider />
       </>
