@@ -27,6 +27,7 @@ import {
 import { apiGet, apiPost, apiDelete, apiPut } from "../../api";
 import moment from "moment";
 import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -395,7 +396,7 @@ const AvailabilityScreen = () => {
     const slotsToMarkUnavailable = generateTimeSlots(
       startTime,
       endTime,
-      unavailableDuration
+      availableDuration
     );
 
     const existingUnavailableTimes = unavailableSlots.map(
@@ -446,10 +447,7 @@ const AvailabilityScreen = () => {
 
     console.log(newUnavailableSlots, "unavailable slots")
 
-    setCurrentClinicSlots({
-      availableSlots: updatedAvailableSlots,
-      unavailableSlots: newUnavailableSlots,
-    });
+
 
     // ✅ Sending only time string array like ["10:00", "10:30"]
     const response = await apiPut("/appointment/updateDoctorSlots", {
@@ -459,7 +457,19 @@ const AvailabilityScreen = () => {
       addressId: selectedClinic,
     });
 
+
     if (response.data && response.data.status === "success") {
+      if (response.data.updatedSlots.length === 0){
+      console.log("response data", response.data.message)
+        toast.error(response.data.message ||"first book available slots");
+return;
+      }
+    console.log(response.data, "response data")
+    setCurrentClinicSlots({
+      availableSlots: updatedAvailableSlots,
+      unavailableSlots: newUnavailableSlots,
+    });
+       message.error(response.data.message);
       message.success("Slots marked as unavailable successfully");
     } else {
       throw new Error(response.data?.message || "Failed to update slots");

@@ -663,13 +663,13 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
 
 
     useEffect(() => {
-      if (user) {
+      if (user && user.createdBy) {
         getCurrentUserData();
       }
-    }, [user]);
+    }, [user && user.createdBy]);
 
 
-    const fetchTimeSlots = useCallback(async (selectedDate, clinicId) => {
+    const fetchTimeSlots = async (selectedDate, clinicId) => {
 
 console.log("first")
       if (!selectedDate || !clinicId || !doctorId) return;
@@ -720,17 +720,17 @@ console.log("first2")
     } finally {
       setIsFetchingSlots(false);
     }
-  }, [currentUserID, patientData.selectedTimeSlot, formatTimeForAPI]);
+  };
 
      useEffect(() => {
     if (date && patientData.clinic && doctorId) {
-      console.log("patient")
+      console.log("patient", date , patientData.clinic , doctorId)
       fetchTimeSlots(date, patientData.clinic);
     } else {
       setTimeSlots([]);
       setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
     }
-  }, [date, patientData.clinic, fetchTimeSlots]);
+  }, [date, patientData.clinic, doctorId]);
 
   const renderSearchCard = () => (
     <Card style={{ marginBottom: 16 }}>
