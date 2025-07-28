@@ -395,7 +395,7 @@ const AvailabilityScreen = () => {
     const slotsToMarkUnavailable = generateTimeSlots(
       startTime,
       endTime,
-      unavailableDuration
+      availableDuration
     );
 
     const existingUnavailableTimes = unavailableSlots.map(
