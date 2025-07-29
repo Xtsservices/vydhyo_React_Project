@@ -54,82 +54,96 @@ const MyPatients = () => {
     return moment().diff(moment(dob, "DD-MM-YYYY"), "years").toString();
   };
 
-  const fetchPatients = useCallback(async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        message.error("No authentication token found. Please login again.");
-        return;
-      }
-
-      const response = await apiGet(
-        `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
-      );
-      const data = response.data;
-
-      console.log(response.data, "response.data from patients.jsx");
-
-      let patientsData = [];
-
-      if (response.status === 200 && data.data) {
-        const appointmentsData = Array.isArray(data.data)
-          ? data.data
-          : [data.data];
-
-        const patientsDataUnsorted = appointmentsData.map((appointment) => ({
-          id:
-            appointment.userId ||
-            `P-${Math.random().toString(36).substr(2, 6)}`,
-          appointmentId: appointment.appointmentId || "N/A",
-          name: appointment.patientName || "N/A",
-          gender: appointment.patientDetails?.gender || "N/A",
-          age: appointment.patientDetails?.dob
-            ? calculateAge(appointment.patientDetails.dob)
-            : "N/A",
-          phone: appointment.patientDetails?.mobile || "N/A",
-          lastVisit: appointment.appointmentDate
-            ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
-            : "N/A",
-          appointmentType: appointment.appointmentType || "N/A",
-          status:
-            appointment.appointmentType === "New-Walkin" ||
-            appointment.appointmentType === "new-walkin"
-              ? "New Patient"
-              : "Follow-up",
-          department: appointment.appointmentDepartment || "N/A",
-          appointmentTime: appointment.appointmentTime || "N/A",
-          appointmentStatus: appointment.appointmentStatus || "N/A",
-          appointmentReason: appointment.appointmentReason || "N/A",
-          appointmentCount: 1,
-          allAppointments: [appointment],
-          ePrescription: appointment.ePrescription || null,
-        }));
-
-        // Sorting by date (desc) then by userId (desc)
-        patientsDataUnsorted.sort((a, b) => {
-          const dateA = moment(a.lastVisit, "DD MMMM YYYY");
-          const dateB = moment(b.lastVisit, "DD MMMM YYYY");
-
-          if (dateA.isBefore(dateB)) return 1;
-          if (dateA.isAfter(dateB)) return -1;
-
-          // Dates are same, now compare ID (assuming alphanumeric)
-          return b.id.localeCompare(a.id); // latest (higher) id first
-        });
-
-        patientsData = patientsDataUnsorted;
-
-        setPatients(patientsData);
-        setFilteredPatients(patientsData);
-      }
-    } catch (error) {
-      console.error("Error fetching patients:", error);
-      message.error("Failed to fetch patients data. Please try again.");
-    } finally {
-      setLoading(false);
+const fetchPatients = useCallback(async () => {
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      message.error("No authentication token found. Please login again.");
+      return;
     }
-  }, [doctorId]);
+
+    const response = await apiGet(
+      `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
+    );
+    const data = response.data;
+
+    let patientsData = [];
+
+    if (response.status === 200 && data.data) {
+      const appointmentsData = Array.isArray(data.data) ? data.data : [data.data];
+
+      // Create a map to deduplicate and merge patient data
+      const patientMap = new Map();
+
+      appointmentsData.forEach((appointment) => {
+        const patientId = appointment.userId || `P-${Math.random().toString(36).substr(2, 6)}`;
+        if (!patientMap.has(patientId)) {
+          patientMap.set(patientId, {
+            id: patientId,
+            appointmentId: appointment.appointmentId || "N/A",
+            name: appointment.patientName || "N/A",
+            gender: appointment.patientDetails?.gender || "N/A",
+            age: appointment.patientDetails?.dob
+              ? calculateAge(appointment.patientDetails.dob)
+              : "N/A",
+            phone: appointment.patientDetails?.mobile || "N/A",
+            lastVisit: appointment.appointmentDate
+              ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
+              : "N/A",
+            appointmentType: appointment.appointmentType || "N/A",
+            status:
+              appointment.appointmentType === "New-Walkin" ||
+              appointment.appointmentType === "new-walkin"
+                ? "New Patient"
+                : "Follow-up",
+            department: appointment.appointmentDepartment || "N/A",
+            appointmentTime: appointment.appointmentTime || "N/A",
+            appointmentStatus: appointment.appointmentStatus || "N/A",
+            appointmentReason: appointment.appointmentReason || "N/A",
+            appointmentCount: 1,
+            allAppointments: [appointment],
+            ePrescription: appointment.ePrescription || null,
+          });
+        } else {
+          const existingPatient = patientMap.get(patientId);
+          existingPatient.allAppointments.push(appointment);
+          // Update lastVisit if the new appointment is more recent
+          const newVisit = moment(appointment.appointmentDate).format("DD MMMM YYYY");
+          if (moment(newVisit).isAfter(existingPatient.lastVisit)) {
+            existingPatient.lastVisit = newVisit;
+          }
+          // Merge ePrescription if available and not already set
+          if (appointment.ePrescription && !existingPatient.ePrescription) {
+            existingPatient.ePrescription = appointment.ePrescription;
+          }
+          existingPatient.appointmentCount += 1;
+        }
+      });
+
+      patientsData = Array.from(patientMap.values());
+
+      // Sort by date (desc) then by userId (desc)
+      patientsData.sort((a, b) => {
+        const dateA = moment(a.lastVisit, "DD MMMM YYYY");
+        const dateB = moment(b.lastVisit, "DD MMMM YYYY");
+
+        if (dateA.isBefore(dateB)) return 1;
+        if (dateA.isAfter(dateB)) return -1;
+
+        return b.id.localeCompare(a.id);
+      });
+
+      setPatients(patientsData);
+      setFilteredPatients(patientsData);
+    }
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    message.error("Failed to fetch patients data. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+}, [doctorId]);
 
   useEffect(() => {
     if (user && doctorId) {

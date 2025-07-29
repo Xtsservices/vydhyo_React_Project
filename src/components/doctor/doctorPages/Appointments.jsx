@@ -592,11 +592,11 @@ console.log(filters.date, "selectedDate")
                 <Card className="appointments-card completed-card">
                   <Statistic
                     title="Completed"
-                    value={
-                      appointmentsCount.filter(
-                        (appt) => appt.appointmentStatus === "completed"
-                      ).length
-                    }
+                    // value={
+                    //   appointmentsCount.filter(
+                    //     (appt) => appt.appointmentStatus === "completed"
+                    //   ).length
+                    // }
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>

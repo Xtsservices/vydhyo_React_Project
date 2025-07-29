@@ -14,6 +14,8 @@ const getToken = () => localStorage.getItem("accessToken");
 
   const getCurrentUserData = async () => {
     try {
+
+      console.log("Fetching user data from API");
       const response = await apiGet("/users/getUser");
       const userData = response.data?.data;
       console.log("userDatafrom app.jsx",userData)

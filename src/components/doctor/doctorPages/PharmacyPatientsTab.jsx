@@ -12,20 +12,19 @@ import {
   Button,
   Collapse,
   Popconfirm,
-  QRCode,
   Empty,
   Pagination,
 } from "antd";
 import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { apiGet, apiPost } from "../../api";
-import { toast, ToastContainer } from "react-toastify"; // Add toast imports
-import "react-toastify/dist/ReactToastify.css"; // Import toast styles
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
-const PatientsTab = ({ status, updateCount, searchQuery }) => {
+const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTrigger }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(4);
   const [loading, setLoading] = useState(false);
@@ -35,21 +34,18 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
   const [editablePrices, setEditablePrices] = useState([]);
   const [saving, setSaving] = useState({});
   const [paying, setPaying] = useState({});
-  const [isPaymentDone, setIsPaymentDone] = useState(false);
+  const [isPaymentDone, setIsPaymentDone] = useState({});
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-  async function filterPatientsDAta(data) {
-    console.log(data, "filter");
-    console.log(status, "filter");
-
+  async function filterPatientsData(data) {
     const isPending = status === "pending";
 
     const filtered = data
       .map((patient) => {
-        const filteredMeds = patient.medicines.filter((med) =>
-          isPending ? med.status === "pending" : med.status !== "pending"
+        const filteredMeds = patient.medicines.filter(
+          (med) => med.status === status
         );
 
         if (filteredMeds.length > 0) {
@@ -59,12 +55,9 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
             medicines: filteredMeds,
           };
         }
-
         return null;
       })
       .filter(Boolean);
-
-    console.log(`${isPending ? "pending" : "completed"} filtered`, filtered);
 
     return filtered;
   }
@@ -75,21 +68,20 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
       const response = await apiGet(
         "/pharmacy/getAllPharmacyPatientsByDoctorID",
         {
-          params: { doctorId: doctorId },
+          params: { doctorId: doctorId, status, searchText: searchQuery },
         }
       );
 
-      console.log("dataArraystart", response);
-
       let dataArray = [];
       if (response?.status === 200 && response?.data?.data) {
-        dataArray = await filterPatientsDAta(response.data.data);
+        dataArray = await filterPatientsData(response.data.data);
 
         // Sort by patientId numeric part descending
         dataArray.sort((a, b) => {
           const getIdNumber = (id) => parseInt(id.replace(/\D/g, "")) || 0;
           return getIdNumber(b.patientId) - getIdNumber(a.patientId);
         });
+
         if (searchQuery?.trim()) {
           const lowerSearch = searchQuery.toLowerCase();
           dataArray = dataArray.filter((patient) =>
@@ -98,21 +90,12 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
         }
       }
 
-      console.log("dataArray", dataArray);
-
       if (dataArray.length > 0) {
         const formattedData = dataArray.map((patient, index) => {
-          const totalAmount =
-            patient.medicines?.reduce((sum, med) => {
-              const price = parseFloat(med.price) || 0;
-              const quantity = parseInt(med.quantity) || 0;
-              return sum + price * quantity;
-            }, 0) || 0;
-
-          const hasPending = patient.medicines?.some(
-            (med) => med.status === "pending"
+          const totalAmount = patient.medicines.reduce(
+            (sum, med) => sum + (med.price || 0) * (med.quantity || 1),
+            0
           );
-          const status = hasPending ? "pending" : "completed";
 
           return {
             key: patient.patientId || `patient-${index}`,
@@ -206,7 +189,6 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
       });
       setEditablePrices((prev) => prev.filter((id) => id !== medicineId));
 
-      // Update local state instead of refetching
       setPatientData((prev) =>
         prev.map((p) =>
           p.patientId === patientId
@@ -234,7 +216,6 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
   };
 
   const handlePayment = async (patientId) => {
-    setIsPaymentDone(true);
     try {
       setPaying((prev) => ({ ...prev, [patientId]: true }));
       const patient = patientData.find((p) => p.patientId === patientId);
@@ -250,6 +231,7 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
         });
         return;
       }
+
       const data = {
         patientId,
         doctorId,
@@ -261,31 +243,26 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
           pharmacyMedID: med.pharmacyMedID || null,
         })),
       };
-      console.log("bodyyyyyyy:", data);
 
-      const response = await apiPost(`/pharmacy/pharmacyPayment`, {
-        patientId,
-        doctorId,
-        amount: totalAmount,
-        medicines: patient.medicines.map((med) => ({
-          medicineId: med._id,
-          price: med.price,
-          quantity: med.quantity,
-          pharmacyMedID: med.pharmacyMedID || null,
-        })),
-      });
+      const response = await apiPost(`/pharmacy/pharmacyPayment`, data);
 
-      updateCount();
       if (response.status === 200) {
+        setIsPaymentDone((prev) => ({ ...prev, [patientId]: true }));
+        updateCount();
         toast.success("Payment processed successfully", {
           position: "top-right",
           autoClose: 3000,
         });
+        // Switch to the "completed" tab
+        if (onTabChange) {
+          onTabChange("2"); // "2" is the key for the completed tab
+        }
+        // Refresh the data
         await fetchPharmacyPatients();
       }
     } catch (error) {
       console.error("Error processing payment:", error);
-      setIsPaymentDone(false);
+      setIsPaymentDone((prev) => ({ ...prev, [patientId]: false }));
       toast.error(
         error.response?.data?.message || "Failed to process payment",
         {
@@ -409,7 +386,7 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
       dataIndex: "status",
       key: "status",
       width: 100,
-      render: (status) => (
+      render: () => (
         <Tag color={status === "pending" ? "orange" : "green"}>
           {status.charAt(0).toUpperCase() + status.slice(1)}
         </Tag>
@@ -433,7 +410,7 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
     if (doctorId) {
       fetchPharmacyPatients();
     }
-  }, [doctorId, searchQuery]); // Added searchQuery to dependencies
+  }, [doctorId, status, searchQuery, refreshTrigger]);
 
   const currentPageData = patientData.slice(
     (currentPage - 1) * pageSize,
@@ -445,7 +422,7 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
 
   return (
     <div>
-      <ToastContainer /> {/* Add ToastContainer to render toasts */}
+      <ToastContainer />
       <Card
         style={{
           borderRadius: "8px",
@@ -460,7 +437,7 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
         >
           <Col>
             <Title level={4} style={{ margin: 0, color: "#1A3C6A" }}>
-              Pharmacy Patients
+              {status === "pending" ? "Pending" : "Completed"} Patients
             </Title>
           </Col>
         </Row>
@@ -553,7 +530,7 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
                             onConfirm={() => handlePayment(record.patientId)}
                             okText="Payment Done"
                             cancelText="Cancel"
-                            disabled={isPaymentDone}
+                            disabled={isPaymentDone[record.patientId] || status === "completed"}
                           >
                             <Button
                               type="primary"
@@ -562,7 +539,9 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
                               disabled={
                                 totalAmount <= 0 ||
                                 paying[record.patientId] ||
-                                !hasPending
+                                !hasPending ||
+                                isPaymentDone[record.patientId] ||
+                                status === "completed"
                               }
                               style={{
                                 background: "#1A3C6A",
@@ -571,7 +550,9 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
                                 marginTop: 8,
                               }}
                             >
-                              {hasPending ? "Process Payment" : "Paid"}
+                              {hasPending && !isPaymentDone[record.patientId] && status !== "completed"
+                                ? "Process Payment"
+                                : "Paid"}
                             </Button>
                           </Popconfirm>
                         </Col>

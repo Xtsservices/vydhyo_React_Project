@@ -26,15 +26,15 @@ import {
   DownloadOutlined,
 } from "@ant-design/icons";
 import * as XLSX from "xlsx";
-import { toast, ToastContainer } from "react-toastify"; // Add toast imports
-import "react-toastify/dist/ReactToastify.css"; // Import toast styles
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Import the tab components
 import PatientsTab from "./PharmacyPatientsTab";
 import MedicinesTab from "./PharmacyMedicinesTab";
 import CompletedTab from "./PharmacyCompletedTab";
 
-import "../../stylings/pharmacy.css"; // Import the CSS file for styling
+import "../../stylings/pharmacy.css";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
 
@@ -97,53 +97,52 @@ export default function Pharmacy() {
     return Object.keys(newErrors).length === 0;
   };
 
-const handleOk = async () => {
-  if (!validateForm()) {
-    return;
-  }
+  const handleOk = async () => {
+    if (!validateForm()) {
+      return;
+    }
 
-  try {
-    const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-    form.quantity = 100;
-    await apiPost("pharmacy/addMedInventory", {
-      ...form,
-      doctorId: doctorId,
-    });
-
-    setForm({ medName: "", quantity: "", price: "" });
-    setErrors({});
-    setIsModalVisible(false);
-    toast.success("Medicine added successfully", {
-      position: "top-right",
-      autoClose: 3000,
-    });
-    updateCount();
-    setRefreshTrigger((prev) => prev + 1);
-    setActiveTab("3"); // Switch to Medicines tab
-    return true; // Return success status
-  } catch (error) {
-    console.error("Error adding medicine:", error);
-    // Check for duplicate medicine error
-    if (
-      error.response?.status === 409 &&
-      error.response?.data?.message?.message === "Medicine already exists"
-    ) {
-      toast.error("Medicine already exists", {
-        position: "top-right",
-        autoClose: 5000,
+    try {
+      const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+      form.quantity = 100;
+      await apiPost("pharmacy/addMedInventory", {
+        ...form,
+        doctorId: doctorId,
       });
-    } else {
-      toast.error(
-        error.response?.data?.message?.message || "Failed to add medicine. Please try again.",
-        {
+
+      setForm({ medName: "", quantity: "", price: "" });
+      setErrors({});
+      setIsModalVisible(false);
+      toast.success("Medicine added successfully", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      updateCount();
+      setRefreshTrigger((prev) => prev + 1);
+      setActiveTab("3"); // Switch to Medicines tab
+      return true;
+    } catch (error) {
+      console.error("Error adding medicine:", error);
+      if (
+        error.response?.status === 409 &&
+        error.response?.data?.message?.message === "Medicine already exists"
+      ) {
+        toast.error("Medicine already exists", {
           position: "top-right",
           autoClose: 5000,
-        }
-      );
+        });
+      } else {
+        toast.error(
+          error.response?.data?.message?.message || "Failed to add medicine. Please try again.",
+          {
+            position: "top-right",
+            autoClose: 5000,
+          }
+        );
+      }
+      return false;
     }
-    return false; // Return failure status
-  }
-};
+  };
 
   const handleCancel = () => {
     setForm({ medName: "", quantity: "", price: "" });
@@ -160,7 +159,7 @@ const handleOk = async () => {
   };
 
   const handleFileUpload = (file) => {
-    setUploadedFile(file); // Store the file for later upload
+    setUploadedFile(file);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -195,7 +194,7 @@ const handleOk = async () => {
       }
     };
     reader.readAsArrayBuffer(file);
-    return false; // Prevent default upload behavior
+    return false;
   };
 
   const handleBulkUpload = async () => {
@@ -233,7 +232,6 @@ const handleOk = async () => {
           }
         );
         updateCount();
-        // Close modal after 2 seconds if there are no errors
         if (
           !response.data.data.errors ||
           response.data.data.errors.length === 0
@@ -288,13 +286,18 @@ const handleOk = async () => {
     XLSX.writeFile(workbook, "medicine_template.xlsx");
   };
 
+  const handlePaymentSuccess = () => {
+  setRefreshTrigger((prev) => prev + 1); // This will refresh both tabs
+  setActiveTab("2"); // Switch to completed tab
+};
+
   const tabItems = [
     {
       key: "1",
       label: "Pending Patients",
       children: (
         <PatientsTab
-          status={"pending"}
+          status="pending"
           updateCount={updateCount}
           searchQuery={searchQuery}
         />
@@ -305,7 +308,7 @@ const handleOk = async () => {
       label: "Completed Patients",
       children: (
         <PatientsTab
-          status={"completed"}
+          status="completed"
           updateCount={updateCount}
           searchQuery={searchQuery}
         />
@@ -329,7 +332,7 @@ const handleOk = async () => {
   }
 
   useEffect(() => {
-    if ((user, doctorId)) {
+    if (user && doctorId) {
       fetchRevenueCount();
     }
   }, [user, doctorId]);
@@ -359,7 +362,7 @@ const handleOk = async () => {
 
   return (
     <div>
-      <ToastContainer /> {/* Add ToastContainer to render toasts */}
+      <ToastContainer />
       <Layout className="pharmacy-layout">
         <Header className="pharmacy-header">
           <div className="pharmacy-logo">
@@ -383,9 +386,7 @@ const handleOk = async () => {
               <Card className="revenue-card-today">
                 <div className="revenue-icon">
                   <div className="revenue-icon-today">
-                    <UserOutlined
-                      style={{ color: "white", fontSize: "18px" }}
-                    />
+                    <UserOutlined style={{ color: "white", fontSize: "18px" }} />
                   </div>
                 </div>
                 <div>
