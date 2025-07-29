@@ -48,13 +48,14 @@ const Appointment = () => {
 
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-  const [appointmentsCount, setAppointmentsCount] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
-
+  const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0)
+  const [scheduledAppointmentsCount, setScheduledAppointmentsCount] = useState(0)
+  const [completedAppointmentsCount, setCompletedAppointmentsCount] = useState(0)
+  const [cancledAppointmentsCount, setCancledAppointmentsCount] = useState(0)
   const [isRescheduleModalVisible, setIsRescheduleModalVisible] = useState(false);
   const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -69,6 +70,11 @@ const Appointment = () => {
   });
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
+  const [pagination, setPagination] = useState({
+  current: 1,
+  pageSize: 5,
+  total: 0,
+});
 
   const getStatusTag = (status) => {
     const statusConfig = {
@@ -246,85 +252,44 @@ const Appointment = () => {
     }
   };
 
-  const applyFilters = (data) => {
-
-    return data.filter((appointment) => {
-      const matchesSearch =
-        searchText === "" ||
-        (appointment.patientName &&
-          appointment.patientName
-            .toLowerCase()
-            .includes(searchText.toLowerCase())) ||
-        (appointment.appointmentId &&
-          appointment.appointmentId
-            .toString()
-            .toLowerCase()
-            .includes(searchText.toLowerCase()));
-
-      const matchesClinic =
-        filters.clinic === "all" ||
-        appointment.appointmentDepartment === filters.clinic;
-
-      const matchesType =
-        filters.type === "all" || appointment.appointmentType === filters.type;
-
-      const matchesStatus =
-        filters.status === "all" ||
-        appointment.appointmentStatus === filters.status;
-console.log(filters.date, "selectedDate")
-     const matchesDate =
-  !filters.date ||
-  moment(appointment.appointmentDate).format("YYYY-MM-DD") ===
-    filters.date.format("YYYY-MM-DD");
-
-      return (
-        matchesSearch &&
-        matchesClinic &&
-        matchesType &&
-        matchesStatus &&
-        matchesDate
-      );
+  const getAppointments = async (page = 1, limit = 5) => {
+  setLoading(true);
+  try {
+    const queryParams = new URLSearchParams({
+      doctorId,
+      ...(searchText && { searchText }),
+      ...(filters.clinic !== "all" && { clinic: filters.clinic }),
+      ...(filters.type !== "all" && { appointmentType: filters.type }),
+      ...(filters.status !== "all" && { status: filters.status }),
+      ...(filters.date && { date: filters.date.format("YYYY-MM-DD") }),
+      page,
+      limit
     });
-  };
 
-  const getAppointments = async () => {
-    setLoading(true);
-    try {
-      const response = await apiGet(
-        `/appointment/getAppointmentsByDoctorID/appointment?doctorId=${doctorId}`
-      );
+    console.log('Fetching appointments with params:', queryParams.toString()); // Debug log
+    const response = await apiGet(
+      `/appointment/getAppointmentsByDoctorID/appointment?${queryParams.toString()}`
+    );
 
-      console.log("Response from getAppointments:", response);
-
-      if (response.status === 200) {
-         const updatedAppointments = response.data.data;
-
-  const sortedAppointments = updatedAppointments.sort((a, b) => {
-    // First, compare by appointmentDate (latest date first)
-    const dateA = moment(a.appointmentDate, "YYYY-MM-DD");
-    const dateB = moment(b.appointmentDate, "YYYY-MM-DD");
-
-    if (dateA.isBefore(dateB)) return 1;
-    if (dateA.isAfter(dateB)) return -1;
-
-    // If same date, then compare by appointmentId (highest first)
-    const idA = parseInt(a.appointmentId.replace("VYDAPMT", ""), 10);
-    const idB = parseInt(b.appointmentId.replace("VYDAPMT", ""), 10);
-    return idB - idA;
-  });
-
-        setAppointments(sortedAppointments);
-        setFilteredData(applyFilters(updatedAppointments));
-      } else {
-        message.error("Failed to fetch appointments");
-      }
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-      message.error("Error fetching appointments");
-    } finally {
-      setLoading(false);
+    console.log('Appointments response:', response.data); // Debug log
+    if (response.status === 200) {
+      const { appointments, pagination } = response.data.data;
+      setAppointments(appointments);
+      setPagination({
+        current: pagination.currentPage,
+        pageSize: pagination.pageSize,
+        total: pagination.totalItems
+      });
+    } else {
+      message.error("Failed to fetch appointments");
     }
-  };
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    message.error("Error fetching appointments");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getAppointmentsCount = async () => {
     setLoading(true);
@@ -333,11 +298,20 @@ console.log(filters.date, "selectedDate")
         `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}`
       );
 
+      console.log(response, "response of count data")
+
+
+
       if (response.status === 200) {
-        const updatedAppointments = response.data.data;
-        setAppointmentsCount(updatedAppointments);
+
+        const count = response?.data?.data 
+
+        setTotalAppointmentsCount(count.total)
+        setScheduledAppointmentsCount(count.scheduled)
+        setCompletedAppointmentsCount(count.completed)
+        setCancledAppointmentsCount(count.cancelled)
       } else {
-        message.error("Failed to fetch appointments");
+        message.error("Failed to fetch appointments count");
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -347,16 +321,16 @@ console.log(filters.date, "selectedDate")
     }
   };
 
+  useEffect(()=>{
+getAppointments();
+  }, [user, doctorId, searchText, filters]);
+  
+
   useEffect(() => {
-    if (user && doctorId) {
-      getAppointments();
+    if (user && doctorId) { 
       getAppointmentsCount();
     }
   }, [user, doctorId]);
-
-  useEffect(() => {
-    setFilteredData(applyFilters(appointments));
-  }, [searchText, filters, appointments, ]);
 
   const timeslots = async (date) => {
      console.log("Selected Date:", date);
@@ -555,7 +529,7 @@ console.log(filters.date, "selectedDate")
                 <Card className="appointments-card">
                   <Statistic
                     title="Total Appointments"
-                    value={appointmentsCount.length}
+                    value={totalAppointmentsCount}
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
@@ -569,13 +543,7 @@ console.log(filters.date, "selectedDate")
                 <Card className="appointments-card upcomming-card">
                   <Statistic
                     title="Upcoming"
-                    value={
-                      appointments.filter(
-                        (appt) =>
-                          appt.appointmentStatus === "scheduled" ||
-                          appt.appointmentStatus === "rescheduled"
-                      ).length
-                    }
+                    value={scheduledAppointmentsCount}
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
@@ -593,9 +561,7 @@ console.log(filters.date, "selectedDate")
                   <Statistic
                     title="Completed"
                     value={
-                      appointmentsCount.filter(
-                        (appt) => appt.appointmentStatus === "completed"
-                      ).length
+                     completedAppointmentsCount
                     }
                     valueRender={(value) => (
                       <div className="statistic-value-row">
@@ -611,9 +577,7 @@ console.log(filters.date, "selectedDate")
                   <Statistic
                     title="Cancelled"
                     value={
-                      appointments.filter(
-                        (appt) => appt.appointmentStatus === "cancelled"
-                      ).length
+                     cancledAppointmentsCount
                     }
                     valueRender={(value) => (
                       <div className="statistic-value-row">
@@ -698,12 +662,29 @@ console.log(filters.date, "selectedDate")
               </Col>
             </Row>
 
-            <Table
+            {/* <Table
               columns={columns}
               dataSource={filteredData}
               rowKey="appointmentId"
               pagination={{ pageSize: 5 }}
-            />
+            /> */}
+
+            <Table
+  columns={columns}
+  dataSource={appointments}
+  rowKey="appointmentId"
+  loading={loading}
+  pagination={{
+    current: pagination.current,
+    pageSize: pagination.pageSize,
+    total: pagination.total,
+    showSizeChanger: false,
+  }}
+  onChange={(pagination) => {
+    getAppointments(pagination.current, pagination.pageSize);
+  }}
+/>
+
           </Col>
         </Row>
       </Spin>
