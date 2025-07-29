@@ -37,20 +37,31 @@ const TestManagement = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-  // Fetch tests on component mount and when refreshTrigger changes
+  // Fetch tests with pagination
   useEffect(() => {
     const fetchTests = async () => {
       try {
         setFetchLoading(true);
-        const response = await apiGet(`/lab/getTestsByDoctorId/${doctorId}`);
+        const response = await apiGet(
+          `/lab/getTestsByDoctorId/${doctorId}?page=${pagination.current}&limit=${pagination.pageSize}`
+        );
         const fetchedTests = response.data.data.tests.map((test) => ({
           testId: test.id,
           testName: test.testName,
           price: test.testPrice,
         }));
         setTests([...new Map(fetchedTests.map((test) => [test.testId, test])).values()]);
+        setPagination((prev) => ({
+          ...prev,
+          total: response.data.data.pagination.totalTests,
+        }));
       } catch (error) {
         toast.error(error.response?.data?.message || "Failed to fetch tests", {
           position: "top-right",
@@ -63,7 +74,15 @@ const TestManagement = () => {
     if (doctorId) {
       fetchTests();
     }
-  }, [doctorId, refreshTrigger]);
+  }, [doctorId, refreshTrigger, pagination.current, pagination.pageSize]);
+
+  const handleTableChange = (paginationData) => {
+    setPagination({
+      ...pagination,
+      current: paginationData.current,
+      pageSize: paginationData.pageSize,
+    });
+  };
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -100,7 +119,6 @@ const TestManagement = () => {
       setIsModalVisible(false);
       setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
-
       if (
         error.response?.status === 400 &&
         error.response?.data?.message?.message === "A test with this name already exists"
@@ -316,8 +334,16 @@ const TestManagement = () => {
           columns={columns}
           dataSource={tests}
           rowKey="testId"
-          pagination={false}
           loading={fetchLoading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "20", "50"],
+            onChange: (page, pageSize) =>
+              handleTableChange({ current: page, pageSize }),
+          }}
         />
 
         <Modal

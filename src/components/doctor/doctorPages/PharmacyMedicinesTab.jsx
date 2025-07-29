@@ -19,13 +19,15 @@ import { apiGet } from "../../api";
 const { Text } = Typography;
 
 const MedicinesTab = ({ refreshTrigger }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState(null);
-  const [totalMedicines, setTotalMedicines] = useState(0);
   const [form, setForm] = useState({
     medName: '',
     quantity: '',
@@ -39,7 +41,11 @@ const MedicinesTab = ({ refreshTrigger }) => {
     try {
       setLoading(true);
       const response = await apiGet('/pharmacy/getAllMedicinesByDoctorID', {
-        params: { doctorId }
+        params: { 
+          doctorId,
+          page: pagination.current,
+          limit: pagination.pageSize
+        }
       });
       
       let dataArray = [];
@@ -63,16 +69,19 @@ const MedicinesTab = ({ refreshTrigger }) => {
         }));
         
         setMedicines(formattedData);
-        setTotalMedicines(formattedData.length);
+        setPagination((prev) => ({
+          ...prev,
+          total: response.data.totalRecords || formattedData.length,
+        }));
       } else {
         setMedicines([]);
-        setTotalMedicines(0);
+        setPagination((prev) => ({ ...prev, total: 0 }));
       }
     } catch (error) {
       console.error('Error fetching medicines:', error);
       message.error(error.response?.data?.message || 'Error fetching medicines');
       setMedicines([]);
-      setTotalMedicines(0);
+      setPagination((prev) => ({ ...prev, total: 0 }));
     } finally {
       setLoading(false);
     }
@@ -80,7 +89,15 @@ const MedicinesTab = ({ refreshTrigger }) => {
 
   useEffect(() => {
     if (doctorId) fetchMedicines();
-  }, [doctorId, refreshTrigger]);
+  }, [doctorId, refreshTrigger, pagination.current, pagination.pageSize]);
+
+  const handleTableChange = (page, pageSize) => {
+    setPagination({
+      ...pagination,
+      current: page,
+      pageSize: pageSize,
+    });
+  };
 
   const handleEdit = (record) => {
     setEditingMedicine(record);
@@ -100,7 +117,7 @@ const MedicinesTab = ({ refreshTrigger }) => {
       cancelText: 'No',
       onOk: () => {
         setMedicines(medicines.filter(med => med.key !== record.key));
-        setTotalMedicines(prev => prev - 1);
+        setPagination((prev) => ({ ...prev, total: prev.total - 1 }));
         message.success('Medicine deleted successfully');
       }
     });
@@ -180,6 +197,11 @@ const MedicinesTab = ({ refreshTrigger }) => {
         <Space size="middle">
           <Button 
             type="text" 
+            icon={<EditOutlined />} 
+            onClick={() => handleEdit(record)}
+          />
+          <Button 
+            type="text" 
             icon={<DeleteOutlined />} 
             onClick={() => handleDelete(record)}
             danger
@@ -189,20 +211,15 @@ const MedicinesTab = ({ refreshTrigger }) => {
     },
   ];
 
-  const currentPageData = medicines.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const startIndex = totalMedicines > 0 ? ((currentPage - 1) * pageSize) + 1 : 0;
-  const endIndex = Math.min(currentPage * pageSize, totalMedicines);
+  const startIndex = pagination.total > 0 ? ((pagination.current - 1) * pagination.pageSize) + 1 : 0;
+  const endIndex = Math.min(pagination.current * pagination.pageSize, pagination.total);
 
   return (
     <div style={{ padding: '20px' }}>
       <Spin spinning={loading}>
         <Table 
           columns={columns} 
-          dataSource={currentPageData}
+          dataSource={medicines}
           pagination={false}
           size="middle"
           showHeader={true}
@@ -214,19 +231,20 @@ const MedicinesTab = ({ refreshTrigger }) => {
         
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
           <span style={{ lineHeight: '32px' }}>
-            {totalMedicines > 0 
-              ? `Showing ${startIndex} to ${endIndex} of ${totalMedicines} results`
+            {pagination.total > 0 
+              ? `Showing ${startIndex} to ${endIndex} of ${pagination.total} results`
               : 'No results found'
             }
           </span>
-          {totalMedicines > pageSize && (
+          {pagination.total > pagination.pageSize && (
             <Pagination 
-              current={currentPage}
-              total={totalMedicines}
-              pageSize={pageSize}
-              showSizeChanger={false}
+              current={pagination.current}
+              total={pagination.total}
+              pageSize={pagination.pageSize}
+              showSizeChanger={true}
+              pageSizeOptions={['10', '20', '50']}
               showQuickJumper={false}
-              onChange={(page) => setCurrentPage(page)}
+              onChange={(page, pageSize) => handleTableChange(page, pageSize)}
             />
           )}
         </div>
