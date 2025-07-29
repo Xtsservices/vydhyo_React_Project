@@ -569,28 +569,33 @@ const AvailabilityScreen = () => {
     setIsModalVisible(true);
   };
 
-const handleOk = async () => {
+const handleOk = async (type) => {
+  console.log(type, "selected string")
   const date = dayjs(selectedDate).format("YYYY-MM-DD");
-   const { availableSlots } = getCurrentClinicSlots(); 
+   const { availableSlots, unavailableSlots } = getCurrentClinicSlots(); 
   console.log("Selected Slot Time:", selectedSlotTime);
   console.log("Available Slots:", availableSlots);
+  console.log("Available Slots:", unavailableSlots);
+
+  const slots = type ==='available' ?availableSlots:unavailableSlots
 
   // Convert 12-hour time (e.g., "09:15 AM") to 24-hour format ("09:15")
   const convertTo24Hour = (time12h) => {
-    const [time, modifier] = time12h.split(" ");
-    let [hours, minutes] = time.split(":").map(Number);
-
+    console.log(time12h)
+    if (typeof time12h !== 'string') {
+    console.error("Invalid time format:", time12h);
+    return null;
+  }
+    const [time, modifier] = time12h?.split(" ");
+    let [hours, minutes] = time?.split(":").map(Number);
     if (modifier === "PM" && hours !== 12) {
       hours += 12;
     }
-
     if (modifier === "AM" && hours === 12) {
       hours = 0;
     }
-
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
   };
-
   // Prepare the payload
   let payload = {
     doctorId: doctorId,
@@ -599,14 +604,17 @@ const handleOk = async () => {
     slotTimes: [],
   };
 
-  if (selectedSlotTime) {
-    // Delete single slot
+  if (selectedSlotTime?.length>0) {
     payload.slotTimes = [convertTo24Hour(selectedSlotTime)];
   } else {
-    // Delete all available slots
-    payload.slotTimes =  availableSlots.map((item) =>
-      convertTo24Hour(item.time)
-    );
+   
+   payload.slotTimes = slots
+  .map((item, index) => {
+    console.log(`Item[${index}] =`, item);
+    return convertTo24Hour(item?.time);
+  })
+  .filter(Boolean); // remove any null/undefined results
+
   }
 
   console.log("Payload for deleting slots:", payload);
@@ -615,7 +623,7 @@ const handleOk = async () => {
 
     
     const res = await apiDelete(
-      `appointment/deleteDoctorSlots?doctorId=${doctorId}&addressId=${selectedClinic}&date=${date}`,
+      `/appointment/deleteDoctorSlots`,
       payload
     );
     console.log(res, "complete response")
@@ -829,7 +837,7 @@ const handleOk = async () => {
               <Button
                 type="primary"
                 danger
-                onClick={handleOk}
+                onClick={() => handleOk('available')}
                 icon={<PlusOutlined />}
                 style={{ fontWeight: "bold" }}
               >
@@ -869,7 +877,7 @@ const handleOk = async () => {
       <Modal
         title="Confirm Delete"
         open={isModalVisible}
-        onOk={handleOk}
+        onOk={() => handleOk('available')}
         onCancel={handleCancel}
         okText="Yes, Delete"
         okType="danger"
@@ -1021,6 +1029,21 @@ const handleOk = async () => {
                 style={{ fontWeight: "bold" }}
               >
                 Add Unavailable Slots
+              </Button>
+              
+            </Space>
+          </Col>
+
+          <Col xs={12} sm={6}>
+            <Space>
+              <Button
+                type="primary"
+                danger
+               onClick={() => handleOk('unavailable')}
+                icon={<StopOutlined />}
+                style={{ fontWeight: "bold" }}
+              >
+                Delete Slots
               </Button>
               
             </Space>
