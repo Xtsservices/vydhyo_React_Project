@@ -39,49 +39,32 @@ const MedicinesTab = ({ refreshTrigger }) => {
     try {
       setLoading(true);
       const response = await apiGet('/pharmacy/getAllMedicinesByDoctorID', {
-        params: { doctorId: doctorId }
+        params: { doctorId }
       });
       
-      console.log('API Response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response dataaaa:', response.data.data);
-
       let dataArray = [];
-      console.log(response.data, "medicines API response");
-      
-      if (response?.data.success && response?.data?.data) {
-        if (Array.isArray(response.data.data)) {
-          dataArray = response.data.data;
-        }
+      if (response?.data?.success && response?.data?.data) {
+        dataArray = Array.isArray(response.data.data) ? response.data.data : [];
       }
 
-      console.log('Processed medicines data array:', dataArray);
-      
       if (dataArray.length > 0) {
-        const formattedData = dataArray.map((medicine, index) => {
-          console.log('Processing medicine:', medicine);
-          
-          return {
-            key: medicine._id || `medicine-${index}`,
-            id: medicine._id || `MED-${index}`,
-            medName: medicine.medName || 'Unknown Medicine',
-            quantity: medicine.quantity || 0,
-            price: parseFloat(medicine.price) || 0,
-            category: medicine.category || 'N/A',
-            expiryDate: medicine.expiryDate || 'N/A',
-            manufacturer: medicine.manufacturer || 'N/A',
-            doctorId: medicine.doctorId || 'N/A',
-            createdAt: medicine.createdAt || 'N/A',
-            originalData: medicine
-          };
-        });
-        
-        console.log('Formatted Medicines Data:', formattedData);
+        const formattedData = dataArray.map((medicine, index) => ({
+          key: medicine._id || `medicine-${index}`,
+          id: medicine._id || `MED-${index}`,
+          medName: medicine.medName || 'Unknown Medicine',
+          quantity: medicine.quantity || 0,
+          price: parseFloat(medicine.price) || 0,
+          category: medicine.category || 'N/A',
+          expiryDate: medicine.expiryDate || 'N/A',
+          manufacturer: medicine.manufacturer || 'N/A',
+          doctorId: medicine.doctorId || 'N/A',
+          createdAt: medicine.createdAt || 'N/A',
+          originalData: medicine
+        }));
         
         setMedicines(formattedData);
         setTotalMedicines(formattedData.length);
       } else {
-        console.log('No medicines found or empty data array');
         setMedicines([]);
         setTotalMedicines(0);
       }
@@ -96,12 +79,8 @@ const MedicinesTab = ({ refreshTrigger }) => {
   };
 
   useEffect(() => {
-    if (doctorId) {
-      fetchMedicines();
-    } else {
-      console.log('No doctorId found, user:', user);
-    }
-  }, [doctorId, refreshTrigger]); 
+    if (doctorId) fetchMedicines();
+  }, [doctorId, refreshTrigger]);
 
   const handleEdit = (record) => {
     setEditingMedicine(record);
@@ -120,7 +99,6 @@ const MedicinesTab = ({ refreshTrigger }) => {
       okText: 'Yes',
       cancelText: 'No',
       onOk: () => {
-        // Add delete logic here - you might want to call a delete API
         setMedicines(medicines.filter(med => med.key !== record.key));
         setTotalMedicines(prev => prev - 1);
         message.success('Medicine deleted successfully');
@@ -134,7 +112,6 @@ const MedicinesTab = ({ refreshTrigger }) => {
       return;
     }
 
-    // Add update API call here if needed
     const updatedMedicines = medicines.map(med => 
       med.key === editingMedicine.key 
         ? { ...med, medName: form.medName, quantity: form.quantity, price: form.price }
@@ -195,13 +172,23 @@ const MedicinesTab = ({ refreshTrigger }) => {
       width: 80,
       render: (price) => `₹${price.toFixed(2)}`,
     },
+    {
+      title: 'Action',
+      key: 'action',
+      width: 100,
+      render: (_, record) => (
+        <Space size="middle">
+          <Button 
+            type="text" 
+            icon={<DeleteOutlined />} 
+            onClick={() => handleDelete(record)}
+            danger
+          />
+        </Space>
+      ),
+    },
   ];
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  // Calculate current page data
   const currentPageData = medicines.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -239,13 +226,12 @@ const MedicinesTab = ({ refreshTrigger }) => {
               pageSize={pageSize}
               showSizeChanger={false}
               showQuickJumper={false}
-              onChange={handlePageChange}
+              onChange={(page) => setCurrentPage(page)}
             />
           )}
         </div>
       </Spin>
 
-      {/* Edit Medicine Modal */}
       <Modal
         title="Edit Medicine"
         open={editModalVisible}
@@ -298,13 +284,6 @@ const MedicinesTab = ({ refreshTrigger }) => {
         .normal-stock {
           color: #52c41a;
           font-weight: bold;
-        }
-        .expiry-warning {
-          color: #ff4d4f;
-          font-weight: bold;
-        }
-        .expiry-normal {
-          color: #595959;
         }
       `}</style>
     </div>

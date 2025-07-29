@@ -45,7 +45,7 @@ const TestManagement = () => {
       try {
         setFetchLoading(true);
         const response = await apiGet(`/lab/getTestsByDoctorId/${doctorId}`);
-        const fetchedTests = response.data.data.map((test) => ({
+        const fetchedTests = response.data.data.tests.map((test) => ({
           testId: test.id,
           testName: test.testName,
           price: test.testPrice,
@@ -100,7 +100,7 @@ const TestManagement = () => {
       setIsModalVisible(false);
       setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
-      console.error("Error adding test:", error);
+
       if (
         error.response?.status === 400 &&
         error.response?.data?.message?.message === "A test with this name already exists"

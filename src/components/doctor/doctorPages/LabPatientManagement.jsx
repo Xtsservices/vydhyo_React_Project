@@ -41,7 +41,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
 
       console.log("getAllTestsPatientsByDoctorID", response);
       if (response.status === 200 && response?.data?.data) {
-        let filteredData = response.data.data;
+        let filteredData = response.data.data.patients;
 
         // Client-side filtering to ensure only the specified status is shown
         filteredData = filteredData.filter((patient) => {
