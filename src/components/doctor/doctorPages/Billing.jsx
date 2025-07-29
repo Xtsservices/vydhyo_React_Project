@@ -29,6 +29,7 @@ const calculateAge = (dob) => {
 
 // Utility function to transform patient data
 const transformPatientData = (result, user) => {
+  if (!user || !result) return [];
   return result.map((patient, index) => {
     const appointments = Array.isArray(patient.appointments)
       ? patient.appointments
@@ -43,7 +44,7 @@ const transformPatientData = (result, user) => {
       appointmentFees: appointment?.feeDetails?.finalAmount || 0,
       addressId: appointment.addressId,
       clinicName: appointment.addressId
-        ? user.addresses.find((addr) => addr.addressId === appointment.addressId)
+        ? user?.addresses?.find((addr) => addr.addressId === appointment.addressId)
             ?.clinicName || "N/A"
         : "N/A",
     }));
@@ -118,14 +119,15 @@ const BillingSystem = () => {
 
   // Memoize transformed patient data to avoid redundant calculations
   const transformedPatients = useMemo(() => {
-    if (!patients.length || !user) return [];
+    console.log("Computing transformedPatients", { patients, user });
     return transformPatientData(patients, user);
   }, [patients, user]);
 
   // Fetch patient data with retry mechanism
   const fetchPatients = async () => {
     if (!user || !doctorId) {
-      // setError("User or doctor ID not available");
+      console.log("User or doctorId not available:", { user, doctorId });
+      setError("User or doctor ID not available");
       setLoading(false);
       return;
     }
@@ -136,12 +138,13 @@ const BillingSystem = () => {
     try {
       const response = await apiGet(
         `/receptionist/fetchMyDoctorPatients/${doctorId}`,
-        { timeout: 10000 } // Set a 10-second timeout
+         { timeout: 10000 }
       );
       console.log("API Response:", response);
 
       if (response.status === 200 && response?.data?.data) {
         setPatients(response.data.data.reverse());
+        console.log("Patients set:", response.data.data.reverse());
         setLoading(false);
       } else {
         throw new Error("API response unsuccessful");
@@ -163,7 +166,13 @@ const BillingSystem = () => {
   };
 
   useEffect(() => {
-    fetchPatients();
+    console.log("useEffect triggered - user:", user, "doctorId:", doctorId);
+    if (user && doctorId) {
+      fetchPatients();
+    } else {
+      setLoading(false);
+      setError("Waiting for user data to load...");
+    }
   }, [user, doctorId]);
 
   const handlePatientExpand = (patientId) => {
@@ -375,6 +384,48 @@ const BillingSystem = () => {
     );
   }
 
+  if (!user || !doctorId) {
+    return (
+      <div
+        style={{
+          fontFamily: "Arial, sans-serif",
+          padding: "20px",
+          backgroundColor: "#f5f5f5",
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            backgroundColor: "white",
+            borderRadius: "8px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            padding: "30px",
+            textAlign: "center",
+          }}
+        >
+          <h1
+            style={{
+              color: "#333",
+              marginBottom: "30px",
+              fontSize: "28px",
+              fontWeight: "bold",
+            }}
+          >
+            Patient Billing System
+          </h1>
+          <p style={{ fontSize: "18px", color: "#666" }}>
+            Waiting for user data to load...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (transformedPatients.length === 0) {
     return (
       <div
@@ -440,7 +491,7 @@ const BillingSystem = () => {
     <div
       style={{
         fontFamily: "Arial, sans-serif",
-        padding: "20px",
+        padding: "_year",
         backgroundColor: "#f5f5f5",
         minHeight: "100vh",
       }}
@@ -518,6 +569,7 @@ const BillingSystem = () => {
                 style={{
                   padding: "12px 15px",
                   textAlign: "left",
+                  // block,
                   borderBottom: "2px solid #ddd",
                   fontWeight: "bold",
                 }}

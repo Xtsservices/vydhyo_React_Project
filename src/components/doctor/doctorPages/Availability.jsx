@@ -14,6 +14,7 @@ import {
   Collapse,
   message,
   Spin,
+  Modal,
 } from "antd";
 import {
   DownOutlined,
@@ -27,7 +28,10 @@ import {
 import { apiGet, apiPost, apiDelete, apiPut } from "../../api";
 import moment from "moment";
 import { useSelector } from "react-redux";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+import dayjs from 'dayjs';
 import { toast } from "react-toastify";
+
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -377,110 +381,86 @@ const AvailabilityScreen = () => {
   };
 
  const handleAddUnavailableSlots = async () => {
-  try {
-    setLoading(true);
-    const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
+    try {
+      setLoading(true);
+      const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
 
-    const startTime = moment(
-      `${unavailableStartTime}:00 ${unavailableStartPeriod}`,
-      "hh:mm A"
-    ).format("HH:mm");
+      const startTime = moment(
+        `${unavailableStartTime}:00 ${unavailableStartPeriod}`,
+        "hh:mm A"
+      );
+      const endTime = moment(
+        `${unavailableEndTime}:00 ${unavailableEndPeriod}`,
+        "hh:mm A"
+      );
 
-    const endTime = moment(
-      `${unavailableEndTime}:00 ${unavailableEndPeriod}`,
-      "hh:mm A"
-    ).format("HH:mm");
+      // Filter available slots that fall within the unavailable time range
+      const slotsToMarkUnavailable = availableSlots.filter((slot) => {
+        const slotTime = moment(slot.originalTime, "HH:mm");
+        return slotTime.isSameOrAfter(startTime) && slotTime.isSameOrBefore(endTime);
+      });
 
-    console.log(startTime, endTime, "1234")
+      const existingUnavailableTimes = unavailableSlots.map(
+        (slot) => slot.originalTime
+      );
 
-    const slotsToMarkUnavailable = generateTimeSlots(
-      startTime,
-      endTime,
-      availableDuration
-    );
+      // Filter out slots that are already unavailable
+      const newSlotsToMark = slotsToMarkUnavailable.filter(
+        (slot) => !existingUnavailableTimes.includes(slot.originalTime)
+      );
 
-    const existingUnavailableTimes = unavailableSlots.map(
-      (slot) => slot.originalTime
-    );
+      if (newSlotsToMark.length === 0) {
+        message.info("No available slots in the selected time range to mark as unavailable");
+        return;
+      }
 
-    const newSlotsToMark = slotsToMarkUnavailable.filter(
-      (time) => !existingUnavailableTimes.includes(time)
-    );
+      // Remove the selected slots from availableSlots
+      const updatedAvailableSlots = availableSlots.filter(
+        (slot) => !newSlotsToMark.some((newSlot) => newSlot.originalTime === slot.originalTime)
+      );
 
-    if (newSlotsToMark.length === 0) {
-      message.info("All selected slots are already marked as unavailable");
-      return;
-    }
-
-    const overlappingAvailableSlots = availableSlots.filter((slot) =>
-      newSlotsToMark.includes(slot.originalTime)
-    );
-
-    const newUnavailableSlots = [
-      ...unavailableSlots,
-      ...newSlotsToMark
-        .filter(
-          (time) => !availableSlots.some((slot) => slot.originalTime === time)
-        )
-        .map((time) => ({
-          time: moment(time, "HH:mm").format("hh:mm A"),
-          available: false,
-          id: `temp-${Date.now()}-${time}`,
-          reason: unavailableReason || "Not available",
-          originalTime: time,
-        })),
-    ];
-
-    const updatedAvailableSlots = availableSlots.filter(
-      (slot) => !newSlotsToMark.includes(slot.originalTime)
-    );
-
-    if (overlappingAvailableSlots.length > 0) {
-      overlappingAvailableSlots.forEach((slot) => {
-        newUnavailableSlots.push({
+      // Add the selected slots to unavailableSlots
+      const newUnavailableSlots = [
+        ...unavailableSlots,
+        ...newSlotsToMark.map((slot) => ({
           ...slot,
           available: false,
           reason: unavailableReason || "Not available",
-        });
+        })),
+      ];
+
+      // Prepare the API payload with the exact times of the slots to mark unavailable
+      const response = await apiPut("/appointment/updateDoctorSlots", {
+        doctorId: doctorId,
+        date: selectedDate.format("YYYY-MM-DD"),
+        timeSlots: newSlotsToMark.map((slot) => slot.originalTime),
+        addressId: selectedClinic,
+        status: "unavailable",
+        reason: unavailableReason || "Not available",
       });
-    }
 
-    console.log(newUnavailableSlots, "unavailable slots")
-
-
-
-    // ✅ Sending only time string array like ["10:00", "10:30"]
-    const response = await apiPut("/appointment/updateDoctorSlots", {
-      doctorId: doctorId,
-      date: selectedDate.format("YYYY-MM-DD"),
-      timeSlots: newUnavailableSlots.map((slot) => slot.originalTime),
-      addressId: selectedClinic,
-    });
-
-
-    if (response.data && response.data.status === "success") {
-      if (response.data.updatedSlots.length === 0){
-      console.log("response data", response.data.message)
-        toast.error(response.data.message ||"first book available slots");
-return;
+      if (response.data && response.data.status === "success") {
+        if (response.data.updatedSlots.length === 0) {
+          console.log("response data", response.data.message);
+          toast.error(response.data.message || "No slots were updated");
+          return;
+        }
+        setCurrentClinicSlots({
+          availableSlots: updatedAvailableSlots,
+          unavailableSlots: newUnavailableSlots,
+        });
+        message.success("Slots marked as unavailable successfully");
+      } else {
+        throw new Error(response.data?.message || "Failed to update slots");
       }
-    console.log(response.data, "response data")
-    setCurrentClinicSlots({
-      availableSlots: updatedAvailableSlots,
-      unavailableSlots: newUnavailableSlots,
-    });
-       message.error(response.data.message);
-      message.success("Slots marked as unavailable successfully");
-    } else {
-      throw new Error(response.data?.message || "Failed to update slots");
+    } catch (error) {
+      console.error("Error creating unavailable slots:", error);
+      message.error("Failed to create unavailable slots");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error creating unavailable slots:", error);
-    message.error("Failed to create unavailable slots");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
 
 
   const handleDeleteAllUnavailable = async () => {
@@ -579,6 +559,92 @@ return;
         setUnavailableDuration((prev) => Math.max(15, prev - 15));
       }
     }
+  };
+
+ const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedSlotTime, setSelectedSlotTime] = useState(null);
+
+  const showModal = (slotTime) => {
+    setSelectedSlotTime(slotTime);
+    setIsModalVisible(true);
+  };
+
+const handleOk = async () => {
+  const date = dayjs(selectedDate).format("YYYY-MM-DD");
+   const { availableSlots } = getCurrentClinicSlots(); 
+  console.log("Selected Slot Time:", selectedSlotTime);
+  console.log("Available Slots:", availableSlots);
+
+  // Convert 12-hour time (e.g., "09:15 AM") to 24-hour format ("09:15")
+  const convertTo24Hour = (time12h) => {
+    const [time, modifier] = time12h.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+
+    if (modifier === "PM" && hours !== 12) {
+      hours += 12;
+    }
+
+    if (modifier === "AM" && hours === 12) {
+      hours = 0;
+    }
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  };
+
+  // Prepare the payload
+  let payload = {
+    doctorId: doctorId,
+    addressId: selectedClinic,
+    date: date,
+    slotTimes: [],
+  };
+
+  if (selectedSlotTime) {
+    // Delete single slot
+    payload.slotTimes = [convertTo24Hour(selectedSlotTime)];
+  } else {
+    // Delete all available slots
+    payload.slotTimes =  availableSlots.map((item) =>
+      convertTo24Hour(item.time)
+    );
+  }
+
+  console.log("Payload for deleting slots:", payload);
+
+  try {
+
+    
+    const res = await apiDelete(
+      `appointment/deleteDoctorSlots?doctorId=${doctorId}&addressId=${selectedClinic}&date=${date}`,
+      payload
+    );
+    console.log(res, "complete response")
+    if (res.status === 200) {
+      toast.success(res.data.message|| "slot deleted successfully")
+      setSelectedSlotTime([])
+  fetchSlotsForDate(date)
+    }else{
+      toast.error(res.data.message)
+    }
+
+    // Update UI: remove deleted slots
+    // if (selectedSlotTime) {
+    //   setUnavailableSlots((prev) =>
+    //     prev.filter((slot) => slot.time !== selectedSlotTime)
+    //   );
+    // } else {
+    //   setUnavailableSlots([]);
+    // }
+
+    setIsModalVisible(false);
+  } catch (error) {
+    console.error("Error deleting slot:", error);
+  }
+};
+
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
   };
 
   const renderAvailableTimeControls = () => {
@@ -757,6 +823,21 @@ return;
               
             </Space>
           </Col>
+
+           <Col xs={12} sm={6}>
+            <Space>
+              <Button
+                type="primary"
+                danger
+                onClick={handleOk}
+                icon={<PlusOutlined />}
+                style={{ fontWeight: "bold" }}
+              >
+                Delete Slots
+              </Button>
+              
+            </Space>
+          </Col>
         </Row>
 
         {/* Slots Display */}
@@ -764,6 +845,7 @@ return;
           {availableSlots.map((slot, index) => (
             <Col key={index} xs={12} sm={8} md={6} lg={4}>
               <Button
+ onClick={() => showModal(slot.time)}
                 block
                 style={{
                   height: 48,
@@ -783,6 +865,18 @@ return;
             </Col>
           ))}
         </Row>
+        
+      <Modal
+        title="Confirm Delete"
+        open={isModalVisible}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        okText="Yes, Delete"
+        okType="danger"
+        cancelText="Cancel"
+      >
+        <p>Are you sure you want to delete the slot: <strong>{selectedSlotTime}</strong>?</p>
+      </Modal>
 
         <Divider />
       </>
