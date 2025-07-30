@@ -178,6 +178,7 @@ const hasfetchClinicsForDoctor = useRef(false)
   }, [selectedDate, doctorId, selectedClinic]);
 
   const fetchSlotsForDate = async (date) => {
+    console.log("Fetching slots for date:", date);
     try {
       setLoading(true);
       const response = await apiGet("/appointment/getSlotsByDoctorIdAndDate", {
@@ -335,8 +336,11 @@ console.log("response", response)
         const message = response?.data?.results[0]?.reason || "Available slots created successfully";
           toast.success(message || response?.data?.message || "updated");
 
-        message.success(response?.data?.message|| "Available slots created successfully");
+        // message.success(response?.data?.message|| "Available slots created successfully");
+       
         fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
+       
+
       } else {
           // toast.error(response?.data?.message || "Failed to create available slots");
 
