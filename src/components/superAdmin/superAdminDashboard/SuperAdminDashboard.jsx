@@ -264,9 +264,10 @@ const SuperAdminDashboard = () => {
                     backgroundColor: item.bgColor,
                     borderRadius: "8px",
                     border: "1px solid #f0f0f0",
-                    height: "150px",
+                    height: "150px", // Fixed height
                     marginLeft: "30px",
                     width: "100%",
+                    overflow: "hidden", // Prevent overflow
                   }}
                   bodyStyle={{
                     padding: "12px",
@@ -274,6 +275,7 @@ const SuperAdminDashboard = () => {
                     flexDirection: "column",
                     justifyContent: "center",
                     height: "100%",
+                    wordBreak: "break-all", // Break long numbers
                   }}
                 >
                   <div
@@ -281,6 +283,7 @@ const SuperAdminDashboard = () => {
                       fontSize: "15px",
                       color: item.color || "#8c8c8c",
                       marginBottom: "4px",
+                      overflowWrap: "break-word", // Ensure text wraps
                     }}
                   >
                     {item.title}
@@ -290,6 +293,8 @@ const SuperAdminDashboard = () => {
                       fontSize: "16px",
                       fontWeight: "bold",
                       color: item.color || "black",
+                      overflowWrap: "break-word", // Ensure text wraps
+                      fontSize: item.value.length > 10 ? "14px" : "16px", // Reduce font size for long values
                     }}
                   >
                     {item.value}
@@ -302,76 +307,132 @@ const SuperAdminDashboard = () => {
 
         {/* Revenue Contribution - Right Side */}
         <Col xs={24} md={10}>
-  <div style={{ fontSize: "20px", fontWeight: 600, marginBottom: "26px", color: "#262626", marginLeft: "90px" }}>
-    Revenue Contribution
-  </div>
-  
-  {/* First 3 Items */}
-  <div style={{ marginLeft: "90px", marginBottom: "16px", fontWeight: 500 }}>
-    Top Categories
-  </div>
-  <Row gutter={[8, 8]} style={{ marginBottom: "24px" }}>
-    {revenueContributionData.slice(0, 3).map((item, index) => (
-      <Col xs={12} sm={6} md={6} key={`top-${index}`}>
-        <Card
-          style={{
-            textAlign: "center",
-            backgroundColor: item.bgColor,
-            borderRadius: "8px",
-            border: "1px solid #f0f0f0",
-            height: "100px",
-            width: "100%",
-            marginLeft: "90px",
-          }}
-          bodyStyle={{
-            padding: "8px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            height: "100%",
-          }}
-        >
-          <div style={{ fontSize: "20px", marginBottom: "4px" }}>{item.icon}</div>
-          <div style={{ fontSize: "12px", color: "#8c8c8c", marginBottom: "4px" }}>{item.title}</div>
-          <div style={{ fontSize: "14px", fontWeight: "bold", color: "#262626" }}>{item.value}</div>
-        </Card>
-      </Col>
-    ))}
-  </Row>
-  
-  {/* Last 3 Items */}
-  <div style={{ marginLeft: "90px", marginBottom: "16px", fontWeight: 500 }}>
-    Other Categories
-  </div>
-  <Row gutter={[8, 8]}>
-    {revenueContributionData.slice(-3).map((item, index) => (
-      <Col xs={12} sm={6} md={6} key={`bottom-${index}`}>
-        <Card
-          style={{
-            textAlign: "center",
-            backgroundColor: item.bgColor,
-            borderRadius: "8px",
-            border: "1px solid #f0f0f0",
-            height: "100px",
-            width: "100%",
-            marginLeft: "90px",
-          }}
-          bodyStyle={{
-            padding: "8px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            height: "100%",
-          }}
-        >
-          <div style={{ fontSize: "20px", marginBottom: "4px" }}>{item.icon}</div>
-          <div style={{ fontSize: "12px", color: "#8c8c8c", marginBottom: "4px" }}>{item.title}</div>
-          <div style={{ fontSize: "14px", fontWeight: "bold", color: "#262626" }}>{item.value}</div>
-        </Card>
-      </Col>
-    ))}
-  </Row>
-</Col>
+          <div
+            style={{
+              fontSize: "20px",
+              fontWeight: 600,
+              marginBottom: "26px",
+              color: "#262626",
+              marginLeft: "90px",
+            }}
+          >
+            Revenue Contribution
+          </div>
+
+          {/* First 3 Items */}
+          <div
+            style={{
+              marginLeft: "90px",
+              marginBottom: "16px",
+              fontWeight: 500,
+            }}
+          >
+            Top Categories
+          </div>
+          <Row gutter={[8, 8]} style={{ marginBottom: "24px" }}>
+            {revenueContributionData.slice(0, 3).map((item, index) => (
+              <Col xs={12} sm={6} md={6} key={`top-${index}`}>
+                <Card
+                  style={{
+                    textAlign: "center",
+                    backgroundColor: item.bgColor,
+                    borderRadius: "8px",
+                    border: "1px solid #f0f0f0",
+                    height: "100px",
+                    width: "100%",
+                    marginLeft: "90px",
+                  }}
+                  bodyStyle={{
+                    padding: "8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
+                >
+                  <div style={{ fontSize: "20px", marginBottom: "4px" }}>
+                    {item.icon}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#8c8c8c",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {item.title}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      color: "#262626",
+                    }}
+                  >
+                    {item.value}
+                  </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+
+          {/* Last 3 Items */}
+          <div
+            style={{
+              marginLeft: "90px",
+              marginBottom: "16px",
+              fontWeight: 500,
+            }}
+          >
+            Other Categories
+          </div>
+          <Row gutter={[8, 8]}>
+            {revenueContributionData.slice(-3).map((item, index) => (
+              <Col xs={12} sm={6} md={6} key={`bottom-${index}`}>
+                <Card
+                  style={{
+                    textAlign: "center",
+                    backgroundColor: item.bgColor,
+                    borderRadius: "8px",
+                    border: "1px solid #f0f0f0",
+                    height: "100px",
+                    width: "100%",
+                    marginLeft: "90px",
+                  }}
+                  bodyStyle={{
+                    padding: "8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
+                >
+                  <div style={{ fontSize: "20px", marginBottom: "4px" }}>
+                    {item.icon}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#8c8c8c",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {item.title}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      color: "#262626",
+                    }}
+                  >
+                    {item.value}
+                  </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Col>
       </Row>
 
       {/* Second Row: Approval Requests, User Metrics, Consultation Stats */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -26,7 +26,6 @@ import {
   IdcardOutlined,
   EnvironmentOutlined,
   DollarOutlined,
-  HomeOutlined,
   VideoCameraOutlined,
   CarOutlined,
   EyeOutlined,
@@ -52,12 +51,13 @@ const DoctorProfileView = () => {
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [reason, setReason] = useState("");
+  const [clinics, setClinics] = useState([]); // New state for clinics
   const location = useLocation();
   const navigate = useNavigate();
 
   const { userId, doctorId, statusFilter } = location.state || {};
 
-  // Fetch doctor details from API
+  // Fetch doctor details and clinics from API
   const fetchDoctorDetails = async () => {
     if (!doctorId || !userId) {
       message.error("No doctor ID provided.");
@@ -101,13 +101,38 @@ const DoctorProfileView = () => {
       // Fetch KYC details
       const kycResponse = await apiGet(`users/getKycByUserId?userId=${userId}`);
       const kycData = kycResponse.data;
-      console.log("kycdataaaaaa", kycData);
 
       if (kycData.status !== "success") {
         throw new Error("Failed to fetch KYC details.");
       }
 
-      // Normalize doctor data with KYC details only if kycData.data is not null
+      // Fetch clinic addresses
+      const clinicResponse = await apiGet(
+        `/users/getClinicAddress?doctorId=${doctorId}`
+      );
+      const clinicData = clinicResponse.data;
+
+      let activeClinics = [];
+      if (clinicData.status === "success") {
+        activeClinics = clinicData.data
+          .filter(
+            (address) =>
+              address.type === "Clinic" &&
+              address.status?.toLowerCase() === "active"
+          )
+          .map((address) => ({
+            label: address.clinicName,
+            value: address.addressId,
+            address: address.location,
+            startTime: address.startTime,
+            endTime: address.endTime,
+          }));
+      } else {
+        toast.error("No clinics found for the doctor.");
+      }
+      setClinics(activeClinics);
+
+      // Normalize doctor data with KYC details
       const kycDetails = kycData.data
         ? {
             panNumber: kycData.data.pan?.number || "N/A",
@@ -146,9 +171,6 @@ const DoctorProfileView = () => {
         DOB: doctor.DOB || "N/A",
         bloodgroup: doctor.bloodgroup || "N/A",
         maritalStatus: doctor.maritalStatus || "N/A",
-        workingLocations: Array.isArray(doctor.workingLocations)
-          ? doctor.workingLocations
-          : [],
         bankDetails: doctor.bankDetails || {},
         kycDetails: kycDetails,
         certifications: Array.isArray(doctor.certifications)
@@ -158,14 +180,16 @@ const DoctorProfileView = () => {
         isVerified: doctor.isVerified || false,
       });
     } catch (error) {
-      console.error("Error fetching doctor or KYC details:", error);
-      message.error("Failed to fetch doctor or KYC details. Please try again.");
+      console.error("Error fetching doctor, KYC, or clinic details:", error);
+      message.error(
+        "Failed to fetch doctor, KYC, or clinic details. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch doctor details on component mount
+  // Fetch doctor details and clinics on component mount
   useEffect(() => {
     fetchDoctorDetails();
   }, []);
@@ -216,10 +240,7 @@ const DoctorProfileView = () => {
         body.rejectionReason = reason;
       }
 
-      const response = await apiPut(
-        "/admin/approveDoctor",
-        JSON.stringify(body)
-      );
+      const response = await apiPut("/admin/approveDoctor", JSON.stringify(body));
 
       if (response?.data?.status === "success") {
         if (newStatus === "active") {
@@ -597,7 +618,7 @@ const DoctorProfileView = () => {
             </Card>
           </Col>
 
-          {/* Working Locations */}
+          {/* Clinics */}
           <Col xs={24} lg={12}>
             <Card
               title={
@@ -614,7 +635,7 @@ const DoctorProfileView = () => {
                   <EnvironmentOutlined
                     style={{ marginRight: "8px", color: "#3b82f6" }}
                   />
-                  Working Locations
+                  Clinics
                 </div>
               }
               style={{
@@ -628,48 +649,62 @@ const DoctorProfileView = () => {
               }}
               bodyStyle={{ padding: "20px" }}
             >
-              {doctorData.workingLocations.map((location, index) => (
-                <div
-                  key={index}
-                  style={{
-                    marginBottom:
-                      index < doctorData.workingLocations.length - 1
-                        ? "16px"
-                        : "0",
-                    padding: "16px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    backgroundColor: "#ffffff",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start" }}>
-                    <EnvironmentOutlined
-                      style={{
-                        color: "#3b82f6",
-                        fontSize: "16px",
-                        marginRight: "12px",
-                        marginTop: "2px",
-                      }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <Text
-                        strong
+              {clinics.length > 0 ? (
+                clinics.map((clinic, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      marginBottom:
+                        index < clinics.length - 1 ? "16px" : "0",
+                      padding: "16px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      backgroundColor: "#ffffff",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start" }}>
+                      <EnvironmentOutlined
                         style={{
-                          fontSize: "14px",
-                          color: "#374151",
-                          display: "block",
-                          marginBottom: "4px",
+                          color: "#3b82f6",
+                          fontSize: "16px",
+                          marginRight: "12px",
+                          marginTop: "2px",
                         }}
-                      >
-                        {location.name || "N/A"}
-                      </Text>
-                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                        {location.address || "N/A"}
-                      </Text>
+                      />
+                      <div style={{ flex: 1 }}>
+                        <Text
+                          strong
+                          style={{
+                            fontSize: "14px",
+                            color: "#374151",
+                            display: "block",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          {clinic.label || "N/A"}
+                        </Text>
+                        <Text style={{ fontSize: "12px", color: "#6b7280" }}>
+                          {clinic.address || "N/A"}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          Operating Hours: {clinic.startTime} - {clinic.endTime}
+                        </Text>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <Text style={{ fontSize: "14px", color: "#6b7280" }}>
+                  No active clinics found for this doctor.
+                </Text>
+              )}
             </Card>
           </Col>
 
@@ -764,7 +799,9 @@ const DoctorProfileView = () => {
                 <Text
                   style={{
                     fontSize: "14px",
-                    color: doctorData.kycDetails.kycVerified ? "#16a34a" : "#dc2626",
+                    color: doctorData.kycDetails.kycVerified
+                      ? "#16a34a"
+                      : "#dc2626",
                     marginLeft: "8px",
                   }}
                 >
