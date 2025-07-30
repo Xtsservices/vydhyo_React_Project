@@ -3,7 +3,7 @@ import "./App.css";
 import { useEffect, useRef } from "react";
 import { apiGet } from "./components/api";
 import { useDispatch, useSelector } from "react-redux";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 const App = () => {
   const dispatch = useDispatch();
@@ -20,6 +20,19 @@ const getToken = () => localStorage.getItem("accessToken");
       const userData = response.data?.data;
       console.log("userDatafrom app.jsx",userData)
       if (userData) {
+        //fetch current DoctorData
+  const doctorId = userData?.role === "doctor" ? userData?.userId : userData?.createdBy;
+
+         const response = await apiGet(`/users/getUser?userId=${doctorId}`);
+                const docData = response.data?.data;
+          console.log(docData, "userdetais")
+          
+
+           dispatch({
+          type: "doctorData",
+          payload: docData,
+        });
+
         dispatch({
           type: "currentUserData",
           payload: userData,

@@ -2,18 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { User } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import '../../stylings/EPrescription.css';
-import {apiGet} from "../../api"
+import { apiGet } from "../../api"
 
 const DoctorClinicInfo = ({ formData, updateFormData }) => {
   const user = useSelector((state) => state.currentUserData);
+  const doctorData = useSelector((state) => state.doctorData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  const [selectedClinic, setSelectedClinic] = useState(null)
+  console.log("doctorDataloop", doctorData)
 
-  console.log("user data123==========",doctorId)
-  // Get only active clinic addresses
-const [allClinics, setAllClinics] = useState()
- const [doctorData, setDoctorData] = useState(null);
-  
-  
   const [localData, setLocalData] = useState({
     doctorId: doctorId,
     selectedClinicId: '',
@@ -22,43 +19,34 @@ const [allClinics, setAllClinics] = useState()
     appointmentEndTime: ''
   });
 
-   const fetchDoctorData = async () => {
-      console.log(doctorId, "curetnuserid")
-      try {
-        const response = await apiGet(`/users/getUser?userId=${doctorId}`);
-        const userData = response.data?.data;
-  console.log(userData, "userdetais")
-        if (userData) {
-            setDoctorData(userData);
-  const allClinics = (userData?.addresses?.filter(address => 
-    address.type === "Clinic" && address.status === "Active"
-  ) || []);
 
-  setAllClinics(allClinics)
-        }
-      } catch (error) {
-        console.error("Error fetching doctor data:", error);
-       
-      } 
-    };
 
-  
+  function getAllClinic() {
+    const allClinics = (doctorData?.addresses?.filter(address =>
+      address.type === "Clinic" && address.status === "Active"
+    ) || []);
+    console.log("allClinicsloop", allClinics)
+    console.log("doctorData", doctorData)
+    return allClinics
+  }
+
 
   useEffect(() => {
-
-fetchDoctorData()
     if (formData && Object.keys(formData).length > 0) {
       setLocalData(formData);
     } else if (user) {
+
+      const allClinics = getAllClinic()
+
       const currentDate = new Date();
       const formattedDate = currentDate.toISOString().split('T')[0];
- const sourceData = user?.role === "doctor" ? user : doctorData;
+      const sourceData = user?.role === "doctor" ? user : doctorData;
       const initialData = {
         doctorId: doctorId,
         appointmentDate: formattedDate,
         appointmentStartTime: '',
         appointmentEndTime: '',
-         doctorName: sourceData ? `${sourceData.firstname || ''} ${sourceData.lastname || ''}` : '',
+        doctorName: sourceData ? `${sourceData.firstname || ''} ${sourceData.lastname || ''}` : '',
         qualifications: sourceData?.specialization?.degree || '',
         specialization: sourceData?.specialization?.name?.trim() || '',
       };
@@ -73,35 +61,36 @@ fetchDoctorData()
       setLocalData(initialData);
       updateFormData(initialData);
     }
-    
-  }, [user, formData]);
 
-  console.log("allClinics====", allClinics)
+  }, [user, doctorData, formData]);
+
 
   // In DoctorClinicInfo component
-const handleClinicChange = (clinicId) => {
-  const selectedClinic = allClinics.find(clinic => clinic.addressId === clinicId);
-  const updatedData = {
-    ...localData,
-    selectedClinicId: clinicId,
-    appointmentStartTime: selectedClinic?.startTime || '',
-    appointmentEndTime: selectedClinic?.endTime || '',
-    // Add these fields to match preview expectations
-    doctorName: `${user?.firstname || ''} ${user?.lastname || ''}`,
-    qualifications: user?.specialization?.degree || '',
-    specialization: user?.specialization?.name?.trim() || '',
-    clinicAddress: selectedClinic?.address || '',
-    contactNumber: selectedClinic?.mobile || user?.mobile || '',
-    city: selectedClinic?.city || '',
-    pincode: selectedClinic?.pincode || ''
+  const handleClinicChange = (clinicId) => {
+    const allClinics = getAllClinic()
+
+    const selectedClinic = allClinics.find(clinic => clinic.addressId === clinicId);
+    const updatedData = {
+      ...localData,
+      selectedClinicId: clinicId,
+      appointmentStartTime: selectedClinic?.startTime || '',
+      appointmentEndTime: selectedClinic?.endTime || '',
+      // Add these fields to match preview expectations
+      doctorName: `${user?.firstname || ''} ${user?.lastname || ''}`,
+      qualifications: user?.specialization?.degree || '',
+      specialization: user?.specialization?.name?.trim() || '',
+      clinicAddress: selectedClinic?.address || '',
+      contactNumber: selectedClinic?.mobile || user?.mobile || '',
+      city: selectedClinic?.city || '',
+      pincode: selectedClinic?.pincode || ''
+    };
+    setLocalData(updatedData);
+    updateFormData(updatedData);
   };
-  setLocalData(updatedData);
-  updateFormData(updatedData);
-};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'selectedClinicId') {
       handleClinicChange(value);
     } else {
@@ -115,9 +104,13 @@ const handleClinicChange = (clinicId) => {
   };
 
   // Get the selected clinic for display purposes
-  const selectedClinic = allClinics?.find(clinic => clinic.addressId === localData.selectedClinicId);
+  useEffect(() => {
+    const allClinics = getAllClinic()
+    const selectedClinicdata = allClinics?.find(clinic => clinic.addressId === localData.selectedClinicId);
+    setSelectedClinic(selectedClinicdata)
+  }, [doctorData, localData, formData, updateFormData])
 
-  console.log("local====", localData)
+
   return (
     <div className="doctor-clinic-container">
       {/* Header */}
@@ -129,7 +122,7 @@ const handleClinicChange = (clinicId) => {
           <h2 className="doctor-clinic-title">Consulting Physician</h2>
         </div>
       </div>
-      
+
       {/* Form Content */}
       <div className="doctor-clinic-form">
         <div className="doctor-clinic-grid">
@@ -144,7 +137,7 @@ const handleClinicChange = (clinicId) => {
               readOnly
             />
           </div>
-          
+
           <div>
             <label className="doctor-clinic-label">
               Qualifications
@@ -156,7 +149,7 @@ const handleClinicChange = (clinicId) => {
               readOnly
             />
           </div>
-          
+
           <div>
             <label className="doctor-clinic-label">
               Specialization
@@ -168,7 +161,7 @@ const handleClinicChange = (clinicId) => {
               readOnly
             />
           </div>
-          
+
           {/* <div>
             <label className="doctor-clinic-label">
               Clinic Name
@@ -188,7 +181,7 @@ const handleClinicChange = (clinicId) => {
             </select>
           </div> */}
 
-           <div>
+          <div>
             <label className="doctor-clinic-label">Clinic Name</label>
             <input
               type="text"
@@ -197,7 +190,7 @@ const handleClinicChange = (clinicId) => {
               readOnly
             />
           </div>
-          
+
           <div style={{ gridColumn: '1 / -1' }}>
             <label className="doctor-clinic-label">
               Clinic Address
@@ -210,7 +203,7 @@ const handleClinicChange = (clinicId) => {
               readOnly
             />
           </div>
-          
+
           <div>
             <label className="doctor-clinic-label">
               City
@@ -222,7 +215,7 @@ const handleClinicChange = (clinicId) => {
               readOnly
             />
           </div>
-          
+
           <div>
             <label className="doctor-clinic-label">
               Pincode
@@ -234,7 +227,7 @@ const handleClinicChange = (clinicId) => {
               readOnly
             />
           </div>
-          
+
           <div>
             <label className="doctor-clinic-label">
               Contact Number
@@ -246,7 +239,7 @@ const handleClinicChange = (clinicId) => {
               readOnly
             />
           </div>
-          
+
           <div>
             <label className="doctor-clinic-label">
               Appointment Date
@@ -257,10 +250,10 @@ const handleClinicChange = (clinicId) => {
               value={localData.appointmentDate}
               onChange={handleChange}
               className="doctor-clinic-input"
-               readOnly
+              readOnly
             />
           </div>
-          
+
           <div>
             <label className="doctor-clinic-label">
               Appointment Start Time
@@ -271,7 +264,7 @@ const handleClinicChange = (clinicId) => {
               value={localData.appointmentStartTime}
               onChange={handleChange}
               className="doctor-clinic-input"
-               readOnly
+              readOnly
             />
           </div>
 

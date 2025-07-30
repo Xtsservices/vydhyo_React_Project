@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Table,
   Card,
@@ -21,6 +21,8 @@ const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
 const LabPatientManagement = ({ status, updateCount, searchValue }) => {
+  const hasfetchRevenueCount = useRef(false);
+  
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [patients, setPatients] = useState([]);
@@ -225,7 +227,8 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
   };
 
   useEffect(() => {
-    if (doctorId && user) {
+    if (doctorId && user && !hasfetchRevenueCount.current) {
+      hasfetchRevenueCount.current = true
       getAllTestsPatientsByDoctorID();
     }
   }, [user, doctorId, status, searchValue]); // Trigger API on tab change (status change)

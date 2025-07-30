@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState,useCallback, } from "react";
+import React, { use, useEffect, useState,useCallback, useRef, } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -45,6 +45,7 @@ const { Option } = Select;
 const Appointment = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.currentUserData);
+    const hasgetAppointments = useRef(false);
 
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
@@ -327,8 +328,10 @@ getAppointments();
   
 
   useEffect(() => {
-    if (user && doctorId) { 
+    if (user && doctorId && !hasgetAppointments.current) {
+      getAppointments();
       getAppointmentsCount();
+      hasgetAppointments.current = true
     }
   }, [user, doctorId]);
 
