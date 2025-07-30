@@ -229,10 +229,10 @@ const EPrescription = () => {
   };
 
   useEffect(() => {
-    if (formData?.doctorInfo?.doctorId) {
+    if (doctorId) {
       getCurrentUserData();
     }
-  }, [formData?.doctorInfo?.doctorId]);
+  }, [doctorId]);
 
   function transformEprescriptionData(formData) {
     const { doctorInfo, patientInfo, vitals, diagnosis, advice } = formData;

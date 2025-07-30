@@ -257,7 +257,7 @@ const SuperAdminDashboard = () => {
 
           <Row gutter={[8, 8]}>
             {revenueSnapshotData(apiData).map((item, index) => (
-              <Col xs={24} sm={12} md={6} key={index}>
+              <Col xs={24} sm={12} md={8} key={index}>
                 <Card
                   style={{
                     textAlign: "center",
@@ -302,62 +302,76 @@ const SuperAdminDashboard = () => {
 
         {/* Revenue Contribution - Right Side */}
         <Col xs={24} md={10}>
-          <div
-            style={{
-              fontSize: "20px",
-              fontWeight: 600,
-              marginBottom: "26px",
-              color: "#262626",
-            }}
-          >
-            Revenue Contribution
-          </div>
-          <Row gutter={[8, 8]}>
-            {revenueContributionData.map((item, index) => (
-              <Col xs={12} sm={6} md={6} key={index}>
-                <Card
-                  style={{
-                    textAlign: "center",
-                    backgroundColor: item.bgColor,
-                    borderRadius: "8px",
-                    border: "1px solid #f0f0f0",
-                    height: "100px",
-                    width: "100%",
-                  }}
-                  bodyStyle={{
-                    padding: "8px",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    height: "100%",
-                  }}
-                >
-                  <div style={{ fontSize: "20px", marginBottom: "4px" }}>
-                    {item.icon}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#8c8c8c",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {item.title}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: "bold",
-                      color: "#262626",
-                    }}
-                  >
-                    {item.value}
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Col>
+  <div style={{ fontSize: "20px", fontWeight: 600, marginBottom: "26px", color: "#262626", marginLeft: "90px" }}>
+    Revenue Contribution
+  </div>
+  
+  {/* First 3 Items */}
+  <div style={{ marginLeft: "90px", marginBottom: "16px", fontWeight: 500 }}>
+    Top Categories
+  </div>
+  <Row gutter={[8, 8]} style={{ marginBottom: "24px" }}>
+    {revenueContributionData.slice(0, 3).map((item, index) => (
+      <Col xs={12} sm={6} md={6} key={`top-${index}`}>
+        <Card
+          style={{
+            textAlign: "center",
+            backgroundColor: item.bgColor,
+            borderRadius: "8px",
+            border: "1px solid #f0f0f0",
+            height: "100px",
+            width: "100%",
+            marginLeft: "90px",
+          }}
+          bodyStyle={{
+            padding: "8px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            height: "100%",
+          }}
+        >
+          <div style={{ fontSize: "20px", marginBottom: "4px" }}>{item.icon}</div>
+          <div style={{ fontSize: "12px", color: "#8c8c8c", marginBottom: "4px" }}>{item.title}</div>
+          <div style={{ fontSize: "14px", fontWeight: "bold", color: "#262626" }}>{item.value}</div>
+        </Card>
+      </Col>
+    ))}
+  </Row>
+  
+  {/* Last 3 Items */}
+  <div style={{ marginLeft: "90px", marginBottom: "16px", fontWeight: 500 }}>
+    Other Categories
+  </div>
+  <Row gutter={[8, 8]}>
+    {revenueContributionData.slice(-3).map((item, index) => (
+      <Col xs={12} sm={6} md={6} key={`bottom-${index}`}>
+        <Card
+          style={{
+            textAlign: "center",
+            backgroundColor: item.bgColor,
+            borderRadius: "8px",
+            border: "1px solid #f0f0f0",
+            height: "100px",
+            width: "100%",
+            marginLeft: "90px",
+          }}
+          bodyStyle={{
+            padding: "8px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            height: "100%",
+          }}
+        >
+          <div style={{ fontSize: "20px", marginBottom: "4px" }}>{item.icon}</div>
+          <div style={{ fontSize: "12px", color: "#8c8c8c", marginBottom: "4px" }}>{item.title}</div>
+          <div style={{ fontSize: "14px", fontWeight: "bold", color: "#262626" }}>{item.value}</div>
+        </Card>
+      </Col>
+    ))}
+  </Row>
+</Col>
       </Row>
 
       {/* Second Row: Approval Requests, User Metrics, Consultation Stats */}
