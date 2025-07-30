@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
   Button,
@@ -13,29 +13,24 @@ import {
   message,
   Card,
   Typography,
-  Tooltip,
   Row,
   Col,
   Input,
-  DatePicker,
-  Select,
 } from "antd";
 import {
   EyeOutlined,
   UserOutlined,
   ReloadOutlined,
-  TeamOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
   CheckCircleOutlined,
   SearchOutlined,
-  CalendarOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
 import { apiGet } from "../../api";
+import _ from "lodash"; // Import lodash for debounce
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 // Constants
 const DEFAULT_PAGE_SIZE = 10;
@@ -54,9 +49,11 @@ const DoctorOnboardingDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [totalDoctors, setTotalDoctors] = useState(0);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: DEFAULT_PAGE_SIZE,
+    total: 0,
+  });
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("inActive");
   const [summaryStats, setSummaryStats] = useState({
@@ -65,6 +62,9 @@ const DoctorOnboardingDashboard = () => {
     approved: 0,
   });
   const { userId, doctorId } = location.state || {};
+
+  // Ref to track component mount state
+  const isMounted = useRef(true);
 
   // Fetch doctors count from API
   const fetchDoctorsCount = useCallback(async () => {
@@ -82,15 +82,19 @@ const DoctorOnboardingDashboard = () => {
         },
       });
 
-      const data = response.data.data;
-      setSummaryStats({
-        pending: data.inActive || 0,
-        rejected: data.rejected || 0,
-        approved: data.approved || 0,
-      });
+      if (isMounted.current) {
+        const data = response.data.data;
+        setSummaryStats({
+          pending: data.inActive || 0,
+          rejected: data.rejected || 0,
+          approved: data.approved || 0,
+        });
+      }
     } catch (error) {
-      console.error("Error fetching doctors count:", error);
-      message.error("Failed to fetch doctors count. Please try again.");
+      if (isMounted.current) {
+        console.error("Error fetching doctors count:", error);
+        message.error("Failed to fetch doctors count. Please try again.");
+      }
     }
   }, [navigate]);
 
@@ -104,56 +108,72 @@ const DoctorOnboardingDashboard = () => {
         navigate("/login");
         return;
       }
-      const response = await apiGet(
-        `users/AllUsers?type=doctor&page=${currentPage}&limit=${pageSize}&status=${statusFilter}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const { data, pagination } = response.data;
-      let doctorsData = Array.isArray(data) ? data : [];
+      const queryParams = new URLSearchParams({
+        type: "doctor",
+        page: pagination.current,
+        limit: pagination.pageSize,
+        status: statusFilter,
+        ...(searchText.trim() && { search: searchText.trim() }),
+      });
+      const response = await apiGet(`users/AllUsers?${queryParams.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (isMounted.current) {
+        const { data, pagination: apiPagination } = response.data;
+        let doctorsData = Array.isArray(data) ? data : [];
 
-      setTotalDoctors(pagination?.total || doctorsData.length);
+        setPagination((prev) => ({
+          ...prev,
+          total: apiPagination?.total || doctorsData.length,
+        }));
 
-      doctorsData = doctorsData.map((doctor) => ({
-        ...doctor,
-        key: doctor._id,
-        firstname: doctor.firstname || "N/A",
-        lastname: doctor.lastname || "",
-      }));
+        doctorsData = doctorsData.map((doctor) => ({
+          ...doctor,
+          key: doctor._id,
+          firstname: doctor.firstname || "N/A",
+          lastname: doctor.lastname || "",
+        }));
 
-      setDoctors(doctorsData);
+        setDoctors(doctorsData);
+      }
     } catch (error) {
-      message.error("Failed to fetch doctors data. Please try again.");
+      if (isMounted.current) {
+        message.error("Failed to fetch doctors data. Please try again.");
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
-  }, [navigate, currentPage, pageSize, statusFilter]);
+  }, [navigate, pagination.current, pagination.pageSize, statusFilter, searchText]);
 
-  // Fetch doctors and count on component mount and when dependencies change
+  // Debounced fetchDoctors using useRef to persist the function
+  const debouncedFetchDoctorsRef = useRef(
+    _.debounce((fetchFn) => fetchFn(), 500)
+  );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      debouncedFetchDoctorsRef.current.cancel();
+    };
+  }, []);
+
+  // Fetch doctors and count on mount and when dependencies change
   useEffect(() => {
     fetchDoctors();
     fetchDoctorsCount();
-  }, [fetchDoctors, fetchDoctorsCount]);
+  }, [fetchDoctors, fetchDoctorsCount, statusFilter, pagination.current, pagination.pageSize]);
 
-  // Filter doctors based on search
-  const filteredDoctors = useMemo(() => {
-    return doctors.filter((doctor) => {
-      const searchTextLower = searchText.toLowerCase();
-
-      const matchesSearch =
-        doctor.firstname?.toLowerCase()?.includes(searchTextLower) ||
-        doctor.lastname?.toLowerCase()?.includes(searchTextLower) ||
-        doctor.email?.toLowerCase()?.includes(searchTextLower) ||
-        doctor.mobile?.toString()?.includes(searchTextLower) ||
-        false;
-
-      return matchesSearch;
-    });
-  }, [doctors, searchText]);
+  // Trigger debounced fetch when searchText changes
+  useEffect(() => {
+    debouncedFetchDoctorsRef.current(fetchDoctors);
+  }, [searchText, fetchDoctors]);
 
   // Utility functions
   const getImageSrc = useCallback((profilepic) => {
@@ -175,7 +195,7 @@ const DoctorOnboardingDashboard = () => {
   };
 
   const handleRefresh = useCallback(() => {
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, current: 1 }));
     fetchDoctors();
     fetchDoctorsCount();
   }, [fetchDoctors, fetchDoctorsCount]);
@@ -196,7 +216,8 @@ const DoctorOnboardingDashboard = () => {
         title: "#",
         key: "index",
         width: 50,
-        render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
+        render: (_, __, index) =>
+          (pagination.current - 1) * pagination.pageSize + index + 1,
       },
       {
         title: "Doctor",
@@ -244,7 +265,7 @@ const DoctorOnboardingDashboard = () => {
         dataIndex: "mobile",
         key: "mobile",
         width: 120,
-        render: (text) => <Text>{text}</Text>,
+        render: (text) => <Text>{text || "N/A"}</Text>,
       },
       {
         title: "Specialty",
@@ -329,12 +350,17 @@ const DoctorOnboardingDashboard = () => {
         ),
       },
     ],
-    [currentPage, pageSize, getImageSrc, handleViewProfile, formatDate]
+    [pagination.current, pagination.pageSize, getImageSrc, handleViewProfile, formatDate]
   );
 
   const handleCardClick = (status) => {
     setStatusFilter(status);
-    setCurrentPage(1); // Reset to first page when filter changes
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchText(e.target.value);
+    setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
   return (
@@ -544,10 +570,11 @@ const DoctorOnboardingDashboard = () => {
       <Row style={{ marginBottom: "clamp(16px, 2vw, 24px)" }}>
         <Col xs={24}>
           <Input
-            placeholder="Search by name or mobile number..."
+            placeholder="Search by first name, last name, or mobile number..."
             prefix={<SearchOutlined />}
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            onChange={handleSearchChange}
+            allowClear
             style={{
               borderRadius: "12px",
               maxWidth: "clamp(300px, 50vw, 400px)",
@@ -606,13 +633,17 @@ const DoctorOnboardingDashboard = () => {
           columns={columns}
           dataSource={doctors}
           pagination={{
-            current: currentPage,
-            pageSize: pageSize,
-            total: totalDoctors,
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
             showSizeChanger: true,
+            pageSizeOptions: ["10", "20", "50"],
             onChange: (page, size) => {
-              setCurrentPage(page);
-              setPageSize(size);
+              setPagination((prev) => ({
+                ...prev,
+                current: page,
+                pageSize: size,
+              }));
             },
             showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} items`,
