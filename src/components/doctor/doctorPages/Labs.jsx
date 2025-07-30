@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Input, Tabs, Card, Avatar, Space, Typography, Row, Col } from "antd";
 import { SearchOutlined, UserOutlined, TeamOutlined } from "@ant-design/icons";
 import TestManagement from "./TestManagement";
@@ -14,6 +14,8 @@ const Labs = () => {
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [cardsData, setCardsData] = useState();
   const [searchValue, setSearchValue] = useState("");
+  const hasfetchRevenueCount = useRef(false);
+  
 
 
   async function fetchRevenueCount() {
@@ -29,7 +31,8 @@ const Labs = () => {
   }
 
   useEffect(() => {
-    if ((user, doctorId)) {
+    if (user && doctorId && !hasfetchRevenueCount.current) {
+      hasfetchRevenueCount.current = true
       fetchRevenueCount();
     }
   }, [user, doctorId]);

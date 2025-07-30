@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Table,
   Typography,
@@ -26,6 +26,8 @@ const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
 const PatientsTab = ({ status, updateCount, searchQuery }) => {
+      const hasfetchClinics = useRef(false);
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(4);
   const [loading, setLoading] = useState(false);
@@ -430,7 +432,8 @@ const PatientsTab = ({ status, updateCount, searchQuery }) => {
   ];
 
   useEffect(() => {
-    if (doctorId) {
+    if (doctorId && !hasfetchClinics.current) {
+      hasfetchClinics.current = true
       fetchPharmacyPatients();
     }
   }, [doctorId, searchQuery]); // Added searchQuery to dependencies

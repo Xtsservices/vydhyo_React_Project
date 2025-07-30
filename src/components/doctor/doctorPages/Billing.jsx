@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
 import DownloadTaxInvoice from "../../Models/DownloadTaxInvoice";
@@ -106,6 +106,8 @@ const transformPatientData = (result, user) => {
 };
 
 const BillingSystem = () => {
+  const hasfetchPatients = useRef(false)
+  
   const [patients, setPatients] = useState([]);
   const [expandedPatients, setExpandedPatients] = useState({});
   const [billingCompleted, setBillingCompleted] = useState({});
@@ -167,7 +169,8 @@ const BillingSystem = () => {
 
   useEffect(() => {
     console.log("useEffect triggered - user:", user, "doctorId:", doctorId);
-    if (user && doctorId) {
+    if (user && doctorId && !hasfetchPatients.current) {
+      hasfetchPatients.current = true
       fetchPatients();
     } else {
       setLoading(false);

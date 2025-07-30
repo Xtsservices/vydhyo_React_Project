@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -20,6 +20,8 @@ const { Option } = Select;
 
 const MyPatients = () => {
   const navigate = useNavigate();
+  const hasfetchPatients = useRef(false);
+  
   const user = useSelector((state) => state.currentUserData);
 
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
@@ -54,8 +56,10 @@ const MyPatients = () => {
     return moment().diff(moment(dob, "DD-MM-YYYY"), "years").toString();
   };
 
-  const fetchPatients = useCallback(async () => {
-    setLoading(true);
+
+
+  const fetchPatients = async ()=>{
+ setLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
@@ -129,13 +133,14 @@ const MyPatients = () => {
     } finally {
       setLoading(false);
     }
-  }, [doctorId]);
+  }
 
   useEffect(() => {
-    if (user && doctorId) {
+    if (user && doctorId && !hasfetchPatients.current) {
+      hasfetchPatients.current = true
       fetchPatients();
     }
-  }, [user, doctorId, fetchPatients]);
+  }, [user, doctorId]);
 
   const fetchPrescriptionDetails = useCallback(async (patientId) => {
     setPrescriptionLoading(true);

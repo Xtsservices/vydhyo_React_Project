@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Card, Typography, Button } from "antd";
 import {
   UserOutlined,
@@ -918,6 +918,8 @@ const ClinicAvailability = ({
   setCurrentClinicIndex,
   doctorId,
 }) => {
+    const hasfetchClinics = useRef(false);
+
   const [availableSlots, setAvailableSlots] = useState([]);
   const [nextAvailableSlot, setNextAvailableSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -946,8 +948,9 @@ const ClinicAvailability = ({
       }
     };
 
-    if (doctorId) {
+    if (doctorId && !hasfetchClinics.current) {
       fetchClinics();
+      hasfetchClinics.current = true
     }
   }, [doctorId]);
 
@@ -1533,6 +1536,8 @@ const RevenueSummary = ({ revenueSummaryData }) => (
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
+    const hasFetchedIntialRender = useRef(false);
+  
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [dashboardData, setDashboardData] = useState({
@@ -1788,13 +1793,14 @@ const DoctorDashboard = () => {
   };
 
   useEffect(() => {
-    if (user && doctorId) {
+    if (user && doctorId && !hasFetchedIntialRender.current) {
       getAppointments();
       getTodayAppointmentCount();
+      getRevenueSummary();
+      getTodayRevenue();
+      hasFetchedIntialRender.current = true; // ✅ Prevent future fetch attempt
     }
 
-    getTodayRevenue();
-    getRevenueSummary();
   }, [user, doctorId]);
 
   return (

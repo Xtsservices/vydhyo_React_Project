@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
   Select,
@@ -39,6 +39,7 @@ const { Panel } = Collapse;
 
 const AvailabilityScreen = () => {
   const today = new Date();
+const hasfetchClinicsForDoctor = useRef(false)
 
   const fullWeek = [
     "Monday",
@@ -158,7 +159,8 @@ const AvailabilityScreen = () => {
   };
 
   useEffect(() => {
-    if (doctorId) {
+    if (doctorId && !hasfetchClinicsForDoctor.current) {
+      hasfetchClinicsForDoctor.current = true
       fetchClinicsForDoctor(doctorId);
     }
   }, [doctorId]);
