@@ -560,9 +560,11 @@ getAppointments();
                 <Card className="appointments-card completed-card">
                   <Statistic
                     title="Completed"
+
                     value={
                      completedAppointmentsCount
                     }
+
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>

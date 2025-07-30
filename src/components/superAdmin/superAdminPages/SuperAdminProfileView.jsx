@@ -58,13 +58,10 @@ const DoctorProfileView = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { userId, doctorId } = location.state || {};
+  const { userId, doctorId, statusFilter } = location.state || {};
 
-  console.log("Doctor ID from URL:", doctorId, userId);
   // Fetch doctor details from API
   const fetchDoctorDetails = async () => {
-    console.log("Fetching doctor details for ID:", doctorId);
-    console.log("Fetching doctor details for ID:", !doctorId);
     if (!doctorId || !userId) {
       message.error("No doctor ID provided.");
       navigate("/SuperAdmin/doctor-onboarding");
@@ -79,29 +76,11 @@ const DoctorProfileView = () => {
         navigate("/login");
         return;
       }
+      
+      // Use the statusFilter from location.state instead of hardcoding "approved"
       const response = await apiGet(
-        `users/AllUsers?type=doctor&id=${doctorId}`
+        `users/AllUsers?type=doctor&id=${doctorId}&status=${statusFilter || "all"}`
       );
-
-      // const response = await fetch(
-      //   `${API_BASE_URL}/users/AllUsers?type=doctor&id=${doctorId}`,
-      //   {
-      //     method: "GET",
-      //     headers: {
-      //       Authorization: `Bearer ${token}`,
-      //       "Content-Type": "application/json",
-      //     },
-      //   }
-      // );
-
-      if (!response.statusText) {
-        if (response.status === 401) {
-          message.error("Session expired. Please login again.");
-          navigate("/login");
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
       const data = response.data;
 
@@ -193,10 +172,6 @@ const DoctorProfileView = () => {
     return null;
   };
 
-  if (!doctorData) {
-    return <Spin spinning={loading} tip="Loading doctor details..." />;
-  }
-
   const updateDoctorStatus = async (newStatus) => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -246,9 +221,13 @@ const DoctorProfileView = () => {
       toast.error("An error occurred while updating the status.");
       message.error("An error occurred while updating the status.");
     } finally {
-      setUpdatingStatus(null);
+      setActionLoading(null);
     }
   };
+
+  if (!doctorData) {
+    return <Spin spinning={loading} tip="Loading doctor details..." />;
+  }
 
   return (
     <div

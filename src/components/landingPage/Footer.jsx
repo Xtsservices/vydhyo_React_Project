@@ -104,7 +104,7 @@ const Footer = () => {
                 Newsletter
               </Title>
               <Text style={{ display: "block", marginBottom: 16, fontSize: "1rem", color: "#666" }}>
-                Subscribe & Stay Updated from the Doccure
+                Subscribe & Stay Updated from the Vydhyo
               </Text>
               
               <Space.Compact style={{ width: "100%", marginBottom: 32 }}>
@@ -172,7 +172,7 @@ const Footer = () => {
         >
           <Col xs={24} sm={8} lg={8}>
             <Text style={{ fontSize: "0.95rem" }}>
-              Copyright © 2025 Doccure. All Rights Reserved
+              Copyright © 2025 Vydhyo. All Rights Reserved
             </Text>
           </Col>
           <Col xs={24} sm={8} lg={8}>
