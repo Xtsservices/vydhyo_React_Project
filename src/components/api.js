@@ -12,7 +12,6 @@ const API_BASE_URL = "http://192.168.1.14:3000";
 // const API_BASE_URL = "http://216.10.251.239:3000";
 
 
-
 // Helper to get token from localStorage (or any storage)
 const getToken = () => localStorage.getItem("accessToken");
 
@@ -50,8 +49,11 @@ export const apiPost = (url, data = {}, config = {}) =>
 export const apiPut = (url, data = {}, config = {}) =>
   axiosWithToken.put(url, data, config);
 
-export const apiDelete = (url, config = {}) =>
-  axiosWithToken.delete(url, config);
+export const apiDelete = (url, data = {}, config = {}) =>
+  axiosWithToken.delete(url, {
+    ...config,
+    data, // 👈 explicitly add data field to config
+  });
 
 // CRUD Operations without token
 export const apiGetWithoutToken = (url, config = {}) =>

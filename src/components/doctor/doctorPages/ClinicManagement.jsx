@@ -20,6 +20,7 @@ export default function ClinicManagement() {
     googleMapsApiKey: googleAPI,
     libraries,
   });
+    const hasfetchClinics = useRef(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -98,7 +99,8 @@ export default function ClinicManagement() {
       }
     };
 
-    if (user && doctorId) {
+    if (user && doctorId && !hasfetchClinics.current) {
+      hasfetchClinics.current = true
       fetchClinics();
     }
   }, [user, doctorId]);
