@@ -5,11 +5,11 @@ import axios from "axios";
 
 
 
-// const API_BASE_URL = "http://192.168.1.8:3000";
+const API_BASE_URL = "http://192.168.48.42:3000";
 
 
 
-const API_BASE_URL = "http://216.10.251.239:3000";
+// const API_BASE_URL = "http://216.10.251.239:3000";
 
 
 
@@ -50,8 +50,11 @@ export const apiPost = (url, data = {}, config = {}) =>
 export const apiPut = (url, data = {}, config = {}) =>
   axiosWithToken.put(url, data, config);
 
-export const apiDelete = (url, config = {}) =>
-  axiosWithToken.delete(url, config);
+export const apiDelete = (url, data = {}, config = {}) =>
+  axiosWithToken.delete(url, {
+    ...config,
+    data, // 👈 explicitly add data field to config
+  });
 
 // CRUD Operations without token
 export const apiGetWithoutToken = (url, config = {}) =>
