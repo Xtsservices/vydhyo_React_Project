@@ -154,14 +154,14 @@ const BillingSystem = () => {
         `/receptionist/fetchMyDoctorPatients/${doctorId}?${queryParams.toString()}`,
         { timeout: 10000 }
       );
-      console.log("API Response:", response);
+      console.log("API Response:", response?.data?.pagination);
 
-      if (response.status === 200 && response?.data?.data) {
+      if (response?.status === 200 && response?.data?.data) {
         setPatients(response.data.data.reverse());
         setPagination({
           current: page,
           pageSize: pageSize,
-          total: response.data.totalPages || 0,
+          total: response?.data?.pagination?.totalPages || 0,
         });
         console.log("Patients set:", response.data.data.reverse());
         setLoading(false);
@@ -295,6 +295,8 @@ const BillingSystem = () => {
       toast.error("Failed to process payment. Please try again.");
     }
   };
+
+  console.log(pagination, "setpaginations")
 
   if (loading) {
     return (
@@ -1221,14 +1223,14 @@ const BillingSystem = () => {
               Previous
             </button>
             <span style={{ fontSize: "16px" }}>
-              Page {pagination.current} of {Math.ceil(pagination.total / pagination.pageSize)}
+              Page {pagination.current} of {pagination.total}
             </span>
             <button
               onClick={() => handlePageChange(pagination.current + 1, pagination.pageSize)}
-              disabled={pagination.current >= Math.ceil(pagination.total / pagination.pageSize)}
+              disabled={pagination.current >= pagination.total}
               style={{
                 background:
-                  pagination.current >= Math.ceil(pagination.total / pagination.pageSize)
+                  pagination.current >= pagination.total 
                     ? "#ccc"
                     : "#007bff",
                 color: "white",
@@ -1236,7 +1238,7 @@ const BillingSystem = () => {
                 borderRadius: "4px",
                 padding: "8px 12px",
                 cursor:
-                  pagination.current >= Math.ceil(pagination.total / pagination.pageSize)
+                  pagination.current >= pagination.total 
                     ? "not-allowed"
                     : "pointer",
                 fontSize: "14px",
