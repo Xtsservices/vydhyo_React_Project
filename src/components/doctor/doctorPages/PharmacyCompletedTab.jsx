@@ -8,15 +8,20 @@ import {
   Tag,
   DatePicker,
   Select,
-  Input
+  Input,
+  Card,
+  Popconfirm,
+  message
 } from 'antd';
-import { EyeOutlined, PrinterOutlined, SearchOutlined } from '@ant-design/icons';
+import { EyeOutlined, PrinterOutlined, SearchOutlined, CheckOutlined } from '@ant-design/icons';
+import { apiGet, apiPost } from '../../api';
+import { useSelector } from 'react-redux';
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-const CompletedTab = () => {
+const CompletedTab = ({ searchValue, updateCount }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [completedOrders, setCompletedOrders] = useState([]);
@@ -24,103 +29,57 @@ const CompletedTab = () => {
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [dateRange, setDateRange] = useState([]);
+  const [processingPayment, setProcessingPayment] = useState({});
+  const user = useSelector((state) => state.currentUserData);
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-  // Sample completed orders data - replace with actual API call
-  const sampleCompletedOrders = [
-    {
-      key: '1',
-      orderId: 'ORD-001',
-      patientId: 'P-234512',
-      patientName: 'John Doe',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      phone: '+91 98765XXXXX',
-      medicines: [
-        { name: 'Paracetamol', quantity: 2, price: 5.50 },
-        { name: 'Amoxicillin', quantity: 1, price: 12.75 }
-      ],
-      totalAmount: 23.75,
-      completedDate: '2025-07-01',
-      completedTime: '14:30',
-      status: 'completed',
-      paymentMethod: 'Cash'
-    },
-    {
-      key: '2',
-      orderId: 'ORD-002',
-      patientId: 'P-234513',
-      patientName: 'Sarah Wilson',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b647?w=150&h=150&fit=crop&crop=face',
-      phone: '+91 98765XXXXY',
-      medicines: [
-        { name: 'Ibuprofen', quantity: 1, price: 8.25 },
-        { name: 'Cetirizine', quantity: 1, price: 15.00 }
-      ],
-      totalAmount: 23.25,
-      completedDate: '2025-07-02',
-      completedTime: '10:15',
-      status: 'completed',
-      paymentMethod: 'Card'
-    },
-    {
-      key: '3',
-      orderId: 'ORD-003',
-      patientId: 'P-234514',
-      patientName: 'Michael Chen',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      phone: '+91 98765XXXXZ',
-      medicines: [
-        { name: 'Metformin', quantity: 1, price: 18.50 }
-      ],
-      totalAmount: 18.50,
-      completedDate: '2025-07-03',
-      completedTime: '16:45',
-      status: 'completed',
-      paymentMethod: 'UPI'
-    },
-    {
-      key: '4',
-      orderId: 'ORD-004',
-      patientId: 'P-234515',
-      patientName: 'Emily Johnson',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      phone: '+91 98765XXXXW',
-      medicines: [
-        { name: 'Paracetamol', quantity: 3, price: 5.50 },
-        { name: 'Ibuprofen', quantity: 2, price: 8.25 }
-      ],
-      totalAmount: 33.00,
-      completedDate: '2025-07-04',
-      completedTime: '11:20',
-      status: 'completed',
-      paymentMethod: 'Cash'
-    },
-    {
-      key: '5',
-      orderId: 'ORD-005',
-      patientId: 'P-234516',
-      patientName: 'David Brown',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-      phone: '+91 98765XXXXV',
-      medicines: [
-        { name: 'Amoxicillin', quantity: 2, price: 12.75 },
-        { name: 'Cetirizine', quantity: 1, price: 15.00 }
-      ],
-      totalAmount: 40.50,
-      completedDate: '2025-07-05',
-      completedTime: '09:30',
-      status: 'completed',
-      paymentMethod: 'Card'
+  // Fetch completed orders
+  const fetchCompletedOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await apiGet(
+        `/pharmacy/getCompletedOrders/${doctorId}?searchValue=${searchValue || searchText}`
+      );
+
+      if (response.status === 200 && response.data?.data) {
+        setCompletedOrders(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching completed orders:", error);
+      message.error(error.response?.data?.message || "Failed to load completed orders");
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  // Process payment for an order
+  const handleProcessPayment = async (orderId) => {
+    try {
+      setProcessingPayment(prev => ({ ...prev, [orderId]: true }));
+      
+      const response = await apiPost('/pharmacy/processPayment', {
+        orderId,
+        doctorId
+      });
+
+      if (response.status === 200) {
+        message.success("Payment processed successfully");
+        updateCount();
+        fetchCompletedOrders();
+      }
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      message.error(error.response?.data?.message || "Failed to process payment");
+    } finally {
+      setProcessingPayment(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
 
   useEffect(() => {
-    // Simulate API call
-    setLoading(true);
-    setTimeout(() => {
-      setCompletedOrders(sampleCompletedOrders);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    if (doctorId) {
+      fetchCompletedOrders();
+    }
+  }, [doctorId, searchValue]);
 
   const handleViewDetails = (record) => {
     console.log('View details for:', record);
@@ -145,11 +104,6 @@ const CompletedTab = () => {
       width: 200,
       render: (_, record) => (
         <div className="patient-info">
-          <img 
-            src={record.avatar} 
-            alt={record.patientName}
-            className="patient-avatar"
-          />
           <div>
             <div className="patient-name">{record.patientName}</div>
             <div className="patient-id">{record.patientId}</div>
@@ -187,16 +141,20 @@ const CompletedTab = () => {
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       width: 120,
-      render: (amount) => <span className="amount-cell">₹ {amount.toFixed(2)}</span>,
+      render: (amount) => <span className="amount-cell">₹ {amount?.toFixed(2)}</span>,
     },
     {
-      title: 'Completed Date',
-      key: 'completedDate',
+      title: 'Date',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       width: 140,
-      render: (_, record) => (
+      render: (date) => (
         <div className="date-time-cell">
-          <div className="date">{record.completedDate}</div>
-          <div className="time">{record.completedTime}</div>
+          {new Date(date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })}
         </div>
       ),
     },
@@ -216,16 +174,34 @@ const CompletedTab = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status) => (
-        <Tag color="success">
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </Tag>
-      ),
+      render: (status) => {
+        let color = 'default';
+        let text = status;
+        
+        switch (status) {
+          case 'completed':
+            color = 'green';
+            text = 'Completed';
+            break;
+          case 'pending_payment':
+            color = 'orange';
+            text = 'Pending Payment';
+            break;
+          case 'paid':
+            color = 'blue';
+            text = 'Paid';
+            break;
+          default:
+            color = 'gray';
+        }
+        
+        return <Tag color={color}>{text}</Tag>;
+      },
     },
     {
       title: 'Action',
       key: 'action',
-      width: 120,
+      width: 150,
       render: (_, record) => (
         <Space size="small">
           <Button 
@@ -242,6 +218,24 @@ const CompletedTab = () => {
             size="small"
             title="Print Receipt"
           />
+          {record.status === 'pending_payment' && (
+            <Popconfirm
+              title="Confirm Payment"
+              description={`Process payment of ₹${record.totalAmount?.toFixed(2)}?`}
+              onConfirm={() => handleProcessPayment(record._id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button 
+                type="primary" 
+                size="small"
+                icon={<CheckOutlined />}
+                loading={processingPayment[record._id]}
+              >
+                Process
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -266,9 +260,9 @@ const CompletedTab = () => {
   // Filter data based on search and filters
   const filteredData = completedOrders.filter(order => {
     const matchesSearch = !searchText || 
-      order.patientName.toLowerCase().includes(searchText.toLowerCase()) ||
-      order.orderId.toLowerCase().includes(searchText.toLowerCase()) ||
-      order.phone.includes(searchText);
+      order.patientName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      order.orderId?.toLowerCase().includes(searchText.toLowerCase()) ||
+      order.phone?.includes(searchText);
     
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
     
@@ -282,16 +276,26 @@ const CompletedTab = () => {
     currentPage * pageSize
   );
 
-  if (completedOrders.length === 0 && !loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '40px' }}>
-        <Text type="secondary">No completed orders</Text>
-      </div>
-    );
-  }
-
   return (
-    <>
+    <Card
+      style={{
+        borderRadius: "8px",
+        marginBottom: "24px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+      }}
+    >
+      <Row
+        justify="space-between"
+        align="middle"
+        style={{ marginBottom: "16px" }}
+      >
+        <Col>
+          <Title level={4} style={{ margin: 0, color: "#1A3C6A" }}>
+            Completed Pharmacy Orders
+          </Title>
+        </Col>
+      </Row>
+
       {/* Filters */}
       <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
         <Input
@@ -309,7 +313,8 @@ const CompletedTab = () => {
         >
           <Option value="all">All Status</Option>
           <Option value="completed">Completed</Option>
-          <Option value="refunded">Refunded</Option>
+          <Option value="pending_payment">Pending Payment</Option>
+          <Option value="paid">Paid</Option>
         </Select>
         <RangePicker
           placeholder={['Start Date', 'End Date']}
@@ -325,6 +330,8 @@ const CompletedTab = () => {
         size="middle"
         showHeader={true}
         loading={loading}
+        rowKey="_id"
+        style={{ background: "#ffffff", borderRadius: "6px" }}
       />
       
       {filteredData.length > 0 && (
@@ -350,12 +357,6 @@ const CompletedTab = () => {
           align-items: center;
           gap: 8px;
         }
-        .patient-avatar {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          object-fit: cover;
-        }
         .patient-name {
           font-weight: 500;
           font-size: 14px;
@@ -376,20 +377,22 @@ const CompletedTab = () => {
         .date-time-cell {
           line-height: 1.3;
         }
-        .date {
-          font-weight: 500;
-          font-size: 13px;
-        }
-        .time {
-          font-size: 12px;
-          color: #8c8c8c;
-        }
         .amount-cell {
           font-weight: 500;
           color: #52c41a;
         }
+        .pagination-container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 16px;
+        }
+        .pagination-info {
+          font-size: 14px;
+          color: #666;
+        }
       `}</style>
-    </>
+    </Card>
   );
 };
 

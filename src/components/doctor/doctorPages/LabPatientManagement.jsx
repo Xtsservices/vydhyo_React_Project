@@ -9,7 +9,6 @@ import {
   Button,
   Collapse,
   Popconfirm,
-  QRCode,
   Tag,
 } from "antd";
 import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
@@ -26,73 +25,35 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
   
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-  console.log(status, "status");
   const [patients, setPatients] = useState([]);
   const [saving, setSaving] = useState({});
   const [editablePrices, setEditablePrices] = useState([]);
   const [expandedKeys, setExpandedKeys] = useState([]);
   const [paying, setPaying] = useState({});
   const [loadingPatients, setLoadingPatients] = useState(false);
-  const [isPaymentDone, setIsPaymentDone] = useState({}); // New state to track payment completion per patient
+  const [isPaymentDone, setIsPaymentDone] = useState({});
 
   // Fetch data
-  async function filterPatientsDAta(data) {
-    if (status === "pending") {
-      const filtered = data
-        .map((patient) => {
-          const pendingTests = patient.tests.filter(
-            (test) => test.status === "pending"
-          );
-          if (pendingTests.length > 0) {
-            return {
-              ...patient,
-              tests: pendingTests,
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
-
-      return filtered;
-    } else {
-      const filtered = data
-        .map((patient) => {
-          const pendingTests = patient.tests.filter(
-            (test) => test.status !== "pending"
-          );
-          if (pendingTests.length > 0) {
-            return {
-              ...patient,
-              tests: pendingTests,
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
-
-      return filtered;
-    }
-  }
-
   async function getAllTestsPatientsByDoctorID() {
     try {
       setLoadingPatients(true);
       const response = await apiGet(
-        `/lab/getAllTestsPatientsByDoctorID/${doctorId}`
+        `/lab/getAllTestsPatientsByDoctorID/${doctorId}?searchValue=${searchValue}&status=${status}`
       );
 
       console.log("getAllTestsPatientsByDoctorID", response);
       if (response.status === 200 && response?.data?.data) {
-        let filteredData = await filterPatientsDAta(response.data.data);
+        let filteredData = response.data.data.patients;
 
-        // Apply search filtering by patientId
-        if (searchValue) {
-          filteredData = filteredData.filter((patient) =>
-            patient?.patientId
-              ?.toLowerCase()
-              .includes(searchValue.toLowerCase())
-          );
-        }
+        // Client-side filtering to ensure only the specified status is shown
+        filteredData = filteredData.filter((patient) => {
+          if (status === "completed") {
+            return patient.tests.every((test) => test.status === "completed");
+          } else if (status === "pending") {
+            return patient.tests.some((test) => test.status === "pending");
+          }
+          return true; // Default case (though status should always be "pending" or "completed")
+        });
 
         // Sort by patientId descending
         filteredData.sort((a, b) => {
@@ -100,7 +61,9 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
           const idB = parseInt(b.patientId.replace(/\D/g, "")) || 0;
           return idB - idA; // latest on top
         });
+
         setPatients(filteredData);
+
         // Initialize isPaymentDone for each patient
         const paymentDoneState = {};
         filteredData.forEach((patient) => {
@@ -109,7 +72,6 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
           );
         });
         setIsPaymentDone(paymentDoneState);
-    
       }
     } catch (error) {
       console.error("Error fetching patient tests:", error);
@@ -242,13 +204,13 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
       });
 
       if (response.status === 200) {
-        setIsPaymentDone((prev) => ({ ...prev, [patientId]: true })); // Mark payment as done
+        setIsPaymentDone((prev) => ({ ...prev, [patientId]: true }));
         updateCount();
         toast.success("Payment processed successfully", {
           position: "top-right",
           autoClose: 3000,
         });
-        await getAllTestsPatientsByDoctorID(); // Refresh data
+        await getAllTestsPatientsByDoctorID();
       }
     } catch (error) {
       console.error("Error processing payment:", error);
@@ -269,7 +231,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
       hasfetchRevenueCount.current = true
       getAllTestsPatientsByDoctorID();
     }
-  }, [user, doctorId, status, searchValue]);
+  }, [user, doctorId, status, searchValue]); // Trigger API on tab change (status change)
 
   const toggleCollapse = (patientId) => {
     setExpandedKeys((prev) =>
@@ -277,6 +239,8 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
         ? prev.filter((id) => id !== patientId)
         : [...prev, patientId]
     );
+    // Trigger API call on expand
+    getAllTestsPatientsByDoctorID();
   };
 
   // Main table columns
@@ -318,9 +282,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
       key: "actions",
       render: (_, record) => (
         <Button type="link" onClick={() => toggleCollapse(record.patientId)}>
-          {expandedKeys.includes(record.patientId)
-            ? "Hide Tests"
-            : "Show Tests"}
+          {expandedKeys.includes(record.patientId) ? "Hide Tests" : "Show Tests"}
         </Button>
       ),
     },
@@ -524,7 +486,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
                           onConfirm={() => handlePayment(record.patientId)}
                           okText="Payment Done"
                           cancelText="Cancel"
-                          disabled={isPaymentDone[record.patientId]} // Disable Popconfirm if payment is done
+                          disabled={isPaymentDone[record.patientId]}
                         >
                           <Button
                             type="primary"
@@ -534,7 +496,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
                               totalAmount <= 0 ||
                               paying[record.patientId] ||
                               !hasPendingTests ||
-                              isPaymentDone[record.patientId] // Disable button if payment is done
+                              isPaymentDone[record.patientId]
                             }
                             style={{
                               background: "#1A3C6A",

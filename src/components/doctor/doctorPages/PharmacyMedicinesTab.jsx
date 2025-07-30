@@ -19,13 +19,15 @@ import { apiGet } from "../../api";
 const { Text } = Typography;
 
 const MedicinesTab = ({ refreshTrigger }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState(null);
-  const [totalMedicines, setTotalMedicines] = useState(0);
   const [form, setForm] = useState({
     medName: '',
     quantity: '',
@@ -39,69 +41,63 @@ const MedicinesTab = ({ refreshTrigger }) => {
     try {
       setLoading(true);
       const response = await apiGet('/pharmacy/getAllMedicinesByDoctorID', {
-        params: { doctorId: doctorId }
+        params: { 
+          doctorId,
+          page: pagination.current,
+          limit: pagination.pageSize
+        }
       });
       
-      console.log('API Response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response dataaaa:', response.data.data);
-
       let dataArray = [];
-      console.log(response.data, "medicines API response");
-      
-      if (response?.data.success && response?.data?.data) {
-        if (Array.isArray(response.data.data)) {
-          dataArray = response.data.data;
-        }
+      if (response?.data?.success && response?.data?.data) {
+        dataArray = Array.isArray(response.data.data) ? response.data.data : [];
       }
 
-      console.log('Processed medicines data array:', dataArray);
-      
       if (dataArray.length > 0) {
-        const formattedData = dataArray.map((medicine, index) => {
-          console.log('Processing medicine:', medicine);
-          
-          return {
-            key: medicine._id || `medicine-${index}`,
-            id: medicine._id || `MED-${index}`,
-            medName: medicine.medName || 'Unknown Medicine',
-            quantity: medicine.quantity || 0,
-            price: parseFloat(medicine.price) || 0,
-            category: medicine.category || 'N/A',
-            expiryDate: medicine.expiryDate || 'N/A',
-            manufacturer: medicine.manufacturer || 'N/A',
-            doctorId: medicine.doctorId || 'N/A',
-            createdAt: medicine.createdAt || 'N/A',
-            originalData: medicine
-          };
-        });
-        
-        console.log('Formatted Medicines Data:', formattedData);
+        const formattedData = dataArray.map((medicine, index) => ({
+          key: medicine._id || `medicine-${index}`,
+          id: medicine._id || `MED-${index}`,
+          medName: medicine.medName || 'Unknown Medicine',
+          quantity: medicine.quantity || 0,
+          price: parseFloat(medicine.price) || 0,
+          category: medicine.category || 'N/A',
+          expiryDate: medicine.expiryDate || 'N/A',
+          manufacturer: medicine.manufacturer || 'N/A',
+          doctorId: medicine.doctorId || 'N/A',
+          createdAt: medicine.createdAt || 'N/A',
+          originalData: medicine
+        }));
         
         setMedicines(formattedData);
-        setTotalMedicines(formattedData.length);
+        setPagination((prev) => ({
+          ...prev,
+          total: response.data.totalRecords || formattedData.length,
+        }));
       } else {
-        console.log('No medicines found or empty data array');
         setMedicines([]);
-        setTotalMedicines(0);
+        setPagination((prev) => ({ ...prev, total: 0 }));
       }
     } catch (error) {
       console.error('Error fetching medicines:', error);
       message.error(error.response?.data?.message || 'Error fetching medicines');
       setMedicines([]);
-      setTotalMedicines(0);
+      setPagination((prev) => ({ ...prev, total: 0 }));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (doctorId) {
-      fetchMedicines();
-    } else {
-      console.log('No doctorId found, user:', user);
-    }
-  }, [doctorId, refreshTrigger]); 
+    if (doctorId) fetchMedicines();
+  }, [doctorId, refreshTrigger, pagination.current, pagination.pageSize]);
+
+  const handleTableChange = (page, pageSize) => {
+    setPagination({
+      ...pagination,
+      current: page,
+      pageSize: pageSize,
+    });
+  };
 
   const handleEdit = (record) => {
     setEditingMedicine(record);
@@ -120,9 +116,8 @@ const MedicinesTab = ({ refreshTrigger }) => {
       okText: 'Yes',
       cancelText: 'No',
       onOk: () => {
-        // Add delete logic here - you might want to call a delete API
         setMedicines(medicines.filter(med => med.key !== record.key));
-        setTotalMedicines(prev => prev - 1);
+        setPagination((prev) => ({ ...prev, total: prev.total - 1 }));
         message.success('Medicine deleted successfully');
       }
     });
@@ -134,7 +129,6 @@ const MedicinesTab = ({ refreshTrigger }) => {
       return;
     }
 
-    // Add update API call here if needed
     const updatedMedicines = medicines.map(med => 
       med.key === editingMedicine.key 
         ? { ...med, medName: form.medName, quantity: form.quantity, price: form.price }
@@ -195,27 +189,37 @@ const MedicinesTab = ({ refreshTrigger }) => {
       width: 80,
       render: (price) => `₹${price.toFixed(2)}`,
     },
+    {
+      title: 'Action',
+      key: 'action',
+      width: 100,
+      render: (_, record) => (
+        <Space size="middle">
+          <Button 
+            type="text" 
+            icon={<EditOutlined />} 
+            onClick={() => handleEdit(record)}
+          />
+          <Button 
+            type="text" 
+            icon={<DeleteOutlined />} 
+            onClick={() => handleDelete(record)}
+            danger
+          />
+        </Space>
+      ),
+    },
   ];
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  // Calculate current page data
-  const currentPageData = medicines.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const startIndex = totalMedicines > 0 ? ((currentPage - 1) * pageSize) + 1 : 0;
-  const endIndex = Math.min(currentPage * pageSize, totalMedicines);
+  const startIndex = pagination.total > 0 ? ((pagination.current - 1) * pagination.pageSize) + 1 : 0;
+  const endIndex = Math.min(pagination.current * pagination.pageSize, pagination.total);
 
   return (
     <div style={{ padding: '20px' }}>
       <Spin spinning={loading}>
         <Table 
           columns={columns} 
-          dataSource={currentPageData}
+          dataSource={medicines}
           pagination={false}
           size="middle"
           showHeader={true}
@@ -227,25 +231,25 @@ const MedicinesTab = ({ refreshTrigger }) => {
         
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
           <span style={{ lineHeight: '32px' }}>
-            {totalMedicines > 0 
-              ? `Showing ${startIndex} to ${endIndex} of ${totalMedicines} results`
+            {pagination.total > 0 
+              ? `Showing ${startIndex} to ${endIndex} of ${pagination.total} results`
               : 'No results found'
             }
           </span>
-          {totalMedicines > pageSize && (
+          {pagination.total > pagination.pageSize && (
             <Pagination 
-              current={currentPage}
-              total={totalMedicines}
-              pageSize={pageSize}
-              showSizeChanger={false}
+              current={pagination.current}
+              total={pagination.total}
+              pageSize={pagination.pageSize}
+              showSizeChanger={true}
+              pageSizeOptions={['10', '20', '50']}
               showQuickJumper={false}
-              onChange={handlePageChange}
+              onChange={(page, pageSize) => handleTableChange(page, pageSize)}
             />
           )}
         </div>
       </Spin>
 
-      {/* Edit Medicine Modal */}
       <Modal
         title="Edit Medicine"
         open={editModalVisible}
@@ -298,13 +302,6 @@ const MedicinesTab = ({ refreshTrigger }) => {
         .normal-stock {
           color: #52c41a;
           font-weight: bold;
-        }
-        .expiry-warning {
-          color: #ff4d4f;
-          font-weight: bold;
-        }
-        .expiry-normal {
-          color: #595959;
         }
       `}</style>
     </div>

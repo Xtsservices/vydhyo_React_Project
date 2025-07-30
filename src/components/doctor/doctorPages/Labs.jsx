@@ -6,7 +6,7 @@ import LabPatientManagement from "./LabPatientManagement";
 import { useSelector } from "react-redux";
 import { apiGet } from "../../api";
 
-const { Title, Text } = Typography; 
+const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
 const Labs = () => {
@@ -90,9 +90,9 @@ const Labs = () => {
               width: "320px",
               borderRadius: "8px",
             }}
-             value={searchValue}
+            value={searchValue}
             onChange={(e) => setSearchValue(e.target.value.trim())}
-  allowClear
+            allowClear
           />
         </Col>
       </Row>
@@ -132,10 +132,10 @@ const Labs = () => {
                     margin: "8px 0",
                   }}
                 >
-                  ₹ {cardsData?.today?.revenue}
+                  ₹ {cardsData?.today?.revenue || 0}
                 </div>
                 <Text style={{ color: "#2563EB", fontSize: "14px" }}>
-                  Patient : {cardsData?.today?.patients}
+                  Patient: {cardsData?.today?.patients || 0}
                 </Text>
               </div>
               <div
@@ -184,10 +184,10 @@ const Labs = () => {
                     margin: "8px 0",
                   }}
                 >
-                  ₹ {cardsData?.month?.revenue}
+                  ₹ {cardsData?.month?.revenue || 0}
                 </div>
                 <Text style={{ color: "#16A34A", fontSize: "14px" }}>
-                  Patients : {cardsData?.month?.patients}
+                  Patients: {cardsData?.month?.patients || 0}
                 </Text>
               </div>
               <div
@@ -211,20 +211,20 @@ const Labs = () => {
         style={{ marginBottom: "24px" }}
       >
         <TabPane tab="Patients" key="patients">
-          <LabPatientManagement status={"pending"} updateCount={updateCount}  searchValue={searchValue}/>
-        </TabPane>
-
-       
-
-        <TabPane tab="Completed Patients" key="completedPatients">
           <LabPatientManagement
-            status={"completed"}
+            status="pending"
             updateCount={updateCount}
             searchValue={searchValue}
           />
         </TabPane>
-
-         <TabPane tab="Tests" key="tests">
+        <TabPane tab="Completed Patients" key="completedPatients">
+          <LabPatientManagement
+            status="completed"
+            updateCount={updateCount}
+            searchValue={searchValue}
+          />
+        </TabPane>
+        <TabPane tab="Tests" key="tests">
           <TestManagement />
         </TabPane>
       </Tabs>

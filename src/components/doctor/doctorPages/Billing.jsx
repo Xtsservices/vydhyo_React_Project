@@ -115,6 +115,11 @@ const BillingSystem = () => {
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
+   const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 5,
+    total: 0,
+  });
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
@@ -126,7 +131,7 @@ const BillingSystem = () => {
   }, [patients, user]);
 
   // Fetch patient data with retry mechanism
-  const fetchPatients = async () => {
+  const fetchPatients = async (page = 1, pageSize = 5) => {
     if (!user || !doctorId) {
       console.log("User or doctorId not available:", { user, doctorId });
       setError("User or doctor ID not available");
@@ -137,15 +142,29 @@ const BillingSystem = () => {
     setLoading(true);
     setError(null);
 
+    console.log(page, pageSize, "userdata")
+
     try {
+      const queryParams = new URLSearchParams({
+        doctorId,
+        page: page.toString(),
+        limit: pageSize.toString(),
+      });
+
+      console.log('Fetching appointments with params:', queryParams.toString());
       const response = await apiGet(
-        `/receptionist/fetchMyDoctorPatients/${doctorId}`,
-         { timeout: 10000 }
+        `/receptionist/fetchMyDoctorPatients/${doctorId}?${queryParams.toString()}`,
+        { timeout: 10000 }
       );
       console.log("API Response:", response);
 
       if (response.status === 200 && response?.data?.data) {
         setPatients(response.data.data.reverse());
+        setPagination({
+          current: page,
+          pageSize: pageSize,
+          total: response.data.totalPages || 0,
+        });
         console.log("Patients set:", response.data.data.reverse());
         setLoading(false);
       } else {
@@ -155,7 +174,7 @@ const BillingSystem = () => {
       console.error("Error fetching patients:", err);
       if (retryCount < maxRetries) {
         setRetryCount(retryCount + 1);
-        setTimeout(() => fetchPatients(), 2000); // Retry after 2 seconds
+        setTimeout(() => fetchPatients(page, pageSize), 2000);
       } else {
         setError(
           `Failed to fetch patient data: ${
@@ -176,7 +195,7 @@ const BillingSystem = () => {
       setLoading(false);
       setError("Waiting for user data to load...");
     }
-  }, [user, doctorId]);
+  }, [user, doctorId, pagination.current, pagination.pageSize]);
 
   const handlePatientExpand = (patientId) => {
     setExpandedPatients((prev) => ({
@@ -489,6 +508,14 @@ const BillingSystem = () => {
       </div>
     );
   }
+
+    const handlePageChange = (page, pageSize) => {
+    setPagination((prev) => ({
+      ...prev,
+      current: page,
+      pageSize: pageSize,
+    }));
+  };
 
   return (
     <div
@@ -1166,6 +1193,63 @@ const BillingSystem = () => {
             })}
           </tbody>
         </table>
+
+          <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "20px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <button
+              onClick={() => handlePageChange(pagination.current - 1, pagination.pageSize)}
+              disabled={pagination.current === 1}
+              style={{
+                background: pagination.current === 1 ? "#ccc" : "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                padding: "8px 12px",
+                cursor: pagination.current === 1 ? "not-allowed" : "pointer",
+                fontSize: "14px",
+              }}
+            >
+              Previous
+            </button>
+            <span style={{ fontSize: "16px" }}>
+              Page {pagination.current} of {Math.ceil(pagination.total / pagination.pageSize)}
+            </span>
+            <button
+              onClick={() => handlePageChange(pagination.current + 1, pagination.pageSize)}
+              disabled={pagination.current >= Math.ceil(pagination.total / pagination.pageSize)}
+              style={{
+                background:
+                  pagination.current >= Math.ceil(pagination.total / pagination.pageSize)
+                    ? "#ccc"
+                    : "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                padding: "8px 12px",
+                cursor:
+                  pagination.current >= Math.ceil(pagination.total / pagination.pageSize)
+                    ? "not-allowed"
+                    : "pointer",
+                fontSize: "14px",
+              }}
+            >
+              Next
+            </button>
+           
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -48,6 +48,18 @@ const MyPatients = () => {
   });
   const [prescriptionLoading, setPrescriptionLoading] = useState(false);
   const [ePrescriptionData, setEPrescriptionData] = useState(null);
+    const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 5,
+    total: 0,
+  });
+  const [filters, setFilters] = useState({
+  type: "all",
+  // other filters if needed
+});
+
+
+   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
 
   const pageSize = 10;
 
@@ -55,36 +67,47 @@ const MyPatients = () => {
     if (!dob) return "N/A";
     return moment().diff(moment(dob, "DD-MM-YYYY"), "years").toString();
   };
-
-
-
-  const fetchPatients = async ()=>{
- setLoading(true);
+  const fetchPatients = async (page = 1, limit = 5) => {
+    setLoading(true);
     try {
-      const token = localStorage.getItem("accessToken");
+
+        const token = localStorage.getItem("accessToken");
       if (!token) {
         message.error("No authentication token found. Please login again.");
+        navigate('/Login')
         return;
       }
 
-      const response = await apiGet(
-        `/appointment/getAppointmentsByDoctorID/patients?doctorId=${doctorId}`
-      );
+      const queryParams = new URLSearchParams({
+            doctorId,
+            ...(searchText && { searchText }),
+            ...(filters.type !== "all" && { appointmentType: filters.type }),
+             page: pagination.current,
+            limit: pagination.pageSize,
+          });
+      
+          console.log('Fetching appointments with params:', queryParams.toString()); // Debug log
+          const response = await apiGet(
+            `/appointment/getAppointmentsByDoctorID/patients?${queryParams.toString()}`
+          );
+    
       const data = response.data;
 
-      console.log(response.data, "response.data from patients.jsx");
+      console.log(response, "response.data from patients.jsx");
 
       let patientsData = [];
 
       if (response.status === 200 && data.data) {
+         const { appointments, pagination } = response.data.data;
         const appointmentsData = Array.isArray(data.data)
           ? data.data
           : [data.data];
 
-        const patientsDataUnsorted = appointmentsData.map((appointment) => ({
+          console.log(appointments)
+
+        const patientsDataUnsorted = appointments.map((appointment) => ({
           id:
-            appointment.userId ||
-            `P-${Math.random().toString(36).substr(2, 6)}`,
+            appointment.userId ,
           appointmentId: appointment.appointmentId || "N/A",
           name: appointment.patientName || "N/A",
           gender: appointment.patientDetails?.gender || "N/A",
@@ -109,23 +132,13 @@ const MyPatients = () => {
           allAppointments: [appointment],
           ePrescription: appointment.ePrescription || null,
         }));
+        setPatients(patientsDataUnsorted);
 
-        // Sorting by date (desc) then by userId (desc)
-        patientsDataUnsorted.sort((a, b) => {
-          const dateA = moment(a.lastVisit, "DD MMMM YYYY");
-          const dateB = moment(b.lastVisit, "DD MMMM YYYY");
-
-          if (dateA.isBefore(dateB)) return 1;
-          if (dateA.isAfter(dateB)) return -1;
-
-          // Dates are same, now compare ID (assuming alphanumeric)
-          return b.id.localeCompare(a.id); // latest (higher) id first
-        });
-
-        patientsData = patientsDataUnsorted;
-
-        setPatients(patientsData);
-        setFilteredPatients(patientsData);
+         setPagination({
+        current: pagination.currentPage,
+        pageSize: pagination.pageSize,
+        total: pagination.totalItems
+      });
       }
     } catch (error) {
       console.error("Error fetching patients:", error);
@@ -135,12 +148,13 @@ const MyPatients = () => {
     }
   }
 
-  useEffect(() => {
-    if (user && doctorId && !hasfetchPatients.current) {
-      hasfetchPatients.current = true
-      fetchPatients();
-    }
-  }, [user, doctorId]);
+ useEffect(() => {
+  if (user && doctorId) {
+    fetchPatients();
+  }
+}, [user, doctorId, searchText, pagination.current, pagination.pageSize, filters]);
+
+
 
   const fetchPrescriptionDetails = useCallback(async (patientId) => {
     setPrescriptionLoading(true);
@@ -207,22 +221,13 @@ const MyPatients = () => {
     [patients, searchField]
   );
 
-  const handleSort = useCallback((value) => {
-    setSortBy(value);
-    setCurrentPage(1);
-    setFilteredPatients((prev) =>
-      [...prev].sort((a, b) => {
-        if (value === "Name") return a.name.localeCompare(b.name);
-        if (value === "Date") {
-          const dateA = moment(a.lastVisit, "DD MMMM YYYY");
-          const dateB = moment(b.lastVisit, "DD MMMM YYYY");
-          return dateB.isBefore(dateA) ? -1 : dateB.isAfter(dateA) ? 1 : 0;
-        }
-        if (value === "ID") return a.id.localeCompare(b.id);
-        return 0;
-      })
-    );
-  }, []);
+ const handleSort = (value) => {
+  setFilters((prev) => ({
+    ...prev,
+    type: value,
+  }));
+};
+
 
   const handleExport = useCallback(() => {
     if (!patients.length) {
@@ -296,16 +301,6 @@ const MyPatients = () => {
     [patients]
   );
 
-  const totalPages = Math.ceil(filteredPatients.length / pageSize);
-  const paginatedPatients = useMemo(
-    () =>
-      filteredPatients.slice(
-        (currentPage - 1) * pageSize,
-        currentPage * pageSize
-      ),
-    [filteredPatients, currentPage]
-  );
-
   const medicineColumns = [
     {
       title: "Medicine Name",
@@ -353,40 +348,40 @@ const MyPatients = () => {
   ];
 
   // Filtering logic for search and dropdown
-  useEffect(() => {
-    let filtered = [...patients];
-    if (searchText) {
-      filtered = filtered.filter((patient) => {
-        if (searchField === "all") {
-          return (
-            patient.name.toLowerCase().includes(searchText) ||
-            patient.id.toLowerCase().includes(searchText) ||
-            patient.department.toLowerCase().includes(searchText) ||
-            patient.phone.includes(searchText)
-          );
-        } else if (searchField === "name") {
-          return patient.name.toLowerCase().includes(searchText);
-        } else if (searchField === "id") {
-          return patient.id.toLowerCase().includes(searchText);
-        } else if (searchField === "department") {
-          return patient.department.toLowerCase().includes(searchText);
-        }
-        return true;
-      });
-    }
-    if (sortBy && sortBy !== "all") {
-      filtered = filtered.filter(
-        (patient) =>
-          (patient.appointmentType || "")
-            .replace(/\s+/g, "")
-            .replace(/-/g, "")
-            .toLowerCase() ===
-          sortBy.replace(/\s+/g, "").replace(/-/g, "").toLowerCase()
-      );
-    }
-    setFilteredPatients(filtered);
-    setCurrentPage(1);
-  }, [patients, searchText, searchField, sortBy]);
+  // useEffect(() => {
+  //   let filtered = [...patients];
+  //   if (searchText) {
+  //     filtered = filtered.filter((patient) => {
+  //       if (searchField === "all") {
+  //         return (
+  //           patient.name.toLowerCase().includes(searchText) ||
+  //           patient.id.toLowerCase().includes(searchText) ||
+  //           patient.department.toLowerCase().includes(searchText) ||
+  //           patient.phone.includes(searchText)
+  //         );
+  //       } else if (searchField === "name") {
+  //         return patient.name.toLowerCase().includes(searchText);
+  //       } else if (searchField === "id") {
+  //         return patient.id.toLowerCase().includes(searchText);
+  //       } else if (searchField === "department") {
+  //         return patient.department.toLowerCase().includes(searchText);
+  //       }
+  //       return true;
+  //     });
+  //   }
+  //   if (sortBy && sortBy !== "all") {
+  //     filtered = filtered.filter(
+  //       (patient) =>
+  //         (patient.appointmentType || "")
+  //           .replace(/\s+/g, "")
+  //           .replace(/-/g, "")
+  //           .toLowerCase() ===
+  //         sortBy.replace(/\s+/g, "").replace(/-/g, "").toLowerCase()
+  //     );
+  //   }
+  //   setFilteredPatients(filtered);
+  //   setCurrentPage(1);
+  // }, [patients, searchText, searchField, sortBy]);
 
   // Helper function to check if a value should be displayed
   const shouldDisplayValue = (value) => {
@@ -394,6 +389,8 @@ const MyPatients = () => {
       value && value !== "N/A" && value !== "undefined" && value !== undefined
     );
   };
+
+
 
   return (
     <div style={styles.container}>
@@ -413,14 +410,14 @@ const MyPatients = () => {
                   searchField === "all" ? "Patient ID, Name " : searchField
                 }`}
                 value={searchText.toUpperCase()}
-                onChange={handleSearch}
+                onChange={(e) => setSearchText(e.target.value.toLowerCase())}
                 style={styles.searchInput}
                 onFocus={(e) => (e.target.style.borderColor = "#3b82f6")}
                 onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
               />
             </div>
             <select
-              value={sortBy}
+              value={filters.type}
               onChange={(e) => handleSort(e.target.value)}
               style={styles.sortSelect}
             >
@@ -709,12 +706,12 @@ const MyPatients = () => {
             <div style={{ textAlign: "center", padding: "24px" }}>
               Loading...
             </div>
-          ) : paginatedPatients.length === 0 ? (
+          ) : patients.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px" }}>
               No patients found.
             </div>
           ) : (
-            paginatedPatients.map((patient) => (
+            patients.map((patient) => (
               <div
                 key={patient.appointmentId}
                 style={styles.tableRow}
@@ -775,52 +772,48 @@ const MyPatients = () => {
 
         <div style={styles.paginationControls}>
           <button
-            style={styles.paginationButton}
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((prev) => prev - 1)}
-            onMouseEnter={(e) =>
-              !e.target.disabled && (e.target.style.color = "#1e293b")
-            }
-            onMouseLeave={(e) =>
-              !e.target.disabled && (e.target.style.color = "#64748b")
-            }
-          >
-            Previous
-          </button>
+  disabled={pagination.current === 1}
+  onClick={() =>
+    setPagination((prev) => ({
+      ...prev,
+      current: prev.current - 1,
+    }))
+  }
+>
+  Previous
+</button>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              style={
-                page === currentPage
-                  ? styles.paginationButtonActive
-                  : styles.paginationButton
-              }
-              onClick={() => setCurrentPage(page)}
-              onMouseEnter={(e) =>
-                page !== currentPage && (e.target.style.color = "#1e293b")
-              }
-              onMouseLeave={(e) =>
-                page !== currentPage && (e.target.style.color = "#64748b")
-              }
-            >
-              {page}
-            </button>
-          ))}
+{Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+  <button
+    key={page}
+    style={
+      page === pagination.current
+        ? styles.paginationButtonActive
+        : styles.paginationButton
+    }
+    onClick={() =>
+      setPagination((prev) => ({
+        ...prev,
+        current: page,
+      }))
+    }
+  >
+    {page}
+  </button>
+))}
 
-          <button
-            style={styles.paginationButton}
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            onMouseEnter={(e) =>
-              !e.target.disabled && (e.target.style.color = "#1e293b")
-            }
-            onMouseLeave={(e) =>
-              !e.target.disabled && (e.target.style.color = "#64748b")
-            }
-          >
-            Next
-          </button>
+<button
+  disabled={pagination.current === totalPages}
+  onClick={() =>
+    setPagination((prev) => ({
+      ...prev,
+      current: prev.current + 1,
+    }))
+  }
+>
+  Next
+</button>
+
         </div>
       </div>
     </div>

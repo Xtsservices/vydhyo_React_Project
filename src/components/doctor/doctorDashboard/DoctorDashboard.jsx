@@ -970,7 +970,7 @@ const ClinicAvailability = ({
         const response = await apiGet(
           `/appointment/getNextAvailableSlotsByDoctor?doctorId=${doctorId}`
         );
-        // console.log("Available Slots Response:", response.data);
+        
         if (response.data.status === "success") {
           const slotsData = response.data.data;
           console.log("Available Slots Data:", slotsData);
@@ -985,36 +985,18 @@ const ClinicAvailability = ({
             (item) => item.date === tomorrow
           );
 
-          // Today's available slots
-          // const todaySlots = slotsData[0]?.slots
-          //   ?.filter(slot => slot.status === "available")
-          //   .map(slot => ({
-          //     startTime: slot.time,
-          //     endTime: calculateEndTime(slot.time)
-          //   })) || [];
-
-          console.log("Today's Available Slots:", tomorrowSlotsData);
-
           setAvailableSlots(todaySlotsData);
           setNextAvailableSlot(tomorrowSlotsData);
-
-          // Next available slot (first available from next day)
-          // if (slotsData.length > 1) {
-          //   const nextDay = slotsData[1];
-          //   const firstAvailable = nextDay.slots.find(slot => slot.status === "available");
-          //   if (firstAvailable) {
-          //     setNextAvailableSlot({
-          //       date: nextDay.date,
-          //       startTime: firstAvailable.time
-          //     });
-          //   }
-          // }
         } else {
-          setError("Failed to fetch available slots");
+          // Handle API failure response
+          setError(response.data.message || "Failed to fetch available slots");
         }
       } catch (err) {
-        console.error("Error fetching available slots:", err);
-        setError("Error fetching available slots");
+        if (err.response && err.response.status === 404 && err.response.data) {
+          setError(err.response.data.message || "No available slots found");
+        } else {
+          setError("Error fetching available slots");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -1086,8 +1068,6 @@ const ClinicAvailability = ({
 
   const currentClinic = clinics[currentClinicIndex];
 
-  console.log("Current Clinic:", currentClinic);
-
   return (
     <Card
       style={{
@@ -1110,7 +1090,7 @@ const ClinicAvailability = ({
       ) : error ? (
         <div style={{ textAlign: "center", padding: "40px 0" }}>
           <Text style={{ fontFamily: "Poppins, sans-serif", color: "#ff4d4f" }}>
-            {error}
+            {error.message || error}
           </Text>
         </div>
       ) : (
@@ -1199,7 +1179,6 @@ const ClinicAvailability = ({
                   );
 
                   if (!matchedSlotGroup) {
-                    // No matching clinic found
                     return (
                       <Text
                         style={{
@@ -1217,13 +1196,7 @@ const ClinicAvailability = ({
                     .filter((slot) => slot.status === "available")
                     .slice(0, 5);
 
-                  console.log(
-                    `Matched Address ID: ${matchedSlotGroup.addressId}`
-                  );
-                  console.log("Available slots:", available);
-
                   if (available.length === 0) {
-                    // No available slots for this clinic
                     return (
                       <Text
                         style={{
@@ -1237,7 +1210,6 @@ const ClinicAvailability = ({
                     );
                   }
 
-                  // Render up to 5 available slots
                   return (
                     <div
                       style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
@@ -1268,7 +1240,6 @@ const ClinicAvailability = ({
                   );
                 })()
               ) : (
-                // availableSlots is empty
                 <Text
                   style={{
                     fontSize: "12px",
@@ -1279,39 +1250,6 @@ const ClinicAvailability = ({
                   No available slots today
                 </Text>
               )}
-              {/* {availableSlots.length > 0 ? (
-                availableSlots.map((slot, index) => (
-                slot.slice(0, 5).map((slot, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      padding: "4px 10px",
-                      backgroundColor: "#f0f8f0",
-                      color: "#16A34A",
-                      borderRadius: "12px",
-                      fontSize: "11px",
-                      fontWeight: 500,
-                      fontFamily: "Poppins, sans-serif",
-                      lineHeight: "1.2",
-                      height: "24px",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                  </div>
-                )))
-              ) ): (
-                <Text
-                  style={{
-                    fontSize: "12px",
-                    color: "#8c8c8c",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                >
-                  No available slots today
-                </Text>
-              )} */}
             </div>
           </div>
           <div
@@ -1369,11 +1307,6 @@ const ClinicAvailability = ({
                     .filter((slot) => slot.status === "available")
                     .slice(0, 5);
 
-                  console.log(
-                    `Matched Address ID: ${matchedSlotGroup.addressId}`
-                  );
-                  console.log("Available slots (Tomorrow):", available);
-
                   if (available.length === 0) {
                     return (
                       <Text
@@ -1428,14 +1361,6 @@ const ClinicAvailability = ({
                   No available slots Tomorrow
                 </Text>
               )}
-
-              {/* {nextAvailableSlot ? (
-                <>
-                  {formatDate(nextAvailableSlot.date)} at {formatTime(nextAvailableSlot.startTime)}
-                </>
-              ) : (
-                "No upcoming availability"
-              )} */}
             </Title>
           </div>
 
@@ -1463,9 +1388,7 @@ const ClinicAvailability = ({
                   justifyContent: "center",
                   cursor: "pointer",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                         marginLeft: "-12px", 
-                          
- 
+                  marginLeft: "-12px", 
                 }}
                 onClick={handlePreviousClinic}
               >
