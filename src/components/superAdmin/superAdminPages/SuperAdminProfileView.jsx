@@ -37,9 +37,6 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 const { Title, Text } = Typography;
 
-// Constants
-const API_BASE_URL = "http://192.168.1.42:3000";
-
 // Custom hooks
 const useLocalStorage = (key) => {
   return localStorage.getItem(key);
@@ -76,32 +73,55 @@ const DoctorProfileView = () => {
         navigate("/login");
         return;
       }
-      
-      // Use the statusFilter from location.state instead of hardcoding "approved"
-      const response = await apiGet(
+
+      // Fetch doctor details
+      const doctorResponse = await apiGet(
         `users/AllUsers?type=doctor&id=${doctorId}&status=${statusFilter || "all"}`
       );
 
-      const data = response.data;
+      const doctorDataResponse = doctorResponse.data;
 
       let doctor = null;
-      if (data.status === "success" && data.data) {
-        if (Array.isArray(data.data)) {
-          doctor = data.data.find((doc) => doc._id === doctorId);
+      if (doctorDataResponse.status === "success" && doctorDataResponse.data) {
+        if (Array.isArray(doctorDataResponse.data)) {
+          doctor = doctorDataResponse.data.find((doc) => doc._id === doctorId);
           if (!doctor) {
             throw new Error("No doctor found with the provided ID.");
           }
         } else {
-          if (data.data._id !== doctorId) {
+          if (doctorDataResponse.data._id !== doctorId) {
             throw new Error("Doctor ID mismatch in response.");
           }
-          doctor = data.data;
+          doctor = doctorDataResponse.data;
         }
       } else {
         throw new Error("Invalid data format");
       }
 
-      // Normalize doctor data
+      // Fetch KYC details
+      const kycResponse = await apiGet(`users/getKycByUserId?userId=${userId}`);
+      const kycData = kycResponse.data;
+      console.log("kycdataaaaaa", kycData);
+
+      if (kycData.status !== "success") {
+        throw new Error("Failed to fetch KYC details.");
+      }
+
+      // Normalize doctor data with KYC details only if kycData.data is not null
+      const kycDetails = kycData.data
+        ? {
+            panNumber: kycData.data.pan?.number || "N/A",
+            panImage: kycData.data.pan?.attachmentUrl?.data || null,
+            panStatus: kycData.data.pan?.status || "pending",
+            kycVerified: kycData.data.kycVerified || false,
+          }
+        : {
+            panNumber: "N/A",
+            panImage: null,
+            panStatus: "pending",
+            kycVerified: false,
+          };
+
       setDoctorData({
         ...doctor,
         key: doctor._id,
@@ -130,7 +150,7 @@ const DoctorProfileView = () => {
           ? doctor.workingLocations
           : [],
         bankDetails: doctor.bankDetails || {},
-        kycDetails: doctor.kycDetails || {},
+        kycDetails: kycDetails,
         certifications: Array.isArray(doctor.certifications)
           ? doctor.certifications
           : [],
@@ -138,8 +158,8 @@ const DoctorProfileView = () => {
         isVerified: doctor.isVerified || false,
       });
     } catch (error) {
-      console.error("Error fetching doctor details:", error);
-      message.error("Failed to fetch doctor details. Please try again.");
+      console.error("Error fetching doctor or KYC details:", error);
+      message.error("Failed to fetch doctor or KYC details. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -709,6 +729,16 @@ const DoctorProfileView = () => {
                     >
                       {doctorData.kycDetails.panNumber || "N/A"}
                     </Text>
+                    <Text
+                      style={{
+                        fontSize: "12px",
+                        color: "#6b7280",
+                        marginLeft: "8px",
+                        display: "block",
+                      }}
+                    >
+                      Status: {doctorData.kycDetails.panStatus}
+                    </Text>
                   </div>
                 </div>
                 {doctorData.kycDetails.panImage && (
@@ -727,46 +757,19 @@ const DoctorProfileView = () => {
                 )}
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <IdcardOutlined
-                    style={{ marginRight: 8, color: "#6b7280" }}
-                  />
-                  <div>
-                    <Text strong style={{ fontSize: "14px", color: "#374151" }}>
-                      Voter ID:
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: "14px",
-                        color: "#374151",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      {doctorData.kycDetails.voterId || "N/A"}
-                    </Text>
-                  </div>
-                </div>
-                {doctorData.kycDetails.voterIdImage && (
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
-                    onClick={() =>
-                      showModal({
-                        type: "voterId",
-                        data: doctorData.kycDetails.voterIdImage,
-                      })
-                    }
-                    style={{ padding: "4px 8px" }}
-                  />
-                )}
+              <div style={{ marginTop: "16px" }}>
+                <Text strong style={{ fontSize: "14px", color: "#374151" }}>
+                  KYC Verification Status:
+                </Text>
+                <Text
+                  style={{
+                    fontSize: "14px",
+                    color: doctorData.kycDetails.kycVerified ? "#16a34a" : "#dc2626",
+                    marginLeft: "8px",
+                  }}
+                >
+                  {doctorData.kycDetails.kycVerified ? "Verified" : "Not Verified"}
+                </Text>
               </div>
             </Card>
           </Col>
@@ -1177,7 +1180,7 @@ const DoctorProfileView = () => {
           )}
         </Modal>
 
-        {/* approve modal */}
+        {/* Approve Modal */}
         <Modal
           title="Approve Doctor"
           open={approveModalVisible}
@@ -1203,7 +1206,7 @@ const DoctorProfileView = () => {
           <p>Are you sure you want to approve this doctor?</p>
         </Modal>
 
-        {/* reject modal */}
+        {/* Reject Modal */}
         <Modal
           title="Reject Doctor"
           open={rejectModalVisible}
@@ -1213,7 +1216,12 @@ const DoctorProfileView = () => {
           }}
           footer={
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button onClick={() => setRejectModalVisible(false)}>
+              <Button
+                onClick={() => {
+                  setRejectModalVisible(false);
+                  setReason("");
+                }}
+              >
                 Cancel
               </Button>
               <Button
