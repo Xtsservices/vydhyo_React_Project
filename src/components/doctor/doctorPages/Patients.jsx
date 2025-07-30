@@ -65,7 +65,6 @@ const MyPatients = () => {
     if (!dob) return "N/A";
     return moment().diff(moment(dob, "DD-MM-YYYY"), "years").toString();
   };
-
   const fetchPatients = async (page = 1, limit = 5) => {
     setLoading(true);
     try {
@@ -152,6 +151,7 @@ const MyPatients = () => {
     fetchPatients();
   }
 }, [user, doctorId, searchText, pagination.current, pagination.pageSize, filters]);
+
 
 
   const fetchPrescriptionDetails = useCallback(async (patientId) => {

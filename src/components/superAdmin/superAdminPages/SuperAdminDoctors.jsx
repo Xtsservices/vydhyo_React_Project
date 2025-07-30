@@ -38,7 +38,6 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 // Constants
-const API_BASE_URL = "http://192.168.1.42:3000";
 const DEFAULT_PAGE_SIZE = 10;
 
 // Custom hooks
@@ -57,9 +56,43 @@ const DoctorOnboardingDashboard = () => {
   const [selectedImage, setSelectedImage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [totalDoctors, setTotalDoctors] = useState(0);
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState("inactive");
+  const [statusFilter, setStatusFilter] = useState("inActive");
+  const [summaryStats, setSummaryStats] = useState({
+    pending: 0,
+    rejected: 0,
+    approved: 0,
+  });
   const { userId, doctorId } = location.state || {};
+
+  // Fetch doctors count from API
+  const fetchDoctorsCount = useCallback(async () => {
+    try {
+      const token = useLocalStorage("accessToken");
+      if (!token) {
+        message.error("No authentication token found. Please login again.");
+        navigate("/login");
+        return;
+      }
+      const response = await apiGet("users/getDoctorsCount", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = response.data.data;
+      setSummaryStats({
+        pending: data.inActive || 0,
+        rejected: data.rejected || 0,
+        approved: data.approved || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching doctors count:", error);
+      message.error("Failed to fetch doctors count. Please try again.");
+    }
+  }, [navigate]);
 
   // Fetch doctors from API
   const fetchDoctors = useCallback(async () => {
@@ -71,108 +104,57 @@ const DoctorOnboardingDashboard = () => {
         navigate("/login");
         return;
       }
-      const response = await apiGet("users/AllUsers?type=doctor");
-      // const response = await fetch(`${API_BASE_URL}/users/AllUsers?type=doctor`, {
-      //   method: "GET",
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //     "Content-Type": "application/json",
-      //   },
-      // });
-      if (!response.status === "success") {
-        if (response.status === 401) {
-          message.error("Session expired. Please login again.");
-          navigate("/login");
-          return;
+      const response = await apiGet(
+        `users/AllUsers?type=doctor&page=${currentPage}&limit=${pageSize}&status=${statusFilter}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      );
+      const { data, pagination } = response.data;
+      let doctorsData = Array.isArray(data) ? data : [];
 
-      const data = response.data;
-      console.log;
-      let doctorsData = [];
+      setTotalDoctors(pagination?.total || doctorsData.length);
 
-      if (data.status === "success" && data.data) {
-        doctorsData = Array.isArray(data.data)
-          ? data.data.reverse()
-          : [data.data];
-      } else {
-        doctorsData = data.data.reverse() || [];
-      }
-      // Normalize doctor data
       doctorsData = doctorsData.map((doctor) => ({
         ...doctor,
         key: doctor._id,
         firstname: doctor.firstname || "N/A",
         lastname: doctor.lastname || "",
-        specialization: doctor.specialization || {},
-        email: doctor.email || "N/A",
-        mobile: doctor.mobile || "N/A",
-        status: doctor.status || "pending",
-        medicalRegistrationNumber: doctor.medicalRegistrationNumber || "N/A",
-        userId: doctor.userId || "N/A",
-        createdAt: doctor.createdAt,
-        consultationModeFee: doctor.consultationModeFee || [],
-        spokenLanguage: doctor.spokenLanguage || [],
-        gender: doctor.gender || "N/A",
-        DOB: doctor.DOB || "N/A",
-        bloodgroup: doctor.bloodgroup || "N/A",
-        maritalStatus: doctor.maritalStatus || "N/A",
       }));
 
       setDoctors(doctorsData);
     } catch (error) {
-      console.error("Error fetching doctors:", error);
       message.error("Failed to fetch doctors data. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, currentPage, pageSize, statusFilter]);
 
-  // Fetch doctors on component mount
+  // Fetch doctors and count on component mount and when dependencies change
   useEffect(() => {
     fetchDoctors();
-  }, [fetchDoctors]);
+    fetchDoctorsCount();
+  }, [fetchDoctors, fetchDoctorsCount]);
 
-  // Calculate summary statistics
-  const summaryStats = useMemo(() => {
-    const pending = doctors.filter(
-      (doc) => doc.status?.toLowerCase() === "inactive"
-    ).length;
-    const rejected = doctors.filter(
-      (doc) => doc.status?.toLowerCase() === "rejected"
-    ).length;
-    const approved = doctors.filter(
-      (doc) =>
-        doc.status?.toLowerCase() === "approved" ||
-        doc.status?.toLowerCase() === "active"
-    ).length;
-
-    return { pending, rejected, approved };
-  }, [doctors]);
-
-  // Filter doctors based on search and status
-
+  // Filter doctors based on search
   const filteredDoctors = useMemo(() => {
     return doctors.filter((doctor) => {
       const searchTextLower = searchText.toLowerCase();
 
       const matchesSearch =
         doctor.firstname?.toLowerCase()?.includes(searchTextLower) ||
-        false ||
         doctor.lastname?.toLowerCase()?.includes(searchTextLower) ||
-        false ||
         doctor.email?.toLowerCase()?.includes(searchTextLower) ||
-        false ||
         doctor.mobile?.toString()?.includes(searchTextLower) ||
-        false; // Added mobile number search
+        false;
 
-      const matchesStatus =
-        statusFilter === "all" || doctor.status?.toLowerCase() === statusFilter;
-
-      return matchesSearch && matchesStatus;
+      return matchesSearch;
     });
-  }, [doctors, searchText, statusFilter]);
+  }, [doctors, searchText]);
+
   // Utility functions
   const getImageSrc = useCallback((profilepic) => {
     if (profilepic?.data && profilepic?.mimeType) {
@@ -187,13 +169,16 @@ const DoctorOnboardingDashboard = () => {
   }, []);
 
   const handleViewProfile = (userId, doctorId) => {
-    navigate("/SuperAdmin/profileView", { state: { userId, doctorId } });
+    navigate("/SuperAdmin/profileView", {
+      state: { userId, doctorId, statusFilter },
+    });
   };
 
   const handleRefresh = useCallback(() => {
     setCurrentPage(1);
     fetchDoctors();
-  }, [fetchDoctors]);
+    fetchDoctorsCount();
+  }, [fetchDoctors, fetchDoctorsCount]);
 
   const formatDate = useCallback((dateString) => {
     if (!dateString) return "N/A";
@@ -294,12 +279,6 @@ const DoctorOnboardingDashboard = () => {
           return <Text>{experience} yr</Text>;
         },
       },
-      // {
-      //   title: "Location",
-      //   key: "location",
-      //   width: 120,
-      //   render: () => <Text>-</Text>,
-      // },
       {
         title: "Request Date",
         dataIndex: "createdAt",
@@ -318,6 +297,7 @@ const DoctorOnboardingDashboard = () => {
             approved: { color: "green", icon: "✅" },
             active: { color: "green", icon: "✅" },
             rejected: { color: "red", icon: "❌" },
+            inActive: { color: "orange", icon: "🟡" },
           };
 
           const config = statusConfig[status?.toLowerCase()] || {
@@ -446,7 +426,7 @@ const DoctorOnboardingDashboard = () => {
               transition: "all 0.3s ease",
             }}
             hoverable
-            onClick={() => handleCardClick("inactive")}
+            onClick={() => handleCardClick("inActive")}
           >
             <div
               style={{
@@ -607,42 +587,28 @@ const DoctorOnboardingDashboard = () => {
               ? "Doctors Approved"
               : statusFilter === "rejected"
               ? "Doctors Rejected"
-              : statusFilter === "inactive"
+              : statusFilter === "inActive"
               ? "Doctor Requests"
               : "All Doctor Requests"}
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            {/* <DatePicker.RangePicker
-            value={null}
-            placeholder={["Start Date", "End Date"]}
-            style={{ borderRadius: "12px", fontSize: "clamp(12px, 1.8vw, 14px)" }}
-            suffixIcon={<CalendarOutlined />}
-            allowClear
-          /> */}
-            {/* <Select
-            value={statusFilter}
-            onChange={setStatusFilter}
-            style={{
-              width: "clamp(100px, 20vw, 120px)",
-              borderRadius: "12px",
-              fontSize: "clamp(12px, 1.8vw, 14px)",
-            }}
-          >
-            <Option value="pending">Pending</Option>
-            <Option value="approved">Approved</Option>
-            <Option value="rejected">Rejected</Option>
-            <Option value="all">All</Option>
-          </Select> */}
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={handleRefresh}
+              style={{ borderRadius: "12px" }}
+            >
+              Refresh
+            </Button>
           </div>
         </div>
         <Table
           columns={columns}
-          dataSource={filteredDoctors}
+          dataSource={doctors}
           pagination={{
             current: currentPage,
             pageSize: pageSize,
-            total: filteredDoctors.length,
+            total: totalDoctors,
             showSizeChanger: true,
             onChange: (page, size) => {
               setCurrentPage(page);
