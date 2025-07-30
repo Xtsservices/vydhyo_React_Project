@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Layout,
   Card,
@@ -54,6 +54,8 @@ export default function Pharmacy() {
     quantity: "",
     price: "",
   });
+      const hasfetchRevenueCount = useRef(false);
+  
   const [errors, setErrors] = useState({});
   const [bulkData, setBulkData] = useState([]);
   const [bulkErrors, setBulkErrors] = useState([]);
@@ -329,7 +331,8 @@ const handleOk = async () => {
   }
 
   useEffect(() => {
-    if ((user, doctorId)) {
+    if ((user, doctorId && !hasfetchRevenueCount.current)) {
+      hasfetchRevenueCount.current  = true
       fetchRevenueCount();
     }
   }, [user, doctorId]);

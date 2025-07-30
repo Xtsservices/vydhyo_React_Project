@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Grid,
   Row,
@@ -338,6 +338,8 @@ const StaffModal = ({
 
 const StaffManagement = () => {
   const screens = useBreakpoint();
+      const hasfetchStaff = useRef(false);
+  
   const navigate = useNavigate();
   const [selectedStaffType, setSelectedStaffType] = useState("receptionist");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -739,7 +741,8 @@ const StaffManagement = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && !hasfetchStaff.current) {
+      hasfetchStaff.current = true
       fetchStaff();
     }
   }, [user]);

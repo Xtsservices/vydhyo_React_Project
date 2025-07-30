@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Home,
   Calendar,
@@ -35,12 +35,12 @@ const EPrescription = () => {
   const [activeTab, setActiveTab] = useState("doctor-clinic");
   const [showPreview, setShowPreview] = useState(false);
   const user = useSelector((state) => state.currentUserData);
+    const doctorData = useSelector((state) => state.doctorData);
+const isfetchPrescription = useRef(false)
+
   const navigate = useNavigate();
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [clinicDetails, setClinicDetails] = useState(null);
-  const [selectedClinic, setSelectedClinic] = useState(null);
-   const [doctorData, setDoctorData] = useState(null);
+  const [, setSelectedClinic] = useState(null);
   const [formData, setFormData] = useState({
     doctorInfo: {
       doctorId: doctorId || "",
@@ -76,7 +76,6 @@ const EPrescription = () => {
 
     const fetchPrescription = async () => {
     if (!patientData?.appointmentId) {
-      setIsLoading(false);
       return;
     }
 
@@ -139,14 +138,13 @@ const EPrescription = () => {
     } catch (error) {
       console.error("Error fetching prescription:", error);
       toast.error("Failed to load existing prescription");
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
-  useEffect(() => {
-    if(user){
 
+  useEffect(() => {
+    if(user && !isfetchPrescription.current){
+      isfetchPrescription.current =true
       fetchPrescription()
     }
   },[user])
@@ -202,9 +200,8 @@ const EPrescription = () => {
 
   const getCurrentUserData = async () => {
     try {
-      const response = await apiGet(`/users/getUser?userId=${doctorId}`);
-      const userData = response.data?.data;
-        setDoctorData(userData);
+   
+      const userData = doctorData
          setFormData((prev) => ({
             ...prev,
             doctorInfo: {
@@ -229,10 +226,10 @@ const EPrescription = () => {
   };
 
   useEffect(() => {
-    if (doctorId) {
+    if(doctorData){
       getCurrentUserData();
     }
-  }, [doctorId]);
+  }, [doctorData,formData?.doctorInfo?.doctorId]);
 
   function transformEprescriptionData(formData) {
     const { doctorInfo, patientInfo, vitals, diagnosis, advice } = formData;
