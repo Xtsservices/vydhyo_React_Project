@@ -188,9 +188,9 @@ const BillingSystem = () => {
 
   useEffect(() => {
     console.log("useEffect triggered - user:", user, "doctorId:", doctorId);
-    if (user && doctorId && !hasfetchPatients.current) {
+    if (user && doctorId) {
       hasfetchPatients.current = true
-      fetchPatients();
+      fetchPatients(pagination.current, pagination.pageSize);
     } else {
       setLoading(false);
       setError("Waiting for user data to load...");
@@ -388,7 +388,8 @@ const BillingSystem = () => {
           <button
             onClick={() => {
               setRetryCount(0);
-              fetchPatients();
+      hasfetchPatients.current = false
+              fetchPatients(pagination.current, pagination.pageSize);
             }}
             style={{
               background: "#007bff",
@@ -490,7 +491,8 @@ const BillingSystem = () => {
           <button
             onClick={() => {
               setRetryCount(0);
-              fetchPatients();
+      hasfetchPatients.current = false
+              fetchPatients(pagination.current, pagination.pageSize);
             }}
             style={{
               background: "#007bff",
