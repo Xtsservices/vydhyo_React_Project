@@ -624,6 +624,7 @@ const PatientAppointments = ({
           padding: "12px 0",
           borderBottom: "2px solid #f1f3f4",
           marginBottom: "16px",
+          alignItems: "center", // Ensure vertical alignment
         }}
       >
         <Text
@@ -633,6 +634,7 @@ const PatientAppointments = ({
             fontSize: "12px",
             textTransform: "uppercase",
             fontFamily: "Poppins, sans-serif",
+            textAlign: "left", // Align left for Patient Name
           }}
         >
           Patient Name
@@ -644,6 +646,7 @@ const PatientAppointments = ({
             fontSize: "12px",
             textTransform: "uppercase",
             fontFamily: "Poppins, sans-serif",
+            textAlign: "center", // Center align for Time
           }}
         >
           Time
@@ -655,6 +658,7 @@ const PatientAppointments = ({
             fontSize: "12px",
             textTransform: "uppercase",
             fontFamily: "Poppins, sans-serif",
+            textAlign: "center", // Center align for Type
           }}
         >
           Type
@@ -666,6 +670,7 @@ const PatientAppointments = ({
             fontSize: "12px",
             textTransform: "uppercase",
             fontFamily: "Poppins, sans-serif",
+            textAlign: "center", // Center align for Status
           }}
         >
           Status
@@ -683,81 +688,85 @@ const PatientAppointments = ({
       ) : displayedAppointments.length > 0 ? (
         <>
           {displayedAppointments.map((appointment, index) => (
-            <div
-              key={appointment.appointmentId || index}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                padding: "16px 0",
-                borderBottom:
-                  index < displayedAppointments.length - 1
-                    ? "1px solid #f8f9fa"
-                    : "none",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontWeight: 500,
-                  color: "#1a1a1a",
-                  fontSize: "14px",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                {appointment.patientName || "Unknown Patient"}
-              </Text>
-              <Text
-                style={{
-                  color: "#6c757d",
-                  fontSize: "14px",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                {appointment.appointmentTime || "N/A"}
-              </Text>
-              <div
-                style={{
-                  padding: "4px 12px",
-                  backgroundColor:
-                    appointment.appointmentType === "New-Walkin"
-                      ? "#DBEAFE"
-                      : "#e8f5e8",
-                  color: getTypeColor(appointment.appointmentType),
-                  borderRadius: "16px",
-                  fontSize: "12px",
-                  fontWeight: 400,
-                  textAlign: "center",
-                  width: "fit-content",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                {getAppointmentTypeDisplay(appointment.appointmentType)}
-              </div>
-              <div
-                style={{
-                  padding: "4px 12px",
-                  backgroundColor:
-                    appointment.appointmentStatus === "scheduled"
-                      ? "#e8f5e8"
-                      : appointment.appointmentStatus === "completed"
-                      ? "#e3f2fd"
-                      : appointment.appointmentStatus === "rescheduled"
-                      ? "#fff3e0"
-                      : "#ffebee",
-                  color: getStatusColor(appointment.appointmentStatus),
-                  borderRadius: "16px",
-                  fontSize: "12px",
-                  fontWeight: 400,
-                  textAlign: "center",
-                  width: "fit-content",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                {appointment.appointmentStatus?.charAt(0).toUpperCase() +
-                  appointment.appointmentStatus?.slice(1) || "Unknown"}
-              </div>
-            </div>
-          ))}
+  <div
+    key={appointment.appointmentId || index}
+    style={{
+      display: "grid",
+      gridTemplateColumns: "2fr 1fr 1fr 1fr",
+      padding: "16px 0",
+      borderBottom:
+        index < displayedAppointments.length - 1
+          ? "1px solid #f8f9fa"
+          : "none",
+      alignItems: "center", // Ensure vertical alignment
+    }}
+  >
+    <Text
+      style={{
+        fontWeight: 500,
+        color: "#1a1a1a",
+        fontSize: "14px",
+        fontFamily: "Poppins, sans-serif",
+        textAlign: "left", // Align left for Patient Name
+      }}
+    >
+      {appointment.patientName || "Unknown Patient"}
+    </Text>
+    <Text
+      style={{
+        color: "#6c757d",
+        fontSize: "14px",
+        fontFamily: "Poppins, sans-serif",
+        textAlign: "center", // Center align for Time
+      }}
+    >
+      {appointment.appointmentTime || "N/A"}
+    </Text>
+    <div
+      style={{
+        padding: "4px 12px",
+        backgroundColor:
+          appointment.appointmentType === "New-Walkin"
+            ? "#DBEAFE"
+            : "#e8f5e8",
+        color: getTypeColor(appointment.appointmentType),
+        borderRadius: "16px",
+        fontSize: "12px",
+        fontWeight: 400,
+        textAlign: "center", // Center align for Type
+        width: "fit-content",
+        margin: "0 auto", // Center the div horizontally
+        fontFamily: "Poppins, sans-serif",
+      }}
+    >
+      {getAppointmentTypeDisplay(appointment.appointmentType)}
+    </div>
+    <div
+      style={{
+        padding: "4px 12px",
+        backgroundColor:
+          appointment.appointmentStatus === "scheduled"
+            ? "#e8f5e8"
+            : appointment.appointmentStatus === "completed"
+            ? "#e3f2fd"
+            : appointment.appointmentStatus === "rescheduled"
+            ? "#fff3e0"
+            : "#ffebee",
+        color: getStatusColor(appointment.appointmentStatus),
+        borderRadius: "16px",
+        fontSize: "12px",
+        fontWeight: 400,
+        textAlign: "center", // Center align for Status
+        width: "fit-content",
+        margin: "0 auto", // Center the div horizontally
+        fontFamily: "Poppins, sans-serif",
+      }}
+    >
+      {appointment.appointmentStatus?.charAt(0).toUpperCase() +
+        appointment.appointmentStatus?.slice(1) || "Unknown"}
+    </div>
+  </div>
+))}
         </>
       ) : (
         <div
@@ -914,7 +923,7 @@ const ClinicAvailability = ({
   setCurrentClinicIndex,
   doctorId,
 }) => {
-    const hasfetchClinics = useRef(false);
+  const hasfetchClinics = useRef(false);
 
   const [availableSlots, setAvailableSlots] = useState([]);
   const [nextAvailableSlot, setNextAvailableSlot] = useState(null);
@@ -945,7 +954,7 @@ const ClinicAvailability = ({
 
     if (doctorId && !hasfetchClinics.current) {
       fetchClinics();
-      hasfetchClinics.current = true
+      hasfetchClinics.current = true;
     }
   }, [doctorId]);
 
@@ -966,7 +975,9 @@ const ClinicAvailability = ({
           const today = moment().format("YYYY-MM-DD");
           const tomorrow = moment().add(1, "day").format("YYYY-MM-DD");
 
-          const todaySlotsData = slotsData.filter((item) => item.date === today);
+          const todaySlotsData = slotsData.filter(
+            (item) => item.date === today
+          );
           const tomorrowSlotsData = slotsData.filter(
             (item) => item.date === tomorrow
           );
@@ -1239,8 +1250,7 @@ const ClinicAvailability = ({
             {nextAvailableSlot?.length > 0 ? (
               (() => {
                 const matchedSlotGroup = nextAvailableSlot.find(
-                  (slotGroup) =>
-                    slotGroup.addressId === currentClinic.addressId
+                  (slotGroup) => slotGroup.addressId === currentClinic.addressId
                 );
 
                 if (!matchedSlotGroup) {
@@ -1410,8 +1420,8 @@ const RevenueSummary = ({ revenueSummaryData }) => (
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
-    const hasFetchedIntialRender = useRef(false);
-  
+  const hasFetchedIntialRender = useRef(false);
+
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [dashboardData, setDashboardData] = useState({
@@ -1506,7 +1516,6 @@ const DoctorDashboard = () => {
           const timeB = moment(b.appointmentTime, "HH:mm");
           return timeB.diff(timeA); // descending
         });
-
 
         setAppointments(appointmentsList);
       } else {
@@ -1668,7 +1677,6 @@ const DoctorDashboard = () => {
       getTodayRevenue();
       hasFetchedIntialRender.current = true; // ✅ Prevent future fetch attempt
     }
-
   }, [user, doctorId]);
 
   return (
