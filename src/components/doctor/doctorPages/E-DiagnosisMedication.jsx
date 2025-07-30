@@ -17,6 +17,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const [medicineOptions, setMedicineOptions] = useState([]);
   const [testOptions, setTestOptions] = useState([]);
   const [testInputValue, setTestInputValue] = useState("");
+  const [showTestNotes, setShowTestNotes] = useState(false); // New state for toggling test notes
 
   const [localData, setLocalData] = useState({
     diagnosisList: formData?.diagnosisList || "",
@@ -52,6 +53,10 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   useEffect(() => {
     if (formData && Object.keys(formData).length > 0) {
       setLocalData(formData);
+      // Show test notes if there is existing testNotes content
+      if (formData?.testNotes) {
+        setShowTestNotes(true);
+      }
     }
   }, [formData]);
 
@@ -393,23 +398,36 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           ))}
         </div>
 
-        {/* Note Box for Diagnostic Tests */}
-        <div className="note-box">
-          <div className="note-header">Notes:</div>
-          <textarea
-            className="note-textarea"
-            placeholder="Enter notes..."
-            value={localData.testNotes || ""}
-            onChange={(e) => {
-              const updatedData = {
-                ...localData,
-                testNotes: e.target.value,
-              };
-              setLocalData(updatedData);
-              updateFormData(updatedData);
-            }}
-          />
+        {/* Add Note Button for Diagnostic Tests */}
+        <div style={{ marginTop: "16px", marginBottom: "16px" }}>
+          <Button
+            type="primary"
+            onClick={() => setShowTestNotes(!showTestNotes)}
+            icon={<Plus style={{ width: "16px", height: "16px" }} />}
+          >
+            {showTestNotes ? "Hide Notes" : "Add Note"}
+          </Button>
         </div>
+
+        {/* Note Box for Diagnostic Tests (Conditional) */}
+        {showTestNotes && (
+          <div className="note-box">
+            <div className="note-header">Notes:</div>
+            <textarea
+              className="note-textarea"
+              placeholder="Enter notes..."
+              value={localData.testNotes || ""}
+              onChange={(e) => {
+                const updatedData = {
+                  ...localData,
+                  testNotes: e.target.value,
+                };
+                setLocalData(updatedData);
+                updateFormData(updatedData);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Diagnosis Section */}

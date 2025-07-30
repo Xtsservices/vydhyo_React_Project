@@ -186,10 +186,10 @@ useEffect(() => {
       errors.firstName = "Valid first name is required";
       isValid = false;
     }
-    if (!patientData.lastName.trim() || !validateName(patientData.lastName)) {
-      errors.lastName = "Valid last name is required";
-      isValid = false;
-    }
+    // if (!patientData.lastName.trim() || !validateName(patientData.lastName)) {
+    //   errors.lastName = "Valid last name is required";
+    //   isValid = false;
+    // }
     if (
       !patientData.phoneNumber ||
       !validatePhoneNumber(patientData.phoneNumber)
@@ -454,7 +454,7 @@ useEffect(() => {
     setApiError("");
     const requiredFields = [
       "firstName",
-      "lastName",
+      // "lastName",
       "phoneNumber",
       // "dateOfBirth",
       "gender",
@@ -807,7 +807,7 @@ console.log("first2")
           )}
         </Col>
         <Col xs={24} sm={8}>
-          <Text strong>Last Name *</Text>
+          <Text strong>Last Name </Text>
           <Input
             placeholder="Enter last name"
             value={patientData.lastName}
@@ -1044,29 +1044,38 @@ console.log("first2")
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Text strong>Consultation Fee (₹) *</Text>
-        {consultationFee !== undefined ? (
+        {/* {consultationFee !== undefined ? (
     <Input
       value={consultationFee}
       disabled={true}
       style={{ marginTop: 8 }}
     />
-  ) : (
+  ) : ( */}
   <Input
             placeholder="Enter consultation fee"
             value={consultationFee ?? ""}
-            onChange={(e) =>
-              setConsultationFee(
-                e.target.value ? parseFloat(e.target.value) : undefined
-              )
-            }
-            type="number"
+            // onChange={(e) =>
+            //   setConsultationFee(
+            //     e.target.value ? parseFloat(e.target.value) : undefined
+            //   )
+            // }
+             onChange={(e) => {
+    const value = e.target.value;
+    // Only update if the value is empty, or a number between 0 and 9999
+    if (value === "" || (Number(value) >= 0 && Number(value) <= 9999)) {
+      setConsultationFee(value ? parseFloat(value) : undefined);
+    }
+  }}
+            // type="number"
             min={0}
+  max={9999}
+          
               step={1}
             style={{ marginTop: 8 }}
           />
-  )
+  {/* )
 
-          }
+          } */}
         
           {fieldErrors.consultationFee && (
             <Text type="danger">{fieldErrors.consultationFee}</Text>
@@ -1088,8 +1097,18 @@ console.log("first2")
           <Input
             placeholder="Enter discount value"
             value={discount}
-            onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-            type="number"
+            // onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+            onChange={(e) => {
+      const value = e.target.value;
+      // Only update if value is empty, 0, or a number between 0 and 100
+      if (
+        value === "" ||
+        (Number(value) >= 0 && Number(value) <= 100)
+      ) {
+        setDiscount(value ? parseFloat(value) : 0);
+      }
+    }}
+            // type="number"
             min={0}
             max={discountType === "percentage" ? 100 : undefined}
             step={1}

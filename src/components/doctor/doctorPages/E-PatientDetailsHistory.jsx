@@ -9,22 +9,26 @@ const capitalizeFirstLetter = (str) => {
 };
 
 const PatientDetailsHistory = ({ formData, updateFormData }) => {
- 
   const location = useLocation();
+
+
+  console.log("details", location.state?.patientData, formData);
   
-  // Initialize with appointmentReason, but don't allow changes
   const [localData, setLocalData] = useState({
     patientId: location.state?.patientData?.patientId || '',
-    chiefComplaint: formData?.chiefComplaint|| '', // Prefill and lock
+    chiefComplaint: formData?.chiefComplaint || '',
     pastMedicalHistory: formData?.pastMedicalHistory || '',
     familyMedicalHistory: formData?.familyMedicalHistory || '',
     physicalExamination: formData?.physicalExamination || ''
   });
 
-  // In PatientDetailsHistory component
+  console.log("localData", localData);
+
   useEffect(() => {
     if (location.state?.patientData) {
       const patientData = location.state.patientData;
+      console.log("Patient Data:", patientData);
+      console.log("Form Data:", formData);
       const updatedData = {
         patientId: patientData.patientId || '',
         patientName: patientData.patientName || '',
@@ -36,6 +40,8 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
         familyMedicalHistory: capitalizeFirstLetter(formData?.familyMedicalHistory) || '',
         physicalExamination: capitalizeFirstLetter(formData?.physicalExamination) || ''
       };
+
+      console.log("Updated Data:", updatedData);
       setLocalData(updatedData);
       if (updateFormData) {
         updateFormData(updatedData);
@@ -43,138 +49,104 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
     }
   }, [location.state]);
 
-  // Only allow changes to fields other than chiefComplaint
   const handleChange = (e) => {
-    console.log("handleChange called", e.target.name, e.target.value);
     const { name, value } = e.target;
-      const capitalizedValue = capitalizeFirstLetter(value);
-      const updatedData = {
-        ...localData,
-        [name]: capitalizedValue
-      };
-      setLocalData(updatedData);
-      if (updateFormData) {
-        updateFormData(updatedData);
-      }
-    
+    const capitalizedValue = capitalizeFirstLetter(value);
+    const updatedData = {
+      ...localData,
+      [name]: capitalizedValue
+    };
+    setLocalData(updatedData);
+    if (updateFormData) {
+      updateFormData(updatedData);
+    }
   };
 
   const patientData = location.state?.patientData || {};
-  console.log(formData, "formData in PatientDetailsHistory");
 
   return (
-    <div className="patient-details-container">
+    <div className="patient-details-container" style={{ padding: '16px' }}>
       {/* Header */}
-      <div className="patient-details-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <User style={{ width: '16px', height: '16px', color: '#10b981' }} />
-          </div>
-          <h2 className="patient-details-title">Patient Details</h2>
+      <div className="patient-details-header" style={{ marginBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <User style={{ width: '14px', height: '14px', color: '#10b981' }} />
+          <h2 style={{ fontSize: '18px', margin: 0 }}>Patient Details</h2>
         </div>
       </div>
       
       {/* Patient Details Form */}
       <div className="patient-details-form">
-        <div className="patient-details-grid">
-          <div>
-            <label className="patient-details-label">Patient Name</label>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 200px' }}>
+            <label className="patient-details-label" style={{ fontSize: '12px' }}>Name</label>
             <input
               type="text"
               value={patientData.patientName ? capitalizeFirstLetter(patientData.patientName) : ''}
               className="patient-details-input"
               readOnly
+              style={{ height: '28px', fontSize: '15px', padding: '4px' }}
             />
           </div>
           
-          <div>
-            <label className="patient-details-label">Gender</label>
-            <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#374151' }}>
-                <input
-                  type="radio"
-                  checked={patientData.gender?.toLowerCase() === 'male'}
-                  style={{ margin: '0' }}
-                  disabled
-                />
-                Male
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#374151' }}>
-                <input
-                  type="radio"
-                  checked={patientData.gender?.toLowerCase() === 'female'}
-                  style={{ margin: '0' }}
-                  disabled
-                />
-                Female
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#374151' }}>
-                <input
-                  type="radio"
-                  checked={patientData.gender?.toLowerCase() === 'other'}
-                  style={{ margin: '0' }}
-                  disabled
-                />
-                Other
-              </label>
-            </div>
+          <div style={{ flex: '0 1 100px' }}>
+            <label className="patient-details-label" style={{ fontSize: '12px' }}>Gender</label>
+            <input
+              type="text"
+              value={patientData.gender ? capitalizeFirstLetter(patientData.gender) : ''}
+              className="patient-details-input"
+              readOnly
+              style={{ height: '28px', fontSize: '15px', padding: '4px' }}
+            />
           </div>
           
-          <div>
-            <label className="patient-details-label">Age</label>
+          <div style={{ flex: '0 1 80px' }}>
+            <label className="patient-details-label" style={{ fontSize: '12px' }}>Age</label>
             <input
               type="number"
               value={patientData.age || ''}
               className="patient-details-input"
               readOnly
+              style={{ height: '28px', fontSize: '15px', padding: '4px' }}
             />
           </div>
           
-          <div>
-            <label className="patient-details-label">Mobile Number</label>
+          <div style={{ flex: '1 1 150px' }}>
+            <label className="patient-details-label" style={{ fontSize: '12px' }}>Mobile</label>
             <input
               type="tel"
               value={patientData.mobileNumber || ''}
               className="patient-details-input"
               readOnly
+              style={{ height: '28px', fontSize: '15px', padding: '4px' }}
             />
           </div>
         </div>
 
-        {/* Patient History Section */}
-        <div className="patient-history-section">
-          <h3 className="patient-history-title">Patient History</h3>
-          <p className="patient-history-subtitle">Complete medical history documentation</p>
-          
-          {/* Chief Complaint (Read-only) */}
-          <div className="history-section">
-            <div className="history-section-header">
-              <div style={{ width: '32px', height: '32px', backgroundColor: '#dbeafe', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <FileText style={{ width: '16px', height: '16px', color: '#2563eb' }} />
+          <div className="patient-history-section">
+            <h3 style={{ fontSize: '16px', margin: '0 0 8px' }}>Patient History</h3>
+            
+            {/* Chief Complaint (Read-only) */}
+            <div className="history-section" style={{ marginBottom: '12px' }}>
+              <div className="history-section-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <FileText style={{ width: '14px', height: '14px', color: '#2563eb' }} />
+                <h4 style={{ fontSize: '14px', margin: 0 }}>Chief Complaint</h4>
               </div>
-              <div>
-                <h4 className="history-section-title">Chief Complaint</h4>
-              </div>
+              <textarea
+                name="chiefComplaint"
+                value={localData.chiefComplaint}
+                onChange={handleChange}
+                className="history-textarea readonly-textarea"
+                placeholder="Enter Here..."
+                rows={2}
+                style={{ fontSize: '16px', padding: '4px', minHeight: '32px', maxHeight: '40px' }}
+              />
             </div>
-            <textarea
-              name="chiefComplaint"
-              value={localData.chiefComplaint}
-              onChange={handleChange}
-              className="history-textarea readonly-textarea"
-              placeholder="Enter Here..."
-              rows={4}
-            />
-          </div>
 
-          {/* Past Medical History (Editable) */}
-          <div className="history-section">
-            <div className="history-section-header">
-              <div style={{ width: '32px', height: '32px', backgroundColor: '#fef3c7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Heart style={{ width: '16px', height: '16px', color: '#f59e0b' }} />
-              </div>
-              <div>
-                <h4 className="history-section-title">Past Medical History</h4>
-              </div>
+            {/* Past Medical History (Editable) */}
+          <div className="history-section" style={{ marginBottom: '12px' }}>
+            <div className="history-section-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <Heart style={{ width: '14px', height: '14px', color: '#f59e0b' }} />
+              <h4 style={{ fontSize: '14px', margin: 0 }}>Past Medical History</h4>
             </div>
             <textarea
               name="pastMedicalHistory"
@@ -182,19 +154,16 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               onChange={handleChange}
               className="history-textarea"
               placeholder="Enter Here..."
-              rows={4}
+              rows={3}
+                style={{ fontSize: '16px', padding: '4px', minHeight: '32px', maxHeight: '40px' }}
             />
           </div>
 
           {/* Family Medical History (Editable) */}
-          <div className="history-section">
-            <div className="history-section-header">
-              <div style={{ width: '32px', height: '32px', backgroundColor: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Users style={{ width: '16px', height: '16px', color: '#16a34a' }} />
-              </div>
-              <div>
-                <h4 className="history-section-title">Family Medical History</h4>
-              </div>
+          <div className="history-section" style={{ marginBottom: '12px' }}>
+            <div className="history-section-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <Users style={{ width: '14px', height: '14px', color: '#16a34a' }} />
+              <h4 style={{ fontSize: '14px', margin: 0 }}>Family Medical History</h4>
             </div>
             <textarea
               name="familyMedicalHistory"
@@ -202,19 +171,16 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               onChange={handleChange}
               className="history-textarea"
               placeholder="Enter Here..."
-              rows={4}
+              rows={3}
+                style={{ fontSize: '16px', padding: '4px', minHeight: '32px', maxHeight: '40px' }}
             />
           </div>
 
           {/* Physical Examination (Editable) */}
           <div className="history-section">
-            <div className="history-section-header">
-              <div style={{ width: '32px', height: '32px', backgroundColor: '#fed7aa', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Stethoscope style={{ width: '16px', height: '16px', color: '#ea580c' }} />
-              </div>
-              <div>
-                <h4 className="history-section-title">Clinical examination findings and observations</h4>
-              </div>
+            <div className="history-section-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <Stethoscope style={{ width: '14px', height: '14px', color: '#ea580c' }} />
+              <h4 style={{ fontSize: '14px', margin: 0 }}>Clinical Examination</h4>
             </div>
             <textarea
               name="physicalExamination"
@@ -222,7 +188,8 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               onChange={handleChange}
               className="history-textarea"
               placeholder="Enter Here..."
-              rows={4}
+              rows={3}
+                style={{ fontSize: '16px', padding: '4px', minHeight: '32px', maxHeight: '40px' }}
             />
           </div>
         </div>

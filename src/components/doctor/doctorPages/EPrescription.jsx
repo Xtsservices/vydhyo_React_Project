@@ -32,11 +32,11 @@ import { useSelector } from "react-redux";
 const EPrescription = () => {
   const location = useLocation();
   const { patientData } = location.state || {};
-  const [activeTab, setActiveTab] = useState("doctor-clinic");
+  const [activeTab, setActiveTab] = useState("patient-details");
   const [showPreview, setShowPreview] = useState(false);
   const user = useSelector((state) => state.currentUserData);
-    const doctorData = useSelector((state) => state.doctorData);
-const isfetchPrescription = useRef(false)
+  const doctorData = useSelector((state) => state.doctorData);
+  const isfetchPrescription = useRef(false);
 
   const navigate = useNavigate();
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
@@ -67,14 +67,14 @@ const isfetchPrescription = useRef(false)
       pastMedicalHistory: "",
       familyMedicalHistory: "",
       physicalExamination: "",
-        appointmentId: "",
+      appointmentId: "",
     },
     vitals: {},
     diagnosis: {},
     advice: {},
   });
 
-    const fetchPrescription = async () => {
+  const fetchPrescription = async () => {
     if (!patientData?.appointmentId) {
       return;
     }
@@ -141,7 +141,6 @@ const isfetchPrescription = useRef(false)
     } 
   };
 
-
   useEffect(() => {
     if(user && !isfetchPrescription.current){
       isfetchPrescription.current =true
@@ -173,9 +172,7 @@ const isfetchPrescription = useRef(false)
   }, [patientData]);
 
   const tabs = [
-    { id: "doctor-clinic", label: "Doctor & Clinic Info", icon: UserCheck },
-    { id: "patient-details", label: "Patient Details & History", icon: Users },
-    { id: "vitals", label: "Vitals & Investigation", icon: Activity },
+    { id: "patient-details", label: "Patient Details & Vitals", icon: Users },
     { id: "diagnosis", label: "Diagnosis & Medication", icon: Pill },
     { id: "advice", label: "Advice & Follow Up", icon: Calendar },
     { id: "preview", label: "Preview", icon: FileText },
@@ -200,20 +197,19 @@ const isfetchPrescription = useRef(false)
 
   const getCurrentUserData = async () => {
     try {
-   
       const userData = doctorData
-         setFormData((prev) => ({
-            ...prev,
-            doctorInfo: {
-              ...prev.doctorInfo,
-              doctorId: doctorId,
-              doctorName: `${userData.firstname || ""} ${userData.lastname || ""}`.trim(),
-              qualifications: userData.specialization?.degree || "",
-              specialization: userData.specialization?.name?.trim() || "",
-              medicalRegistrationNumber: userData.medicalRegistrationNumber || "",
-              contactNumber: userData.mobile ,
-            },
-          }));
+      setFormData((prev) => ({
+        ...prev,
+        doctorInfo: {
+          ...prev.doctorInfo,
+          doctorId: doctorId,
+          doctorName: `${userData.firstname || ""} ${userData.lastname || ""}`.trim(),
+          qualifications: userData.specialization?.degree || "",
+          specialization: userData.specialization?.name?.trim() || "",
+          medicalRegistrationNumber: userData.medicalRegistrationNumber || "",
+          contactNumber: userData.mobile ,
+        },
+      }));
       const selectedClinic2 =
         userData?.addresses?.find(
           (address) =>
@@ -230,7 +226,7 @@ const isfetchPrescription = useRef(false)
       getCurrentUserData();
     }
   }, [doctorData,formData?.doctorInfo?.doctorId]);
-
+console.log(formData, "completeFormData")
   function transformEprescriptionData(formData) {
     const { doctorInfo, patientInfo, vitals, diagnosis, advice } = formData;
     const appointmentId = location?.state?.patientData?.appointmentId;
@@ -418,26 +414,18 @@ const isfetchPrescription = useRef(false)
     }
 
     switch (activeTab) {
-      case "doctor-clinic":
-        return (
-          <DoctorClinicInfo
-            formData={formData.doctorInfo}
-            updateFormData={(data) => updateFormData("doctorInfo", data)}
-          />
-        );
       case "patient-details":
         return (
-          <PatientDetailsHistory
-            formData={formData.patientInfo}
-            updateFormData={(data) => updateFormData("patientInfo", data)}
-          />
-        );
-      case "vitals":
-        return (
-          <VitalsInvestigation
-            formData={formData.vitals}
-            updateFormData={(data) => updateFormData("vitals", data)}
-          />
+          <div className="combined-patient-vitals">
+            <PatientDetailsHistory
+              formData={formData.patientInfo}
+              updateFormData={(data) => updateFormData("patientInfo", data)}
+            />
+            <VitalsInvestigation
+              formData={formData.vitals}
+              updateFormData={(data) => updateFormData("vitals", data)}
+            />
+          </div>
         );
       case "diagnosis":
         return (
@@ -455,10 +443,16 @@ const isfetchPrescription = useRef(false)
         );
       default:
         return (
-          <DoctorClinicInfo
-            formData={formData.doctorInfo}
-            updateFormData={(data) => updateFormData("doctorInfo", data)}
-          />
+          <div className="combined-patient-vitals">
+            <PatientDetailsHistory
+              formData={formData.patientInfo}
+              updateFormData={(data) => updateFormData("patientInfo", data)}
+            />
+            <VitalsInvestigation
+              formData={formData.vitals}
+              updateFormData={(data) => updateFormData("vitals", data)}
+            />
+          </div>
         );
     }
   };

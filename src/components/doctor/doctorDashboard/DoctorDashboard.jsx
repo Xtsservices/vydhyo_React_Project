@@ -1111,7 +1111,7 @@ const ClinicAvailability = ({
               >
                 {currentClinic.clinicName}
               </Title>
-              <Text
+              {/* <Text
                 style={{
                   fontSize: "11px",
                   color: "#8c8c8c",
@@ -1119,7 +1119,7 @@ const ClinicAvailability = ({
                 }}
               >
                 {currentClinic.startTime} - {currentClinic.endTime}
-              </Text>
+              </Text> */}
               <Text
                 style={{
                   fontSize: "11px",
@@ -1142,7 +1142,7 @@ const ClinicAvailability = ({
                 fontFamily: "Poppins, sans-serif",
               }}
             >
-              Available Slots:
+              Upcoming 5 Slots:
             </Text>
 
             <div
@@ -1228,7 +1228,7 @@ const ClinicAvailability = ({
               )}
             </div>
           </div>
-          <div
+          {/* <div
             style={{
               padding: "12px",
               backgroundColor: "#f0f8f0",
@@ -1245,7 +1245,7 @@ const ClinicAvailability = ({
                 fontFamily: "Poppins, sans-serif",
               }}
             >
-              Next Availability
+              Next Availability==
             </Text>
             {nextAvailableSlot?.length > 0 ? (
               (() => {
@@ -1329,7 +1329,7 @@ const ClinicAvailability = ({
                 No available slots Tomorrow
               </Text>
             )}
-          </div>
+          </div> */}
 
           {clinics.length > 1 && (
             <div
@@ -1409,7 +1409,7 @@ const RevenueSummary = ({ revenueSummaryData }) => (
           fontFamily: "Poppins, sans-serif",
         }}
       >
-        Revenue Summary
+        Revenue Summary (Till Date)
       </Title>
     </div>
     <div style={{ textAlign: "center" }}>

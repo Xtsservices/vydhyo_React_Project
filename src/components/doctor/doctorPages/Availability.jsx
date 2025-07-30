@@ -408,9 +408,14 @@ console.log("response", response)
       );
 
       // Filter available slots that fall within the unavailable time range
+      // const slotsToMarkUnavailable = availableSlots.filter((slot) => {
+      //   const slotTime = moment(slot.originalTime, "HH:mm");
+      //   return slotTime.isSameOrAfter(startTime) && slotTime.isSameOrBefore(endTime);
+      // });
+      
       const slotsToMarkUnavailable = availableSlots.filter((slot) => {
         const slotTime = moment(slot.originalTime, "HH:mm");
-        return slotTime.isSameOrAfter(startTime) && slotTime.isSameOrBefore(endTime);
+        return slotTime.isSameOrAfter(startTime) && slotTime.isBefore(endTime);
       });
 
       const existingUnavailableTimes = unavailableSlots.map(
@@ -1236,10 +1241,10 @@ const handleOk = async (type) => {
             {renderAvailableTimeControls()}
 
             {/* Unavailable Slots Section */}
-            {renderUnavailableTimeControls()}
+            {/* {renderUnavailableTimeControls()} */}
 
             {/* Legend */}
-            <div style={{ marginBottom: 16 }}>
+            {/* <div style={{ marginBottom: 16 }}>
               <Space>
                 <Tag color="#16A34A" icon={<ClockCircleOutlined />}>
                   Available Slots
@@ -1248,7 +1253,7 @@ const handleOk = async (type) => {
                   Unavailable Slots
                 </Tag>
               </Space>
-            </div>
+            </div> */}
           </Card>
         </Spin>
       </div>

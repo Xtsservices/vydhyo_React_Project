@@ -211,11 +211,14 @@ const Appointment = () => {
       return;
     }
 
+    console.log("Rescheduling appointment:", selectedAppointment.appointmentId);
+    console.log("New Date:", newDate.format("YYYY-MM-DD"));
+
     setRescheduleLoading(true);
     try {
       const response = await apiPost("/appointment/rescheduleAppointment", {
         appointmentId: selectedAppointment.appointmentId,
-        newDate: newDate.format("YYYY-MM-DD"),
+        newDate: selectedDate.format("YYYY-MM-DD"),
         newTime: newTime,
         reason: "Patient requested reschedule",
       });

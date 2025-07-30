@@ -455,21 +455,18 @@
   margin-bottom: 8px;
 }
 
-/* EPrescription specific styles */
 .eprescription-container {
-  display: flex;
-  height: 100vh; /* Full viewport height */
+  width: 100%; /* Full width */
+  margin: 0; /* Remove margins */
+  padding: 0; /* Remove padding from container */
   background-color: #f9fafb;
   font-family: 'Arial, sans-serif';
-  overflow: hidden; /* Prevent scrolling on the container itself */
+  overflow: hidden;
 }
 
 .eprescription-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%; /* Ensure it takes full height */
-  overflow: hidden; /* Prevent overflow in main */
+  width: 100%; /* Full width */
+  padding: 0 16px; /* Minimal padding */
 }
 
 .eprescription-tabs {
@@ -505,19 +502,18 @@
 }
 
 .eprescription-content {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto; /* Only this should scroll */
-  height: 100%; /* Ensure it takes full height */
-  box-sizing: border-box;
+  padding: 24px 0; /* Adjust padding to avoid extra space */
+  width: 100%; /* Full width */
+  overflow-y: auto;
 }
-/* PatientDetailsHistory specific styles */
+/* Adjust container to remove extra space */
 .patient-details-container {
-  max-width: 800px;
-  margin: 0 auto;
+  width: 100%; /* Ensure full width */
+  margin: 0; /* Remove margins */
+  padding: 16px; /* Minimal padding */
   background-color: white;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .patient-details-header {
@@ -536,14 +532,15 @@
 }
 
 .patient-details-form {
-  padding: 24px;
+  padding: 0; /* Remove extra padding */
+  width: 100%;
 }
 
 .patient-details-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-  margin-bottom: 32px;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .patient-details-input {
@@ -614,17 +611,16 @@
 
 .history-textarea {
   width: 100%;
-  min-height: 80px;
-  padding: 12px;
+  min-height: 30px; /* Single line height */
+  padding: 6px 12px; /* Smaller padding */
   border: 1px solid #d1d5db;
   border-radius: 6px;
   background-color: #f9fafb;
   font-size: 14px;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.2s;
+  resize: none; /* Prevent resizing */
+  overflow: hidden; /* Hide overflow text */
+  box-sizing: border-box;
 }
-
 .history-textarea:focus {
   border-color: #2563eb;
 }
@@ -1318,6 +1314,7 @@
   margin-right: 6px;
   min-width: 120px;
 }
+
 
 
 /* Print Styles */
