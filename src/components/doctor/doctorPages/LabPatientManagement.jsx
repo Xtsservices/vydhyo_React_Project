@@ -32,13 +32,18 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
   const [paying, setPaying] = useState({});
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [isPaymentDone, setIsPaymentDone] = useState({});
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 5,
+    total: 0,
+  });
 
   // Fetch data
-  async function getAllTestsPatientsByDoctorID() {
+  async function getAllTestsPatientsByDoctorID(page = 1, pageSize = 5) {
     try {
       setLoadingPatients(true);
       const response = await apiGet(
-        `/lab/getAllTestsPatientsByDoctorID/${doctorId}?searchValue=${searchValue}&status=${status}`
+        `/lab/getAllTestsPatientsByDoctorID/${doctorId}?searchValue=${searchValue}&status=${status}&page=${page}&limit=${pageSize}`
       );
 
       console.log("getAllTestsPatientsByDoctorID", response);
@@ -52,17 +57,22 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
           } else if (status === "pending") {
             return patient.tests.some((test) => test.status === "pending");
           }
-          return true; // Default case (though status should always be "pending" or "completed")
+          return true;
         });
 
         // Sort by patientId descending
         filteredData.sort((a, b) => {
           const idA = parseInt(a.patientId.replace(/\D/g, "")) || 0;
           const idB = parseInt(b.patientId.replace(/\D/g, "")) || 0;
-          return idB - idA; // latest on top
+          return idB - idA;
         });
 
         setPatients(filteredData);
+        setPagination({
+          current: response.data.data.pagination.page,
+          pageSize: response.data.data.pagination.limit,
+          total: response.data.data.pagination.totalPatients,
+        });
 
         // Initialize isPaymentDone for each patient
         const paymentDoneState = {};
@@ -210,7 +220,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
           position: "top-right",
           autoClose: 3000,
         });
-        await getAllTestsPatientsByDoctorID();
+        await getAllTestsPatientsByDoctorID(pagination.current, pagination.pageSize);
       }
     } catch (error) {
       console.error("Error processing payment:", error);
@@ -226,12 +236,16 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
     }
   };
 
+  const handleTableChange = (pagination) => {
+    getAllTestsPatientsByDoctorID(pagination.current, pagination.pageSize);
+  };
+
   useEffect(() => {
     if (doctorId && user && !hasfetchRevenueCount.current) {
-      hasfetchRevenueCount.current = true
+      hasfetchRevenueCount.current = true;
       getAllTestsPatientsByDoctorID();
     }
-  }, [user, doctorId, status, searchValue]); // Trigger API on tab change (status change)
+  }, [user, doctorId, status, searchValue]);
 
   const toggleCollapse = (patientId) => {
     setExpandedKeys((prev) =>
@@ -239,8 +253,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
         ? prev.filter((id) => id !== patientId)
         : [...prev, patientId]
     );
-    // Trigger API call on expand
-    getAllTestsPatientsByDoctorID();
+    getAllTestsPatientsByDoctorID(pagination.current, pagination.pageSize);
   };
 
   // Main table columns
@@ -416,7 +429,15 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
           columns={columns}
           dataSource={patients}
           rowKey="patientId"
-          pagination={false}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            pageSizeOptions: ['5', '10', '20'],
+            onChange: (page, pageSize) => handleTableChange({ current: page, pageSize }),
+            onShowSizeChange: (current, size) => handleTableChange({ current, pageSize: size }),
+          }}
           loading={loadingPatients}
           expandable={{
             expandedRowKeys: expandedKeys,
