@@ -330,16 +330,23 @@ const hasfetchClinicsForDoctor = useRef(false)
         isAvailable: true,
         addressId: selectedClinic,
       });
-
+console.log("response", response)
       if (response.data && response.data.status === "success") {
-        message.success("Available slots created successfully");
+        const message = response?.data?.results[0]?.reason || "Available slots created successfully";
+          toast.success(message || response?.data?.message || "updated");
+
+        message.success(response?.data?.message|| "Available slots created successfully");
         fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
       } else {
+          // toast.error(response?.data?.message || "Failed to create available slots");
+
         message.error(
           response.data?.message || "Failed to create available slots"
         );
       }
     } catch (error) {
+          // toast.error( "Failed to create available slots");
+
       console.error("Error creating available slots:", error);
       message.error("Failed to create available slots");
     } finally {
@@ -412,6 +419,7 @@ const hasfetchClinicsForDoctor = useRef(false)
       );
 
       if (newSlotsToMark.length === 0) {
+        toast.error("No available slots in the selected time range to mark as unavailable");
         message.info("No available slots in the selected time range to mark as unavailable");
         return;
       }
@@ -434,12 +442,13 @@ const hasfetchClinicsForDoctor = useRef(false)
       // Prepare the API payload with the exact times of the slots to mark unavailable
       const response = await apiPut("/appointment/updateDoctorSlots", {
         doctorId: doctorId,
-        date: selectedDate.format("YYYY-MM-DD"),
+        date: selectedDate?.format("YYYY-MM-DD"),
         timeSlots: newSlotsToMark.map((slot) => slot.originalTime),
         addressId: selectedClinic,
         status: "unavailable",
         reason: unavailableReason || "Not available",
       });
+      console.log("response123", response)
 
       if (response.data && response.data.status === "success") {
         if (response.data.updatedSlots.length === 0) {
@@ -451,6 +460,8 @@ const hasfetchClinicsForDoctor = useRef(false)
           availableSlots: updatedAvailableSlots,
           unavailableSlots: newUnavailableSlots,
         });
+          toast.success( "Slots marked as unavailable successfully");
+
         message.success("Slots marked as unavailable successfully");
       } else {
         throw new Error(response.data?.message || "Failed to update slots");
@@ -852,28 +863,43 @@ const handleOk = async (type) => {
 
         {/* Slots Display */}
         <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
-          {availableSlots.map((slot, index) => (
-            <Col key={index} xs={12} sm={8} md={6} lg={4}>
-              <Button
- onClick={() => showModal(slot.time)}
-                block
-                style={{
-                  height: 48,
-                  borderRadius: 8,
-                  border: "1px solid #52c41a",
-                  backgroundColor: "#DCFCE7",
-                  color: "#52c41a",
-                  fontWeight: "bold",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                icon={<ClockCircleOutlined />}
-              >
-                {slot.time}
-              </Button>
-            </Col>
-          ))}
+         {availableSlots.map((slot, index) => {
+  const isToday =
+    selectedDate && selectedDate.isSame(new Date(), "day");
+
+  // Convert slot time (e.g., "10:30 AM") and current time to comparable Date objects
+  const slotDateTime = isToday
+    ? new Date(`${selectedDate.format("YYYY-MM-DD")} ${slot.time}`)
+    : null;
+
+  const isPastTime =
+    isToday && slotDateTime && slotDateTime < new Date();
+
+  return (
+    <Col key={index} xs={12} sm={8} md={6} lg={4}>
+      <Button
+        onClick={() => showModal(slot.time)}
+        disabled={isPastTime}
+        block
+        style={{
+          height: 48,
+          borderRadius: 8,
+          border: "1px solid #52c41a",
+          backgroundColor: isPastTime ? "#f5f5f5" : "#DCFCE7",
+          color: isPastTime ? "#999" : "#52c41a",
+          fontWeight: "bold",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        icon={<ClockCircleOutlined />}
+      >
+        {slot.time}
+      </Button>
+    </Col>
+  );
+})}
+
         </Row>
         
       <Modal
@@ -1069,6 +1095,7 @@ const handleOk = async (type) => {
             <Col key={index} xs={12} sm={8} md={6} lg={4}>
               <Button
                 block
+                 onClick={() => showModal(slot.time)}
                 style={{
                   height: 48,
                   borderRadius: 8,
@@ -1159,6 +1186,7 @@ const handleOk = async (type) => {
                     onChange={handleDateChange}
                     value={selectedDate}
                     format="MM/DD/YYYY"
+                     disabledDate={(current) => current && current < moment().startOf('day')}
                   />
 
                   <Text strong>End Date:</Text>
@@ -1169,6 +1197,7 @@ const handleOk = async (type) => {
                     onChange={handleEndDateChange}
                     value={selectedEndDate}
                     format="MM/DD/YYYY"
+                    disabledDate={(current) => current && current < moment().startOf('day')}
                   />
                 </Space>
               </div>
