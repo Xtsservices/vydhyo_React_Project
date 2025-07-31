@@ -189,26 +189,26 @@ const MedicinesTab = ({ refreshTrigger }) => {
       width: 80,
       render: (price) => `₹${price.toFixed(2)}`,
     },
-    {
-      title: 'Action',
-      key: 'action',
-      width: 100,
-      render: (_, record) => (
-        <Space size="middle">
-          <Button 
-            type="text" 
-            icon={<EditOutlined />} 
-            onClick={() => handleEdit(record)}
-          />
-          <Button 
-            type="text" 
-            icon={<DeleteOutlined />} 
-            onClick={() => handleDelete(record)}
-            danger
-          />
-        </Space>
-      ),
-    },
+    // {
+    //   title: 'Action',
+    //   key: 'action',
+    //   width: 100,
+    //   render: (_, record) => (
+    //     <Space size="middle">
+    //       <Button 
+    //         type="text" 
+    //         icon={<EditOutlined />} 
+    //         onClick={() => handleEdit(record)}
+    //       />
+    //       <Button 
+    //         type="text" 
+    //         icon={<DeleteOutlined />} 
+    //         onClick={() => handleDelete(record)}
+    //         danger
+    //       />
+    //     </Space>
+    //   ),
+    // },
   ];
 
   const startIndex = pagination.total > 0 ? ((pagination.current - 1) * pagination.pageSize) + 1 : 0;

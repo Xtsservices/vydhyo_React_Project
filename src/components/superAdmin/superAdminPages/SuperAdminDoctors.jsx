@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -28,7 +34,7 @@ import {
 } from "@ant-design/icons";
 import moment from "moment";
 import { apiGet } from "../../api";
-import _ from "lodash"; // Import lodash for debounce
+import { debounce } from "lodash";
 
 const { Title, Text } = Typography;
 
@@ -115,12 +121,15 @@ const DoctorOnboardingDashboard = () => {
         status: statusFilter,
         ...(searchText.trim() && { search: searchText.trim() }),
       });
-      const response = await apiGet(`users/AllUsers?${queryParams.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await apiGet(
+        `users/AllUsers?${queryParams.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
       if (isMounted.current) {
         const { data, pagination: apiPagination } = response.data;
         let doctorsData = Array.isArray(data) ? data : [];
@@ -148,11 +157,18 @@ const DoctorOnboardingDashboard = () => {
         setLoading(false);
       }
     }
-  }, [navigate, pagination.current, pagination.pageSize, statusFilter, searchText]);
+  }, [
+    navigate,
+    pagination.current,
+    pagination.pageSize,
+    statusFilter,
+    searchText,
+  ]);
 
-  // Debounced fetchDoctors using useRef to persist the function
-  const debouncedFetchDoctorsRef = useRef(
-    _.debounce((fetchFn) => fetchFn(), 500)
+  // Create a debounced version of fetchDoctors
+  const debouncedFetchDoctors = useMemo(
+    () => debounce(fetchDoctors, 500),
+    [fetchDoctors]
   );
 
   // Cleanup on unmount
@@ -160,20 +176,30 @@ const DoctorOnboardingDashboard = () => {
     isMounted.current = true;
     return () => {
       isMounted.current = false;
-      debouncedFetchDoctorsRef.current.cancel();
+      debouncedFetchDoctors.cancel();
     };
-  }, []);
+  }, [debouncedFetchDoctors]);
 
   // Fetch doctors and count on mount and when dependencies change
   useEffect(() => {
     fetchDoctors();
     fetchDoctorsCount();
-  }, [fetchDoctors, fetchDoctorsCount, statusFilter, pagination.current, pagination.pageSize]);
+  }, [
+    fetchDoctorsCount,
+    statusFilter,
+    pagination.current,
+    pagination.pageSize,
+  ]);
 
   // Trigger debounced fetch when searchText changes
   useEffect(() => {
-    debouncedFetchDoctorsRef.current(fetchDoctors);
-  }, [searchText, fetchDoctors]);
+    if (searchText !== "") {
+      debouncedFetchDoctors();
+    } else {
+      // If search text is empty, fetch immediately without debounce
+      fetchDoctors();
+    }
+  }, [searchText, debouncedFetchDoctors, fetchDoctors]);
 
   // Utility functions
   const getImageSrc = useCallback((profilepic) => {
@@ -208,6 +234,20 @@ const DoctorOnboardingDashboard = () => {
       return dateString;
     }
   }, []);
+
+  // Handle search input with mobile number validation
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+
+    // Check if the input might be a mobile number (all digits)
+    if (/^\d+$/.test(value)) {
+      if (value.length <= 10) {
+        setSearchText(value);
+      }
+    } else {
+      setSearchText(value);
+    }
+  };
 
   // Table columns configuration
   const columns = useMemo(
@@ -350,17 +390,19 @@ const DoctorOnboardingDashboard = () => {
         ),
       },
     ],
-    [pagination.current, pagination.pageSize, getImageSrc, handleViewProfile, formatDate]
+    [
+      pagination.current,
+      pagination.pageSize,
+      getImageSrc,
+      handleViewProfile,
+      formatDate,
+    ]
   );
 
   const handleCardClick = (status) => {
     setStatusFilter(status);
     setPagination((prev) => ({ ...prev, current: 1 }));
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchText(e.target.value);
-    setPagination((prev) => ({ ...prev, current: 1 }));
+    setSearchText(""); // Reset search when changing status filter
   };
 
   return (
@@ -570,7 +612,7 @@ const DoctorOnboardingDashboard = () => {
       <Row style={{ marginBottom: "clamp(16px, 2vw, 24px)" }}>
         <Col xs={24}>
           <Input
-            placeholder="Search by first name, last name, or mobile number..."
+            placeholder="Search by name or mobile number..."
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={handleSearchChange}
@@ -580,6 +622,14 @@ const DoctorOnboardingDashboard = () => {
               maxWidth: "clamp(300px, 50vw, 400px)",
               fontSize: "clamp(12px, 1.8vw, 14px)",
             }}
+            maxLength={30} // Reasonable limit for names
+            // suffix={
+            //   /^\d+$/.test(searchText) && searchText.length > 0 ? (
+            //     <Text type={searchText.length === 10 ? "success" : "danger"}>
+            //       {searchText.length}/10
+            //     </Text>
+            //   ) : null
+            // }
           />
         </Col>
       </Row>

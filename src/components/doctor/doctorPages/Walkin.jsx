@@ -803,127 +803,133 @@ console.log("first2")
   );
 
   const renderBasicInfoCard = () => (
-    <Card
-      title={
-        <>
-          <UserOutlined /> Basic Information
-        </>
-      }
-      style={{ marginBottom: 16 }}
-    >
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={8}>
-          <Text strong>First Name *</Text>
-          <Input
-            placeholder="Enter first name"
-            value={patientData.firstName}
-            onChange={(e) => handleInputChange("firstName", e.target.value)}
-            disabled={isCreatingPatient || userFound}
-            style={{ marginTop: 8 }}
-          />
-          {fieldErrors.firstName && (
-            <Text type="danger">{fieldErrors.firstName}</Text>
-          )}
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Last Name </Text>
-          <Input
-            placeholder="Enter last name"
-            value={patientData.lastName}
-            onChange={(e) => handleInputChange("lastName", e.target.value)}
-            disabled={isCreatingPatient || userFound}
-            style={{ marginTop: 8 }}
-          />
-          {fieldErrors.lastName && (
-            <Text type="danger">{fieldErrors.lastName}</Text>
-          )}
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Phone Number *</Text>
-          <Input
-            placeholder="Enter 10-digit mobile number"
-            value={patientData.phoneNumber}
-            onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-            maxLength={10}
-            disabled={isCreatingPatient || userFound}
-            style={{ marginTop: 8 }}
-          />
-          {fieldErrors.phoneNumber && (
-            <Text type="danger">{fieldErrors.phoneNumber}</Text>
-          )}
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Date of Birth </Text>
-          <DatePicker
-            value={
-              patientData.dateOfBirth
-                ? moment(patientData.dateOfBirth, "DD-MM-YYYY")
-                : null
-            }
-            onChange={(date) =>
-              handleInputChange(
-                "dateOfBirth",
-                date ? date.format("DD-MM-YYYY") : ""
-              )
-            }
-            disabled={isCreatingPatient || userFound}
-            style={{ width: "100%", marginTop: 8 }}
-            format="DD-MM-YYYY"
-            disabledDate={(current) =>
-              current && current > moment().endOf("day")
-            }
-          />
-          {fieldErrors.dateOfBirth && (
-            <Text type="danger">{fieldErrors.dateOfBirth}</Text>
-          )}
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Age (Calculated)</Text>
-          <Input
-            placeholder="Age calculated from DOB"
-            value={
-              patientData.dateOfBirth
-                ? calculateAge(patientData.dateOfBirth) || patientData.age
-                : patientData.age
-            }
-            
-            onChange={(e) => handleInputChange("age", e.target.value)}
-            style={{ marginTop: 8 }}
-            disabled={!!patientData.dateOfBirth} // Disable only if DOB is selected
-          />
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Gender *</Text>
-          <Select
-            value={patientData.gender}
-            onChange={(value) => handleInputChange("gender", value)}
-            placeholder="Select gender"
-            disabled={isCreatingPatient || userFound}
-            style={{ width: "100%", marginTop: 8 }}
-          >
-            <Option value="Male">Male</Option>
-            <Option value="Female">Female</Option>
-            <Option value="Other">Other</Option>
-          </Select>
-          {fieldErrors.gender && (
-            <Text type="danger">{fieldErrors.gender}</Text>
-          )}
-        </Col>
+  <Card
+    title={
+      <>
+        <UserOutlined /> Basic Information
+      </>
+    }
+    style={{ marginBottom: 16 }}
+  >
+    <Row gutter={[16, 16]}>
+      <Col xs={24} sm={8}>
+        <Text strong>First Name *</Text>
+        <Input
+          placeholder="Enter first name"
+          value={patientData.firstName}
+          onChange={(e) => handleInputChange("firstName", e.target.value)}
+          disabled={isCreatingPatient || userFound}
+          style={{ marginTop: 8 }}
+        />
+        {fieldErrors.firstName && (
+          <Text type="danger">{fieldErrors.firstName}</Text>
+        )}
+      </Col>
+      <Col xs={24} sm={8}>
+        <Text strong>Last Name </Text>
+        <Input
+          placeholder="Enter last name"
+          value={patientData.lastName}
+          onChange={(e) => handleInputChange("lastName", e.target.value)}
+          disabled={isCreatingPatient || userFound}
+          style={{ marginTop: 8 }}
+        />
+        {fieldErrors.lastName && (
+          <Text type="danger">{fieldErrors.lastName}</Text>
+        )}
+      </Col>
+      <Col xs={24} sm={8}>
+        <Text strong>Phone Number *</Text>
+        <Input
+          placeholder="Enter 10-digit mobile number"
+          value={patientData.phoneNumber}
+          onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+          maxLength={10}
+          disabled={isCreatingPatient || userFound}
+          style={{ marginTop: 8 }}
+        />
+        {fieldErrors.phoneNumber && (
+          <Text type="danger">{fieldErrors.phoneNumber}</Text>
+        )}
+      </Col>
+      <Col xs={24} sm={8}>
+        <Text strong>Date of Birth </Text>
+        <input
+          type="date"
+          style={{
+            alignSelf: "flex-end",
+            borderRadius: "12px",
+            background: "#F6F6F6",
+            padding: "0.4rem",
+            color: "#1977f3",
+            width: "130px",
+            border: "1px solid #d9d9d9",
+            marginTop: 8,
+          }}
+          max={new Date().toISOString().split("T")[0]} // Prevent future dates
+          value={
+            patientData.dateOfBirth
+              ? moment(patientData.dateOfBirth, "DD-MM-YYYY").format("YYYY-MM-DD")
+              : ""
+          }
+          onChange={(e) =>
+            handleInputChange(
+              "dateOfBirth",
+              e.target.value ? moment(e.target.value, "YYYY-MM-DD").format("DD-MM-YYYY") : ""
+            )
+          }
+          disabled={isCreatingPatient || userFound}
+        />
+        {fieldErrors.dateOfBirth && (
+          <Text type="danger">{fieldErrors.dateOfBirth}</Text>
+        )}
+      </Col>
+      <Col xs={24} sm={8}>
+        <Text strong>Age (Calculated)</Text>
+        <Input
+          placeholder="Age calculated from DOB"
+          value={
+            patientData.dateOfBirth
+              ? calculateAge(patientData.dateOfBirth) || patientData.age
+              : patientData.age
+          }
+          onChange={(e) => handleInputChange("age", e.target.value)}
+          style={{ marginTop: 8 }}
+          disabled={!!patientData.dateOfBirth} // Disable only if DOB is selected
+        />
+      </Col>
+      <Col xs={24} sm={8}>
+        <Text strong>Gender *</Text>
+        <Select
+          value={patientData.gender}
+          onChange={(value) => handleInputChange("gender", value)}
+          placeholder="Select gender"
+          disabled={isCreatingPatient || userFound}
+          style={{ width: "100%", marginTop: 8 }}
+        >
+          <Option value="Male">Male</Option>
+          <Option value="Female">Female</Option>
+          <Option value="Other">Other</Option>
+        </Select>
+        {fieldErrors.gender && (
+          <Text type="danger">{fieldErrors.gender}</Text>
+        )}
+      </Col>
+    </Row>
+    {!userFound && !patientCreated && (
+      <Row justify="end" style={{ marginTop: 16 }}>
+        <Button
+          type="primary"
+          onClick={handleCreatePatient}
+          loading={isCreatingPatient}
+          disabled={isCreatingPatient || clinics.length === 0}
+        >
+          Create Patient
+        </Button>
       </Row>
-      {!userFound && !patientCreated && (
-        <Row justify="end" style={{ marginTop: 16 }}>
-          <Button
-            type="primary"
-            onClick={handleCreatePatient}
-            loading={isCreatingPatient}
-            disabled={isCreatingPatient || clinics.length === 0}
-          >
-            Create Patient
-          </Button>
-        </Row>
-      )}
-    </Card>
-  );
+    )}
+  </Card>
+);
 
   const renderAppointmentDetailsCard = () => (
     <Card
