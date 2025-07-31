@@ -94,6 +94,8 @@ const transformPatientData = (result, user) => {
         name: med.medName,
         quantity: med.quantity || 1,
         price: med.price || 0,
+        gst:med.gst|| 0,
+        cgst:med.cgst || 0,
         status:
           med.status?.charAt(0).toUpperCase() + med.status?.slice(1) ||
           "Unknown",
@@ -102,6 +104,7 @@ const transformPatientData = (result, user) => {
       totalMedicineAmount,
       totalAppointmentFees,
       grandTotal: totalTestAmount + totalMedicineAmount + totalAppointmentFees,
+
     };
   });
 };
@@ -926,6 +929,24 @@ const BillingSystem = () => {
                                     >
                                       Status
                                     </th>
+                                     <th
+                                      style={{
+                                        padding: "10px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #ddd",
+                                      }}
+                                    >
+                                      Gst (₹)
+                                    </th>
+                                     <th
+                                      style={{
+                                        padding: "10px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #ddd",
+                                      }}
+                                    >
+                                      Cgst (₹)
+                                    </th>
                                     <th
                                       style={{
                                         padding: "10px",
@@ -992,6 +1013,22 @@ const BillingSystem = () => {
                                         >
                                           {medicine.status}
                                         </span>
+                                      </td>
+                                       <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                        }}
+                                      >
+                                        {medicine.gst}
+                                      </td>
+                                       <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                        }}
+                                      >
+                                        {medicine.cgst}
                                       </td>
                                       <td
                                         style={{
@@ -1193,7 +1230,7 @@ const BillingSystem = () => {
                             <div>
                               <DownloadTaxInvoice patient={patient} user={user} />
                               <button
-                                onClick={() => handlePayClick(patient.id)}
+                                onClick={() => handleMarkAsPaid(patient.id)}
                                 style={{
                                   background: "#28a745",
                                   color: "white",
