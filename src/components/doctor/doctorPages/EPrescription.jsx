@@ -37,10 +37,10 @@ const EPrescription = () => {
   const user = useSelector((state) => state.currentUserData);
   const doctorData = useSelector((state) => state.doctorData);
   const isfetchPrescription = useRef(false);
-
   const navigate = useNavigate();
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-  const [, setSelectedClinic] = useState(null);
+  const [selectedClinic, setSelectedClinic] = useState(null);
+
   const [formData, setFormData] = useState({
     doctorInfo: {
       doctorId: doctorId || "",
@@ -50,24 +50,24 @@ const EPrescription = () => {
       qualifications: user?.specialization?.degree || "",
       specialization: user?.specialization?.name || "",
       medicalRegistrationNumber: user?.medicalRegistrationNumber || "",
-      selectedClinicId: "",
+      selectedClinicId: patientData?.addressId || "",
       clinicAddress: "",
       contactNumber: "",
-      appointmentDate: "",
-      appointmentStartTime: "",
+      appointmentDate: patientData?.appointmentDate || "",
+      appointmentStartTime: patientData?.appointmentTime || "",
       appointmentEndTime: "",
     },
     patientInfo: {
-      patientId: "",
-      patientName: "",
-      age: "",
-      gender: "",
-      mobileNumber: "",
-      chiefComplaint: "",
+      patientId: patientData?.patientId || "",
+      patientName: patientData?.patientName || "",
+      age: patientData?.age || "",
+      gender: patientData?.gender || "",
+      mobileNumber: patientData?.mobileNumber || "",
+      chiefComplaint: patientData?.appointmentReason || "",
       pastMedicalHistory: "",
       familyMedicalHistory: "",
       physicalExamination: "",
-      appointmentId: "",
+      appointmentId: patientData?.appointmentId || "",
     },
     vitals: {},
     diagnosis: {},
@@ -80,22 +80,23 @@ const EPrescription = () => {
     }
 
     try {
-      const response = await apiGet(`/pharmacy/getEPrescriptionByAppointmentId/${patientData.appointmentId}`);
-      if (response.data.success && response.data.data) {
-        const prescription2 = response.data.data;
+      isfetchPrescription.current = true;
+      const response = await apiGet(
+        `/pharmacy/getEPrescriptionByAppointmentId/${patientData.appointmentId}`
+      );
+      if (response.data.success && response.data.data && response.data.data.length > 0) {
         const prescription = response.data.data[0]; // Select the first prescription
-        console.log("response====",response)
-        console.log("prescription2====",prescription2)
-        console.log("prescription====",prescription)
-        setFormData({
+        setFormData((prev) => ({
+          ...prev,
           doctorInfo: {
-            ...formData.doctorInfo,
+            ...prev.doctorInfo,
             doctorId: prescription.doctorId || doctorId,
-            selectedClinicId: prescription.addressId || "",
-            appointmentDate: patientData.appointmentDate || "",
-            appointmentStartTime: patientData.appointmentTime || "",
+            selectedClinicId: prescription.addressId || prev.doctorInfo.selectedClinicId,
+            appointmentDate: patientData.appointmentDate || prev.doctorInfo.appointmentDate,
+            appointmentStartTime: patientData.appointmentTime || prev.doctorInfo.appointmentStartTime,
           },
           patientInfo: {
+            ...prev.patientInfo,
             patientId: prescription.userId || patientData.patientId || "",
             patientName: prescription.patientInfo?.patientName || patientData.patientName || "",
             age: prescription.patientInfo?.age || patientData.age || "",
@@ -105,7 +106,7 @@ const EPrescription = () => {
             pastMedicalHistory: prescription.patientInfo?.pastMedicalHistory || "",
             familyMedicalHistory: prescription.patientInfo?.familyMedicalHistory || "",
             physicalExamination: prescription.patientInfo?.physicalExamination || "",
-            appointmentId: prescription.appointmentId || ""
+            appointmentId: prescription.appointmentId || patientData.appointmentId || "",
           },
           vitals: {
             bp: prescription.vitals?.bp || "",
@@ -121,9 +122,9 @@ const EPrescription = () => {
           diagnosis: {
             diagnosisList: prescription.diagnosis?.diagnosisNote || "",
             selectedTests: prescription.diagnosis?.selectedTests || [],
-            medications: prescription.diagnosis?.medications.map(med => ({
+            medications: prescription.diagnosis?.medications?.map((med) => ({
               ...med,
-              id: Date.now() + Math.random(), // Add unique ID for UI rendering
+              id: Date.now() + Math.random(),
               timings: typeof med.timings === "string" ? med.timings.split(", ") : med.timings,
             })) || [],
             testNotes: prescription.diagnosis?.testsNote || "",
@@ -133,43 +134,21 @@ const EPrescription = () => {
             advice: prescription.advice?.advice || "",
             followUpDate: prescription.advice?.followUpDate || "",
           },
-        });
+        }));
       }
     } catch (error) {
       console.error("Error fetching prescription:", error);
       toast.error("Failed to load existing prescription");
-    } 
+    } finally {
+      isfetchPrescription.current = false;
+    }
   };
 
   useEffect(() => {
-    if(user && !isfetchPrescription.current){
-      isfetchPrescription.current =true
-      fetchPrescription()
+    if (user && !isfetchPrescription.current) {
+      fetchPrescription();
     }
-  },[user])
-
-  useEffect(() => {
-    if (patientData) {
-      setFormData((prev) => ({
-        ...prev,
-        doctorInfo: {
-          ...prev.doctorInfo,
-          appointmentDate: patientData.appointmentDate || "",
-          appointmentStartTime: patientData.appointmentTime || "",
-          selectedClinicId: patientData.addressId || "",
-        },
-        patientInfo: {
-          ...prev.patientInfo,
-          patientId: patientData.patientId || "",
-          patientName: patientData.patientName || "",
-          age: patientData.age || "",
-          gender: patientData.gender || "",
-          mobileNumber: patientData.mobileNumber || "",
-          appointmentId:patientData.appointmentId || ""
-        },
-      }));
-    }
-  }, [patientData]);
+  }, [user]);
 
   const tabs = [
     { id: "patient-details", label: "Patient Details & Vitals", icon: Users },
@@ -181,7 +160,7 @@ const EPrescription = () => {
   const updateFormData = (section, data) => {
     setFormData((prev) => ({
       ...prev,
-      [section]: data,
+      [section]: { ...prev[section], ...data },
     }));
   };
 
@@ -197,39 +176,39 @@ const EPrescription = () => {
 
   const getCurrentUserData = async () => {
     try {
-      const userData = doctorData
-      setFormData((prev) => ({
-        ...prev,
-        doctorInfo: {
-          ...prev.doctorInfo,
-          doctorId: doctorId,
-          doctorName: `${userData.firstname || ""} ${userData.lastname || ""}`.trim(),
-          qualifications: userData.specialization?.degree || "",
-          specialization: userData.specialization?.name?.trim() || "",
-          medicalRegistrationNumber: userData.medicalRegistrationNumber || "",
-          contactNumber: userData.mobile ,
-        },
-      }));
-      const selectedClinic2 =
-        userData?.addresses?.find(
-          (address) =>
-            address.addressId === formData.doctorInfo?.selectedClinicId
-        ) || {};
-      setSelectedClinic(selectedClinic2);
+      if (doctorData) {
+        setFormData((prev) => ({
+          ...prev,
+          doctorInfo: {
+            ...prev.doctorInfo,
+            doctorId: doctorId,
+            doctorName: `${doctorData.firstname || ""} ${doctorData.lastname || ""}`.trim(),
+            qualifications: doctorData.specialization?.degree || "",
+            specialization: doctorData.specialization?.name?.trim() || "",
+            medicalRegistrationNumber: doctorData.medicalRegistrationNumber || "",
+            contactNumber: doctorData.mobile || "",
+          },
+        }));
+        const selectedClinic2 =
+          doctorData?.addresses?.find(
+            (address) => address.addressId === formData.doctorInfo?.selectedClinicId
+          ) || {};
+        setSelectedClinic(selectedClinic2);
+      }
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
   };
 
   useEffect(() => {
-    if(doctorData){
+    if (doctorData) {
       getCurrentUserData();
     }
-  }, [doctorData,formData?.doctorInfo?.doctorId]);
-console.log(formData, "completeFormData")
+  }, [doctorData, formData?.doctorInfo?.selectedClinicId]);
+
   function transformEprescriptionData(formData) {
     const { doctorInfo, patientInfo, vitals, diagnosis, advice } = formData;
-    const appointmentId = location?.state?.patientData?.appointmentId;
+    const appointmentId = patientData?.appointmentId;
 
     return {
       appointmentId: appointmentId,
@@ -247,7 +226,7 @@ console.log(formData, "completeFormData")
         physicalExamination: patientInfo.physicalExamination || null,
       },
       vitals: {
-        bp: `${vitals?.bpSystolic}/${vitals?.bpDiastolic}` || null,
+        bp: `${vitals?.bpSystolic || ""}/${vitals?.bpDiastolic || ""}`,
         pulseRate: vitals.pulseRate || null,
         respiratoryRate: vitals.respiratoryRate || null,
         temperature: vitals.temperature || null,
@@ -285,7 +264,7 @@ console.log(formData, "completeFormData")
         followUpDate: advice.followUpDate || null,
       },
       createdBy: user.userId || doctorInfo.doctorId,
-      updatedBy: user.userId ||doctorInfo.doctorId,
+      updatedBy: user.userId || doctorInfo.doctorId,
     };
   }
 
@@ -324,33 +303,23 @@ console.log(formData, "completeFormData")
             toast.error("Failed to upload attachment: Prescription ID missing");
             return;
           }
-          console.log("Prescription ID:", prescriptionId);
-          console.log("formData ID:", patientData);
-          console.log("formData1234:", formData);
 
-          const uploadFormData  = new FormData();
-          uploadFormData .append("file", pdfBlob, "e-prescription.pdf");
-          uploadFormData .append("prescriptionId", prescriptionId);
-          uploadFormData .append("appointmentId", patientData?.appointmentId || "");
-          uploadFormData .append("patientId", patientData?.patientId || "");
-          uploadFormData .append("mobileNumber", formData.patientInfo?.mobileNumber || "");
-
-          console.log("Form Data for Upload:");
-          for (const [key, value] of uploadFormData.entries()) {
-            console.log(`${key}:`, value);
-          }
+          const uploadFormData = new FormData();
+          uploadFormData.append("file", pdfBlob, "e-prescription.pdf");
+          uploadFormData.append("prescriptionId", prescriptionId);
+          uploadFormData.append("appointmentId", patientData?.appointmentId || "");
+          uploadFormData.append("patientId", patientData?.patientId || "");
+          uploadFormData.append("mobileNumber", formData.patientInfo?.mobileNumber || "");
 
           const uploadResponse = await apiPost(
             "/pharmacy/addattachprescription",
-            uploadFormData ,
+            uploadFormData,
             {
               headers: {
                 "Content-Type": "multipart/form-data",
               },
             }
           );
-
-          console.log("Upload Response:", uploadResponse);
 
           if (uploadResponse?.status === 200) {
             toast.success("Attachment uploaded successfully");
@@ -485,33 +454,31 @@ console.log(formData, "completeFormData")
           </nav>
         </div>
 
-        <main className="eprescription-content">
-          {renderActiveComponent()}
+        <main className="eprescription-content">{renderActiveComponent()}</main>
 
-          {activeTab !== "preview" && (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "24px",
-              }}
+        {activeTab !== "preview" && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: "24px",
+            }}
+          >
+            <button
+              className="common-button common-cancel-button"
+              onClick={() => navigate(-1)}
             >
-              <button
-                className="common-button common-cancel-button"
-                onClick={() => navigate(-1)}
-              >
-                Cancel
-              </button>
+              Cancel
+            </button>
 
-              <button
-                onClick={activeTab === "advice" ? handleConfirm : handleNext}
-                className="common-button common-confirm-button"
-              >
-                {activeTab === "advice" ? "Preview" : "Next"}
-              </button>
-            </div>
-          )}
-        </main>
+            <button
+              onClick={activeTab === "advice" ? handleConfirm : handleNext}
+              className="common-button common-confirm-button"
+            >
+              {activeTab === "advice" ? "Preview" : "Next"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
