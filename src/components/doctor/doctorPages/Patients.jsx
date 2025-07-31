@@ -113,7 +113,7 @@ const MyPatients = () => {
           gender: appointment.patientDetails?.gender || "N/A",
           age: appointment.patientDetails?.dob
             ? calculateAge(appointment.patientDetails.dob)
-            : "N/A",
+            : appointment?.patientDetails?.age,
           phone: appointment.patientDetails?.mobile || "N/A",
           lastVisit: appointment.appointmentDate
             ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
@@ -765,9 +765,9 @@ const MyPatients = () => {
 
       <div style={styles.pagination}>
         <div style={styles.paginationInfo}>
-          Showing {(currentPage - 1) * pageSize + 1} to{" "}
+          {/* Showing {(currentPage - 1) * pageSize + 1} to{" "}
           {Math.min(currentPage * pageSize, filteredPatients.length)} of{" "}
-          {filteredPatients.length} results
+          {filteredPatients.length} results */}
         </div>
 
         <div style={styles.paginationControls}>
