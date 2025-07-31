@@ -17,7 +17,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const [medicineOptions, setMedicineOptions] = useState([]);
   const [testOptions, setTestOptions] = useState([]);
   const [testInputValue, setTestInputValue] = useState("");
-  const [showTestNotes, setShowTestNotes] = useState(false); // New state for toggling test notes
+  const [showTestNotes, setShowTestNotes] = useState(false);
 
   const [localData, setLocalData] = useState({
     diagnosisList: formData?.diagnosisList || "",
@@ -41,19 +41,18 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   ];
 
   const frequencyOptions = [
-    "1-0-0", // Once a day (Morning)
-    "1-0-1", // Twice a day (Morning and Night)
-    "1-1-1", // Three times a day (Morning, Afternoon, Night)
-    "0-0-1", // Once at night
-    "0-1-0", // Once at lunch
-    "1-1-0", // Morning and lunch
-    "0-1-1", // Lunch and night
+    "1-0-0",
+    "1-0-1",
+    "1-1-1",
+    "0-0-1",
+    "0-1-0",
+    "1-1-0",
+    "0-1-1",
   ];
 
   useEffect(() => {
     if (formData && Object.keys(formData).length > 0) {
       setLocalData(formData);
-      // Show test notes if there is existing testNotes content
       if (formData?.testNotes) {
         setShowTestNotes(true);
       }
@@ -65,7 +64,6 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       const response = await apiGet("/pharmacy/getAllMedicinesByDoctorID");
       const medicines = response.data.data || [];
 
-      // Sort medicines alphabetically by medName
       const sortedMedicines = [...medicines].sort((a, b) =>
         a.medName.localeCompare(b.medName)
       );
@@ -88,14 +86,14 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       return;
     }
     try {
-      const response = await apiGet(`/lab/getTestsByDoctorId/${doctorId}`);
-      const tests = response.data.data || [];
-      
+      const response = await apiGet(`/lab/getAllTestsByDoctorId/${doctorId}`);
+      const tests = response.data.tests || [];
+
       // Sort tests alphabetically by testName
-      const sortedTests = [...tests].sort((a, b) => 
+      const sortedTests = [...tests].sort((a, b) =>
         a.testName.localeCompare(b.testName)
       );
-      
+
       setTestList(sortedTests);
       setTestOptions(
         sortedTests.map((test) => ({
@@ -278,7 +276,6 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           }
         }
 
-        // Update quantity based on duration and timings
         if (field === "duration" || field === "timings") {
           const newDuration = field === "duration" ? value : med.duration;
           const newTimings = field === "timings" ? value : med.timings;
@@ -304,7 +301,6 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const updateMedicationFrequency = (id, value) => {
     const updatedMedications = localData.medications.map((med) => {
       if (med.id === id) {
-        // For SOS frequency, clear timings
         if (value === "SOS") {
           return {
             ...med,
@@ -313,12 +309,10 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           };
         }
 
-        // Calculate how many timings we need based on frequency
         const requiredTimingsCount = value
           .split("-")
           .filter((x) => x === "1").length;
 
-        // Filter existing timings to keep only the first X that match the new frequency count
         const filteredTimings = med.timings.slice(0, requiredTimingsCount);
 
         return {
@@ -741,10 +735,10 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           ))}
         </div>
 
-        {/* Add Medicine Button - Now placed below all medication forms */}
+        {/* Add Medicine Button */}
         <div style={{ marginTop: "16px", textAlign: "right" }}>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             onClick={addMedication}
             icon={<Plus style={{ width: "16px", height: "16px" }} />}
           >
