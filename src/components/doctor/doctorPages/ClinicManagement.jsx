@@ -397,6 +397,12 @@ export default function ClinicManagement() {
       return;
     }
 
+    // Validate mobile number starts with 6,7,8, or 9
+    if (formData.mobile && !/^[6-9]/.test(formData.mobile)) {
+      toast.error("Mobile number must start with 6, 7, 8, or 9");
+      return;
+    }
+
     try {
       let response;
       console.log("Submitting with doctorId:", doctorId, "FormData:", formData);
@@ -660,13 +666,6 @@ toast.error(errorMessage);
                         >
                           <Edit size={16} />
                         </button>
-                        {/* <button
-                          className="clinic-upload-button"
-                          title="Upload Header"
-                          onClick={() => handleUploadHeader(clinic)}
-                        >
-                          <Upload size={16} />
-                        </button> */}
                         {user?.role === "doctor" && (
                           <button
                             className="clinic-delete-button"
@@ -785,11 +784,12 @@ toast.error(errorMessage);
                       maxLength={10}
                       onChange={(e) => {
                         const onlyDigits = e.target.value.replace(/\D/g, "");
-                        if (onlyDigits.length <= 10) {
+                        // Only update if first digit is 6-9 or field is empty
+                        if (onlyDigits === "" || /^[6-9]/.test(onlyDigits)) {
                           handleInputChange({
                             target: {
                               name: "mobile",
-                              value: onlyDigits,
+                              value: onlyDigits.slice(0, 10),
                             },
                           });
                         }
@@ -801,10 +801,11 @@ toast.error(errorMessage);
                     <input
                       type="text"
                       name="pincode"
-                      placeholder="Enter pincode"
+                      placeholder="Pincode (auto-filled)"
                       className="clinic-form-input"
                       value={formData.pincode}
                       onChange={handleInputChange}
+                      readOnly
                     />
                   </div>
                 </div>

@@ -26,15 +26,15 @@ import {
   DownloadOutlined,
 } from "@ant-design/icons";
 import * as XLSX from "xlsx";
-import { toast, ToastContainer } from "react-toastify"; // Add toast imports
-import "react-toastify/dist/ReactToastify.css"; // Import toast styles
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Import the tab components
 import PatientsTab from "./PharmacyPatientsTab";
 import MedicinesTab from "./PharmacyMedicinesTab";
 import CompletedTab from "./PharmacyCompletedTab";
 
-import "../../stylings/pharmacy.css"; // Import the CSS file for styling
+import "../../stylings/pharmacy.css";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
 
@@ -53,8 +53,10 @@ export default function Pharmacy() {
     medName: "",
     quantity: "",
     price: "",
+    cgst: "",
+    gst: "",
   });
-      const hasfetchRevenueCount = useRef(false);
+  const hasfetchRevenueCount = useRef(false);
   
   const [errors, setErrors] = useState({});
   const [bulkData, setBulkData] = useState([]);
@@ -95,60 +97,71 @@ export default function Pharmacy() {
     if (!form.price || form.price < 0) {
       newErrors.price = "Price must be non-negative";
     }
+    if (!form.quantity || form.quantity < 0) {
+      newErrors.quantity = "Quantity must be non-negative";
+    }
+    if (form.cgst === "" || form.cgst < 0) {
+      newErrors.cgst = "CGST must be non-negative";
+    }
+    if (form.gst === "" || form.gst < 0) {
+      newErrors.gst = "GST must be non-negative";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-const handleOk = async () => {
-  if (!validateForm()) {
-    return;
-  }
+  const handleOk = async () => {
+    if (!validateForm()) {
+      return;
+    }
 
-  try {
-    const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
-    form.quantity = 100;
-    await apiPost("pharmacy/addMedInventory", {
-      ...form,
-      doctorId: doctorId,
-    });
-
-    setForm({ medName: "", quantity: "", price: "" });
-    setErrors({});
-    setIsModalVisible(false);
-    toast.success("Medicine added successfully", {
-      position: "top-right",
-      autoClose: 3000,
-    });
-    updateCount();
-    setRefreshTrigger((prev) => prev + 1);
-    setActiveTab("3"); // Switch to Medicines tab
-    return true; // Return success status
-  } catch (error) {
-    console.error("Error adding medicine:", error);
-    // Check for duplicate medicine error
-    if (
-      error.response?.status === 409 &&
-      error.response?.data?.message?.message === "Medicine already exists"
-    ) {
-      toast.error("Medicine already exists", {
-        position: "top-right",
-        autoClose: 5000,
+    try {
+      const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+      await apiPost("pharmacy/addMedInventory", {
+        medName: form.medName,
+        price: form.price,
+        quantity: form.quantity,
+        cgst: form.cgst,
+        gst: form.gst,
+        doctorId: doctorId,
       });
-    } else {
-      toast.error(
-        error.response?.data?.message?.message || "Failed to add medicine. Please try again.",
-        {
+
+      setForm({ medName: "", quantity: "", price: "", cgst: "", gst: "" });
+      setErrors({});
+      setIsModalVisible(false);
+      toast.success("Medicine added successfully", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      updateCount();
+      setRefreshTrigger((prev) => prev + 1);
+      setActiveTab("3");
+      return true;
+    } catch (error) {
+      console.error("Error adding medicine:", error);
+      if (
+        error.response?.status === 409 &&
+        error.response?.data?.message?.message === "Medicine already exists"
+      ) {
+        toast.error("Medicine already exists", {
           position: "top-right",
           autoClose: 5000,
-        }
-      );
+        });
+      } else {
+        toast.error(
+          error.response?.data?.message?.message || "Failed to add medicine. Please try again.",
+          {
+            position: "top-right",
+            autoClose: 5000,
+          }
+        );
+      }
+      return false;
     }
-    return false; // Return failure status
-  }
-};
+  };
 
   const handleCancel = () => {
-    setForm({ medName: "", quantity: "", price: "" });
+    setForm({ medName: "", quantity: "", price: "", cgst: "", gst: "" });
     setErrors({});
     setIsModalVisible(false);
   };
@@ -162,7 +175,7 @@ const handleOk = async () => {
   };
 
   const handleFileUpload = (file) => {
-    setUploadedFile(file); // Store the file for later upload
+    setUploadedFile(file);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -177,7 +190,9 @@ const handleOk = async () => {
           key: index,
           medName: row.medName || row.MedName || row["Medicine Name"] || "",
           price: parseFloat(row.price || row.Price || 0),
-          quantity: parseInt(row.quantity || row.Quantity || 100),
+          quantity: parseInt(row.quantity || row.Quantity || 0),
+          cgst: parseFloat(row.cgst || row.CGST || 0),
+          gst: parseFloat(row.gst || row.GST || 0),
           row: index + 2,
         }));
 
@@ -197,7 +212,7 @@ const handleOk = async () => {
       }
     };
     reader.readAsArrayBuffer(file);
-    return false; // Prevent default upload behavior
+    return false;
   };
 
   const handleBulkUpload = async () => {
@@ -235,7 +250,6 @@ const handleOk = async () => {
           }
         );
         updateCount();
-        // Close modal after 2 seconds if there are no errors
         if (
           !response.data.data.errors ||
           response.data.data.errors.length === 0
@@ -279,9 +293,9 @@ const handleOk = async () => {
 
   const downloadTemplate = () => {
     const sampleData = [
-      { medName: "Paracetamol", price: 10.5, quantity: 100 },
-      { medName: "Ibuprofen", price: 15.75, quantity: 50 },
-      { medName: "Amoxicillin", price: 25, quantity: 30 },
+      { medName: "Paracetamol", price: 10.5, quantity: 100, cgst: 5, gst: 5 },
+      { medName: "Ibuprofen", price: 15.75, quantity: 50, cgst: 5, gst: 5 },
+      { medName: "Amoxicillin", price: 25, quantity: 30, cgst: 5, gst: 5 },
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(sampleData);
@@ -358,11 +372,23 @@ const handleOk = async () => {
       dataIndex: "quantity",
       key: "quantity",
     },
+    {
+      title: "CGST (%)",
+      dataIndex: "cgst",
+      key: "cgst",
+      render: (cgst) => `${cgst}%`,
+    },
+    {
+      title: "GST (%)",
+      dataIndex: "gst",
+      key: "gst",
+      render: (gst) => `${gst}%`,
+    },
   ];
 
   return (
     <div>
-      <ToastContainer /> {/* Add ToastContainer to render toasts */}
+      <ToastContainer />
       <Layout className="pharmacy-layout">
         <Header className="pharmacy-header">
           <div className="pharmacy-logo">
@@ -466,7 +492,8 @@ const handleOk = async () => {
                   </div>
                 )}
               </div>
-              <div>
+              
+              <div style={{ marginBottom: "16px" }}>
                 <label style={{ display: "block", marginBottom: "8px" }}>
                   Price (₹)
                 </label>
@@ -487,6 +514,76 @@ const handleOk = async () => {
                   </div>
                 )}
               </div>
+              
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", marginBottom: "8px" }}>
+                  Quantity
+                </label>
+                <InputNumber
+                  name="quantity"
+                  value={form.quantity}
+                  onChange={(value) => handleNumberChange("quantity", value)}
+                  min={0}
+                  placeholder="Enter quantity"
+                  style={{ width: "100%" }}
+                />
+                {errors.quantity && (
+                  <div
+                    style={{ color: "red", fontSize: "12px", marginTop: "4px" }}
+                  >
+                    {errors.quantity}
+                  </div>
+                )}
+              </div>
+              
+              <Row gutter={16}>
+                <Col span={12}>
+                  <div style={{ marginBottom: "16px" }}>
+                    <label style={{ display: "block", marginBottom: "8px" }}>
+                      CGST (%)
+                    </label>
+                    <InputNumber
+                      name="cgst"
+                      value={form.cgst}
+                      onChange={(value) => handleNumberChange("cgst", value)}
+                      min={0}
+                      max={100}
+                      placeholder="Enter CGST"
+                      style={{ width: "100%" }}
+                    />
+                    {errors.cgst && (
+                      <div
+                        style={{ color: "red", fontSize: "12px", marginTop: "4px" }}
+                      >
+                        {errors.cgst}
+                      </div>
+                    )}
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <div style={{ marginBottom: "16px" }}>
+                    <label style={{ display: "block", marginBottom: "8px" }}>
+                      GST (%)
+                    </label>
+                    <InputNumber
+                      name="gst"
+                      value={form.gst}
+                      onChange={(value) => handleNumberChange("gst", value)}
+                      min={0}
+                      max={100}
+                      placeholder="Enter GST"
+                      style={{ width: "100%" }}
+                    />
+                    {errors.gst && (
+                      <div
+                        style={{ color: "red", fontSize: "12px", marginTop: "4px" }}
+                      >
+                        {errors.gst}
+                      </div>
+                    )}
+                  </div>
+                </Col>
+              </Row>
             </div>
           </Modal>
 
@@ -520,7 +617,7 @@ const handleOk = async () => {
             <div style={{ padding: "16px 0" }}>
               <Alert
                 message="Upload Instructions"
-                description="Please upload an Excel file (.xlsx) with columns: medName, price, quantity. Download the template for reference."
+                description="Please upload an Excel file (.xlsx) with columns: medName, price, quantity, cgst, gst. Download the template for reference."
                 type="info"
                 showIcon
                 style={{ marginBottom: "16px" }}
@@ -600,18 +697,6 @@ const handleOk = async () => {
               items={tabItems}
             />
           </Card>
-
-          <div className="notes-section">
-            <div className="notes-header">
-              <div className="notes-title">
-                <EditOutlined />
-                <span>My Notes</span>
-              </div>
-              <Button className="add-note-btn">
-                <PlusOutlined />
-              </Button>
-            </div>
-          </div>
         </Content>
       </Layout>
     </div>

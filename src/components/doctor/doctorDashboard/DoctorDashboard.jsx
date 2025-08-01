@@ -562,6 +562,8 @@ const PatientAppointments = ({
   const displayedAppointments = filteredAppointments.slice(0, 5);
   const hasMoreAppointments = filteredAppointments.length > 5;
 
+  console.log(hasMoreAppointments,filteredAppointments, "more appointments")
+
   const handleViewAll = () => {
     navigate("/doctor/doctorPages/Appointments");
   };
@@ -1345,7 +1347,7 @@ const ClinicAvailability = ({
                   width: "28px",
                   height: "28px",
                   borderRadius: "50%",
-                  backgroundColor: "#9EBEFF",
+                  backgroundColor: "#3a70dbff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1361,7 +1363,7 @@ const ClinicAvailability = ({
                   width: "28px",
                   height: "28px",
                   borderRadius: "50%",
-                  backgroundColor: "#9EBEFF",
+                  backgroundColor: "#3a70dbff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1504,18 +1506,19 @@ const DoctorDashboard = () => {
       setIsLoadingAppointments(true);
       const formattedDate = date || moment().format("YYYY-MM-DD");
       const response = await apiGet(
-        `/appointment/getAppointmentsByDoctorID/dashboardAppointment?date=${formattedDate}&doctorId=${doctorId}`
+        `/appointment/getAppointmentsByDoctorID/dashboardAppointment?date=${formattedDate}&doctorId=${doctorId}&limit=${6}`
       );
 
       if (response.data.status === "success") {
         const appointmentsList = response.data.data.appointments;
+        console.log(appointmentsList, "complete appointmetns list")
 
         // Sort by appointmentTime in descending order (latest first)
-        appointmentsList.sort((a, b) => {
-          const timeA = moment(a.appointmentTime, "HH:mm");
-          const timeB = moment(b.appointmentTime, "HH:mm");
-          return timeB.diff(timeA); // descending
-        });
+        // appointmentsList.sort((a, b) => {
+        //   const timeA = moment(a.appointmentTime, "HH:mm");
+        //   const timeB = moment(b.appointmentTime, "HH:mm");
+        //   return timeB.diff(timeA); // descending
+        // });
 
         setAppointments(appointmentsList);
       } else {

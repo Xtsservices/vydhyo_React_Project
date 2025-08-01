@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import DownloadTaxInvoice from "../../Models/DownloadTaxInvoice";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {debounce} from '../../../utils'
 
 // Utility function to calculate age from DOB
 const calculateAge = (dob) => {
@@ -68,7 +69,7 @@ const transformPatientData = (result, user) => {
       name: `${patient.firstname} ${patient.lastname}`.trim(),
       firstname: patient.firstname,
       lastname: patient.lastname,
-      age: calculateAge(patient.DOB),
+      age: patient?.age || calculateAge(patient.DOB),
       gender: patient.gender,
       mobile: patient.mobile || "Not Provided",
       bloodgroup: patient.bloodgroup || "Not Specified",
@@ -93,6 +94,8 @@ const transformPatientData = (result, user) => {
         name: med.medName,
         quantity: med.quantity || 1,
         price: med.price || 0,
+        gst:med.gst|| 0,
+        cgst:med.cgst || 0,
         status:
           med.status?.charAt(0).toUpperCase() + med.status?.slice(1) ||
           "Unknown",
@@ -101,12 +104,15 @@ const transformPatientData = (result, user) => {
       totalMedicineAmount,
       totalAppointmentFees,
       grandTotal: totalTestAmount + totalMedicineAmount + totalAppointmentFees,
+
     };
   });
 };
 
 const BillingSystem = () => {
   const hasfetchPatients = useRef(false)
+  const debouncedMarkAsPaidMap = useRef({});
+
   
   const [patients, setPatients] = useState([]);
   const [expandedPatients, setExpandedPatients] = useState({});
@@ -123,6 +129,8 @@ const BillingSystem = () => {
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  const [isPaymentInProgress, setIsPaymentInProgress] = useState({});
+
 
   // Memoize transformed patient data to avoid redundant calculations
   const transformedPatients = useMemo(() => {
@@ -156,7 +164,7 @@ const BillingSystem = () => {
         `/receptionist/fetchMyDoctorPatients/${doctorId}?${queryParams.toString()}`,
         { timeout: 10000 }
       );
-      console.log("API Response:", response?.data?.pagination);
+      console.log("API Response:", response?.data);
 
       if (response?.status === 200 && response?.data?.data) {
         setPatients(response.data.data.reverse());
@@ -221,6 +229,10 @@ const BillingSystem = () => {
   };
 
   const handleMarkAsPaid = async (patientId) => {
+ if (isPaymentInProgress[patientId]) return;
+
+  setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: true }));
+    console.log("paymenthit")
     const patient = transformedPatients.find((p) => p.id === patientId);
     if (!patient) return;
 
@@ -268,7 +280,11 @@ const BillingSystem = () => {
         "/receptionist/totalBillPayFromReception",
         payload
       );
+
+      console.log(response, 'transcationResponse')
       if (response.status === 200) {
+
+        console.log('appointmentSucces')
         setPatients((prevPatients) =>
           prevPatients.map((p) =>
             p.id === patientId
@@ -288,16 +304,37 @@ const BillingSystem = () => {
               : p
           )
         );
+
+        console.log('1234567')
         setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
         toast.success("Payment processed successfully!");
       } else {
+  setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: false }));
+
         throw new Error("Failed to process payment");
       }
     } catch (err) {
       console.error("Error processing payment:", err);
       toast.error("Failed to process payment. Please try again.");
+  setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: false }));
+
     }
   };
+
+
+
+  console.log(patients, 'after setting 123')
+
+  const handlePayClick = (patientId) => {
+  if (!debouncedMarkAsPaidMap.current[patientId]) {
+    debouncedMarkAsPaidMap.current[patientId] = debounce(
+      () => handleMarkAsPaid(patientId),
+      1000 // delay in ms
+    );
+  }
+  debouncedMarkAsPaidMap.current[patientId]();
+};
+
 
   console.log(pagination, "setpaginations")
 
@@ -892,6 +929,24 @@ const BillingSystem = () => {
                                     >
                                       Status
                                     </th>
+                                     <th
+                                      style={{
+                                        padding: "10px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #ddd",
+                                      }}
+                                    >
+                                      Gst (₹)
+                                    </th>
+                                     <th
+                                      style={{
+                                        padding: "10px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #ddd",
+                                      }}
+                                    >
+                                      Cgst (₹)
+                                    </th>
                                     <th
                                       style={{
                                         padding: "10px",
@@ -958,6 +1013,22 @@ const BillingSystem = () => {
                                         >
                                           {medicine.status}
                                         </span>
+                                      </td>
+                                       <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                        }}
+                                      >
+                                        {medicine.gst}
+                                      </td>
+                                       <td
+                                        style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                        }}
+                                      >
+                                        {medicine.cgst}
                                       </td>
                                       <td
                                         style={{
@@ -1069,7 +1140,7 @@ const BillingSystem = () => {
                                         }}
                                       >
                                         {test.price
-                                          ? test.price.toFixed(2)
+                                          ? test.price
                                           : "N/A"}
                                       </td>
                                       <td
@@ -1167,15 +1238,28 @@ const BillingSystem = () => {
                                   borderRadius: "4px",
                                   padding: "10px 20px",
                                   cursor:
-                                    totals.grandTotal > 0
-                                      ? "pointer"
-                                      : "not-allowed",
+      totals.grandTotal > 0 &&
+      !isPaymentInProgress[patient.id] &&
+      !billingCompleted[patient.id]
+        ? "pointer"
+        : "not-allowed",
                                   fontSize: "16px",
                                   fontWeight: "bold",
                                   marginLeft: "10px",
-                                  opacity: totals.grandTotal > 0 ? 1 : 0.6,
-                                }}
-                                disabled={totals.grandTotal <= 0}
+
+                                opacity:
+      totals.grandTotal > 0 &&
+      !isPaymentInProgress[patient.id] &&
+      !billingCompleted[patient.id]
+        ? 1
+        : 0.6,
+  }}
+                               disabled={
+    totals.grandTotal <= 0 ||
+    isPaymentInProgress[patient.id] ||
+    billingCompleted[patient.id]
+  }
+                                // disabled={totals.grandTotal <= 0 }
                                 onMouseOver={(e) => {
                                   if (totals.grandTotal <= 0) {
                                     toast.info(
