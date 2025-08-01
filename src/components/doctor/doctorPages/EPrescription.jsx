@@ -256,6 +256,7 @@ console.log(formData, "completeFormData")
         weight: vitals.weight || null,
         bmi: vitals.bmi || null,
         investigationFindings: vitals.investigationFindings || null,
+        other: vitals.other || null,
       },
       diagnosis: {
         diagnosisNote: diagnosis.diagnosisList || null,
