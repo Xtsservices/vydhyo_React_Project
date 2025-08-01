@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState,useCallback, useRef, } from "react";
+import React, { use, useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -45,7 +45,7 @@ const { Option } = Select;
 const Appointment = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.currentUserData);
-    const hasgetAppointments = useRef(false);
+  const hasgetAppointments = useRef(false);
 
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
@@ -53,11 +53,14 @@ const Appointment = () => {
   const [loading, setLoading] = useState(false);
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
-  const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0)
-  const [scheduledAppointmentsCount, setScheduledAppointmentsCount] = useState(0)
-  const [completedAppointmentsCount, setCompletedAppointmentsCount] = useState(0)
-  const [cancledAppointmentsCount, setCancledAppointmentsCount] = useState(0)
-  const [isRescheduleModalVisible, setIsRescheduleModalVisible] = useState(false);
+  const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
+  const [scheduledAppointmentsCount, setScheduledAppointmentsCount] =
+    useState(0);
+  const [completedAppointmentsCount, setCompletedAppointmentsCount] =
+    useState(0);
+  const [cancledAppointmentsCount, setCancledAppointmentsCount] = useState(0);
+  const [isRescheduleModalVisible, setIsRescheduleModalVisible] =
+    useState(false);
   const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [newDate, setNewDate] = useState(null);
@@ -67,15 +70,15 @@ const Appointment = () => {
     clinic: "all",
     type: "all",
     status: "all",
-    date: moment()
+    date: moment(),
   });
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [pagination, setPagination] = useState({
-  current: 1,
-  pageSize: 5,
-  total: 0,
-});
+    current: 1,
+    pageSize: 5,
+    total: 0,
+  });
 
   const getStatusTag = (status) => {
     const statusConfig = {
@@ -89,7 +92,7 @@ const Appointment = () => {
   };
 
   const handleEPrescription = (appointment) => {
-    console.log("appointment===",appointment.patientDetails?.age)
+    console.log("appointment===", appointment.patientDetails?.age);
     // Calculate age from dob if available
     let age = "N/A";
     const dob = appointment.patientDetails?.dob;
@@ -100,13 +103,12 @@ const Appointment = () => {
       }
     }
 
-
     const patientData = {
-      appointmentId:appointment.appointmentId,
+      appointmentId: appointment.appointmentId,
       patientId: appointment.userId || appointment.appointmentId,
       patientName: appointment.patientName,
       gender: appointment.patientDetails?.gender || "N/A",
-      age:  appointment.patientDetails?.age || "N/A",
+      age: appointment.patientDetails?.age || "N/A",
       mobileNumber: appointment.patientDetails?.mobile || "N/A",
       appointmentId: appointment.appointmentId,
       appointmentDate: moment(appointment.appointmentDate).format("YYYY-MM-DD"),
@@ -114,10 +116,10 @@ const Appointment = () => {
       appointmentStatus: appointment.appointmentStatus,
       appointmentReason: appointment.appointmentReason || "N/A",
       addressId: appointment.addressId,
-      appointmentTime:appointment.appointmentTime,
+      appointmentTime: appointment.appointmentTime,
     };
 
-    console.log("patientData",patientData)
+    console.log("patientData", patientData);
 
     // Navigate to E-Prescription page with patient data
     navigate("/doctor/doctorPages/EPrescription", { state: { patientData } });
@@ -195,7 +197,6 @@ const Appointment = () => {
   };
 
   const handleRescheduleSubmit = async () => {
-
     console.log("Selected Appointment:", selectedAppointment);
     console.log("New Date:", newDate);
     console.log("New Time:", newTime);
@@ -257,43 +258,43 @@ const Appointment = () => {
   };
 
   const getAppointments = async (page = 1, limit = 5) => {
-  setLoading(true);
-  try {
-    const queryParams = new URLSearchParams({
-      doctorId,
-      ...(searchText && { searchText }),
-      ...(filters.clinic !== "all" && { clinic: filters.clinic }),
-      ...(filters.type !== "all" && { appointmentType: filters.type }),
-      ...(filters.status !== "all" && { status: filters.status }),
-      ...(filters.date && { date: filters.date.format("YYYY-MM-DD") }),
-      page,
-      limit
-    });
-
-    console.log('Fetching appointments with params:', queryParams.toString()); // Debug log
-    const response = await apiGet(
-      `/appointment/getAppointmentsByDoctorID/appointment?${queryParams.toString()}`
-    );
-
-    console.log('Appointments response:', response.data); // Debug log
-    if (response.status === 200) {
-      const { appointments, pagination } = response.data.data;
-      setAppointments(appointments);
-      setPagination({
-        current: pagination.currentPage,
-        pageSize: pagination.pageSize,
-        total: pagination.totalItems
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        doctorId,
+        ...(searchText && { searchText }),
+        ...(filters.clinic !== "all" && { clinic: filters.clinic }),
+        ...(filters.type !== "all" && { appointmentType: filters.type }),
+        ...(filters.status !== "all" && { status: filters.status }),
+        ...(filters.date && { date: filters.date.format("YYYY-MM-DD") }),
+        page,
+        limit,
       });
-    } else {
-      message.error("Failed to fetch appointments");
+
+      console.log("Fetching appointments with params:", queryParams.toString()); // Debug log
+      const response = await apiGet(
+        `/appointment/getAppointmentsByDoctorID/appointment?${queryParams.toString()}`
+      );
+
+      console.log("Appointments response:", response.data); // Debug log
+      if (response.status === 200) {
+        const { appointments, pagination } = response.data.data;
+        setAppointments(appointments);
+        setPagination({
+          current: pagination.currentPage,
+          pageSize: pagination.pageSize,
+          total: pagination.totalItems,
+        });
+      } else {
+        message.error("Failed to fetch appointments");
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      message.error("Error fetching appointments");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching appointments:", error);
-    message.error("Error fetching appointments");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const getAppointmentsCount = async () => {
     setLoading(true);
@@ -302,18 +303,15 @@ const Appointment = () => {
         `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}`
       );
 
-      console.log(response, "response of count data")
-
-
+      console.log(response, "response of count data");
 
       if (response.status === 200) {
+        const count = response?.data?.data;
 
-        const count = response?.data?.data 
-
-        setTotalAppointmentsCount(count.total)
-        setScheduledAppointmentsCount(count.scheduled)
-        setCompletedAppointmentsCount(count.completed)
-        setCancledAppointmentsCount(count.cancelled)
+        setTotalAppointmentsCount(count.total);
+        setScheduledAppointmentsCount(count.scheduled);
+        setCompletedAppointmentsCount(count.completed);
+        setCancledAppointmentsCount(count.cancelled);
       } else {
         message.error("Failed to fetch appointments count");
       }
@@ -325,60 +323,63 @@ const Appointment = () => {
     }
   };
 
-  useEffect(()=>{
-getAppointments();
+  useEffect(() => {
+    getAppointments();
   }, [user, doctorId, searchText, filters]);
-  
 
   useEffect(() => {
     if (user && doctorId && !hasgetAppointments.current) {
       getAppointments();
       getAppointmentsCount();
-      hasgetAppointments.current = true
+      hasgetAppointments.current = true;
     }
   }, [user, doctorId]);
 
   const timeslots = async (date) => {
-     console.log("Selected Date:", date);
-     console.log(selectedAppointment, "selectedAppointment");
-    const selectedDate = date
-    const clinicId =selectedAppointment?.addressId
-;
-    const currentUserID = selectedAppointment?.doctorId || selectedAppointment?.createdBy;
-   
+    console.log("Selected Date:", date);
+    console.log(selectedAppointment, "selectedAppointment");
+    const selectedDate = date;
+    const clinicId = selectedAppointment?.addressId;
+    const currentUserID =
+      selectedAppointment?.doctorId || selectedAppointment?.createdBy;
+
     try {
-        const response = await apiGet(
-              `/appointment/getSlotsByDoctorIdAndDate?doctorId=${currentUserID}&date=${selectedDate}&addressId=${clinicId}`
-            );
+      const response = await apiGet(
+        `/appointment/getSlotsByDoctorIdAndDate?doctorId=${currentUserID}&date=${selectedDate}&addressId=${clinicId}`
+      );
 
-            const data = response.data;
-            if (data.status === "success"){
-             const today = moment().format("YYYY-MM-DD"); // today's date
-  console.log(selectedDate, "selected date");
-  console.log(today, "today");
+      const data = response.data;
+      if (data.status === "success") {
+        const today = moment().format("YYYY-MM-DD"); // today's date
+        console.log(selectedDate, "selected date");
+        console.log(today, "today");
 
-  const avilableSlots = data?.data?.slots
-    .filter((slot) => slot?.status === "available")
-    .filter((slot) => {
-      // Check only future times if selectedDate is today
-      if (selectedDate === today) {
-        const slotDateTime = moment(`${selectedDate} ${slot.time}`, "YYYY-MM-DD HH:mm");
-        return slotDateTime.isAfter(moment());
-      }
-      return true; // keep all slots for future dates
-    })
-    .map((slot) => slot); // keep formatted as 'HH:mm'
-
-  console.log(avilableSlots, "availableslots data");
-  setAvailableTimeSlots(avilableSlots);
-            }else{
-              toast.error(data?.message?.message || "Failed to fetch timeslots");
+        const avilableSlots = data?.data?.slots
+          .filter((slot) => slot?.status === "available")
+          .filter((slot) => {
+            // Check only future times if selectedDate is today
+            if (selectedDate === today) {
+              const slotDateTime = moment(
+                `${selectedDate} ${slot.time}`,
+                "YYYY-MM-DD HH:mm"
+              );
+              return slotDateTime.isAfter(moment());
             }
+            return true; // keep all slots for future dates
+          })
+          .map((slot) => slot); // keep formatted as 'HH:mm'
 
-      
-            console.log("Time Slots Response:=============",   data );
+        console.log(avilableSlots, "availableslots data");
+        setAvailableTimeSlots(avilableSlots);
+      } else {
+        toast.error(data?.message?.message || "Failed to fetch timeslots");
+      }
+
+      console.log("Time Slots Response:=============", data);
     } catch (error) {
-      toast.error(error?.response?.data?.message?.message || "Error fetching timeslots");
+      toast.error(
+        error?.response?.data?.message?.message || "Error fetching timeslots"
+      );
     }
   };
 
@@ -386,9 +387,7 @@ getAppointments();
     if (selectedDate) {
       timeslots(selectedDate.format("YYYY-MM-DD"));
     }
-    
   }, [selectedDate]);
-
 
   const handleFilterChange = (filterName, value) => {
     setFilters((prev) => ({
@@ -404,23 +403,22 @@ getAppointments();
     }));
   };
 
-  console.log("user appoi",user)
+  console.log("user appoi", user);
   const renderActionMenu = (record) => (
     <Menu>
-    {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
-    <Menu.Item
-      key="e-prescription"
-      onClick={() => handleEPrescription(record)}
-      disabled={
-        record.appointmentStatus === "completed" ||
-        record.appointmentStatus === "cancelled"
-      }
-      icon={<EyeOutlined />}
-    >
-      Digital-Prescription
-    </Menu.Item>
-  )}
-
+      {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
+        <Menu.Item
+          key="e-prescription"
+          onClick={() => handleEPrescription(record)}
+          disabled={
+            record.appointmentStatus === "completed" ||
+            record.appointmentStatus === "cancelled"
+          }
+          icon={<EyeOutlined />}
+        >
+          Digital-Prescription
+        </Menu.Item>
+      )}
 
       <Menu.Item
         key="complete"
@@ -507,10 +505,10 @@ getAppointments();
     },
   ];
 
-    const handleInputChange = useCallback(( value) => {
-      console.log("Input Change:", value);
-      setNewTime(value);
-    }, []);
+  const handleInputChange = useCallback((value) => {
+    console.log("Input Change:", value);
+    setNewTime(value);
+  }, []);
 
   console.log(selectedAppointment, "selectedAppointment");
 
@@ -566,11 +564,7 @@ getAppointments();
                 <Card className="appointments-card completed-card">
                   <Statistic
                     title="Completed"
-
-                    value={
-                     completedAppointmentsCount
-                    }
-
+                    value={completedAppointmentsCount}
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
@@ -584,9 +578,7 @@ getAppointments();
                 <Card className="appointments-card cancled-card">
                   <Statistic
                     title="Cancelled"
-                    value={
-                     cancledAppointmentsCount
-                    }
+                    value={cancledAppointmentsCount}
                     valueRender={(value) => (
                       <div className="statistic-value-row">
                         <span className="statistic-value">{value}</span>
@@ -612,9 +604,8 @@ getAppointments();
                   placeholder="Search by Patient Name or Appointment ID or email or mobile"
                   prefix={<SearchOutlined />}
                   value={searchText.toUpperCase()}
-                   onChange={(e) => setSearchText(e.target.value.toLowerCase())}
+                  onChange={(e) => setSearchText(e.target.value.toLowerCase())}
                   className="filters-input"
-                  
                 />
               </Col>
 
@@ -661,11 +652,25 @@ getAppointments();
               </Col>
 
               <Col>
-                <DatePicker
-                  onChange={handleDateChange}
-                  value={filters.date}
-                  allowClear
-                  placeholder="Filter by date"
+                <input
+                  type="date"
+                  style={{
+                    alignSelf: "flex-end",
+                    borderRadius: "12px",
+                    background: "#F6F6F6",
+                    padding: "0.4rem",
+                    color: "#1977f3",
+                    width: "130px",
+                    border: "1px solid #d9d9d9",
+                    marginTop: 8,
+                  }}
+                  value={filters.date ? filters.date.format("YYYY-MM-DD") : ""}
+                  onChange={(e) => {
+                    const dateValue = e.target.value;
+                    handleDateChange(
+                      dateValue ? moment(dateValue, "YYYY-MM-DD") : null
+                    );
+                  }}
                 />
               </Col>
             </Row>
@@ -678,21 +683,20 @@ getAppointments();
             /> */}
 
             <Table
-  columns={columns}
-  dataSource={appointments}
-  rowKey="appointmentId"
-  loading={loading}
-  pagination={{
-    current: pagination.current,
-    pageSize: pagination.pageSize,
-    total: pagination.total,
-    showSizeChanger: false,
-  }}
-  onChange={(pagination) => {
-    getAppointments(pagination.current, pagination.pageSize);
-  }}
-/>
-
+              columns={columns}
+              dataSource={appointments}
+              rowKey="appointmentId"
+              loading={loading}
+              pagination={{
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
+                showSizeChanger: false,
+              }}
+              onChange={(pagination) => {
+                getAppointments(pagination.current, pagination.pageSize);
+              }}
+            />
           </Col>
         </Row>
       </Spin>
@@ -723,30 +727,41 @@ getAppointments();
               {selectedAppointment.appointmentTime}
             </p>
             <div style={{ margin: "16px 0" }}>
-
-
-              <DatePicker
-                style={{ width: "100%", marginBottom: 16 }}
-                value={selectedDate}
-                onChange={(date) => setSelectedDate(date)}
-                disabledDate={(current) =>
-                  current && current < moment().startOf("day")
-                }
+              <input
+                type="date"
+                style={{
+                  alignSelf: "flex-end",
+                  borderRadius: "12px",
+                  background: "#F6F6F6",
+                  padding: "0.4rem",
+                  color: "#1977f3",
+                  width: "100%",
+                  border: "1px solid #d9d9d9",
+                  marginBottom: 16,
+                }}
+                min={moment().format("YYYY-MM-DD")}
+                value={selectedDate ? selectedDate.format("YYYY-MM-DD") : ""}
+                onChange={(e) => {
+                  const dateValue = e.target.value;
+                  setSelectedDate(
+                    dateValue ? moment(dateValue, "YYYY-MM-DD") : null
+                  );
+                }}
               />
 
               <Select
-                          value={newTime}
-                          onChange={(value) => handleInputChange( value)}
-                          placeholder="Select time slot"
-                          // disabled={!patientCreated && !userFound}
-                          style={{ width: "100%", marginTop: 8 }}
-                        >
-{availableTimeSlots?.map((slot) => (
-  <Option key={slot._id} value={slot.time}  >
-    {slot.time}
-  </Option>
-))}
-                        </Select>
+                value={newTime}
+                onChange={(value) => handleInputChange(value)}
+                placeholder="Select time slot"
+                // disabled={!patientCreated && !userFound}
+                style={{ width: "100%", marginTop: 8 }}
+              >
+                {availableTimeSlots?.map((slot) => (
+                  <Option key={slot._id} value={slot.time}>
+                    {slot.time}
+                  </Option>
+                ))}
+              </Select>
               {/* <TimePicker
                 style={{ width: "100%" }}
                 value={newTime}

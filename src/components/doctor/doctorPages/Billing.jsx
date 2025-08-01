@@ -1140,7 +1140,7 @@ const BillingSystem = () => {
                                         }}
                                       >
                                         {test.price
-                                          ? test.price.toFixed(2)
+                                          ? test.price
                                           : "N/A"}
                                       </td>
                                       <td
