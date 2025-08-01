@@ -39,6 +39,13 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
     updateFormData(resetData);
   };
 
+  // Get tomorrow's date in YYYY-MM-DD format
+  const getTomorrowDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
   return (
     <div className="common-container">
       {/* Advice Section */}
@@ -79,6 +86,7 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
             value={localData.followUpDate}
             onChange={handleChange}
             className="common-date-input"
+            min={getTomorrowDate()}
           />
         </div>
       </div>

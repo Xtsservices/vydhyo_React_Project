@@ -235,6 +235,7 @@ const EPrescription = () => {
         weight: vitals.weight || null,
         bmi: vitals.bmi || null,
         investigationFindings: vitals.investigationFindings || null,
+        other: vitals.other || null,
       },
       diagnosis: {
         diagnosisNote: diagnosis.diagnosisList || null,
@@ -310,6 +311,8 @@ const EPrescription = () => {
           uploadFormData.append("appointmentId", patientData?.appointmentId || "");
           uploadFormData.append("patientId", patientData?.patientId || "");
           uploadFormData.append("mobileNumber", formData.patientInfo?.mobileNumber || "");
+          uploadFormData.append("doctorId", formData.doctorInfo?.doctorId || "");
+          console.log("form data...............:",formData)
 
           const uploadResponse = await apiPost(
             "/pharmacy/addattachprescription",

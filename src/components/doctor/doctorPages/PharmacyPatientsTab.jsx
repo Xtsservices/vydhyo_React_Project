@@ -295,6 +295,18 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
       render: (quantity) => `${quantity} units`,
     },
     {
+      title: "GST (%)",
+      dataIndex: "gst",
+      key: "gst",
+      render: (gst) => `${gst}%`,
+    },
+    {
+      title: "CGST (%)",
+      dataIndex: "cgst",
+      key: "cgst",
+      render: (cgst) => `${cgst}%`,
+    },
+    {
       title: "Total",
       key: "total",
       render: (_, record) => {
@@ -332,6 +344,7 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
         </div>
       ),
     },
+    
     {
       title: "Status",
       dataIndex: "status",
