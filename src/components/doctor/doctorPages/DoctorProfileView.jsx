@@ -199,17 +199,34 @@ const UploadImage = ({ onUpload }) => {
         <Row gutter={[16, 16]}>
           {/* Personal Information */}
           <Col xs={24} lg={12}>
-            <Card
-              title={
-                <div className="profile-card-header">
-                  <UserOutlined
-                    style={{ marginRight: "8px", color: "#3b82f6" }}
-                  />
-                  Personal Information
-                </div>
-              }
-              className="profile-card"
-            >
+         
+
+           <Card
+  title={
+    <div
+      className="profile-card-header"
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      <div>
+        <UserOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
+        Personal Information
+      </div>
+      <Button
+        type="link"
+        icon={<EditOutlined />}
+        onClick={() => setEditVisible(true)}
+      >
+        
+      </Button>
+    </div>
+  }
+  className="profile-card"
+>
+
               <div className="avatar-container">
                 <Avatar
                   size={64}

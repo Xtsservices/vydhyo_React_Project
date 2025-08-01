@@ -441,8 +441,27 @@ useEffect(() => {
     console.log("Input Change:", field, value);
     setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     let validatedValue = value;
-
-    if (field === "phoneNumber") validatedValue = value.replace(/\D/g, "");
+ if (field === "firstName" || field === "lastName") {
+    const onlyAlphabets = value.replace(/[^A-Za-z ]/g, "");
+    setPatientData((prev) => ({ ...prev, [field]: onlyAlphabets }));
+    return
+  }
+    if (field === "phoneNumber") {
+  let digitsOnly = value.replace(/\D/g, "");
+  if (digitsOnly.length === 1 && !/^[6-9]/.test(digitsOnly)) {
+    return;
+  }
+  if (digitsOnly.length > 10) {
+    digitsOnly = digitsOnly.slice(0, 10);
+  }
+  validatedValue = digitsOnly;
+}
+if (field === "age") {
+  validatedValue = value.replace(/\D/g, "");
+  if (validatedValue.length > 3) {
+    validatedValue = validatedValue.slice(0, 3);
+  }
+}
     if (field === "visitReason" && value.length > 500)
       validatedValue = value.substring(0, 500);
 
@@ -1242,7 +1261,7 @@ console.log("first2")
   closable={false}
   maskClosable={false}
   maskStyle={{ backdropFilter: "blur(4px)" }}
-  okText="Go to Clinic Management"
+  okText={slotAvailability ? "Go To Clinic Management": "Go To Availability"} 
   cancelText="Cancel"
   onOk={() => {
     setIsClinicModalVisible(false);
