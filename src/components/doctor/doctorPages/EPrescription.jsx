@@ -85,7 +85,13 @@ const EPrescription = () => {
         `/pharmacy/getEPrescriptionByAppointmentId/${patientData.appointmentId}`
       );
       if (response.data.success && response.data.data && response.data.data.length > 0) {
-        const prescription = response.data.data[0]; // Select the first prescription
+        const prescription = response.data.data[0];
+        
+        // Handle BP data
+        const bpParts = prescription.vitals?.bp?.split('/') || [];
+        const bpSystolic = bpParts[0] || "";
+        const bpDiastolic = bpParts[1] || "";
+        
         setFormData((prev) => ({
           ...prev,
           doctorInfo: {
@@ -110,6 +116,8 @@ const EPrescription = () => {
           },
           vitals: {
             bp: prescription.vitals?.bp || "",
+            bpSystolic: bpSystolic,
+            bpDiastolic: bpDiastolic,
             pulseRate: prescription.vitals?.pulseRate || "",
             respiratoryRate: prescription.vitals?.respiratoryRate || "",
             temperature: prescription.vitals?.temperature || "",
@@ -118,6 +126,7 @@ const EPrescription = () => {
             weight: prescription.vitals?.weight || "",
             bmi: prescription.vitals?.bmi || "",
             investigationFindings: prescription.vitals?.investigationFindings || "",
+            other: prescription.vitals?.other || {},
           },
           diagnosis: {
             diagnosisList: prescription.diagnosis?.diagnosisNote || "",
@@ -312,7 +321,6 @@ const EPrescription = () => {
           uploadFormData.append("patientId", patientData?.patientId || "");
           uploadFormData.append("mobileNumber", formData.patientInfo?.mobileNumber || "");
           uploadFormData.append("doctorId", formData.doctorInfo?.doctorId || "");
-          console.log("form data...............:",formData)
 
           const uploadResponse = await apiPost(
             "/pharmacy/addattachprescription",
