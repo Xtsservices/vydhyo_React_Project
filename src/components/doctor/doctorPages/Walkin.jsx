@@ -854,7 +854,7 @@ console.log("first2")
       </Col>
       <Col xs={24} sm={8}>
         <Text strong>Date of Birth </Text>
-        <input
+        <input  
           type="date"
           style={{
             alignSelf: "flex-end",
