@@ -13,42 +13,60 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
   const patientData = location.state?.patientData || {};
 
   const [localData, setLocalData] = useState({
-    patientId: formData?.patientId || patientData?.patientId || "",
-    patientName: formData?.patientName || patientData?.patientName || "",
-    age: formData?.age || patientData?.age || "",
-    gender: formData?.gender || patientData?.gender || "",
-    mobileNumber: formData?.mobileNumber || patientData?.mobileNumber || "",
-    chiefComplaint: formData?.chiefComplaint || patientData?.appointmentReason || "",
-    pastMedicalHistory: formData?.pastMedicalHistory || "",
-    familyMedicalHistory: formData?.familyMedicalHistory || "",
-    physicalExamination: formData?.physicalExamination || "",
+    patientId: "",
+    patientName: "",
+    age: "",
+    gender: "",
+    mobileNumber: "",
+    chiefComplaint: "",
+    pastMedicalHistory: "",
+    familyMedicalHistory: "",
+    physicalExamination: "",
   });
 
+  // Initialize localData from props
   useEffect(() => {
-    const updatedData = {
+    setLocalData({
       patientId: formData?.patientId || patientData?.patientId || "",
       patientName: formData?.patientName || patientData?.patientName || "",
       age: formData?.age || patientData?.age || "",
       gender: formData?.gender || patientData?.gender || "",
       mobileNumber: formData?.mobileNumber || patientData?.mobileNumber || "",
-      chiefComplaint: capitalizeFirstLetter(formData?.chiefComplaint || patientData?.appointmentReason || ""),
-      pastMedicalHistory: capitalizeFirstLetter(formData?.pastMedicalHistory || ""),
-      familyMedicalHistory: capitalizeFirstLetter(formData?.familyMedicalHistory || ""),
-      physicalExamination: capitalizeFirstLetter(formData?.physicalExamination || ""),
-    };
-    setLocalData(updatedData);
+      chiefComplaint: formData?.chiefComplaint || patientData?.appointmentReason || "",
+      pastMedicalHistory: formData?.pastMedicalHistory || "",
+      familyMedicalHistory: formData?.familyMedicalHistory || "",
+      physicalExamination: formData?.physicalExamination || "",
+    });
   }, [formData, patientData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const capitalizedValue = capitalizeFirstLetter(value);
-    const updatedData = {
-      ...localData,
-      [name]: capitalizedValue,
-    };
-    setLocalData(updatedData);
-    if (updateFormData) {
-      updateFormData(updatedData);
+    setLocalData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    // Only capitalize when leaving the field
+    if (value && name !== 'patientId' && name !== 'age' && name !== 'mobileNumber') {
+      const capitalizedValue = capitalizeFirstLetter(value);
+      setLocalData(prev => ({
+        ...prev,
+        [name]: capitalizedValue
+      }));
+      if (updateFormData) {
+        updateFormData({
+          ...localData,
+          [name]: capitalizedValue
+        });
+      }
+    } else if (updateFormData) {
+      updateFormData({
+        ...localData,
+        [name]: value
+      });
     }
   };
 
@@ -69,7 +87,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
             </label>
             <input
               type="text"
-              value={capitalizeFirstLetter(localData.patientName)}
+              value={localData.patientName}
               className="patient-details-input"
               readOnly
               style={{ height: "28px", fontSize: "15px", padding: "4px" }}
@@ -82,7 +100,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
             </label>
             <input
               type="text"
-              value={capitalizeFirstLetter(localData.gender)}
+              value={localData.gender}
               className="patient-details-input"
               readOnly
               style={{ height: "28px", fontSize: "15px", padding: "4px" }}
@@ -131,6 +149,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               name="chiefComplaint"
               value={localData.chiefComplaint}
               onChange={handleChange}
+              onBlur={handleBlur}
               className="history-textarea"
               placeholder="Enter Here..."
               rows={2}
@@ -150,6 +169,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               name="pastMedicalHistory"
               value={localData.pastMedicalHistory}
               onChange={handleChange}
+              onBlur={handleBlur}
               className="history-textarea"
               placeholder="Enter Here..."
               rows={3}
@@ -169,6 +189,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               name="familyMedicalHistory"
               value={localData.familyMedicalHistory}
               onChange={handleChange}
+              onBlur={handleBlur}
               className="history-textarea"
               placeholder="Enter Here..."
               rows={3}
@@ -188,6 +209,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
               name="physicalExamination"
               value={localData.physicalExamination}
               onChange={handleChange}
+              onBlur={handleBlur}
               className="history-textarea"
               placeholder="Enter Here..."
               rows={3}
