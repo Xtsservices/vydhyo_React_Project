@@ -82,8 +82,6 @@ const StaffModal = ({
     }
   }, [modalMode, initialData, form]);
 
-
-
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
@@ -313,8 +311,6 @@ const StaffModal = ({
                   placeholder="Select access permissions"
                   allowClear
                   options={getAccessOptions(selectedRole)}
-                  // options={accessOptions}
-                  
                 />
               </Form.Item>
             </Col>
@@ -338,8 +334,7 @@ const StaffModal = ({
 
 const StaffManagement = () => {
   const screens = useBreakpoint();
-      const hasfetchStaff = useRef(false);
-  
+  const hasfetchStaff = useRef(false);
   const navigate = useNavigate();
   const [selectedStaffType, setSelectedStaffType] = useState("receptionist");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -557,15 +552,17 @@ const StaffManagement = () => {
             className="icon-view"
             onClick={() => handleView(record)}
           />
-          <EditOutlined
-            className="icon-edit"
-            onClick={() => handleEdit(record)}
-          />
           {user?.role === "doctor" && (
-            <DeleteOutlined
-              className="icon-delete"
-              onClick={() => handleDelete(record)}
-            />
+            <>
+              <EditOutlined
+                className="icon-edit"
+                onClick={() => handleEdit(record)}
+              />
+              <DeleteOutlined
+                className="icon-delete"
+                onClick={() => handleDelete(record)}
+              />
+            </>
           )}
         </div>
       ),
@@ -757,14 +754,16 @@ const StaffManagement = () => {
         </Col>
         <Col>
           <Space>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleQuickAdd}
-              loading={loading}
-            >
-              Add Staff
-            </Button>
+            {user?.role === "doctor" && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleQuickAdd}
+                loading={loading}
+              >
+                Add Staff
+              </Button>
+            )}
           </Space>
         </Col>
       </Row>
