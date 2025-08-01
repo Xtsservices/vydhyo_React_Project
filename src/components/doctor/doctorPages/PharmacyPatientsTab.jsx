@@ -211,6 +211,20 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
         return;
       }
 
+      // Check if all medicine prices are confirmed (not in editable state)
+      const hasUnconfirmedPrices = patient.medicines.some(med => 
+        editablePrices.includes(med._id) && 
+        (med.price !== null && med.price !== undefined)
+      );
+
+      if (hasUnconfirmedPrices) {
+        toast.error("Please confirm all medicine prices before payment", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+        return;
+      }
+
       const response = await apiPost(`/pharmacy/pharmacyPayment`, {
         patientId,
         doctorId,
