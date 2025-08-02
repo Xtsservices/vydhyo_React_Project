@@ -39,8 +39,8 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
     },
     respiratoryRate: {
       min: 0,
-      max: 30,
-      message: "Respiratory rate must be between 0 and 30 breaths/min",
+      max: 60,
+      message: "Respiratory rate must be between 0 and 60 breaths/min",
     },
     temperature: {
       min: 95,

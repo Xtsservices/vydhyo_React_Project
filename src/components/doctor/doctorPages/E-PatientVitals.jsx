@@ -44,7 +44,7 @@ const PatientVitals = ({ patientData, vitalsData, updateFormData }) => {
     bpSystolic: { min: 60, max: 200, message: 'Systolic BP must be between 60 and 200 mmHg' },
     bpDiastolic: { min: 40, max: 120, message: 'Diastolic BP must be between 40 and 120 mmHg' },
     pulseRate: { min: 40, max: 180, message: 'Pulse rate must be between 40 and 180 bpm' },
-    respiratoryRate: { min: 8, max: 40, message: 'Respiratory rate must be between 8 and 40 breaths/min' },
+    respiratoryRate: { min: 8, max: 60, message: 'Respiratory rate must be between 8 and 40 breaths/min' },
     temperature: { min: 95, max: 108, message: 'Temperature must be between 95 and 108 °F' },
     spo2: { min: 70, max: 100, message: 'SpO2 must be between 70 and 100%' },
     height: { min: 50, max: 250, message: 'Height must be between 50 and 250 cm' },
