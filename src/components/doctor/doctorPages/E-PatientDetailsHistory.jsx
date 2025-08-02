@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { User, FileText, Heart, Users, Stethoscope } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import "../../stylings/EPrescription.css";
+import { useSelector } from "react-redux";
 
 const capitalizeFirstLetter = (str) => {
   if (!str) return str;
@@ -9,6 +10,10 @@ const capitalizeFirstLetter = (str) => {
 };
 
 const PatientDetailsHistory = ({ formData, updateFormData }) => {
+    const doctorData = useSelector((state) => state.doctorData);
+  const user = useSelector((state) => state.currentUserData);
+  const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  
   const location = useLocation();
   const patientData = location.state?.patientData || {};
 
@@ -91,6 +96,8 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
       });
     }
   };
+
+  console.log("formData from patient tab", formData)
 
   return (
     <div className="patient-details-container" style={{ padding: "16px" }}>

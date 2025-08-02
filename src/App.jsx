@@ -50,6 +50,31 @@ const getToken = () => localStorage.getItem("accessToken");
     }
   }, [user]);
 
+  const getDoctorDa = async () => {
+    try {
+const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
+         const response = await apiGet(`/users/getUser?userId=${doctorId}`);
+                const docData = response.data?.data;
+          console.log(docData, "docData")
+          
+
+           dispatch({
+          type: "doctorData",
+          payload: docData,
+        });
+    }catch (error) {
+      console.error("Error fetching doctor data:", error);
+    }
+    
+  }
+
+  useEffect(() => {
+if(user){
+  getDoctorDa()
+}
+  },[user])
+
   return (
     <>
       <AppRoutes />
