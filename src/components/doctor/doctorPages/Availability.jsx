@@ -1144,9 +1144,13 @@ const handleOk = async (type) => {
   const selectedIndex = fullWeek.indexOf(day) + 1; // 1-based to match isoWeekday
 
   let diff = selectedIndex - todayIndex;
-  if (diff <= 0) {
-    diff += 7; // Move to the *next* occurrence if same day or past day
+    // Only move to next week if the selected day is before today
+  if (diff < 0) {
+    diff += 7;
   }
+  // if (diff <= 0) {
+  //   diff += 7; // Move to the *next* occurrence if same day or past day
+  // }
 
   const date = moment().add(diff, "days");
   setSelectedDate(date);
