@@ -1138,13 +1138,33 @@ const handleOk = async (type) => {
   };
 
   const handleDayClick = (day) => {
-    setSelectedDay(day);
-    const todayIndex = moment().isoWeekday(); // Monday=1, Sunday=7
-    const selectedIndex = fullWeek.indexOf(day) + 1; // Make it 1-based like isoWeekday
-    const diff = selectedIndex - todayIndex;
-    const date = moment().add(diff, "days");
-    setSelectedDate(date);
-  };
+  setSelectedDay(day);
+
+  const todayIndex = moment().isoWeekday(); // 1 (Monday) - 7 (Sunday)
+  const selectedIndex = fullWeek.indexOf(day) + 1; // 1-based to match isoWeekday
+
+  let diff = selectedIndex - todayIndex;
+    // Only move to next week if the selected day is before today
+  if (diff < 0) {
+    diff += 7;
+  }
+  // if (diff <= 0) {
+  //   diff += 7; // Move to the *next* occurrence if same day or past day
+  // }
+
+  const date = moment().add(diff, "days");
+  setSelectedDate(date);
+};
+
+
+  // const handleDayClick = (day) => {
+  //   setSelectedDay(day);
+  //   const todayIndex = moment().isoWeekday(); // Monday=1, Sunday=7
+  //   const selectedIndex = fullWeek.indexOf(day) + 1; // Make it 1-based like isoWeekday
+  //   const diff = selectedIndex - todayIndex;
+  //   const date = moment().add(diff, "days");
+  //   setSelectedDate(date);
+  // };
 
   return (
     <div
