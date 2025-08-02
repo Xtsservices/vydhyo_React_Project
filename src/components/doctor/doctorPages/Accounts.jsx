@@ -29,6 +29,7 @@ import { apiGet, apiPost } from "../../../components/api";
 import "../../stylings/Accounts.css";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -45,7 +46,7 @@ const AccountsPage = () => {
   const [filterStatus, setFilterStatus] = useState("");
   const [searchText, setSearchText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
+const navigate = useNavigate();
   // Data state
   const [transactions, setTransactions] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -544,7 +545,8 @@ const AccountsPage = () => {
             <div
               className="clickable-card-container"
               onClick={() => {
-                window.location.href = "/doctor/doctorPages/TotalExpenditure";
+                navigate("/doctor/doctorPages/TotalExpenditure");
+                // window.location.href = "/doctor/doctorPages/TotalExpenditure";
               }}
             >
               <Card className="summary-card clickable">

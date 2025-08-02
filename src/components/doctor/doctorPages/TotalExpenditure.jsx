@@ -70,7 +70,10 @@ const TotalExpenditureScreen = () => {
   };
 
   useEffect(() => {
-    fetchExpenses();
+     const today = moment();
+  fetchExpenses(today); // Pass today's date as start (and end)
+  setSelectedDate(today);
+    // fetchExpenses();
   }, []);
 
   const columns = [
