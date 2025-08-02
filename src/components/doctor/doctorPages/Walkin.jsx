@@ -388,7 +388,7 @@ useEffect(() => {
           setPatientCreated(true);
           setCreatedPatientId(userData.userId || "");
         } else {
-          setApiError("Multiple patients found. Please select one.");
+            setApiError(<span style={{ color: "blue" }}>Multiple patients found. Please select one.</span>);
         }
       } else {
         setPatientData({

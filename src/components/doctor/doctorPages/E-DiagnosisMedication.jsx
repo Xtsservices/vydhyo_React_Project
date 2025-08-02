@@ -276,13 +276,22 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           }
         }
 
+        if (field === "medicineType") {
+          // Reset quantity when medicine type changes
+          updatedMed.quantity = null;
+        }
+
         if (field === "duration" || field === "timings") {
           const newDuration = field === "duration" ? value : med.duration;
           const newTimings = field === "timings" ? value : med.timings;
-          updatedMed.quantity =
-            newDuration && newTimings.length
-              ? newDuration * newTimings.length
-              : null;
+          
+          // Auto-calculate quantity for tablets, capsules, and injections
+          if (["Tablet", "Capsule", "Injection"].includes(med.medicineType)) {
+            updatedMed.quantity =
+              newDuration && newTimings.length
+                ? newDuration * newTimings.length
+                : null;
+          }
         }
 
         return updatedMed;
@@ -332,6 +341,25 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     updateFormData(updatedData);
   };
 
+  const handleQuantityChange = (id, value) => {
+    const updatedMedications = localData.medications.map((med) => {
+      if (med.id === id) {
+        return {
+          ...med,
+          quantity: value,
+        };
+      }
+      return med;
+    });
+
+    const updatedData = {
+      ...localData,
+      medications: updatedMedications,
+    };
+    setLocalData(updatedData);
+    updateFormData(updatedData);
+  };
+
   const medicineTypeOptions = [
     "Tablet",
     "Capsule",
@@ -340,6 +368,10 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
     "Cream",
     "Drops",
   ];
+
+  const isQuantityEditable = (medicineType) => {
+    return ["Syrup", "Cream", "Drops"].includes(medicineType);
+  };
 
   return (
     <div className="common-container">
@@ -568,15 +600,26 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                   >
                     Quantity
                   </label>
-                  <InputNumber
-                    value={
-                      medication.duration && medication.timings
-                        ? medication.duration * medication.timings.length
-                        : 0
-                    }
-                    style={{ width: "100%" }}
-                    disabled
-                  />
+                  {isQuantityEditable(medication.medicineType) ? (
+                    <InputNumber
+                      value={medication.quantity}
+                      onChange={(value) =>
+                        handleQuantityChange(medication.id, value)
+                      }
+                      style={{ width: "100%" }}
+                      min={1}
+                    />
+                  ) : (
+                    <InputNumber
+                      value={
+                        medication.duration && medication.timings
+                          ? medication.duration * medication.timings.length
+                          : 0
+                      }
+                      style={{ width: "100%" }}
+                      disabled
+                    />
+                  )}
                 </div>
 
                 {localData.medications.length > 1 && (
