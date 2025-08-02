@@ -11,7 +11,7 @@ import "../../stylings/Preview.css";
 const Preview = ({ formData, handlePrescriptionAction }) => {
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // New loading state
+  const [isLoading, setIsLoading] = useState(true);
 
   const formatDate = (dateString) => {
     if (!dateString) return "Date not provided";
@@ -54,6 +54,8 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
         logging: true,
         backgroundColor: "#ffffff",
         scrollY: -window.scrollY,
+        windowWidth: document.documentElement.scrollWidth,
+        windowHeight: document.documentElement.scrollHeight,
       });
 
       Object.assign(input.style, originalStyles);
@@ -178,7 +180,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
 
   const getCurrentUserData = async () => {
     try {
-      setIsLoading(true); // Set loading to true before fetching
+      setIsLoading(true);
       const response = await apiGet(
         `/users/getUser?userId=${formData.doctorInfo?.doctorId}`
       );
@@ -188,12 +190,11 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
           (address) =>
             address.addressId === formData.doctorInfo?.selectedClinicId
         ) || {};
-      console.log("selectedClinic2===", selectedClinic2);
       setSelectedClinic(selectedClinic2);
     } catch (error) {
       console.error("Error fetching user data:", error);
     } finally {
-      setIsLoading(false); // Set loading to false after fetching
+      setIsLoading(false);
     }
   };
 
@@ -201,13 +202,12 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     if (formData?.doctorInfo?.doctorId) {
       getCurrentUserData();
     } else {
-      setIsLoading(false); // If no doctorId, skip loading
+      setIsLoading(false);
     }
   }, [formData?.doctorInfo?.doctorId]);
 
   const handleSaveClick = async () => {
     if (isSaving) return;
-    console.log("Saving prescription...", isSaving);
     setIsSaving(true);
     try {
       await handlePrescriptionAction("save");
@@ -216,14 +216,12 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     }
   };
 
-  console.log("formdata===", formData);
-
   return (
     <div>
       <ToastContainer />
       <div id="prescription-container" className="prescription-container">
         {isLoading ? (
-          <div>Loading...</div> // Show a loading indicator
+          <div>Loading...</div>
         ) : (
           <div className="prescription-header">
             {selectedClinic?.headerImage ? (

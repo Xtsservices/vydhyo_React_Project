@@ -202,6 +202,20 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
         return;
       }
 
+      // Check if all test prices are confirmed (not in editable state)
+      const hasUnconfirmedPrices = patient.tests.some(test => 
+        editablePrices.includes(test._id) && 
+        (test.price !== null && test.price !== undefined)
+      );
+
+      if (hasUnconfirmedPrices) {
+        toast.error("Please confirm all test prices before payment", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+        return;
+      }
+
       const response = await apiPost(`/lab/processPayment`, {
         patientId,
         doctorId,

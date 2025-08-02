@@ -1,16 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   Input,
   Select,
   DatePicker,
   Button,
-  Tag,
-  Space,
   Card,
   Typography,
   Pagination,
-  Tooltip,
   Modal,
   Form,
   message
@@ -18,12 +15,11 @@ import {
 import {
   SearchOutlined,
   DownloadOutlined,
-  EyeOutlined,
   PlusOutlined
 } from '@ant-design/icons';
-import { apiPost } from '../../api';
+import { apiPost, apiGet } from '../../api';
 import { useSelector } from "react-redux";
-import moment from 'moment'; // Import moment for date handling
+import moment from 'moment';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -35,134 +31,78 @@ const TotalExpenditureScreen = () => {
   const user = useSelector((state) => state.currentUserData);
   const userId = user?.userId;
   const [searchText, setSearchText] = useState('');
-  // Initialize selectedDate with today's date using moment
   const [selectedDate, setSelectedDate] = useState(moment());
   const [transactionType, setTransactionType] = useState('Transaction Type');
-  const [status, setStatus] = useState('All Status');
-  const [service, setService] = useState('All Services');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [expenses, setExpenses] = useState([]);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [fetching, setFetching] = useState(false);
 
-  // Sample data matching the image
-  const dataSource = [
-    {
-      key: '1',
-      transactionId: 'TXN00123',
-      transactionType: 'Bills',
-      date: '01-Jul-2025',
-      service: 'Lab',
-      amount: '₹500',
-      status: 'Paid',
-      paymentMethod: 'UPI'
-    },
-    {
-      key: '2',
-      transactionId: 'TXN00124',
-      transactionType: 'Rent',
-      date: '30-Jun-2025',
-      service: 'Pharmacy',
-      amount: '₹1,500',
-      status: 'Pending',
-      paymentMethod: 'Cash'
-    },
-    {
-      key: '3',
-      transactionId: 'TXN00125',
-      transactionType: 'Salary',
-      date: '29-Jun-2025',
-      service: 'Clinic',
-      amount: '₹750',
-      status: 'Paid',
-      paymentMethod: 'Card'
-    },
-    {
-      key: '4',
-      transactionId: 'TXN00125',
-      transactionType: 'Others',
-      date: '29-Jun-2025',
-      service: 'Clinic',
-      amount: '₹750',
-      status: 'Paid',
-      paymentMethod: 'Card'
-    }
-  ];
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Paid':
-        return '#52c41a';
-      case 'Pending':
-        return '#fa8c16';
-      default:
-        return '#d9d9d9';
+  // Fetch expenses data
+  const fetchExpenses = async () => {
+    try {
+      setFetching(true);
+      // Get today's date and 7 days back for the default range
+      const endDate = moment().format('YYYY-MM-DD');
+      const startDate = moment().subtract(7, 'days').format('YYYY-MM-DD');
+      
+      const response = await apiGet(`/finance/getExpense?startDate=${startDate}&endDate=${endDate}`);
+      
+      if (response.data.success) {
+        setExpenses(response.data.data);
+        setTotalExpenses(response.data.data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+      message.error('Failed to fetch expenses. Please try again.');
+    } finally {
+      setFetching(false);
     }
   };
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
 
   const columns = [
     {
       title: 'Transaction ID',
-      dataIndex: 'transactionId',
+      dataIndex: '_id',
       key: 'transactionId',
-      render: (text) => <span style={{ fontWeight: 500 }}>{text}</span>
+      render: (id) => <span style={{ fontWeight: 500 }}>{id || 'N/A'}</span>
     },
     {
-      title: 'Transaction Type',
-      dataIndex: 'transactionType',
-      key: 'transactionType',
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      render: (text) => <span style={{ fontWeight: 500 }}>{text || 'N/A'}</span>
     },
     {
       title: 'Date',
       dataIndex: 'date',
       key: 'date',
-    },
-    {
-      title: 'Service',
-      dataIndex: 'service',
-      key: 'service',
+      render: (date) => moment(date).format('DD-MMM-YYYY') || 'N/A'
     },
     {
       title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
-      render: (amount) => <span style={{ fontWeight: 500 }}>{amount}</span>
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Tag
-          color={getStatusColor(status)}
-          style={{
-            borderRadius: '4px',
-            fontSize: '12px',
-            fontWeight: 500,
-            border: 'none'
-          }}
-        >
-          {status}
-        </Tag>
-      )
+      render: (amount) => <span style={{ fontWeight: 500 }}>{amount ? `₹${amount}` : 'N/A'}</span>
     },
     {
       title: 'Payment Method',
       dataIndex: 'paymentMethod',
       key: 'paymentMethod',
+      render: (text) => text ? text.charAt(0).toUpperCase() + text.slice(1) : 'N/A'
     },
     {
-      title: 'Action',
-      key: 'action',
-      render: () => (
-        <Tooltip title="View Details">
-          <Button
-            type="text"
-            icon={<EyeOutlined />}
-            style={{ color: '#2563EB' }}
-          />
-        </Tooltip>
-      )
+      title: 'Notes',
+      dataIndex: 'notes',
+      key: 'notes',
+      render: (text) => text || 'N/A'
     }
   ];
 
@@ -172,17 +112,35 @@ const TotalExpenditureScreen = () => {
 
   const handleSearch = (value) => {
     setSearchText(value);
-    console.log('Search:', value);
+    if (value) {
+      const filtered = expenses.filter(expense => 
+        expense._id?.toLowerCase().includes(value.toLowerCase()) ||
+        expense.description?.toLowerCase().includes(value.toLowerCase()) ||
+        expense.notes?.toLowerCase().includes(value.toLowerCase())
+      );
+      setExpenses(filtered);
+    } else {
+      fetchExpenses();
+    }
   };
 
   const handleDateChange = (date) => {
     setSelectedDate(date);
-    console.log('Date changed:', date ? date.format('MM/DD/YYYY') : null);
+    if (date) {
+      const filtered = expenses.filter(expense => 
+        moment(expense.date).isSame(date, 'day')
+      );
+      setExpenses(filtered);
+    } else {
+      fetchExpenses();
+    }
   };
 
   const showModal = () => {
-    // Set default date in form when modal opens
-    form.setFieldsValue({ date: moment() });
+    form.setFieldsValue({ 
+      date: moment(),
+      paymentMethod: 'cash'
+    });
     setIsModalVisible(true);
   };
 
@@ -201,27 +159,26 @@ const TotalExpenditureScreen = () => {
         date: values.date.format('YYYY-MM-DD'),
         description: values.description,
         amount: values.amount,
+        paymentMethod: values.paymentMethod || 'cash',
         notes: values.notes || ''
       };
 
-      // Call the API
       const response = await apiPost('/finance/createExpense', payload);
-console.log('API Response:', response.data.success);
-if(response.data.success){
-toast.success('Expense created successfully!', {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-}
-      // message.success('Expense created successfully!');
+      
+      if(response.data.success){
+        toast.success('Expense created successfully!', {
+          position: 'top-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        await fetchExpenses();
+      }
+      
       setIsModalVisible(false);
       form.resetFields();
-
-      console.log('API Response:', response);
 
     } catch (error) {
       console.error('Error creating expense:', error);
@@ -231,7 +188,6 @@ toast.success('Expense created successfully!', {
     }
   };
 
-  // DatePicker styles matching the reference code
   const datePickerStyle = {
     borderRadius: '12px',
     background: '#F6F6F6',
@@ -277,7 +233,7 @@ toast.success('Expense created successfully!', {
           alignItems: 'center'
         }}>
           <Input
-            placeholder="Search by Patient Name or Transaction ID"
+            placeholder="Search by Transaction ID, Description or Notes"
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => handleSearch(e.target.value)}
@@ -286,43 +242,32 @@ toast.success('Expense created successfully!', {
 
           <DatePicker
             placeholder="mm/dd/yyyy"
-            style={datePickerStyle} // Apply custom styles
-            value={selectedDate} // Set default to today
+            style={datePickerStyle}
+            value={selectedDate}
             onChange={handleDateChange}
             format="MM/DD/YYYY"
           />
 
           <Select
             value={transactionType}
-            onChange={setTransactionType}
+            onChange={(value) => {
+              setTransactionType(value);
+              if (value) {
+                const filtered = expenses.filter(expense => 
+                  expense.description === value
+                );
+                setExpenses(filtered);
+              } else {
+                fetchExpenses();
+              }
+            }}
             style={{ width: '150px' }}
           >
             <Option value="">Transaction Type</Option>
-            <Option value="Bills">Bills</Option>
-            <Option value="Rent">Rent</Option>
-            <Option value="Salary">Salary</Option>
-            <Option value="Others">Others</Option>
-          </Select>
-
-          <Select
-            value={service}
-            onChange={setService}
-            style={{ width: '120px' }}
-          >
-            <Option value="">All Services</Option>
-            <Option value="appointment">Appointment</Option>
-            <Option value="lab">Lab</Option>
-            <Option value="pharmacy">Pharmacy</Option>
-          </Select>
-
-          <Select
-            value={status}
-            onChange={setStatus}
-            style={{ width: '100px' }}
-          >
-            <Option value="">All Status</Option>
-            <Option value="Paid">Paid</Option>
-            <Option value="Pending">Pending</Option>
+            <Option value="rent">Rent</Option>
+            <Option value="salary">Salary</Option>
+            <Option value="bills">Bills</Option>
+            <Option value="supplies">Supplies</Option>
           </Select>
 
           <Button
@@ -349,12 +294,14 @@ toast.success('Expense created successfully!', {
 
         {/* Table */}
         <Table
-          dataSource={dataSource}
+          dataSource={expenses}
           columns={columns}
           pagination={false}
           size="middle"
           style={{ marginBottom: '16px' }}
           scroll={{ x: 'max-content' }}
+          loading={fetching}
+          rowKey="_id"
         />
 
         {/* Footer with pagination info and pagination */}
@@ -366,12 +313,12 @@ toast.success('Expense created successfully!', {
           gap: '16px'
         }}>
           <span style={{ color: '#666', fontSize: '14px' }}>
-            Showing 1 to 10
+            Showing 1 to {expenses.length} of {totalExpenses} entries
           </span>
 
           <Pagination
             current={currentPage}
-            total={30}
+            total={totalExpenses}
             pageSize={10}
             showSizeChanger={false}
             onChange={(page) => setCurrentPage(page)}
@@ -395,9 +342,10 @@ toast.success('Expense created successfully!', {
           form={form}
           layout="vertical"
           initialValues={{
-            date: moment(), // Default to today
+            date: moment(),
             description: '',
             amount: '',
+            paymentMethod: 'cash',
             notes: ''
           }}
         >
@@ -407,7 +355,7 @@ toast.success('Expense created successfully!', {
             rules={[{ required: true, message: 'Please select a date' }]}
           >
             <DatePicker
-              style={datePickerStyle} // Apply custom styles
+              style={datePickerStyle}
               format="MM/DD/YYYY"
             />
           </Form.Item>
@@ -417,7 +365,7 @@ toast.success('Expense created successfully!', {
             name="description"
             rules={[{ required: true, message: 'Please enter a description' }]}
           >
-            <Input placeholder="e.g., Salary, Rent, Supplies" />
+            <Input placeholder="e.g., Rent, Salary, Supplies" />
           </Form.Item>
 
           <Form.Item
@@ -429,6 +377,18 @@ toast.success('Expense created successfully!', {
             ]}
           >
             <Input type="number" placeholder="Enter amount" />
+          </Form.Item>
+
+          <Form.Item
+            label="Payment Method"
+            name="paymentMethod"
+          >
+            <Select>
+              <Option value="cash">Cash</Option>
+              <Option value="card">Card</Option>
+              <Option value="upi">UPI</Option>
+              <Option value="bank transfer">Bank Transfer</Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
