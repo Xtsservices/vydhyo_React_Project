@@ -42,12 +42,18 @@ const TotalExpenditureScreen = () => {
   const [fetching, setFetching] = useState(false);
 
   // Fetch expenses data
-  const fetchExpenses = async () => {
+  const fetchExpenses = async (start = null, end = null) => { 
     try {
       setFetching(true);
+      let startDate, endDate;
+
+      if (start) {
+        startDate = start.format('YYYY-MM-DD');
+        endDate = end ? end.format('YYYY-MM-DD') : startDate; // Use startDate as endDate if end is not provided
+      }
       // Get today's date and 7 days back for the default range
-      const endDate = moment().format('YYYY-MM-DD');
-      const startDate = moment().subtract(7, 'days').format('YYYY-MM-DD');
+      // const endDate = moment().format('YYYY-MM-DD');
+      // const startDate = moment().subtract(7, 'days').format('YYYY-MM-DD');
       
       const response = await apiGet(`/finance/getExpense?startDate=${startDate}&endDate=${endDate}`);
       
@@ -126,11 +132,14 @@ const TotalExpenditureScreen = () => {
 
   const handleDateChange = (date) => {
     setSelectedDate(date);
+    console.log('Selected date:', date ? date.format('YYYY-MM-DD') : 'None');
     if (date) {
       const filtered = expenses.filter(expense => 
         moment(expense.date).isSame(date, 'day')
       );
       setExpenses(filtered);
+      fetchExpenses(date);
+
     } else {
       fetchExpenses();
     }
@@ -232,13 +241,13 @@ const TotalExpenditureScreen = () => {
           flexWrap: 'wrap',
           alignItems: 'center'
         }}>
-          <Input
+          {/* <Input
             placeholder="Search by Transaction ID, Description or Notes"
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => handleSearch(e.target.value)}
             style={{ width: '300px' }}
-          />
+          /> */}
 
           <DatePicker
             placeholder="mm/dd/yyyy"
@@ -248,7 +257,7 @@ const TotalExpenditureScreen = () => {
             format="MM/DD/YYYY"
           />
 
-          <Select
+          {/* <Select
             value={transactionType}
             onChange={(value) => {
               setTransactionType(value);
@@ -268,9 +277,9 @@ const TotalExpenditureScreen = () => {
             <Option value="salary">Salary</Option>
             <Option value="bills">Bills</Option>
             <Option value="supplies">Supplies</Option>
-          </Select>
+          </Select> */}
 
-          <Button
+          {/* <Button
             type="primary"
             icon={<DownloadOutlined />}
             onClick={handleExport}
@@ -282,7 +291,7 @@ const TotalExpenditureScreen = () => {
             }}
           >
             Export
-          </Button>
+          </Button> */}
         </div>
 
         {/* Transaction History Section */}
