@@ -160,6 +160,7 @@ const AccountsPage = () => {
         setAccountSummary((prev) => ({
           ...prev,
           totalReceived: apiData.totalRevenue,
+          totalExpenditure: apiData.totalExpenditure,
           recentTransactions: apiData.lastThreeTransactions.map((txn) => ({
             name: txn.username,
             amount: txn.finalAmount,
@@ -523,7 +524,7 @@ const AccountsPage = () => {
       <div className="content-section">
         {/* Summary Cards */}
         <Row gutter={[16, 16]} className="summary-row">
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} md={8}>
             <Card className="summary-card">
               <div className="card-icon-container">
                 <div className="card-icon green">
@@ -539,7 +540,7 @@ const AccountsPage = () => {
             </Card>
           </Col>
 
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} md={8}>
             <div
               className="clickable-card-container"
               onClick={() => {
@@ -562,7 +563,7 @@ const AccountsPage = () => {
             </div>
           </Col>
 
-          <Col xs={24} sm={12} md={6}>
+          {/* <Col xs={24} sm={12} md={6}>
             <div
               className="clickable-card-container"
               onClick={() => {
@@ -584,9 +585,9 @@ const AccountsPage = () => {
                 </div>
               </Card>
             </div>
-          </Col>
+          </Col> */}
 
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} md={8}>
             <Card className="summary-card">
               <div className="card-icon-container">
                 <div className="card-icon blue">
