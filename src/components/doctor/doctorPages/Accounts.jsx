@@ -555,7 +555,7 @@ const AccountsPage = () => {
                 </div>
                 <div>
                   <Text className="card-amount">
-                    ₹{accountSummary.totalExpenditure.toLocaleString()}
+                    ₹{accountSummary?.totalExpenditure?.toLocaleString()}
                   </Text>
                   <div className="card-label">Total Expenditure</div>
                 </div>

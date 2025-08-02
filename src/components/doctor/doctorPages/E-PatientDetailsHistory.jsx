@@ -25,19 +25,41 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
   });
 
   // Initialize localData from props
+  // useEffect(() => {
+  //   setLocalData({
+  //     patientId: formData?.patientId || patientData?.patientId || "",
+  //     patientName: formData?.patientName || patientData?.patientName || "",
+  //     age: formData?.age || patientData?.age || "",
+  //     gender: formData?.gender || patientData?.gender || "",
+  //     mobileNumber: formData?.mobileNumber || patientData?.mobileNumber || "",
+  //     chiefComplaint: formData?.chiefComplaint || patientData?.appointmentReason || "",
+  //     pastMedicalHistory: formData?.pastMedicalHistory || "",
+  //     familyMedicalHistory: formData?.familyMedicalHistory || "",
+  //     physicalExamination: formData?.physicalExamination || "",
+  //   });
+  // }, [formData, patientData]);
+
   useEffect(() => {
-    setLocalData({
-      patientId: formData?.patientId || patientData?.patientId || "",
-      patientName: formData?.patientName || patientData?.patientName || "",
-      age: formData?.age || patientData?.age || "",
-      gender: formData?.gender || patientData?.gender || "",
-      mobileNumber: formData?.mobileNumber || patientData?.mobileNumber || "",
-      chiefComplaint: formData?.chiefComplaint || patientData?.appointmentReason || "",
-      pastMedicalHistory: formData?.pastMedicalHistory || "",
-      familyMedicalHistory: formData?.familyMedicalHistory || "",
-      physicalExamination: formData?.physicalExamination || "",
-    });
-  }, [formData, patientData]);
+  const newData = {
+    patientId: formData?.patientId || patientData?.patientId || "",
+    patientName: formData?.patientName || patientData?.patientName || "",
+    age: formData?.age || patientData?.age || "",
+    gender: formData?.gender || patientData?.gender || "",
+    mobileNumber: formData?.mobileNumber || patientData?.mobileNumber || "",
+    chiefComplaint: formData?.chiefComplaint || patientData?.appointmentReason || "",
+    pastMedicalHistory: formData?.pastMedicalHistory || "",
+    familyMedicalHistory: formData?.familyMedicalHistory || "",
+    physicalExamination: formData?.physicalExamination || "",
+  };
+
+  // Only update localData if it has changed
+  setLocalData((prev) => {
+    if (JSON.stringify(prev) !== JSON.stringify(newData)) {
+      return newData;
+    }
+    return prev;
+  });
+}, [formData, patientData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

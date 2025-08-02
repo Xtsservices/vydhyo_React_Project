@@ -184,10 +184,10 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       toast.error("Please select a medicine type");
       return false;
     }
-    if (!medication.dosage.trim() || !validateDosage(medication.dosage)) {
-      toast.error("Please enter a valid dosage (e.g., 100mg, 5ml)");
-      return false;
-    }
+    // if (!medication.dosage.trim() || !validateDosage(medication.dosage)) {
+    //   toast.error("Please enter a valid dosage (e.g., 100mg, 5ml)");
+    //   return false;
+    // }
     if (medication.duration === null || medication.duration <= 0) {
       toast.error("Please enter a valid duration greater than 0 days");
       return false;
@@ -372,6 +372,11 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   const isQuantityEditable = (medicineType) => {
     return ["Syrup", "Cream", "Drops"].includes(medicineType);
   };
+
+  const getMaxTimings = (frequency) => {
+  if (!frequency || frequency === "SOS") return 0;
+  return frequency.split("-").filter((x) => x === "1").length;
+};
 
   return (
     <div className="common-container">
@@ -682,43 +687,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
 
               {/* Third Row - Timings, Frequency */}
               <div className="medication-timing-row">
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "12px",
-                      fontWeight: "500",
-                      color: "#6b7280",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Timings
-                  </label>
-                  <Select
-                    mode="multiple"
-                    placeholder="Select timings"
-                    value={medication.timings}
-                    onChange={(value) =>
-                      updateMedication(medication.id, "timings", value)
-                    }
-                    style={{ width: "100%" }}
-                    allowClear
-                    disabled={medication.frequency === "SOS"}
-                    maxTagCount={
-                      medication.frequency
-                        ? medication.frequency
-                            .split("-")
-                            .filter((x) => x === "1").length
-                        : 3
-                    }
-                  >
-                    {timingOptions.map((option) => (
-                      <Option key={option} value={option}>
-                        {option}
-                      </Option>
-                    ))}
-                  </Select>
-                </div>
+               
 
                 <div>
                   <label
@@ -741,6 +710,54 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                     placeholder="Select frequency"
                   >
                     {frequencyOptions.map((option) => (
+                      <Option key={option} value={option}>
+                        {option}
+                      </Option>
+                    ))}
+                  </Select>
+                </div>
+
+                 <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                      color: "#6b7280",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Timings
+                  </label>
+                  <Select
+                    mode="multiple"
+                    placeholder="Select timings"
+                    value={medication.timings}
+                    onChange={(value) => {
+                      if (value.length <= getMaxTimings(medication.frequency)) {
+      updateMedication(medication.id, "timings", value);
+    } else {
+      toast.error(
+        `Cannot select more than ${getMaxTimings(medication.frequency)} timing${
+          getMaxTimings(medication.frequency) > 1 ? "s" : ""
+        } for frequency ${medication.frequency}`
+      );
+    }
+                    }
+                      // updateMedication(medication.id, "timings", value)
+                    }
+                    style={{ width: "100%" }}
+                    allowClear
+                    disabled={medication.frequency === "SOS"}
+                    maxTagCount={
+                      medication.frequency
+                        ? medication.frequency
+                            .split("-")
+                            .filter((x) => x === "1").length
+                        : 3
+                    }
+                  >
+                    {timingOptions.map((option) => (
                       <Option key={option} value={option}>
                         {option}
                       </Option>
