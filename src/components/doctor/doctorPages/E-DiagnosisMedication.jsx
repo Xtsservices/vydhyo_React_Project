@@ -27,7 +27,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
         ? formData.medications
         : [],
     testNotes: formData?.testNotes || "",
-    medicationNotes: formData?.medicationNotes || "",
+    // medicationNotes: formData?.medicationNotes || "",
   });
 
   const timingOptions = [
@@ -837,23 +837,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           </Button>
         </div>
 
-        {/* General Notes Box for Medications */}
-        <div className="note-box">
-          <div className="note-header">General Notes:</div>
-          <textarea
-            className="note-textarea"
-            placeholder="Enter general notes..."
-            value={localData.medicationNotes || ""}
-            onChange={(e) => {
-              const updatedData = {
-                ...localData,
-                medicationNotes: e.target.value,
-              };
-              setLocalData(updatedData);
-              updateFormData(updatedData);
-            }}
-          />
-        </div>
+       
       </div>
     </div>
   );

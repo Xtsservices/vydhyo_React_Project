@@ -136,9 +136,9 @@ const EPrescription = () => {
               timings: typeof med.timings === "string" ? med.timings.split(", ") : med.timings,
             })) || [],
             testNotes: prescription.diagnosis?.testsNote || "",
-            medicationNotes: prescription.diagnosis?.PrescribeMedNotes || "",
           },
           advice: {
+            medicationNotes: prescription.advice?.PrescribeMedNotes || "",
             advice: prescription.advice?.advice || "",
             followUpDate: prescription.advice?.followUpDate || "",
           },
@@ -248,7 +248,6 @@ const EPrescription = () => {
       diagnosis: {
         diagnosisNote: diagnosis.diagnosisList || null,
         testsNote: diagnosis.testNotes || null,
-        PrescribeMedNotes: diagnosis.medicationNotes || null,
         selectedTests: Array.isArray(diagnosis.selectedTests)
           ? diagnosis.selectedTests.map((test) => ({
               testName: test.testName,
@@ -269,6 +268,7 @@ const EPrescription = () => {
           : [],
       },
       advice: {
+        PrescribeMedNotes: advice?.medicationNotes || null,
         advice: advice.advice || null,
         followUpDate: advice.followUpDate || null,
       },

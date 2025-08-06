@@ -4,6 +4,7 @@ import '../../stylings/EPrescription.css';
 
 const AdviceFollowUp = ({ formData, updateFormData }) => {
   const [localData, setLocalData] = useState({
+       medicationNotes: formData?.medicationNotes || "",
     advice: '',
     followUpDate: ''
   });
@@ -50,6 +51,23 @@ const AdviceFollowUp = ({ formData, updateFormData }) => {
     <div className="common-container">
       {/* Advice Section */}
       <div className="common-section">
+         {/* General Notes Box for Medications */}
+        <div className="note-box">
+          <div className="note-header">General Notes:</div>
+          <textarea
+            className="note-textarea"
+            placeholder="Enter general notes..."
+            value={localData.medicationNotes || ""}
+            onChange={(e) => {
+              const updatedData = {
+                ...localData,
+                medicationNotes: e.target.value,
+              };
+              setLocalData(updatedData);
+              updateFormData(updatedData);
+            }}
+          />
+        </div>
         <div className="common-section-header">
           <div className="common-icon-container">
             <Stethoscope size={16} color="#16a34a" />
