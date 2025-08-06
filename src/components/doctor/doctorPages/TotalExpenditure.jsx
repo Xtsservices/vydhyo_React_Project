@@ -3,7 +3,6 @@ import {
   Table,
   Input,
   Select,
-  DatePicker,
   Button,
   Card,
   Typography,
@@ -31,7 +30,7 @@ const TotalExpenditureScreen = () => {
   const user = useSelector((state) => state.currentUserData);
   const userId = user?.userId;
   const [searchText, setSearchText] = useState('');
-  const [selectedDate, setSelectedDate] = useState(moment());
+  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
   const [transactionType, setTransactionType] = useState('Transaction Type');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -41,6 +40,14 @@ const TotalExpenditureScreen = () => {
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [fetching, setFetching] = useState(false);
 
+  // Expense categories for dropdown
+  const expenseCategories = [
+    'Rent',
+    'Salary',
+    'Utilities',
+    'Others'
+  ];
+
   // Fetch expenses data
   const fetchExpenses = async (start = null, end = null) => { 
     try {
@@ -48,12 +55,9 @@ const TotalExpenditureScreen = () => {
       let startDate, endDate;
 
       if (start) {
-        startDate = start.format('YYYY-MM-DD');
-        endDate = end ? end.format('YYYY-MM-DD') : startDate; // Use startDate as endDate if end is not provided
+        startDate = moment(start).format('YYYY-MM-DD');
+        endDate = end ? moment(end).format('YYYY-MM-DD') : startDate;
       }
-      // Get today's date and 7 days back for the default range
-      // const endDate = moment().format('YYYY-MM-DD');
-      // const startDate = moment().subtract(7, 'days').format('YYYY-MM-DD');
       
       const response = await apiGet(`/finance/getExpense?startDate=${startDate}&endDate=${endDate}`);
       
@@ -70,10 +74,9 @@ const TotalExpenditureScreen = () => {
   };
 
   useEffect(() => {
-     const today = moment();
-  fetchExpenses(today); // Pass today's date as start (and end)
-  setSelectedDate(today);
-    // fetchExpenses();
+    const today = moment().format('YYYY-MM-DD');
+    fetchExpenses(today);
+    setSelectedDate(today);
   }, []);
 
   const columns = [
@@ -133,16 +136,15 @@ const TotalExpenditureScreen = () => {
     }
   };
 
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
-    console.log('Selected date:', date ? date.format('YYYY-MM-DD') : 'None');
-    if (date) {
+  const handleDateChange = (e) => {
+    const dateValue = e.target.value;
+    setSelectedDate(dateValue);
+    if (dateValue) {
       const filtered = expenses.filter(expense => 
-        moment(expense.date).isSame(date, 'day')
+        moment(expense.date).isSame(moment(dateValue), 'day')
       );
       setExpenses(filtered);
-      fetchExpenses(date);
-
+      fetchExpenses(dateValue);
     } else {
       fetchExpenses();
     }
@@ -151,7 +153,8 @@ const TotalExpenditureScreen = () => {
   const showModal = () => {
     form.setFieldsValue({ 
       date: moment(),
-      paymentMethod: 'cash'
+      paymentMethod: 'cash',
+      description: undefined // Reset description when modal opens
     });
     setIsModalVisible(true);
   };
@@ -244,57 +247,19 @@ const TotalExpenditureScreen = () => {
           flexWrap: 'wrap',
           alignItems: 'center'
         }}>
-          {/* <Input
-            placeholder="Search by Transaction ID, Description or Notes"
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => handleSearch(e.target.value)}
-            style={{ width: '300px' }}
-          /> */}
-
-          <DatePicker
-            placeholder="mm/dd/yyyy"
-            style={datePickerStyle}
+          <input
+            type="date"
+            style={{
+              borderRadius: '12px',
+              background: '#F6F6F6',
+              padding: '0.4rem',
+              color: '#1977f3',
+              width: '130px',
+              border: '1px solid #d9d9d9'
+            }}
             value={selectedDate}
             onChange={handleDateChange}
-            format="MM/DD/YYYY"
           />
-
-          {/* <Select
-            value={transactionType}
-            onChange={(value) => {
-              setTransactionType(value);
-              if (value) {
-                const filtered = expenses.filter(expense => 
-                  expense.description === value
-                );
-                setExpenses(filtered);
-              } else {
-                fetchExpenses();
-              }
-            }}
-            style={{ width: '150px' }}
-          >
-            <Option value="">Transaction Type</Option>
-            <Option value="rent">Rent</Option>
-            <Option value="salary">Salary</Option>
-            <Option value="bills">Bills</Option>
-            <Option value="supplies">Supplies</Option>
-          </Select> */}
-
-          {/* <Button
-            type="primary"
-            icon={<DownloadOutlined />}
-            onClick={handleExport}
-            style={{
-              backgroundColor: '#16A34A',
-              borderColor: '#52c41a',
-              borderRadius: '6px',
-              marginLeft: '0px'
-            }}
-          >
-            Export
-          </Button> */}
         </div>
 
         {/* Transaction History Section */}
@@ -355,7 +320,7 @@ const TotalExpenditureScreen = () => {
           layout="vertical"
           initialValues={{
             date: moment(),
-            description: '',
+            description: undefined,
             amount: '',
             paymentMethod: 'cash',
             notes: ''
@@ -366,18 +331,34 @@ const TotalExpenditureScreen = () => {
             name="date"
             rules={[{ required: true, message: 'Please select a date' }]}
           >
-            <DatePicker
+            <input
+              type="date"
               style={datePickerStyle}
-              format="MM/DD/YYYY"
+              onChange={(e) => form.setFieldsValue({ date: moment(e.target.value) })}
+              value={form.getFieldValue('date')?.format('YYYY-MM-DD')}
             />
           </Form.Item>
 
           <Form.Item
             label="Description"
             name="description"
-            rules={[{ required: true, message: 'Please enter a description' }]}
+            rules={[{ required: true, message: 'Please select a description' }]}
           >
-            <Input placeholder="e.g., Rent, Salary, Supplies" />
+            <Select
+              placeholder="Select expense category"
+              allowClear
+              showSearch
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+            >
+              {expenseCategories.map(category => (
+                <Option key={category} value={category}>
+                  {category}
+                </Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item

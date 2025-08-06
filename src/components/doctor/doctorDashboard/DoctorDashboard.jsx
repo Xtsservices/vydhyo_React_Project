@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Card, Typography, Button } from "antd";
+import { Card, Typography, Button, DatePicker } from "antd";
 import {
   UserOutlined,
   LeftOutlined,
@@ -7,15 +7,14 @@ import {
   StarFilled,
   ArrowUpOutlined,
   ArrowDownOutlined,
-  ConsoleSqlOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { apiGet } from "../../api";
-import { Users } from "lucide-react";
 
 const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 
 // Sample feedback data
 const feedbacks = [
@@ -85,13 +84,11 @@ const PieChart = ({ data }) => {
   // Calculate total and handle zero values
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
-  console.log("PieChart data:", data, "Total:", total);
-
   // If total is 0, show equal segments for visual representation
   const processedData =
     total === 0
-      ? data.map((item) => ({ ...item, value: 1 })) // Equal segments when no data
-      : data.filter((item) => item.value > 0); // Only show non-zero segments
+      ? data.map((item) => ({ ...item, value: 1 }))
+      : data.filter((item) => item.value > 0);
 
   const processedTotal = processedData.reduce(
     (sum, item) => sum + item.value,
@@ -107,7 +104,6 @@ const PieChart = ({ data }) => {
     const startAngle = currentAngle;
     const endAngle = currentAngle + angle;
 
-    // Convert angles to radians and calculate coordinates
     const startRadians = ((startAngle - 90) * Math.PI) / 180;
     const endRadians = ((endAngle - 90) * Math.PI) / 180;
 
@@ -118,7 +114,6 @@ const PieChart = ({ data }) => {
 
     const largeArcFlag = angle > 180 ? 1 : 0;
 
-    // Handle special case for full circle (360 degrees)
     const pathData =
       angle >= 360
         ? `M ${centerX} ${centerY} m -${radius} 0 a ${radius} ${radius} 0 1 1 ${
@@ -130,13 +125,6 @@ const PieChart = ({ data }) => {
             `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
             "Z",
           ].join(" ");
-
-    console.log(`Segment ${item.label}:`, {
-      startAngle,
-      endAngle,
-      angle,
-      pathData,
-    });
 
     currentAngle += angle;
 
@@ -229,9 +217,7 @@ const PieChart = ({ data }) => {
 };
 
 const Header = ({ user, navigate }) => {
-  // Get current time in IST
   const now = new Date();
-  // Convert to IST (UTC+5:30)
   const utc = now.getTime() + now.getTimezoneOffset() * 60000;
   const istNow = new Date(utc + 5.5 * 60 * 60 * 1000);
   const hour = istNow.getHours();
@@ -248,7 +234,7 @@ const Header = ({ user, navigate }) => {
       style={{
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "flex-start",
+        alignItems: "center",
         marginBottom: "24px",
       }}
     >
@@ -344,7 +330,7 @@ const AppointmentsCard = ({ dashboardData }) => (
           display: "block",
           fontFamily: "Poppins, sans-serif",
         }}
-      >
+        >
         Today's Appointments
       </Text>
     </div>
@@ -360,7 +346,6 @@ const AppointmentsCard = ({ dashboardData }) => (
           textAlign: "center",
           backdropFilter: "blur(10px)",
         }}
-        // onClick={setNewAppointments(true)}
       >
         <Title
           level={2}
@@ -401,7 +386,6 @@ const AppointmentsCard = ({ dashboardData }) => (
           textAlign: "center",
           backdropFilter: "blur(10px)",
         }}
-        // onClick={setNewFollowups(true)}
       >
         <Title
           level={2}
@@ -546,7 +530,6 @@ const PatientAppointments = ({
   newFollowups,
 }) => {
   const navigate = useNavigate();
-  console.log(newAppointments, "newappointments ");
 
   const filteredAppointments = appointments.filter(
     (appt) =>
@@ -554,15 +537,8 @@ const PatientAppointments = ({
       selectedDate
   );
 
-  if (newAppointments) {
-    console.log("new appointments");
-  }
-
-  // Show only first 5 appointments if there are more
   const displayedAppointments = filteredAppointments.slice(0, 5);
   const hasMoreAppointments = filteredAppointments.length > 5;
-
-  console.log(hasMoreAppointments,filteredAppointments, "more appointments")
 
   const handleViewAll = () => {
     navigate("/doctor/doctorPages/Appointments");
@@ -612,6 +588,7 @@ const PatientAppointments = ({
               width: "130px",
               border: "1px solid #d9d9d9",
               marginTop: 8,
+              fontFamily: "Poppins, sans-serif",
             }}
             value={selectedDate}
             onChange={(e) => handleDateChange(e.target.value)}
@@ -626,7 +603,7 @@ const PatientAppointments = ({
           padding: "12px 0",
           borderBottom: "2px solid #f1f3f4",
           marginBottom: "16px",
-          alignItems: "center", // Ensure vertical alignment
+          alignItems: "center",
         }}
       >
         <Text
@@ -636,7 +613,7 @@ const PatientAppointments = ({
             fontSize: "12px",
             textTransform: "uppercase",
             fontFamily: "Poppins, sans-serif",
-            textAlign: "left", // Align left for Patient Name
+            textAlign: "left",
           }}
         >
           Patient Name
@@ -648,7 +625,7 @@ const PatientAppointments = ({
             fontSize: "12px",
             textTransform: "uppercase",
             fontFamily: "Poppins, sans-serif",
-            textAlign: "center", // Center align for Time
+            textAlign: "center",
           }}
         >
           Time
@@ -660,7 +637,7 @@ const PatientAppointments = ({
             fontSize: "12px",
             textTransform: "uppercase",
             fontFamily: "Poppins, sans-serif",
-            textAlign: "center", // Center align for Type
+            textAlign: "center",
           }}
         >
           Type
@@ -672,7 +649,7 @@ const PatientAppointments = ({
             fontSize: "12px",
             textTransform: "uppercase",
             fontFamily: "Poppins, sans-serif",
-            textAlign: "center", // Center align for Status
+            textAlign: "center",
           }}
         >
           Status
@@ -690,85 +667,85 @@ const PatientAppointments = ({
       ) : displayedAppointments.length > 0 ? (
         <>
           {displayedAppointments.map((appointment, index) => (
-  <div
-    key={appointment.appointmentId || index}
-    style={{
-      display: "grid",
-      gridTemplateColumns: "2fr 1fr 1fr 1fr",
-      padding: "16px 0",
-      borderBottom:
-        index < displayedAppointments.length - 1
-          ? "1px solid #f8f9fa"
-          : "none",
-      alignItems: "center", // Ensure vertical alignment
-    }}
-  >
-    <Text
-      style={{
-        fontWeight: 500,
-        color: "#1a1a1a",
-        fontSize: "14px",
-        fontFamily: "Poppins, sans-serif",
-        textAlign: "left", // Align left for Patient Name
-      }}
-    >
-      {appointment.patientName || "Unknown Patient"}
-    </Text>
-    <Text
-      style={{
-        color: "#6c757d",
-        fontSize: "14px",
-        fontFamily: "Poppins, sans-serif",
-        textAlign: "center", // Center align for Time
-      }}
-    >
-      {appointment.appointmentTime || "N/A"}
-    </Text>
-    <div
-      style={{
-        padding: "4px 12px",
-        backgroundColor:
-          appointment.appointmentType === "New-Walkin"
-            ? "#DBEAFE"
-            : "#e8f5e8",
-        color: getTypeColor(appointment.appointmentType),
-        borderRadius: "16px",
-        fontSize: "12px",
-        fontWeight: 400,
-        textAlign: "center", // Center align for Type
-        width: "fit-content",
-        margin: "0 auto", // Center the div horizontally
-        fontFamily: "Poppins, sans-serif",
-      }}
-    >
-      {getAppointmentTypeDisplay(appointment.appointmentType)}
-    </div>
-    <div
-      style={{
-        padding: "4px 12px",
-        backgroundColor:
-          appointment.appointmentStatus === "scheduled"
-            ? "#e8f5e8"
-            : appointment.appointmentStatus === "completed"
-            ? "#e3f2fd"
-            : appointment.appointmentStatus === "rescheduled"
-            ? "#fff3e0"
-            : "#ffebee",
-        color: getStatusColor(appointment.appointmentStatus),
-        borderRadius: "16px",
-        fontSize: "12px",
-        fontWeight: 400,
-        textAlign: "center", // Center align for Status
-        width: "fit-content",
-        margin: "0 auto", // Center the div horizontally
-        fontFamily: "Poppins, sans-serif",
-      }}
-    >
-      {appointment.appointmentStatus?.charAt(0).toUpperCase() +
-        appointment.appointmentStatus?.slice(1) || "Unknown"}
-    </div>
-  </div>
-))}
+            <div
+              key={appointment.appointmentId || index}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                padding: "16px 0",
+                borderBottom:
+                  index < displayedAppointments.length - 1
+                    ? "1px solid #f8f9fa"
+                    : "none",
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: 500,
+                  color: "#1a1a1a",
+                  fontSize: "14px",
+                  fontFamily: "Poppins, sans-serif",
+                  textAlign: "left",
+                }}
+              >
+                {appointment.patientName || "Unknown Patient"}
+              </Text>
+              <Text
+                style={{
+                  color: "#6c757d",
+                  fontSize: "14px",
+                  fontFamily: "Poppins, sans-serif",
+                  textAlign: "center",
+                }}
+              >
+                {appointment.appointmentTime || "N/A"}
+              </Text>
+              <div
+                style={{
+                  padding: "4px 12px",
+                  backgroundColor:
+                    appointment.appointmentType === "New-Walkin"
+                      ? "#DBEAFE"
+                      : "#e8f5e8",
+                  color: getTypeColor(appointment.appointmentType),
+                  borderRadius: "16px",
+                  fontSize: "12px",
+                  fontWeight: 400,
+                  textAlign: "center",
+                  width: "fit-content",
+                  margin: "0 auto",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {getAppointmentTypeDisplay(appointment.appointmentType)}
+              </div>
+              <div
+                style={{
+                  padding: "4px 12px",
+                  backgroundColor:
+                    appointment.appointmentStatus === "scheduled"
+                      ? "#e8f5e8"
+                      : appointment.appointmentStatus === "completed"
+                      ? "#e3f2fd"
+                      : appointment.appointmentStatus === "rescheduled"
+                      ? "#fff3e0"
+                      : "#ffebee",
+                  color: getStatusColor(appointment.appointmentStatus),
+                  borderRadius: "16px",
+                  fontSize: "12px",
+                  fontWeight: 400,
+                  textAlign: "center",
+                  width: "fit-content",
+                  margin: "0 auto",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {appointment.appointmentStatus?.charAt(0).toUpperCase() +
+                  appointment.appointmentStatus?.slice(1) || "Unknown"}
+              </div>
+            </div>
+          ))}
         </>
       ) : (
         <div
@@ -933,7 +910,6 @@ const ClinicAvailability = ({
   const [error, setError] = useState(null);
   const [clinics, setClinics] = useState([]);
 
-  // Fetch clinics data (unchanged)
   useEffect(() => {
     const fetchClinics = async () => {
       try {
@@ -960,7 +936,6 @@ const ClinicAvailability = ({
     }
   }, [doctorId]);
 
-  // Fetch available slots for the current clinic (unchanged)
   useEffect(() => {
     const fetchAvailableSlots = async () => {
       if (!doctorId || clinics.length === 0) return;
@@ -1024,11 +999,6 @@ const ClinicAvailability = ({
     const ampm = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    return moment(dateString).format("DD-MM-YYYY");
   };
 
   if (clinics.length === 0) {
@@ -1113,15 +1083,6 @@ const ClinicAvailability = ({
               >
                 {currentClinic.clinicName}
               </Title>
-              {/* <Text
-                style={{
-                  fontSize: "11px",
-                  color: "#8c8c8c",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                {currentClinic.startTime} - {currentClinic.endTime}
-              </Text> */}
               <Text
                 style={{
                   fontSize: "11px",
@@ -1230,108 +1191,6 @@ const ClinicAvailability = ({
               )}
             </div>
           </div>
-          {/* <div
-            style={{
-              padding: "12px",
-              backgroundColor: "#f0f8f0",
-              borderRadius: "10px",
-              marginBottom: "16px",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: "13px",
-                display: "block",
-                marginBottom: "2px",
-                fontWeight: 500,
-                fontFamily: "Poppins, sans-serif",
-              }}
-            >
-              Next Availability==
-            </Text>
-            {nextAvailableSlot?.length > 0 ? (
-              (() => {
-                const matchedSlotGroup = nextAvailableSlot.find(
-                  (slotGroup) => slotGroup.addressId === currentClinic.addressId
-                );
-
-                if (!matchedSlotGroup) {
-                  return (
-                    <Text
-                      style={{
-                        fontSize: "12px",
-                        color: "#8c8c8c",
-                        fontFamily: "Poppins, sans-serif",
-                      }}
-                    >
-                      No available slots Tomorrow
-                    </Text>
-                  );
-                }
-
-                const available = matchedSlotGroup.slots
-                  .filter((slot) => slot.status === "available")
-                  .slice(0, 5);
-
-                if (available.length === 0) {
-                  return (
-                    <Text
-                      style={{
-                        fontSize: "12px",
-                        color: "#8c8c8c",
-                        fontFamily: "Poppins, sans-serif",
-                      }}
-                    >
-                      No available slots Tomorrow
-                    </Text>
-                  );
-                }
-
-                return (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "6px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {available.map((slot, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          padding: "4px 10px",
-                          backgroundColor: "#f0f8f0",
-                          color: "#16A34A",
-                          borderRadius: "12px",
-                          fontSize: "11px",
-                          fontWeight: 500,
-                          fontFamily: "Poppins, sans-serif",
-                          lineHeight: "1.2",
-                          height: "24px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          minWidth: "80px",
-                        }}
-                      >
-                        {formatTime(slot.time)}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()
-            ) : (
-              <Text
-                style={{
-                  fontSize: "12px",
-                  color: "#8c8c8c",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                No available slots Tomorrow
-              </Text>
-            )}
-          </div> */}
 
           {clinics.length > 1 && (
             <div
@@ -1381,44 +1240,63 @@ const ClinicAvailability = ({
     </Card>
   );
 };
+const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeChange }) => {
+  const handleDateChange = (dates) => {
+    if (dates && dates.length === 2) {
+      const start = dates[0].format('YYYY-MM-DD');
+      const end = dates[1].format('YYYY-MM-DD');
+      onDateRangeChange(start, end);
+    }
+  };
 
-const RevenueSummary = ({ revenueSummaryData }) => (
-  <Card
-    style={{
-      borderRadius: "16px",
-      border: "none",
-      boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-      background: "white",
-      marginTop: "2rem",
-    }}
-    bodyStyle={{ padding: "24px" }}
-  >
-    <div
+  return (
+    <Card
       style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "24px",
+        borderRadius: "16px",
+        border: "none",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+        background: "white",
+        marginTop: "2rem",
       }}
+      bodyStyle={{ padding: "24px" }}
     >
-      <Title
-        level={4}
+      <div
         style={{
-          margin: 0,
-          fontWeight: 600,
-          color: "#1a1a1a",
-          fontSize: "18px",
-          fontFamily: "Poppins, sans-serif",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "24px",
         }}
       >
-        Revenue Summary (Till Date)
-      </Title>
-    </div>
-    <div style={{ textAlign: "center" }}>
-      <PieChart data={revenueSummaryData} />
-    </div>
-  </Card>
-);
+        <Title
+          level={4}
+          style={{
+            margin: 0,
+            fontWeight: 600,
+            color: "#1a1a1a",
+            fontSize: "18px",
+            fontFamily: "Poppins, sans-serif",
+          }}
+        >
+          Revenue Summary
+        </Title>
+        <RangePicker
+  className="date-picker"
+  placeholder={["Start Date", "End Date"]}
+  value={[moment(startDate), moment(endDate)]}
+  onChange={handleDateChange}
+  disabledDate={(current) => {
+    return current && current > moment().endOf('day');
+  }}
+  allowClear
+/>
+      </div>
+      <div style={{ textAlign: "center" }}>
+        <PieChart data={revenueSummaryData} />
+      </div>
+    </Card>
+  );
+};
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
@@ -1454,7 +1332,10 @@ const DoctorDashboard = () => {
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
   const formattedDate = `${year}-${month}-${day}`;
+  const firstDayOfMonth = `${year}-${month}-01`;
   const [selectedDate, setSelectedDate] = useState(formattedDate);
+  const [revenueStartDate, setRevenueStartDate] = useState(firstDayOfMonth);
+  const [revenueEndDate, setRevenueEndDate] = useState(formattedDate);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [revenueSummaryData, setRevenueSummaryData] = useState([
     { label: "Appointment", value: 0, color: "#4285f4" },
@@ -1511,15 +1392,6 @@ const DoctorDashboard = () => {
 
       if (response.data.status === "success") {
         const appointmentsList = response.data.data.appointments;
-        console.log(appointmentsList, "complete appointmetns list")
-
-        // Sort by appointmentTime in descending order (latest first)
-        // appointmentsList.sort((a, b) => {
-        //   const timeA = moment(a.appointmentTime, "HH:mm");
-        //   const timeB = moment(b.appointmentTime, "HH:mm");
-        //   return timeB.diff(timeA); // descending
-        // });
-
         setAppointments(appointmentsList);
       } else {
         console.warn("Unexpected API response structure:", response.data);
@@ -1589,12 +1461,11 @@ const DoctorDashboard = () => {
     }
   };
 
-  const getRevenueSummary = async () => {
+  const getRevenueSummary = async (start, end) => {
     try {
       const response = await apiGet(
-        "/finance/getDoctorRevenueSummaryThismonth"
+        `/finance/getDoctorRevenueSummaryThismonth?startDate=${start}&endDate=${end}`
       );
-      console.log("Revenue summary API response:", response.data);
       if (response.data.status === "success") {
         const data = response.data.data;
         setRevenueSummaryData([
@@ -1612,7 +1483,7 @@ const DoctorDashboard = () => {
           response.data
         );
         setRevenueSummaryData([
-          { label: "Appointment", value: 1620, color: "#4285f4" },
+          { label: "Appointment", value: 0, color: "#4285f4" },
           { label: "Lab", value: 0, color: "#34a853" },
           { label: "Pharmacy", value: 0, color: "#fbbc04" },
         ]);
@@ -1620,7 +1491,7 @@ const DoctorDashboard = () => {
     } catch (error) {
       console.error("Error fetching revenue summary:", error);
       setRevenueSummaryData([
-        { label: "Appointment", value: 1620, color: "#4285f4" },
+        { label: "Appointment", value: 0, color: "#4285f4" },
         { label: "Lab", value: 0, color: "#34a853" },
         { label: "Pharmacy", value: 0, color: "#fbbc04" },
       ]);
@@ -1672,15 +1543,23 @@ const DoctorDashboard = () => {
     getAppointments(newDate);
   };
 
+  const handleRevenueDateRangeChange = (start, end) => {
+    setRevenueStartDate(start);
+    setRevenueEndDate(end);
+    if (start && end && start <= end) {
+      getRevenueSummary(start, end);
+    }
+  };
+
   useEffect(() => {
     if (user && doctorId && !hasFetchedIntialRender.current) {
       getAppointments();
       getTodayAppointmentCount();
-      getRevenueSummary();
+      getRevenueSummary(revenueStartDate, revenueEndDate);
       getTodayRevenue();
-      hasFetchedIntialRender.current = true; // ✅ Prevent future fetch attempt
+      hasFetchedIntialRender.current = true;
     }
-  }, [user, doctorId]);
+  }, [user, doctorId, revenueStartDate, revenueEndDate]);
 
   return (
     <>
@@ -1698,7 +1577,6 @@ const DoctorDashboard = () => {
       >
         <Header user={user} navigate={navigate} />
 
-        {/* Main layout grid - same for all roles */}
         <div
           style={{
             display: "grid",
@@ -1736,7 +1614,6 @@ const DoctorDashboard = () => {
             <PatientFeedback />
           </div>
 
-          {/* Right column - only visible to doctors */}
           {user?.role === "doctor" && (
             <div
               style={{
@@ -1750,7 +1627,12 @@ const DoctorDashboard = () => {
                 setCurrentClinicIndex={setCurrentClinicIndex}
                 doctorId={doctorId}
               />
-              <RevenueSummary revenueSummaryData={revenueSummaryData} />
+              <RevenueSummary
+                revenueSummaryData={revenueSummaryData}
+                startDate={revenueStartDate}
+                endDate={revenueEndDate}
+                onDateRangeChange={handleRevenueDateRangeChange}
+              />
             </div>
           )}
         </div>

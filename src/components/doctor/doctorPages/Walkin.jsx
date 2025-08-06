@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
@@ -26,14 +27,11 @@ import { apiGet, apiPost } from "../../api";
 
 import { toast } from "react-toastify";
 
-
 import { useNavigate } from "react-router-dom";
-
 
 const { useBreakpoint } = Grid;
 const { Title, Text } = Typography;
 const { Option } = Select;
-
 
 const AddWalkInPatient = () => {
   const screens = useBreakpoint();
@@ -315,10 +313,7 @@ useEffect(() => {
     try {
       
       const body = JSON.stringify(appointmentRequest);
-
-
-
-      console.log("Creating appointment with body:", body);
+            console.log("Creating appointment with body:", body);
       const response = await apiPost("/appointment/createAppointment", body);
 
       const data = response.data;
@@ -1069,73 +1064,37 @@ console.log("first2")
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Text strong>Consultation Fee (₹) *</Text>
-        {/* {consultationFee !== undefined ? (
-    <Input
-      value={consultationFee}
-      disabled={true}
-      style={{ marginTop: 8 }}
-    />
-  ) : ( */}
-  <Input
+        <Input
             placeholder="Enter consultation fee"
             value={consultationFee ?? ""}
-            // onChange={(e) =>
-            //   setConsultationFee(
-            //     e.target.value ? parseFloat(e.target.value) : undefined
-            //   )
-            // }
-             onChange={(e) => {
+            onChange={(e) => {
     const value = e.target.value;
-    // Only update if the value is empty, or a number between 0 and 9999
     if (value === "" || (Number(value) >= 0 && Number(value) <= 9999)) {
       setConsultationFee(value ? parseFloat(value) : undefined);
     }
   }}
-            // type="number"
             min={0}
-  max={9999}
-          
-              step={1}
+            max={9999}
+            step={1}
             style={{ marginTop: 8 }}
           />
-  {/* )
-
-          } */}
-        
           {fieldErrors.consultationFee && (
             <Text type="danger">{fieldErrors.consultationFee}</Text>
           )}
         </Col>
-        {/* <Col span={24}>
-          <Text strong>Discount Type</Text>
-          <Select
-            value={discountType}
-            onChange={setDiscountType}
-            style={{ width: "100%", marginTop: 8 }}
-          >
-            <Option value="percentage">Percentage (%)</Option>
-            <Option value="flat">Flat Amount</Option>
-          </Select>
-        </Col> */}
         <Col span={24}>
           <Text strong>Discount(%)</Text>
           <Input
             placeholder="Enter discount value"
             value={discount}
-            // onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
             onChange={(e) => {
       const value = e.target.value;
-      // Only update if value is empty, 0, or a number between 0 and 100
-      if (
-        value === "" ||
-        (Number(value) >= 0 && Number(value) <= 100)
-      ) {
+      if (value === "" || (Number(value) >= 0 && Number(value) <= 100)) {
         setDiscount(value ? parseFloat(value) : 0);
       }
     }}
-            // type="number"
             min={0}
-            max={discountType === "percentage" ? 100 : undefined}
+            max={100}
             step={1}
             style={{ marginTop: 8 }}
           />
@@ -1156,9 +1115,7 @@ console.log("first2")
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
               <Text type="danger">
-                {discountType === "percentage"
-                  ? `${discount}%`
-                  : `₹${discount.toFixed(2)}`}
+                {discount}%
               </Text>
             </Col>
             <Col span={12}>
@@ -1235,13 +1192,10 @@ console.log("first2")
               </div>
             </Col>
           )}
-          <Col xs={24} lg={16}>
+          <Col span={24}>
             {renderSearchCard()}
             {renderBasicInfoCard()}
             {renderAppointmentDetailsCard()}
-            
-          </Col>
-          <Col xs={24} lg={8}>
             {renderPaymentSummaryCard()}
             <Button
               type="primary"
@@ -1256,29 +1210,27 @@ console.log("first2")
         </Row>
       </div>
       <Modal
-  open={isClinicModalVisible}
-  title="No Clinic or Slots Found"
-  closable={false}
-  maskClosable={false}
-  maskStyle={{ backdropFilter: "blur(4px)" }}
-  okText={slotAvailability ? "Go To Clinic Management": "Go To Availability"} 
-  cancelText="Cancel"
-  onOk={() => {
-    setIsClinicModalVisible(false);
-    {slotAvailability ? navigate("/doctor/doctorPages/ClinicManagement") : navigate("/doctor/doctorPages/Availability")} ;
-  }}
-  onCancel={() => {
-    setIsClinicModalVisible(false);
-  }}
->
-
-  {!slotAvailability ? (
-    <p>No available slots for this clinic please add slots.</p>
-  ) : (
-    <p>No active clinic and availability found. Please add a clinic and add Availability to continue creating appointments.</p>
-  )}
-</Modal>
-
+        open={isClinicModalVisible}
+        title="No Clinic or Slots Found"
+        closable={false}
+        maskClosable={false}
+        maskStyle={{ backdropFilter: "blur(4px)" }}
+        okText={slotAvailability ? "Go To Clinic Management": "Go To Availability"} 
+        cancelText="Cancel"
+        onOk={() => {
+          setIsClinicModalVisible(false);
+          {slotAvailability ? navigate("/doctor/doctorPages/ClinicManagement") : navigate("/doctor/doctorPages/Availability")} ;
+        }}
+        onCancel={() => {
+          setIsClinicModalVisible(false);
+        }}
+      >
+        {!slotAvailability ? (
+          <p>No available slots for this clinic please add slots.</p>
+        ) : (
+          <p>No active clinic and availability found. Please add a clinic and add Availability to continue creating appointments.</p>
+        )}
+      </Modal>
     </div>
   );
 };

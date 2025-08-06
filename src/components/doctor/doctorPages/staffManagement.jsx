@@ -216,14 +216,30 @@ const StaffModal = ({
                 name="DOB"
                 // rules={[{ required: true, message: "Please select DOB" }]}
               >
-                <DatePicker
-                  style={{ width: "100%" }}
-                  format="DD-MM-YYYY"
-                  placeholder="Select DOB"
-                  disabledDate={(current) =>
-                    current && current > dayjs().endOf("day")
+                <input
+                  type="date"
+                  style={{
+                    alignSelf: "flex-end",
+                    borderRadius: "12px",
+                    background: "#F6F6F6",
+                    padding: "0.4rem",
+                    color: "#1977f3",
+                    width: "100%",
+                    border: "1px solid #d9d9d9",
+                  }}
+                  max={new Date().toISOString().split("T")[0]} // Prevent future dates
+                  value={
+                    form.getFieldValue("DOB")
+                      ? dayjs(form.getFieldValue("DOB")).format("YYYY-MM-DD")
+                      : ""
                   }
-                  inputReadOnly={true}
+                  onChange={(e) =>
+                    form.setFieldsValue({
+                      DOB: e.target.value 
+                        ? dayjs(e.target.value, "YYYY-MM-DD").format("DD-MM-YYYY")
+                        : null
+                    })
+                  }
                 />
               </Form.Item>
             </Col>

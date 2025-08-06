@@ -1200,36 +1200,57 @@ const handleOk = async (type) => {
           <Card
             title={
               <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Space>
-                  <Text strong>Manage Availability for:</Text>
-                  <Text strong>Start Date:</Text>
-                  <DatePicker
-                    placeholder="mm/dd/yyyy"
-                    style={{ width: "120px" }}
-                    onChange={handleDateChange}
-                    value={selectedDate}
-                    format="MM/DD/YYYY"
-                     disabledDate={(current) => current && current < moment().startOf('day')}
-                  />
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  }}
+>
+  <Space>
+    <Text strong>Manage Availability for:</Text>
+    <Text strong>Start Date:</Text>
+    <input
+      type="date"
+      style={{
+        alignSelf: "flex-end",
+        borderRadius: "12px",
+        background: "#F6F6F6",
+        padding: "0.4rem",
+        color: "#1977f3",
+        width: "120px",
+        border: "1px solid #d9d9d9",
+        marginBottom: 16,
+      }}
+      min={moment().format("YYYY-MM-DD")}
+      value={selectedDate ? selectedDate.format("YYYY-MM-DD") : ""}
+      onChange={(e) => {
+        const dateValue = e.target.value;
+        setSelectedDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
+      }}
+    />
 
-                  <Text strong>End Date:</Text>
-
-                  <DatePicker
-                    placeholder="mm/dd/yyyy"
-                    style={{ width: "120px" }}
-                    onChange={handleEndDateChange}
-                    value={selectedEndDate}
-                    format="MM/DD/YYYY"
-                    disabledDate={(current) => current && current < moment().startOf('day')}
-                  />
-                </Space>
-              </div>
+    <Text strong>End Date:</Text>
+    <input
+      type="date"
+      style={{
+        alignSelf: "flex-end",
+        borderRadius: "12px",
+        background: "#F6F6F6",
+        padding: "0.4rem",
+        color: "#1977f3",
+        width: "120px",
+        border: "1px solid #d9d9d9",
+        marginBottom: 16,
+      }}
+      min={moment().format("YYYY-MM-DD")}
+      value={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ""}
+      onChange={(e) => {
+        const dateValue = e.target.value;
+        setSelectedEndDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
+      }}
+    />
+  </Space>
+</div>
             }
             style={{ borderRadius: 12, marginBottom: 24 }}
             bodyStyle={{ padding: 24 }}

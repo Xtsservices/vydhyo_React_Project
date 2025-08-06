@@ -8,7 +8,7 @@ import "../../stylings/EPrescription.css";
 
 const { Option } = Select;
 
-const DiagnosisMedication = ({ formData, updateFormData }) => {
+const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
@@ -166,6 +166,9 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   };
 
   const validateDosage = (dosage) => {
+    if (!dosage || !dosage.trim()) {
+      return false;
+    }
     const dosageRegex =
       /^\d+\s*(mg|ml|g|tablet|tab|capsule|cap|spoon|drop)s?$/i;
     return dosageRegex.test(dosage);
@@ -184,10 +187,10 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       toast.error("Please select a medicine type");
       return false;
     }
-    // if (!medication.dosage.trim() || !validateDosage(medication.dosage)) {
-    //   toast.error("Please enter a valid dosage (e.g., 100mg, 5ml)");
-    //   return false;
-    // }
+    if (!medication.dosage || !validateDosage(medication.dosage)) {
+      toast.error("Please enter a valid dosage (e.g., 100mg, 5ml)");
+      return false;
+    }
     if (medication.duration === null || medication.duration <= 0) {
       toast.error("Please enter a valid duration greater than 0 days");
       return false;
@@ -213,6 +216,22 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
       return false;
     }
     return true;
+  };
+
+  const validateAllMedications = () => {
+    if (localData.medications.length === 0) {
+      return true; // No medications to validate
+    }
+
+    let allValid = true;
+    
+    localData.medications.forEach((medication) => {
+      if (!validateMedication(medication)) {
+        allValid = false;
+      }
+    });
+
+    return allValid;
   };
 
   const addMedication = () => {
@@ -281,16 +300,19 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           updatedMed.quantity = null;
         }
 
-        if (field === "duration" || field === "timings") {
+        if (field === "duration" || field === "frequency") {
           const newDuration = field === "duration" ? value : med.duration;
-          const newTimings = field === "timings" ? value : med.timings;
-          
+          const newFrequency = field === "frequency" ? value : med.frequency;
+
           // Auto-calculate quantity for tablets, capsules, and injections
           if (["Tablet", "Capsule", "Injection"].includes(med.medicineType)) {
-            updatedMed.quantity =
-              newDuration && newTimings.length
-                ? newDuration * newTimings.length
-                : null;
+            if (newFrequency && newDuration) {
+              // Calculate based on frequency (count of '1's in the frequency string)
+              const timesPerDay = newFrequency.split("-").filter(x => x === "1").length;
+              updatedMed.quantity = newDuration * timesPerDay;
+            } else {
+              updatedMed.quantity = null;
+            }
           }
         }
 
@@ -324,10 +346,18 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
 
         const filteredTimings = med.timings.slice(0, requiredTimingsCount);
 
+        // Calculate new quantity if medicine type requires it
+        let newQuantity = med.quantity;
+        if (["Tablet", "Capsule", "Injection"].includes(med.medicineType) && med.duration) {
+          const timesPerDay = value.split("-").filter(x => x === "1").length;
+          newQuantity = med.duration * timesPerDay;
+        }
+
         return {
           ...med,
           frequency: value,
           timings: filteredTimings,
+          quantity: newQuantity
         };
       }
       return med;
@@ -374,9 +404,9 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
   };
 
   const getMaxTimings = (frequency) => {
-  if (!frequency || frequency === "SOS") return 0;
-  return frequency.split("-").filter((x) => x === "1").length;
-};
+    if (!frequency || frequency === "SOS") return 0;
+    return frequency.split("-").filter((x) => x === "1").length;
+  };
 
   return (
     <div className="common-container">
@@ -529,6 +559,13 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
           </div>
         </div>
 
+        {/* Display validation error if exists */}
+        {validationError && (
+          <div className="medication-validation-error">
+            {validationError}
+          </div>
+        )}
+
         {/* Medications List */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {localData.medications.map((medication) => (
@@ -616,11 +653,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                     />
                   ) : (
                     <InputNumber
-                      value={
-                        medication.duration && medication.timings
-                          ? medication.duration * medication.timings.length
-                          : 0
-                      }
+                      value={medication.quantity || 0}
                       style={{ width: "100%" }}
                       disabled
                     />
@@ -687,8 +720,6 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
 
               {/* Third Row - Timings, Frequency */}
               <div className="medication-timing-row">
-               
-
                 <div>
                   <label
                     style={{
@@ -717,7 +748,7 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                   </Select>
                 </div>
 
-                 <div>
+                <div>
                   <label
                     style={{
                       display: "block",
@@ -735,17 +766,17 @@ const DiagnosisMedication = ({ formData, updateFormData }) => {
                     value={medication.timings}
                     onChange={(value) => {
                       if (value.length <= getMaxTimings(medication.frequency)) {
-      updateMedication(medication.id, "timings", value);
-    } else {
-      toast.error(
-        `Cannot select more than ${getMaxTimings(medication.frequency)} timing${
-          getMaxTimings(medication.frequency) > 1 ? "s" : ""
-        } for frequency ${medication.frequency}`
-      );
-    }
-                    }
-                      // updateMedication(medication.id, "timings", value)
-                    }
+                        updateMedication(medication.id, "timings", value);
+                      } else {
+                        toast.error(
+                          `Cannot select more than ${getMaxTimings(
+                            medication.frequency
+                          )} timing${
+                            getMaxTimings(medication.frequency) > 1 ? "s" : ""
+                          } for frequency ${medication.frequency}`
+                        );
+                      }
+                    }}
                     style={{ width: "100%" }}
                     allowClear
                     disabled={medication.frequency === "SOS"}
