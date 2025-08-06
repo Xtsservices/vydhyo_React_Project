@@ -87,7 +87,6 @@ const EPrescription = () => {
       if (response.data.success && response.data.data && response.data.data.length > 0) {
         const prescription = response.data.data[0];
         
-        // Handle BP data
         const bpParts = prescription.vitals?.bp?.split('/') || [];
         const bpSystolic = bpParts[0] || "";
         const bpDiastolic = bpParts[1] || "";
@@ -357,7 +356,27 @@ const EPrescription = () => {
     }
   };
 
+  const validateCurrentTab = () => {
+    if (activeTab === "diagnosis") {
+      // Check if any medication has empty dosage
+      const hasInvalidMedication = formData.diagnosis.medications.some(med => {
+        if (!med.dosage || !med.dosage.trim()) {
+          toast.error(`Please enter a valid dosage for ${med.medName || "the medication"} (e.g., 100mg, 5ml)`);
+          return true;
+        }
+        return false;
+      });
+
+      if (hasInvalidMedication) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleConfirm = async () => {
+    if (!validateCurrentTab()) return;
+    
     try {
       setActiveTab("preview");
       setShowPreview(true);
@@ -368,6 +387,8 @@ const EPrescription = () => {
   };
 
   const handleNext = () => {
+    if (!validateCurrentTab()) return;
+    
     const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
     if (currentIndex < tabs.length - 2) {
       setActiveTab(tabs[currentIndex + 1].id);
@@ -375,6 +396,8 @@ const EPrescription = () => {
   };
 
   const handleTabChange = (tabId) => {
+    if (!validateCurrentTab()) return;
+    
     if (tabId === "preview") {
       setShowPreview(true);
     } else {

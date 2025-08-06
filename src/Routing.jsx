@@ -27,7 +27,7 @@ import DoctorProfileView from "./components/doctor/doctorPages/DoctorProfileView
 import EPrescription from "./components/doctor/doctorPages/EPrescription";
 import TotalExpenditureScreen from "./components/doctor/doctorPages/TotalExpenditure";
 import PendingTransactionsScreen from "./components/doctor/doctorPages/PendingTransactions";
-
+import PreviousPrescriptions from "./components/doctor/doctorPages/PreviousPrescriptions"
 // import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingDoctorsPage";
 import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage"; 
 
@@ -175,6 +175,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <DoctorDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/doctor/doctorPages/PreviousPrescriptions"
+          element={
+            <ProtectedRoute>
+              <PreviousPrescriptions/>
             </ProtectedRoute>
           }
         />
