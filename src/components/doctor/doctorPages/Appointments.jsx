@@ -69,7 +69,8 @@ const Appointment = () => {
     clinic: "all",
     type: "all",
     status: "all",
-    dateRange: null, // Changed to null initially
+    selectedFilterDate: null,
+    dateRange: null,
   });
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
@@ -281,9 +282,8 @@ const Appointment = () => {
         ...(filters.clinic !== "all" && { clinic: filters.clinic }),
         ...(filters.type !== "all" && { appointmentType: filters.type }),
         ...(filters.status !== "all" && { status: filters.status }),
-        ...(filters.dateRange && { 
-          startDate: filters.dateRange[0].format("YYYY-MM-DD"),
-          endDate: filters.dateRange[1].format("YYYY-MM-DD")
+        ...(filters.selectedFilterDate && {
+          date: filters.selectedFilterDate.format("YYYY-MM-DD")
         }),
         page,
         limit,
@@ -317,7 +317,7 @@ const Appointment = () => {
     try {
       const startDate = filters.dateRange ? filters.dateRange[0].format("YYYY-MM-DD") : moment().startOf('month').format("YYYY-MM-DD");
       const endDate = filters.dateRange ? filters.dateRange[1].format("YYYY-MM-DD") : moment().endOf('month').format("YYYY-MM-DD");
-      
+
       const response = await apiGet(
         `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}&startDate=${startDate}&endDate=${endDate}`
       );
@@ -348,10 +348,7 @@ const Appointment = () => {
   }, [user, doctorId]);
 
   useEffect(() => {
-    if (filters.dateRange) {
-      getAppointments();
-      getAppointmentsCount();
-    }
+    getAppointments();
   }, [filters]);
 
   const timeslots = async (date) => {
@@ -413,6 +410,13 @@ const Appointment = () => {
     }));
   };
 
+  const handleDateChange = (date) => {
+    setFilters((prev) => ({
+      ...prev,
+      selectedFilterDate: date,
+    }));
+  };
+
   const renderActionMenu = (record) => (
     <Menu>
       {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
@@ -442,8 +446,9 @@ const Appointment = () => {
         onClick={() => handleCompleteAppointment(record.appointmentId)}
         disabled={
           record.appointmentStatus === "completed" ||
+          record.appointmentStatus === "cancel" ||
           record.appointmentStatus === "cancelled"
-          }
+        }
         icon={<CheckOutlined />}
       >
         Mark as Completed
@@ -536,77 +541,96 @@ const Appointment = () => {
                   View all your schedules and appointments in one place
                 </Text>
               </Col>
+
             </Row>
 
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-              <Col xs={24} sm={12} lg={6}>
-                <Card className="appointments-card">
-                  <Statistic
-                    title="Total Appointments"
-                    value={totalAppointmentsCount}
-                    valueRender={(value) => (
-                      <div className="statistic-value-row">
-                        <span className="statistic-value">{value}</span>
-                        <CalendarFilled className="calendar-icon" />
-                      </div>
-                    )}
-                  />
-                </Card>
+            <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', padding: '4px' }}>
+
+              <br />
+              <Col span={24}>
+                <RangePicker
+                  value={filters.dateRange}
+                  onChange={handleDateRangeChange}
+                  style={{ width: '50%' }}
+                  disabledDate={(current) => {
+                    return current && current > moment().endOf('day');
+                  }}
+                  allowClear={true}
+                />
               </Col>
-              <Col xs={24} sm={12} lg={6}>
-                <Card className="appointments-card upcomming-card">
-                  <Statistic
-                    title="Upcoming"
-                    value={scheduledAppointmentsCount}
-                    valueRender={(value) => (
-                      <div className="statistic-value-row">
-                        <span className="statistic-value">{value}</span>
-                        <ClockCircleFilled
-                          className="calendar-icon"
-                          style={{ color: "#75c34e" }}
-                        />
-                      </div>
-                    )}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} lg={6}>
-                <Card className="appointments-card completed-card">
-                  <Statistic
-                    title="Completed"
-                    value={completedAppointmentsCount}
-                    valueRender={(value) => (
-                      <div className="statistic-value-row">
-                        <span className="statistic-value">{value}</span>
-                        <CheckOutlined className="right-mark-icon" />
-                      </div>
-                    )}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} lg={6}>
-                <Card className="appointments-card cancled-card">
-                  <Statistic
-                    title="Cancelled"
-                    value={cancledAppointmentsCount}
-                    valueRender={(value) => (
-                      <div className="statistic-value-row">
-                        <span className="statistic-value">{value}</span>
-                        <span
-                          style={{
-                            marginLeft: 8,
-                            color: "#ff4d4f",
-                            fontSize: 20,
-                          }}
-                        >
-                          X
-                        </span>
-                      </div>
-                    )}
-                  />
-                </Card>
-              </Col>
-            </Row>
+              <br />
+
+              <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card className="appointments-card" style={{ border: '1px solid #d9d9d9' }}>
+                    <Statistic
+                      title="Total Appointments"
+                      value={totalAppointmentsCount}
+                      valueRender={(value) => (
+                        <div className="statistic-value-row">
+                          <span className="statistic-value">{value}</span>
+                          <CalendarFilled className="calendar-icon" />
+                        </div>
+                      )}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card className="appointments-card upcomming-card" style={{ border: '1px solid #d9d9d9' }}>
+                    <Statistic
+                      title="Upcoming"
+                      value={scheduledAppointmentsCount}
+                      valueRender={(value) => (
+                        <div className="statistic-value-row">
+                          <span className="statistic-value">{value}</span>
+                          <ClockCircleFilled
+                            className="calendar-icon"
+                            style={{ color: "#75c34e" }}
+                          />
+                        </div>
+                      )}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card className="appointments-card completed-card" style={{ border: '1px solid #d9d9d9' }}>
+                    <Statistic
+                      title="Completed"
+                      value={completedAppointmentsCount}
+                      valueRender={(value) => (
+                        <div className="statistic-value-row">
+                          <span className="statistic-value">{value}</span>
+                          <CheckOutlined className="right-mark-icon" />
+                        </div>
+                      )}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card className="appointments-card cancled-card" style={{ border: '1px solid #d9d9d9' }}>
+                    <Statistic
+                      title="Cancelled"
+                      value={cancledAppointmentsCount}
+                      valueRender={(value) => (
+                        <div className="statistic-value-row">
+                          <span className="statistic-value">{value}</span>
+                          <span
+                            style={{
+                              marginLeft: 8,
+                              color: "#ff4d4f",
+                              fontSize: 20,
+                            }}
+                          >
+                            X
+                          </span>
+                        </div>
+                      )}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            </div>
+            <br /><br />
 
             <Row gutter={[16, 16]} align="middle" className="filters-row">
               <Col>
@@ -638,7 +662,7 @@ const Appointment = () => {
                 <Select
                   className="filters-select"
                   value={filters.status}
-                  onChange={(value) => handleFilterChange("status", value)}
+                  onChange={(value) => handleFilterChange("type", value)}
                 >
                   <Option value="all">All Status</Option>
                   <Option value="scheduled">Scheduled</Option>
@@ -646,15 +670,21 @@ const Appointment = () => {
                 </Select>
               </Col>
 
-              <Col>
-                <RangePicker
-                  value={filters.dateRange}
-                  onChange={handleDateRangeChange}
-                  style={{ width: '100%' }}
-                  disabledDate={(current) => {
-                    return current && current > moment().endOf('day');
+              <Col xs={24} sm={12} md={4}>
+                <input
+                  type="date"
+                  value={filters.selectedFilterDate ? filters.selectedFilterDate.format("YYYY-MM-DD") : ""}
+                  onChange={(e) => {
+                    const dateValue = e.target.value;
+                    handleDateChange(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
                   }}
-                  allowClear={true}
+                  max={moment().format("YYYY-MM-DD")}
+                  style={{
+                    width: "100%",
+                    padding: "4px",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "4px",
+                  }}
                 />
               </Col>
             </Row>

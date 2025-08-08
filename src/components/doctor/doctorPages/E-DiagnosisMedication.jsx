@@ -199,22 +199,18 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
       toast.error("Please select a frequency");
       return false;
     }
-    if (
-      medication.frequency !== "SOS" &&
-      medication.timings.length !==
-        medication.frequency.split("-").filter((x) => x === "1").length
-    ) {
-      toast.error(
-        `Please select exactly ${
-          medication.frequency.split("-").filter((x) => x === "1").length
-        } timing${
-          medication.frequency.split("-").filter((x) => x === "1").length > 1
-            ? "s"
-            : ""
-        } to match the frequency`
-      );
-      return false;
+    
+    // Validate timings match frequency
+    if (medication.frequency !== "SOS") {
+      const requiredTimings = medication.frequency.split("-").filter(x => x === "1").length;
+      if (medication.timings.length !== requiredTimings) {
+        toast.error(
+          `Please select exactly ${requiredTimings} timing${requiredTimings > 1 ? "s" : ""} to match the frequency ${medication.frequency}`
+        );
+        return false;
+      }
     }
+    
     return true;
   };
 
@@ -406,6 +402,25 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
   const getMaxTimings = (frequency) => {
     if (!frequency || frequency === "SOS") return 0;
     return frequency.split("-").filter((x) => x === "1").length;
+  };
+
+  // Function to validate before tab switch
+  const validateBeforeTabSwitch = () => {
+    let isValid = true;
+    
+    localData.medications.forEach(medication => {
+      if (medication.frequency && medication.frequency !== "SOS") {
+        const requiredTimings = medication.frequency.split("-").filter(x => x === "1").length;
+        if (medication.timings.length !== requiredTimings) {
+          toast.error(
+            `For medicine ${medication.medName || 'unnamed'}, please select exactly ${requiredTimings} timing${requiredTimings > 1 ? 's' : ''} to match the frequency ${medication.frequency}`
+          );
+          isValid = false;
+        }
+      }
+    });
+    
+    return isValid;
   };
 
   return (
@@ -826,6 +841,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           ))}
         </div>
 
+
         {/* Add Medicine Button */}
         <div style={{ marginTop: "16px", textAlign: "right" }}>
           <Button
@@ -836,8 +852,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
             Add Medicine
           </Button>
         </div>
-
-       
       </div>
     </div>
   );
