@@ -1280,7 +1280,9 @@ const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeCha
         >
           Revenue Summary
         </Title>
-        <RangePicker
+       
+      </div>
+       <RangePicker
   className="date-picker"
   placeholder={["Start Date", "End Date"]}
   value={[moment(startDate), moment(endDate)]}
@@ -1290,7 +1292,6 @@ const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeCha
   }}
   allowClear
 />
-      </div>
       <div style={{ textAlign: "center" }}>
         <PieChart data={revenueSummaryData} />
       </div>
