@@ -558,6 +558,7 @@ const BillingSystem = () => {
     }));
   };
 
+  console.log("patients====",patients)
   return (
     <div
       style={{

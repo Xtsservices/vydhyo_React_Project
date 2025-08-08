@@ -19,6 +19,7 @@ import {
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { apiGet, apiPut, apiUploadFile, apiPost } from "../../api";
+// import crypto = require('crypto');
 
 import {
   UserOutlined,
@@ -58,17 +59,16 @@ const DoctorProfileView = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-const crypto = require('crypto');
-const algorithm = 'aes-256-cbc';
-const secretKey = process.env.ENCRYPTION_KEY; // 32-byte hex key
-const iv = Buffer.from(process.env.ENCRYPTION_IV, 'hex'); // 16-byte IV
+// const algorithm = 'aes-256-cbc';
+// const secretKey = process.env.ENCRYPTION_KEY; // 32-byte hex key
+// const iv = Buffer.from(process.env.ENCRYPTION_IV, 'hex'); // 16-byte IV
 
-function decrypt(text) {
-  const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey, 'hex'), iv);
-  let decrypted = decipher.update(text, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-}
+// function decrypt2(text) {
+//   const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey, 'hex'), iv);
+//   let decrypted = decipher.update(text, 'hex', 'utf8');
+//   decrypted += decipher.final('utf8');
+//   return decrypted;
+// }
 
 
   const fetchDoctorData = async () => {
@@ -96,8 +96,8 @@ function decrypt(text) {
         const bankDetails = userData.bankDetails;
 
 const decryptedBankDetails = {
-  accountNumber: decrypt(bankDetails.accountNumber),
-  accountHolderName: decrypt(bankDetails.accountHolderName),
+  accountNumber: (bankDetails.accountNumber),
+  accountHolderName: (bankDetails.accountHolderName),
   ifscCode: bankDetails.ifscCode, // assuming this is not encrypted
   bankName: bankDetails.bankName,
 };

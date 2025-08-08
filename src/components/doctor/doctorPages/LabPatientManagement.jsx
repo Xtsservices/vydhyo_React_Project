@@ -61,11 +61,11 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
         });
 
         // Sort by patientId descending
-        filteredData.sort((a, b) => {
-          const idA = parseInt(a.patientId.replace(/\D/g, "")) || 0;
-          const idB = parseInt(b.patientId.replace(/\D/g, "")) || 0;
-          return idB - idA;
-        });
+        // filteredData.sort((a, b) => {
+        //   const idA = parseInt(a.patientId.replace(/\D/g, "")) || 0;
+        //   const idB = parseInt(b.patientId.replace(/\D/g, "")) || 0;
+        //   return idB - idA;
+        // });
 
         setPatients(filteredData);
         setPagination({
@@ -267,7 +267,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
         ? prev.filter((id) => id !== patientId)
         : [...prev, patientId]
     );
-    getAllTestsPatientsByDoctorID(pagination.current, pagination.pageSize);
+    // getAllTestsPatientsByDoctorID(pagination.current, pagination.pageSize);
   };
 
   // Main table columns

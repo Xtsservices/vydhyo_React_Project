@@ -91,7 +91,7 @@ const navigate = useNavigate();
       }
       
       grouped[key].count++;
-      grouped[key].totalAmount += txn.finalAmount || txn.actualAmount || 0;
+      grouped[key].totalAmount += txn.finalAmount !== undefined ? txn.finalAmount : txn.actualAmount || 0;
       grouped[key].allTxns.push(txn);
       
       // Track unique services, payment methods, and statuses
@@ -126,7 +126,8 @@ const navigate = useNavigate();
     patient: txn.patientName,
     date: txn.paidAt ? dayjs(txn.paidAt).format("DD-MMM-YYYY") : "-",
     service: txn.services || getServiceName(txn.paymentFrom),
-    amount: txn.groupedAmount || txn.finalAmount || txn.actualAmount || 0,
+    amount: txn.groupedCount > 1 ? txn.groupedAmount : (txn.finalAmount !== undefined ? txn.finalAmount : txn.actualAmount || 0),
+    // amount: txn.groupedAmount || txn.finalAmount || txn.actualAmount,
     status: txn.statuses || txn.paymentStatus || "-",
     paymentMethod: txn.paymentMethods || (txn.paymentMethod
       ? txn.paymentMethod.charAt(0).toUpperCase() + txn.paymentMethod.slice(1)
@@ -136,6 +137,7 @@ const navigate = useNavigate();
     allTransactions: txn.allTransactions || [txn],
   }));
 
+  console.log("transactions===",transactions)
   function getServiceName(paymentFrom) {
     switch (paymentFrom) {
       case "appointments":
