@@ -841,6 +841,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           ))}
         </div>
 
+
         {/* Add Medicine Button */}
         <div style={{ marginTop: "16px", textAlign: "right" }}>
           <Button
