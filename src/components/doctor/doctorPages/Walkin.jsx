@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
@@ -63,7 +62,7 @@ const AddWalkInPatient = () => {
   const [date, setDate] = useState(formattedDate);
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [consultationFee, setConsultationFee] = useState(undefined);
-  const [discount, setDiscount] = useState(10);
+  const [discount, setDiscount] = useState(0); // Changed from 10 to 0
   const [discountType, setDiscountType] = useState("percentage");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -602,7 +601,7 @@ if (field === "age") {
     setDate(new Date().toISOString().split("T")[0]);
     setPaymentStatus("paid");
     setConsultationFee(undefined);
-    setDiscount(10);
+    setDiscount(0); // Changed from 10 to 0
     setDiscountType("percentage");
     setSearchQuery("");
     setUserFound(false);

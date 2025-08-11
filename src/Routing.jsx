@@ -30,7 +30,7 @@ import PendingTransactionsScreen from "./components/doctor/doctorPages/PendingTr
 import PreviousPrescriptions from "./components/doctor/doctorPages/PreviousPrescriptions"
 // import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingDoctorsPage";
 import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage"; 
-
+import EPrescriptionList from "./components/doctor/doctorPages/EPrescriptionList";
 
 
 
@@ -211,6 +211,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <EPrescription/>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/doctor/doctorPages/EPrescriptionList"
+          element={
+            <ProtectedRoute>
+              <EPrescriptionList/>
             </ProtectedRoute>
           }
         />

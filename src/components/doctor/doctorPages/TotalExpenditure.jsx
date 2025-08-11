@@ -14,13 +14,18 @@ import {
 import {
   SearchOutlined,
   DownloadOutlined,
-  PlusOutlined
+  PlusOutlined,
+  CalendarOutlined
 } from '@ant-design/icons';
 import { apiPost, apiGet } from '../../api';
 import { useSelector } from "react-redux";
 import moment from 'moment';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { DateRange } from 'react-date-range';
+import 'react-date-range/dist/styles.css'; // main style file
+import 'react-date-range/dist/theme/default.css'; // theme css file
+import { format } from 'date-fns';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -30,7 +35,14 @@ const TotalExpenditureScreen = () => {
   const user = useSelector((state) => state.currentUserData);
   const userId = user?.userId;
   const [searchText, setSearchText] = useState('');
-  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
+  const [state, setState] = useState([
+    {
+      startDate: new Date(),
+      endDate: new Date(),
+      key: 'selection'
+    }
+  ]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [transactionType, setTransactionType] = useState('Transaction Type');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -54,9 +66,13 @@ const TotalExpenditureScreen = () => {
       setFetching(true);
       let startDate, endDate;
 
-      if (start) {
+      if (start && end) {
         startDate = moment(start).format('YYYY-MM-DD');
-        endDate = end ? moment(end).format('YYYY-MM-DD') : startDate;
+        endDate = moment(end).format('YYYY-MM-DD');
+      } else {
+        // Default to current month if no range provided
+        startDate = moment().startOf('month').format('YYYY-MM-DD');
+        endDate = moment().endOf('month').format('YYYY-MM-DD');
       }
       
       const response = await apiGet(`/finance/getExpense?startDate=${startDate}&endDate=${endDate}`);
@@ -74,10 +90,8 @@ const TotalExpenditureScreen = () => {
   };
 
   useEffect(() => {
-    const today = moment().format('YYYY-MM-DD');
-    fetchExpenses(today);
-    setSelectedDate(today);
-  }, []);
+    fetchExpenses(state[0].startDate, state[0].endDate);
+  }, [state]);
 
   const columns = [
     {
@@ -132,29 +146,20 @@ const TotalExpenditureScreen = () => {
       );
       setExpenses(filtered);
     } else {
-      fetchExpenses();
+      fetchExpenses(state[0].startDate, state[0].endDate);
     }
   };
 
-  const handleDateChange = (e) => {
-    const dateValue = e.target.value;
-    setSelectedDate(dateValue);
-    if (dateValue) {
-      const filtered = expenses.filter(expense => 
-        moment(expense.date).isSame(moment(dateValue), 'day')
-      );
-      setExpenses(filtered);
-      fetchExpenses(dateValue);
-    } else {
-      fetchExpenses();
-    }
+  const handleDateRangeChange = (item) => {
+    setState([item.selection]);
+    setShowDatePicker(false);
   };
 
   const showModal = () => {
     form.setFieldsValue({ 
       date: moment(),
       paymentMethod: 'cash',
-      description: undefined // Reset description when modal opens
+      description: undefined
     });
     setIsModalVisible(true);
   };
@@ -189,7 +194,7 @@ const TotalExpenditureScreen = () => {
           pauseOnHover: true,
           draggable: true,
         });
-        await fetchExpenses();
+        await fetchExpenses(state[0].startDate, state[0].endDate);
       }
       
       setIsModalVisible(false);
@@ -210,6 +215,10 @@ const TotalExpenditureScreen = () => {
     color: '#1977f3',
     width: '130px',
     border: '1px solid #d9d9d9'
+  };
+
+  const formatDisplayDate = () => {
+    return `${format(state[0].startDate, 'MMM d, yyyy')} - ${format(state[0].endDate, 'MMM d, yyyy')}`;
   };
 
   return (
@@ -242,24 +251,58 @@ const TotalExpenditureScreen = () => {
         {/* Filters */}
         <div style={{
           display: 'flex',
-          gap: '5px',
+          gap: '16px',
           marginBottom: '24px',
           flexWrap: 'wrap',
-          alignItems: 'center'
+          alignItems: 'center',
+          position: 'relative'
         }}>
-          <input
-            type="date"
-            style={{
-              borderRadius: '12px',
-              background: '#F6F6F6',
-              padding: '0.4rem',
-              color: '#1977f3',
-              width: '130px',
-              border: '1px solid #d9d9d9'
-            }}
-            value={selectedDate}
-            onChange={handleDateChange}
-          />
+          <div style={{ position: 'relative' }}>
+            <Button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              icon={<CalendarOutlined />}
+              style={{
+                borderRadius: '8px',
+                border: '1px solid #d9d9d9',
+                padding: '8px 16px',
+                width: '250px',
+                textAlign: 'left',
+                backgroundColor: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <span>{formatDisplayDate()}</span>
+            </Button>
+            {showDatePicker && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                zIndex: 1000,
+                marginTop: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                borderRadius: '8px'
+              }}>
+                <DateRange
+                  editableDateInputs={true}
+                  onChange={handleDateRangeChange}
+                  moveRangeOnFirstSelection={false}
+                  ranges={state}
+                  maxDate={new Date()}
+                />
+              </div>
+            )}
+          </div>
+{/*           
+          <Input
+            placeholder="Search transactions..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => handleSearch(e.target.value)}
+            style={{ width: 250 }}
+          /> */}
         </div>
 
         {/* Transaction History Section */}

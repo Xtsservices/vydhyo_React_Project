@@ -359,54 +359,60 @@ const EPrescription = () => {
   };
 
   const validateMedications = () => {
-    // Check if any medication has empty required fields
-    const hasEmptyFields = formData.diagnosis.medications.some(med => {
-      if (!med.medName || !med.medName.trim()) {
-        toast.error(`Please enter a medicine name for all medications`);
-        return true;
-      }
-      if (!med.dosage || !med.dosage.trim()) {
-        toast.error(`Please enter a valid dosage for ${med.medName || "the medication"} (e.g., 100mg, 5ml)`);
-        return true;
-      }
-      if (!med.medicineType) {
-        toast.error(`Please select a medicine type for ${med.medName || "the medication"}`);
-        return true;
-      }
-      if (med.quantity === null || med.quantity <= 0) {
-        toast.error(`Please enter a valid quantity for ${med.medName || "the medication"}`);
-        return true;
-      }
-      if (!med.duration || med.duration <= 0) {
-        toast.error(`Please enter a valid duration for ${med.medName || "the medication"}`);
-        return true;
-      }
-      if (!med.frequency) {
-        toast.error(`Please select a frequency for ${med.medName || "the medication"}`);
-        return true;
-      }
-      return false;
-    });
-
-    if (hasEmptyFields) {
-      return false;
-    }
-
-    // Check if timings match frequency
-    const hasInvalidTimings = formData.diagnosis.medications.some(med => {
-      if (med.frequency && med.frequency !== "SOS") {
-        const requiredTimings = med.frequency.split("-").filter(x => x === "1").length;
-        if (med.timings.length !== requiredTimings) {
-          toast.error(
-            `For medicine ${med.medName || 'unnamed'}, please select exactly ${requiredTimings} timing${requiredTimings > 1 ? 's' : ''} to match the frequency ${med.frequency}`
-          );
+    // Only validate medications if they exist
+    if (formData.diagnosis.medications && formData.diagnosis.medications.length > 0) {
+      // Check if any medication has empty required fields
+      const hasEmptyFields = formData.diagnosis.medications.some(med => {
+        if (!med.medName || !med.medName.trim()) {
+          toast.error(`Please enter a medicine name for all medications`);
           return true;
         }
-      }
-      return false;
-    });
+        if (!med.dosage || !med.dosage.trim()) {
+          toast.error(`Please enter a valid dosage for ${med.medName || "the medication"} (e.g., 100mg, 5ml)`);
+          return true;
+        }
+        if (!med.medicineType) {
+          toast.error(`Please select a medicine type for ${med.medName || "the medication"}`);
+          return true;
+        }
+        if (med.quantity === null || med.quantity <= 0) {
+          toast.error(`Please enter a valid quantity for ${med.medName || "the medication"}`);
+          return true;
+        }
+        if (!med.duration || med.duration <= 0) {
+          toast.error(`Please enter a valid duration for ${med.medName || "the medication"}`);
+          return true;
+        }
+        if (!med.frequency) {
+          toast.error(`Please select a frequency for ${med.medName || "the medication"}`);
+          return true;
+        }
+        return false;
+      });
 
-    return !hasInvalidTimings;
+      if (hasEmptyFields) {
+        return false;
+      }
+
+      // Check if timings match frequency
+      const hasInvalidTimings = formData.diagnosis.medications.some(med => {
+        if (med.frequency && med.frequency !== "SOS") {
+          const requiredTimings = med.frequency.split("-").filter(x => x === "1").length;
+          if (med.timings.length !== requiredTimings) {
+            toast.error(
+              `For medicine ${med.medName || 'unnamed'}, please select exactly ${requiredTimings} timing${requiredTimings > 1 ? 's' : ''} to match the frequency ${med.frequency}`
+            );
+            return true;
+          }
+        }
+        return false;
+      });
+
+      return !hasInvalidTimings;
+    }
+    
+    // If no medications, validation passes
+    return true;
   };
 
   const validateCurrentTab = () => {

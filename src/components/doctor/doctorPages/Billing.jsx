@@ -48,6 +48,14 @@ const transformPatientData = (result, user) => {
         ? user?.addresses?.find((addr) => addr.addressId === appointment.addressId)
             ?.clinicName || "N/A"
         : "N/A",
+      appointmentDate: appointment.appointmentDate 
+        ? new Date(appointment.appointmentDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })
+        : "N/A",
+      appointmentTime: appointment.appointmentTime || "N/A",
     }));
 
     const totalTestAmount = tests.reduce(
@@ -73,6 +81,15 @@ const transformPatientData = (result, user) => {
       gender: patient.gender,
       mobile: patient.mobile || "Not Provided",
       bloodgroup: patient.bloodgroup || "Not Specified",
+      prescriptionCreatedAt: patient.prescriptionCreatedAt
+        ? new Date(patient.prescriptionCreatedAt).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : "N/A",
       appointmentDetails,
       tests: tests.map((test, idx) => ({
         id: `T${index}${idx}`,
@@ -84,7 +101,13 @@ const transformPatientData = (result, user) => {
           test.status?.charAt(0).toUpperCase() + test.status?.slice(1) ||
           "Unknown",
         createdDate: test.createdAt
-          ? new Date(test.createdAt).toLocaleDateString()
+          ? new Date(test.createdAt).toLocaleString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
           : "N/A",
       })),
       medicines: medicines.map((med, idx) => ({
@@ -94,17 +117,25 @@ const transformPatientData = (result, user) => {
         name: med.medName,
         quantity: med.quantity || 1,
         price: med.price || 0,
-        gst:med.gst|| 0,
-        cgst:med.cgst || 0,
+        gst: med.gst || 0,
+        cgst: med.cgst || 0,
         status:
           med.status?.charAt(0).toUpperCase() + med.status?.slice(1) ||
           "Unknown",
+        createdDate: med.createdAt
+          ? new Date(med.createdAt).toLocaleString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : "N/A",
       })),
       totalTestAmount,
       totalMedicineAmount,
       totalAppointmentFees,
       grandTotal: totalTestAmount + totalMedicineAmount + totalAppointmentFees,
-
     };
   });
 };
@@ -113,7 +144,6 @@ const BillingSystem = () => {
   const hasfetchPatients = useRef(false)
   const debouncedMarkAsPaidMap = useRef({});
 
-  
   const [patients, setPatients] = useState([]);
   const [expandedPatients, setExpandedPatients] = useState({});
   const [billingCompleted, setBillingCompleted] = useState({});
@@ -121,7 +151,7 @@ const BillingSystem = () => {
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
-   const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 5,
     total: 0,
@@ -131,14 +161,11 @@ const BillingSystem = () => {
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [isPaymentInProgress, setIsPaymentInProgress] = useState({});
 
-
-  // Memoize transformed patient data to avoid redundant calculations
   const transformedPatients = useMemo(() => {
     console.log("Computing transformedPatients", { patients, user });
     return transformPatientData(patients, user);
   }, [patients, user]);
 
-  // Fetch patient data with retry mechanism
   const fetchPatients = async (page = 1, pageSize = 5) => {
     if (!user || !doctorId) {
       console.log("User or doctorId not available:", { user, doctorId });
@@ -150,8 +177,6 @@ const BillingSystem = () => {
     setLoading(true);
     setError(null);
 
-    console.log(page, pageSize, "userdata")
-
     try {
       const queryParams = new URLSearchParams({
         doctorId,
@@ -159,12 +184,10 @@ const BillingSystem = () => {
         limit: pageSize.toString(),
       });
 
-      console.log('Fetching appointments with params:', queryParams.toString());
       const response = await apiGet(
         `/receptionist/fetchMyDoctorPatients/${doctorId}?${queryParams.toString()}`,
         { timeout: 10000 }
       );
-      console.log("API Response:", response?.data);
 
       if (response?.status === 200 && response?.data?.data) {
         setPatients(response.data.data.reverse());
@@ -173,7 +196,6 @@ const BillingSystem = () => {
           pageSize: pageSize,
           total: response?.data?.pagination?.totalPages || 0,
         });
-        console.log("Patients set:", response.data.data.reverse());
         setLoading(false);
       } else {
         throw new Error("API response unsuccessful");
@@ -195,7 +217,6 @@ const BillingSystem = () => {
   };
 
   useEffect(() => {
-    console.log("useEffect triggered - user:", user, "doctorId:", doctorId);
     if (user && doctorId) {
       hasfetchPatients.current = true
       fetchPatients(pagination.current, pagination.pageSize);
@@ -229,10 +250,9 @@ const BillingSystem = () => {
   };
 
   const handleMarkAsPaid = async (patientId) => {
- if (isPaymentInProgress[patientId]) return;
+    if (isPaymentInProgress[patientId]) return;
 
-  setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: true }));
-    console.log("paymenthit")
+    setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: true }));
     const patient = transformedPatients.find((p) => p.id === patientId);
     if (!patient) return;
 
@@ -281,10 +301,7 @@ const BillingSystem = () => {
         payload
       );
 
-      console.log(response, 'transcationResponse')
       if (response.status === 200) {
-
-        console.log('appointmentSucces')
         setPatients((prevPatients) =>
           prevPatients.map((p) =>
             p.id === patientId
@@ -305,43 +322,40 @@ const BillingSystem = () => {
           )
         );
 
-        console.log('1234567')
         setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
         toast.success("Payment processed successfully!");
       } else {
-  setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: false }));
-
+        setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: false }));
         throw new Error("Failed to process payment");
       }
     } catch (err) {
       console.error("Error processing payment:", err);
       toast.error("Failed to process payment. Please try again.");
-  setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: false }));
-
+      setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: false }));
     }
   };
 
-
-
-  console.log(patients, 'after setting 123')
-
   const handlePayClick = (patientId) => {
-  if (!debouncedMarkAsPaidMap.current[patientId]) {
-    debouncedMarkAsPaidMap.current[patientId] = debounce(
-      () => handleMarkAsPaid(patientId),
-      1000 // delay in ms
-    );
-  }
-  debouncedMarkAsPaidMap.current[patientId]();
-};
+    if (!debouncedMarkAsPaidMap.current[patientId]) {
+      debouncedMarkAsPaidMap.current[patientId] = debounce(
+        () => handleMarkAsPaid(patientId),
+        1000
+      );
+    }
+    debouncedMarkAsPaidMap.current[patientId]();
+  };
 
-
-  console.log(pagination, "setpaginations")
+  const handlePageChange = (page, pageSize) => {
+    setPagination((prev) => ({
+      ...prev,
+      current: page,
+      pageSize: pageSize,
+    }));
+  };
 
   if (loading) {
     return (
-      <div
-        style={{
+      <div style={{
           fontFamily: "Arial, sans-serif",
           padding: "20px",
           backgroundColor: "#f5f5f5",
@@ -349,10 +363,8 @@ const BillingSystem = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-        }}
-      >
-        <div
-          style={{
+        }}>
+        <div style={{
             maxWidth: "1200px",
             margin: "0 auto",
             backgroundColor: "white",
@@ -360,10 +372,8 @@ const BillingSystem = () => {
             boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
             padding: "30px",
             textAlign: "center",
-          }}
-        >
-          <div
-            style={{
+          }}>
+          <div style={{
               border: "4px solid #007bff",
               borderRadius: "50%",
               width: "40px",
@@ -371,8 +381,7 @@ const BillingSystem = () => {
               borderTopColor: "transparent",
               animation: "spin 1s linear infinite",
               margin: "0 auto 20px",
-            }}
-          />
+            }}/>
           <p style={{ fontSize: "18px", color: "#666" }}>Loading patients...</p>
           <style>{`
             @keyframes spin {
@@ -387,8 +396,7 @@ const BillingSystem = () => {
 
   if (error) {
     return (
-      <div
-        style={{
+      <div style={{
           fontFamily: "Arial, sans-serif",
           padding: "20px",
           backgroundColor: "#f5f5f5",
@@ -396,10 +404,8 @@ const BillingSystem = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-        }}
-      >
-        <div
-          style={{
+        }}>
+        <div style={{
             maxWidth: "1200px",
             margin: "0 auto",
             backgroundColor: "white",
@@ -407,16 +413,13 @@ const BillingSystem = () => {
             boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
             padding: "30px",
             textAlign: "center",
-          }}
-        >
-          <h1
-            style={{
+          }}>
+          <h1 style={{
               color: "#333",
               marginBottom: "30px",
               fontSize: "28px",
               fontWeight: "bold",
-            }}
-          >
+            }}>
             Patient Billing System
           </h1>
           <p style={{ fontSize: "18px", color: "#721c24", marginBottom: "20px" }}>
@@ -425,7 +428,7 @@ const BillingSystem = () => {
           <button
             onClick={() => {
               setRetryCount(0);
-      hasfetchPatients.current = false
+              hasfetchPatients.current = false
               fetchPatients(pagination.current, pagination.pageSize);
             }}
             style={{
@@ -448,8 +451,7 @@ const BillingSystem = () => {
 
   if (!user || !doctorId) {
     return (
-      <div
-        style={{
+      <div style={{
           fontFamily: "Arial, sans-serif",
           padding: "20px",
           backgroundColor: "#f5f5f5",
@@ -457,10 +459,8 @@ const BillingSystem = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-        }}
-      >
-        <div
-          style={{
+        }}>
+        <div style={{
             maxWidth: "1200px",
             margin: "0 auto",
             backgroundColor: "white",
@@ -468,16 +468,13 @@ const BillingSystem = () => {
             boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
             padding: "30px",
             textAlign: "center",
-          }}
-        >
-          <h1
-            style={{
+          }}>
+          <h1 style={{
               color: "#333",
               marginBottom: "30px",
               fontSize: "28px",
               fontWeight: "bold",
-            }}
-          >
+            }}>
             Patient Billing System
           </h1>
           <p style={{ fontSize: "18px", color: "#666" }}>
@@ -490,8 +487,7 @@ const BillingSystem = () => {
 
   if (transformedPatients.length === 0) {
     return (
-      <div
-        style={{
+      <div style={{
           fontFamily: "Arial, sans-serif",
           padding: "20px",
           backgroundColor: "#f5f5f5",
@@ -499,10 +495,8 @@ const BillingSystem = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-        }}
-      >
-        <div
-          style={{
+        }}>
+        <div style={{
             maxWidth: "1200px",
             margin: "0 auto",
             backgroundColor: "white",
@@ -510,16 +504,13 @@ const BillingSystem = () => {
             boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
             padding: "30px",
             textAlign: "center",
-          }}
-        >
-          <h1
-            style={{
+          }}>
+          <h1 style={{
               color: "#333",
               marginBottom: "30px",
               fontSize: "28px",
               fontWeight: "bold",
-            }}
-          >
+            }}>
             Patient Billing System
           </h1>
           <p style={{ fontSize: "18px", color: "#666" }}>
@@ -528,7 +519,7 @@ const BillingSystem = () => {
           <button
             onClick={() => {
               setRetryCount(0);
-      hasfetchPatients.current = false
+              hasfetchPatients.current = false
               fetchPatients(pagination.current, pagination.pageSize);
             }}
             style={{
@@ -550,113 +541,91 @@ const BillingSystem = () => {
     );
   }
 
-    const handlePageChange = (page, pageSize) => {
-    setPagination((prev) => ({
-      ...prev,
-      current: page,
-      pageSize: pageSize,
-    }));
-  };
-
-  console.log("patients====",patients)
   return (
-    <div
-      style={{
+    <div style={{
         fontFamily: "Arial, sans-serif",
         padding: "_year",
         backgroundColor: "#f5f5f5",
         minHeight: "100vh",
-      }}
-    >
-      <div
-        style={{
+      }}>
+      <div style={{
           maxWidth: "1200px",
           margin: "0 auto",
           backgroundColor: "white",
           borderRadius: "8px",
           boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
           padding: "30px",
-        }}
-      >
-        <h1
-          style={{
+        }}>
+        <h1 style={{
             color: "#333",
             marginBottom: "30px",
             textAlign: "center",
             fontSize: "28px",
             fontWeight: "bold",
-          }}
-        >
+          }}>
           Patient Billing System
         </h1>
 
-        <table
-          style={{
+        <table style={{
             width: "100%",
             borderCollapse: "collapse",
             marginBottom: "20px",
-          }}
-        >
+          }}>
           <thead>
             <tr style={{ backgroundColor: "#f8f9fa" }}>
-              <th
-                style={{
+              <th style={{
                   padding: "12px 15px",
                   textAlign: "left",
                   borderBottom: "2px solid #ddd",
                   fontWeight: "bold",
-                }}
-              ></th>
-              <th
-                style={{
+                }}></th>
+              <th style={{
                   padding: "12px 15px",
                   textAlign: "left",
                   borderBottom: "2px solid #ddd",
                   fontWeight: "bold",
-                }}
-              >
+                }}>
                 Patient ID
               </th>
-              <th
-                style={{
+              <th style={{
                   padding: "12px 15px",
                   textAlign: "left",
                   borderBottom: "2px solid #ddd",
                   fontWeight: "bold",
-                }}
-              >
+                }}>
                 Patient Name
               </th>
-              <th
-                style={{
+              <th style={{
                   padding: "12px 15px",
                   textAlign: "left",
                   borderBottom: "2px solid #ddd",
                   fontWeight: "bold",
-                }}
-              >
+                }}>
                 Mobile
               </th>
-              <th
-                style={{
+              <th style={{
                   padding: "12px 15px",
                   textAlign: "left",
-                  // block,
                   borderBottom: "2px solid #ddd",
                   fontWeight: "bold",
-                }}
-              >
+                }}>
                 Age
               </th>
-              <th
-                style={{
+              <th style={{
                   padding: "12px 15px",
                   textAlign: "left",
                   borderBottom: "2px solid #ddd",
                   fontWeight: "bold",
-                }}
-              >
+                }}>
                 Gender
+              </th>
+              <th style={{
+                  padding: "12px 15px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #ddd",
+                  fontWeight: "bold",
+                }}>
+                Prescription Date
               </th>
             </tr>
           </thead>
@@ -665,14 +634,12 @@ const BillingSystem = () => {
               const totals = calculateTotals(patient);
               return (
                 <React.Fragment key={patient.id}>
-                  <tr
-                    style={{
+                  <tr style={{
                       borderBottom: "1px solid #eee",
                       backgroundColor: expandedPatients[patient.id]
                         ? "#f0f8ff"
                         : "white",
-                    }}
-                  >
+                    }}>
                     <td style={{ padding: "12px 15px" }}>
                       <button
                         onClick={() => handlePatientExpand(patient.id)}
@@ -699,35 +666,30 @@ const BillingSystem = () => {
                     <td style={{ padding: "12px 15px" }}>{patient.mobile}</td>
                     <td style={{ padding: "12px 15px" }}>{patient.age}</td>
                     <td style={{ padding: "12px 15px" }}>{patient.gender}</td>
+                    <td style={{ padding: "12px 15px" }}>{patient.prescriptionCreatedAt}</td>
                   </tr>
 
                   {expandedPatients[patient.id] && (
                     <tr>
-                      <td colSpan="7" style={{ padding: "0" }}>
-                        <div
-                          style={{
+                      <td colSpan="8" style={{ padding: "0" }}>
+                        <div style={{
                             backgroundColor: "#f8f9fa",
                             padding: "20px",
                             border: "1px solid #ddd",
                             borderRadius: "4px",
                             margin: "10px",
-                          }}
-                        >
-                          <div
-                            style={{
+                          }}>
+                          <div style={{
                               display: "flex",
                               justifyContent: "space-between",
                               alignItems: "center",
                               marginBottom: "20px",
-                            }}
-                          >
-                            <h3
-                              style={{
+                            }}>
+                            <h3 style={{
                                 margin: "0",
                                 color: "#333",
                                 fontSize: "20px",
-                              }}
-                            >
+                              }}>
                               Patient Details
                             </h3>
                             <button
@@ -745,25 +707,21 @@ const BillingSystem = () => {
                           </div>
 
                           {/* Patient Info */}
-                          <div
-                            style={{
+                          <div style={{
                               backgroundColor: "white",
                               padding: "15px",
                               borderRadius: "4px",
                               marginBottom: "20px",
                               border: "1px solid #ddd",
-                            }}
-                          >
+                            }}>
                             <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>
                               Patient Information
                             </h4>
-                            <div
-                              style={{
+                            <div style={{
                                 display: "grid",
                                 gridTemplateColumns: "1fr 1fr",
                                 gap: "10px",
-                              }}
-                            >
+                              }}>
                               <p style={{ margin: "5px 0" }}>
                                 <strong>Patient ID:</strong> {patient.patientId}
                               </p>
@@ -782,67 +740,70 @@ const BillingSystem = () => {
                               <p style={{ margin: "5px 0" }}>
                                 <strong>Mobile:</strong> {patient.mobile}
                               </p>
+                              <p style={{ margin: "5px 0" }}>
+                                <strong>Prescription Date:</strong> {patient.prescriptionCreatedAt}
+                              </p>
                             </div>
                           </div>
 
                           {/* Appointment Details Section */}
                           {patient.appointmentDetails.length > 0 && (
-                            <div
-                              style={{
+                            <div style={{
                                 backgroundColor: "white",
                                 padding: "15px",
                                 borderRadius: "4px",
                                 marginBottom: "20px",
                                 border: "1px solid #ddd",
-                              }}
-                            >
-                              <h4
-                                style={{ margin: "0 0 15px 0", color: "#333" }}
-                              >
+                              }}>
+                              <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
                                 Appointment Details
                               </h4>
-                              <table
-                                style={{
+                              <table style={{
                                   width: "100%",
                                   borderCollapse: "collapse",
-                                }}
-                              >
+                                }}>
                                 <thead>
                                   <tr>
-                                    <th
-                                      style={{
+                                    <th style={{
                                         padding: "12px 15px",
                                         borderBottom: "1px solid #ddd",
                                         textAlign: "left",
-                                      }}
-                                    >
+                                      }}>
                                       AppointmentId
                                     </th>
-                                    <th
-                                      style={{
+                                    <th style={{
                                         padding: "12px 15px",
                                         borderBottom: "1px solid #ddd",
                                         textAlign: "left",
-                                      }}
-                                    >
+                                      }}>
                                       Appointment Type
                                     </th>
-                                    <th
-                                      style={{
+                                    <th style={{
                                         padding: "12px 15px",
                                         borderBottom: "1px solid #ddd",
                                         textAlign: "left",
-                                      }}
-                                    >
+                                      }}>
+                                      Date
+                                    </th>
+                                    <th style={{
+                                        padding: "12px 15px",
+                                        borderBottom: "1px solid #ddd",
+                                        textAlign: "left",
+                                      }}>
+                                      Time
+                                    </th>
+                                    <th style={{
+                                        padding: "12px 15px",
+                                        borderBottom: "1px solid #ddd",
+                                        textAlign: "left",
+                                      }}>
                                       Clinic Name
                                     </th>
-                                    <th
-                                      style={{
+                                    <th style={{
                                         padding: "12px 15px",
                                         borderBottom: "1px solid #ddd",
                                         textAlign: "left",
-                                      }}
-                                    >
+                                      }}>
                                       Price (₹)
                                     </th>
                                   </tr>
@@ -856,6 +817,12 @@ const BillingSystem = () => {
                                         </td>
                                         <td style={{ padding: "12px 15px" }}>
                                           {appointment.appointmentType}
+                                        </td>
+                                        <td style={{ padding: "12px 15px" }}>
+                                          {appointment.appointmentDate}
+                                        </td>
+                                        <td style={{ padding: "12px 15px" }}>
+                                          {appointment.appointmentTime}
                                         </td>
                                         <td style={{ padding: "12px 15px" }}>
                                           {appointment.clinicName}
@@ -872,89 +839,76 @@ const BillingSystem = () => {
                           )}
                           {/* Medicines Section */}
                           {patient.medicines.length > 0 && (
-                            <div
-                              style={{
+                            <div style={{
                                 backgroundColor: "white",
                                 padding: "15px",
                                 borderRadius: "4px",
                                 marginBottom: "20px",
                                 border: "1px solid #ddd",
-                              }}
-                            >
-                              <h4
-                                style={{ margin: "0 0 15px 0", color: "#333" }}
-                              >
+                              }}>
+                              <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
                                 Medicines Prescribed
                               </h4>
-                              <table
-                                style={{
+                              <table style={{
                                   width: "100%",
                                   borderCollapse: "collapse",
-                                }}
-                              >
+                                }}>
                                 <thead>
                                   <tr style={{ backgroundColor: "#f8f9fa" }}>
-                                    <th
-                                      style={{
+                                    <th style={{
                                         padding: "10px",
                                         textAlign: "left",
                                         borderBottom: "1px solid #ddd",
-                                      }}
-                                    >
+                                      }}>
                                       Medicine Name
                                     </th>
-                                    <th
-                                      style={{
+                                    <th style={{
                                         padding: "10px",
                                         textAlign: "left",
                                         borderBottom: "1px solid #ddd",
-                                      }}
-                                    >
+                                      }}>
                                       Quantity
                                     </th>
-                                    <th
-                                      style={{
+                                    <th style={{
                                         padding: "10px",
                                         textAlign: "right",
                                         borderBottom: "1px solid #ddd",
-                                      }}
-                                    >
+                                      }}>
                                       Price (₹)
                                     </th>
-                                    <th
-                                      style={{
+                                    <th style={{
                                         padding: "10px",
                                         textAlign: "center",
                                         borderBottom: "1px solid #ddd",
-                                      }}
-                                    >
+                                      }}>
                                       Status
                                     </th>
-                                     <th
-                                      style={{
+                                    <th style={{
                                         padding: "10px",
                                         textAlign: "right",
                                         borderBottom: "1px solid #ddd",
-                                      }}
-                                    >
+                                      }}>
                                       Gst (₹)
                                     </th>
-                                     <th
-                                      style={{
+                                    <th style={{
                                         padding: "10px",
                                         textAlign: "right",
                                         borderBottom: "1px solid #ddd",
-                                      }}
-                                    >
+                                      }}>
                                       Cgst (₹)
                                     </th>
-                                    <th
-                                      style={{
+                                    <th style={{
                                         padding: "10px",
                                         textAlign: "right",
                                         borderBottom: "1px solid #ddd",
-                                      }}
-                                    >
+                                      }}>
+                                      Created Date
+                                    </th>
+                                    <th style={{
+                                        padding: "10px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #ddd",
+                                      }}>
                                       Subtotal (₹)
                                     </th>
                                   </tr>
@@ -962,42 +916,33 @@ const BillingSystem = () => {
                                 <tbody>
                                   {patient.medicines.map((medicine) => (
                                     <tr key={medicine.id}>
-                                      <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
-                                        }}
-                                      >
+                                        }}>
                                         {medicine.name}
                                       </td>
-                                      <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
-                                        }}
-                                      >
+                                        }}>
                                         {medicine.quantity}
                                       </td>
-                                      <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
                                           textAlign: "right",
-                                        }}
-                                      >
+                                        }}>
                                         {medicine.price
                                           ? medicine.price.toFixed(2)
                                           : "N/A"}
                                       </td>
-                                      <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
                                           textAlign: "center",
-                                        }}
-                                      >
-                                        <span
-                                          style={{
+                                        }}>
+                                        <span style={{
                                             padding: "4px 8px",
                                             borderRadius: "12px",
                                             fontSize: "12px",
@@ -1010,34 +955,33 @@ const BillingSystem = () => {
                                               medicine.status === "Pending"
                                                 ? "#856404"
                                                 : "#155724",
-                                          }}
-                                        >
+                                          }}>
                                           {medicine.status}
                                         </span>
                                       </td>
-                                       <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
-                                        }}
-                                      >
+                                        }}>
                                         {medicine.gst}
                                       </td>
-                                       <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
-                                        }}
-                                      >
+                                        }}>
                                         {medicine.cgst}
                                       </td>
-                                      <td
-                                        style={{
+                                      <td style={{
+                                          padding: "10px",
+                                          borderBottom: "1px solid #eee",
+                                        }}>
+                                        {medicine.createdDate}
+                                      </td>
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
                                           textAlign: "right",
-                                        }}
-                                      >
+                                        }}>
                                         {medicine.price
                                           ? (
                                               medicine.quantity * medicine.price
@@ -1048,12 +992,10 @@ const BillingSystem = () => {
                                   ))}
                                 </tbody>
                               </table>
-                              <div
-                                style={{
+                              <div style={{
                                   textAlign: "right",
                                   marginTop: "10px",
-                                }}
-                              >
+                                }}>
                                 <strong>
                                   Medicine Total: ₹
                                   {patient.totalMedicineAmount.toFixed(2)}
@@ -1063,60 +1005,48 @@ const BillingSystem = () => {
                           )}
 
                           {/* Tests Section */}
-                          <div
-                            style={{
+                          <div style={{
                               backgroundColor: "white",
                               padding: "15px",
                               borderRadius: "4px",
                               marginBottom: "20px",
                               border: "1px solid #ddd",
-                            }}
-                          >
+                            }}>
                             <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
                               Tests Conducted
                             </h4>
-                            <table
-                              style={{
+                            <table style={{
                                 width: "100%",
                                 borderCollapse: "collapse",
-                              }}
-                            >
+                              }}>
                               <thead>
                                 <tr style={{ backgroundColor: "#f8f9fa" }}>
-                                  <th
-                                    style={{
+                                  <th style={{
                                       padding: "10px",
                                       textAlign: "left",
                                       borderBottom: "1px solid #ddd",
-                                    }}
-                                  >
+                                    }}>
                                     Test Name
                                   </th>
-                                  <th
-                                    style={{
+                                  <th style={{
                                       padding: "10px",
                                       textAlign: "right",
                                       borderBottom: "1px solid #ddd",
-                                    }}
-                                  >
+                                    }}>
                                     Price (₹)
                                   </th>
-                                  <th
-                                    style={{
+                                  <th style={{
                                       padding: "10px",
                                       textAlign: "center",
                                       borderBottom: "1px solid #ddd",
-                                    }}
-                                  >
+                                    }}>
                                     Status
                                   </th>
-                                  <th
-                                    style={{
+                                  <th style={{
                                       padding: "10px",
                                       textAlign: "left",
                                       borderBottom: "1px solid #ddd",
-                                    }}
-                                  >
+                                    }}>
                                     Created Date
                                   </th>
                                 </tr>
@@ -1125,34 +1055,27 @@ const BillingSystem = () => {
                                 {patient.tests.length > 0 ? (
                                   patient.tests.map((test) => (
                                     <tr key={test.id}>
-                                      <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
-                                        }}
-                                      >
+                                        }}>
                                         {test.name}
                                       </td>
-                                      <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
                                           textAlign: "right",
-                                        }}
-                                      >
+                                        }}>
                                         {test.price
                                           ? test.price
                                           : "N/A"}
                                       </td>
-                                      <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
                                           textAlign: "center",
-                                        }}
-                                      >
-                                        <span
-                                          style={{
+                                        }}>
+                                        <span style={{
                                             padding: "4px 8px",
                                             borderRadius: "12px",
                                             fontSize: "12px",
@@ -1169,17 +1092,14 @@ const BillingSystem = () => {
                                                 : test.status === "Pending"
                                                 ? "#856404"
                                                 : "#721c24",
-                                          }}
-                                        >
+                                          }}>
                                           {test.status}
                                         </span>
                                       </td>
-                                      <td
-                                        style={{
+                                      <td style={{
                                           padding: "10px",
                                           borderBottom: "1px solid #eee",
-                                        }}
-                                      >
+                                        }}>
                                         {test.createdDate}
                                       </td>
                                     </tr>
@@ -1199,9 +1119,7 @@ const BillingSystem = () => {
                                 )}
                               </tbody>
                             </table>
-                            <div
-                              style={{ textAlign: "right", marginTop: "10px" }}
-                            >
+                            <div style={{ textAlign: "right", marginTop: "10px" }}>
                               <strong>
                                 Test Total: ₹{" "}
                                 {patient.totalTestAmount.toFixed(2)}
@@ -1209,23 +1127,19 @@ const BillingSystem = () => {
                             </div>
                           </div>
 
-                          <div
-                            style={{
+                          <div style={{
                               display: "flex",
                               justifyContent: "space-between",
                               alignItems: "center",
                               backgroundColor: "#e9ecef",
                               padding: "15px",
                               borderRadius: "4px",
-                            }}
-                          >
-                            <div
-                              style={{
+                            }}>
+                            <div style={{
                                 fontSize: "18px",
                                 fontWeight: "bold",
                                 color: "#333",
-                              }}
-                            >
+                              }}>
                               Grand Total: ₹{patient.grandTotal.toFixed(2)}
                             </div>
                             <div>
@@ -1239,28 +1153,26 @@ const BillingSystem = () => {
                                   borderRadius: "4px",
                                   padding: "10px 20px",
                                   cursor:
-      totals.grandTotal > 0 &&
-      !isPaymentInProgress[patient.id] &&
-      !billingCompleted[patient.id]
-        ? "pointer"
-        : "not-allowed",
+                                    totals.grandTotal > 0 &&
+                                    !isPaymentInProgress[patient.id] &&
+                                    !billingCompleted[patient.id]
+                                      ? "pointer"
+                                      : "not-allowed",
                                   fontSize: "16px",
                                   fontWeight: "bold",
                                   marginLeft: "10px",
-
-                                opacity:
-      totals.grandTotal > 0 &&
-      !isPaymentInProgress[patient.id] &&
-      !billingCompleted[patient.id]
-        ? 1
-        : 0.6,
-  }}
-                               disabled={
-    totals.grandTotal <= 0 ||
-    isPaymentInProgress[patient.id] ||
-    billingCompleted[patient.id]
-  }
-                                // disabled={totals.grandTotal <= 0 }
+                                  opacity:
+                                    totals.grandTotal > 0 &&
+                                    !isPaymentInProgress[patient.id] &&
+                                    !billingCompleted[patient.id]
+                                      ? 1
+                                      : 0.6,
+                                }}
+                                disabled={
+                                  totals.grandTotal <= 0 ||
+                                  isPaymentInProgress[patient.id] ||
+                                  billingCompleted[patient.id]
+                                }
                                 onMouseOver={(e) => {
                                   if (totals.grandTotal <= 0) {
                                     toast.info(
@@ -1283,20 +1195,16 @@ const BillingSystem = () => {
           </tbody>
         </table>
 
-          <div
-          style={{
+        <div style={{
             display: "flex",
             justifyContent: "center",
             marginTop: "20px",
-          }}
-        >
-          <div
-            style={{
+          }}>
+          <div style={{
               display: "flex",
               alignItems: "center",
               gap: "10px",
-            }}
-          >
+            }}>
             <button
               onClick={() => handlePageChange(pagination.current - 1, pagination.pageSize)}
               disabled={pagination.current === 1}
@@ -1336,7 +1244,6 @@ const BillingSystem = () => {
             >
               Next
             </button>
-           
           </div>
         </div>
       </div>
