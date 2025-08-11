@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Printer, CheckCircle } from "lucide-react";
+import { Printer, CheckCircle, Loader2 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -221,372 +221,388 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
       <ToastContainer />
       <div id="prescription-container" className="prescription-container">
         {isLoading ? (
-          <div>Loading...</div>
+          <div className="loading-container">
+            <Loader2 className="animate-spin" size={24} />
+            <span>Loading prescription data...</span>
+          </div>
         ) : (
-          <div className="prescription-header">
-            {selectedClinic?.headerImage ? (
-              <img
-                src={selectedClinic.headerImage}
-                alt="Clinic Header"
-                className="header-image"
-                style={{
-                  width: "100%",
-                  maxHeight: "120px",
-                  objectFit: "contain",
-                  display: "block",
-                  margin: "0 auto",
-                }}
-              />
-            ) : (
-              selectedClinic && (
-                <>
-                  <div className="clinic-info">
-                    <div>
-                      <div className="clinic-name">
-                        {selectedClinic.clinicName
-                          ? selectedClinic.clinicName.charAt(0).toUpperCase() +
-                            selectedClinic.clinicName.slice(1)
-                          : "Clinic Name"}
+          <>
+            <div className="prescription-header">
+              {selectedClinic?.headerImage ? (
+                <img
+                  src={selectedClinic.headerImage}
+                  alt="Clinic Header"
+                  className="header-image"
+                  style={{
+                    width: "100%",
+                    maxHeight: "120px",
+                    objectFit: "contain",
+                    display: "block",
+                    margin: "0 auto",
+                  }}
+                />
+              ) : (
+                selectedClinic && (
+                  <>
+                    <div className="clinic-info">
+                      <div>
+                        <div className="clinic-name">
+                          {selectedClinic.clinicName
+                            ? selectedClinic.clinicName.charAt(0).toUpperCase() +
+                              selectedClinic.clinicName.slice(1)
+                            : "Clinic Name"}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="contact-info">
-                    <div>📍 {selectedClinic.address || "Address not provided"}</div>
-                    <div>📞 {selectedClinic.mobile || "Contact not provided"}</div>
-                  </div>
-                </>
-              )
-            )}
-          </div>
-        )}
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: "16px",
-          }}
-        >
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                fontSize: "18px",
-                fontWeight: "bold",
-                marginBottom: "4px",
-              }}
-            >
-              DR. {formData.doctorInfo?.doctorName || "Unknown Doctor"}
-            </div>
-            <div
-              style={{
-                fontSize: "14px",
-                color: "#6b7280",
-                marginBottom: "6px",
-              }}
-            >
-              {formData.doctorInfo?.qualifications || "Qualifications not provided"} |{" "}
-              {formData.doctorInfo?.specialization || "Specialist"}
-            </div>
-            <div style={{ fontSize: "13px", color: "#6c757d" }}>
-              Medical Registration No:{" "}
-              {formData.doctorInfo?.medicalRegistrationNumber || "Not provided"}
-            </div>
-          </div>
-
-          <div style={{ flex: 1, textAlign: "right" }}>
-            Patient Details:
-            <div style={{ fontSize: "12px", marginBottom: "4px" }}>
-              {formData.patientInfo?.patientName || "Unknown Patient"}
-            </div>
-            <div
-              style={{
-                fontSize: "12px",
-                color: "#6b7280",
-                marginBottom: "6px",
-              }}
-            >
-              {formData.patientInfo?.age || "Age not provided"} Years |{" "}
-              {formData.patientInfo?.gender
-                ? formData.patientInfo.gender.charAt(0).toUpperCase() +
-                  formData.patientInfo.gender.slice(1)
-                : "Gender not provided"}
-            </div>
-            <div style={{ fontSize: "12px", color: "#6c757d" }}>
-              {formData.patientInfo?.mobileNumber || "Contact not provided"}
-            </div>
-          </div>
-        </div>
-
-        <div className="prescription-content">
-          <div className="prescription-section">
-            <div className="section-header">📋 PATIENT HISTORY</div>
-            <div className="history-row">
-              <div className="detail-item">
-                <div className="detail-label">Chief Complaint:</div>
-                <div className="detail-value">
-                  {formData.patientInfo?.chiefComplaint || "Not provided"}
-                </div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">Past History:</div>
-                <div className="detail-value">
-                  {formData.patientInfo?.pastMedicalHistory || "Not provided"}
-                </div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">Family History:</div>
-                <div className="detail-value">
-                  {formData.patientInfo?.familyMedicalHistory || "Not provided"}
-                </div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">Examination:</div>
-                <div className="detail-value">
-                  {formData.patientInfo?.physicalExamination || "Not provided"}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="prescription-section">
-            <div className="section-header">🩺 VITALS</div>
-            <div className="vitals-container">
-              <div className="vitals-row">
-                <div className="vital-item">
-                  <span className="vital-label">BP:</span>
-                  <span className="vital-value">
-                    {formData.vitals?.bp
-                      ? formData.vitals.bp
-                      : formData.vitals?.bpSystolic &&
-                        formData.vitals?.bpDiastolic
-                      ? `${formData.vitals.bpSystolic}/${formData.vitals.bpDiastolic}`
-                      : "Not provided"}{" "}
-                    mmHg
-                  </span>
-                </div>
-                <div className="vital-separator">|</div>
-                <div className="vital-item">
-                  <span className="vital-label">Pulse:</span>
-                  <span className="vital-value">
-                    {formData.vitals?.pulseRate || "Not provided"} BPM
-                  </span>
-                </div>
-                <div className="vital-separator">|</div>
-                <div className="vital-item">
-                  <span className="vital-label">Temp:</span>
-                  <span className="vital-value">
-                    {formData.vitals?.temperature || "Not provided"}°F
-                  </span>
-                </div>
-                <div className="vital-separator">|</div>
-                <div className="vital-item">
-                  <span className="vital-label">SpO2:</span>
-                  <span className="vital-value">
-                    {formData.vitals?.spo2 || "Not provided"}%
-                  </span>
-                </div>
-                <div className="vital-separator">|</div>
-                <div className="vital-item">
-                  <span className="vital-label">RR:</span>
-                  <span className="vital-value">
-                    {formData.vitals?.respiratoryRate || "Not provided"} breaths/min
-                  </span>
-                </div>
-                <div className="vital-separator">|</div>
-                <div className="vital-item">
-                  <span className="vital-label">Height:</span>
-                  <span className="vital-value">
-                    {formData.vitals?.height || "Not provided"} cm
-                  </span>
-                </div>
-                <div className="vital-separator">|</div>
-                <div className="vital-item">
-                  <span className="vital-label">Weight:</span>
-                  <span className="vital-value">
-                    {formData.vitals?.weight || "Not provided"} kg
-                  </span>
-                </div>
-                <div className="vital-separator">|</div>
-                <div className="vital-item">
-                  <span className="vital-label">BMI:</span>
-                  <span className="vital-value">
-                    {formData.vitals?.bmi || "Not provided"}
-                  </span>
-                </div>
-                {formData.vitals?.other &&
-                  Object.entries(formData.vitals.other).map(([key, value]) => (
-                    <>
-                      <div className="vital-separator">|</div>
-                      <div className="vital-item" key={key}>
-                        <span className="vital-label">{key}:</span>
-                        <span className="vital-value">{value || "Not provided"}</span>
-                      </div>
-                    </>
-                  ))}
-              </div>
-            </div>
-          </div>
-
-          {formData.diagnosis?.selectedTests?.length > 0 && (
-            <div className="prescription-section">
-              <div className="section-header">🔬 TESTS</div>
-              <div className="investigation-row">
-                {formData.diagnosis.selectedTests.map((test, index) => (
-                  <div key={index} className="investigation-item">
-                    <div className="detail-value">{test.testName || test}</div>
-                  </div>
-                ))}
-              </div>
-              {formData.diagnosis?.testNotes && (
-                <div className="notes-display">
-                  <div className="notes-label">Test Findings:</div>
-                  <div className="notes-content">
-                    {formData.diagnosis.testNotes}
-                  </div>
-                </div>
+                    <div className="contact-info">
+                      <div>📍 {selectedClinic.address || "Address not provided"}</div>
+                      <div>📞 {selectedClinic.mobile || "Contact not provided"}</div>
+                    </div>
+                  </>
+                )
               )}
             </div>
-          )}
 
-          {formData.diagnosis?.diagnosisList && (
-            <div className="prescription-section">
-              <div className="section-header">🩺 DIAGNOSIS</div>
-              <div className="diagnosis-row">
-                {formData.diagnosis.diagnosisList
-                  .split(",")
-                  .map((diagnosis, index) => (
-                    <span key={index} className="diagnosis-tag">
-                      {diagnosis.trim().toUpperCase()}
-                    </span>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {formData.diagnosis?.medications?.length > 0 && (
-            <div className="prescription-section">
-              <div className="section-header">💊 MEDICATION</div>
-              <table className="medication-table">
-                <thead>
-                  <tr>
-                    <th className="table-header">Type</th>
-                    <th className="table-header">Medicine Name</th>
-                    <th className="table-header">Dosage</th>
-                    <th className="table-header">Frequency</th>
-                    <th className="table-header">Timings</th>
-                    <th className="table-header">Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formData.diagnosis.medications.map((med, index) => (
-                    <tr key={index}>
-                      <td className="table-cell">
-                        {med.medicineType || "Not provided"}
-                      </td>
-                      <td className="table-cell">
-                        {med.medName || med.name || "Not provided"}
-                      </td>
-                      <td className="table-cell">
-                        {med.dosage || med.dosagePattern || "As directed"}
-                      </td>
-                      <td className="table-cell">{med.frequency || "Not provided"}</td>
-                      <td className="table-cell">
-                        {med.timings
-                          ? med.timings.join(", ")
-                          : med.timing || "Not provided"}
-                      </td>
-                      <td className="table-cell">{med.notes || "Not provided"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {formData.diagnosis?.medicationNotes && (
-                <div className="notes-display">
-                  <div className="notes-label">Medication Instructions:</div>
-                  <div className="notes-content">
-                    {formData.diagnosis.medicationNotes}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {formData.advice?.advice && (
-            <div className="prescription-section">
-              <div className="section-header">💡 ADVICE</div>
-              <ul className="advice-list">
-                {formData.advice.advice.split("\n").map(
-                  (item, index) =>
-                    item.trim() && (
-                      <li key={index} className="advice-item">
-                        <span className="bullet">•</span>
-                        <span>{item}</span>
-                      </li>
-                    )
-                )}
-              </ul>
-            </div>
-          )}
-
-          {formData.advice?.followUpDate && (
-            <div className="prescription-section">
-              <div className="section-header">📅 FOLLOW-UP</div>
-              <div className="follow-up-container">
-                <div className="follow-up-date">
-                  Next Visit: {formatDate(formData.advice.followUpDate)}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="signature">
-            {selectedClinic?.digitalSignature ? (
-              <img
-                src={selectedClinic.digitalSignature}
-                alt="Digital Signature"
-                className="digital-signature"
-              />
-            ) : (
-              <>
-                <div style={{ height: "48px" }}></div>
-                <div style={{ fontWeight: "bold" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: "16px",
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    marginBottom: "4px",
+                  }}
+                >
                   DR. {formData.doctorInfo?.doctorName || "Unknown Doctor"}
                 </div>
-              </>
-            )}
-            <div style={{ fontSize: "12px", marginTop: "4px" }}>
-              <CheckCircle size={14} style={{ marginRight: "4px" }} />
-              Digitally Signed
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#6b7280",
+                    marginBottom: "6px",
+                  }}
+                >
+                  {formData.doctorInfo?.qualifications || "Qualifications not provided"} |{" "}
+                  {formData.doctorInfo?.specialization || "Specialist"}
+                </div>
+                <div style={{ fontSize: "13px", color: "#6c757d" }}>
+                  Medical Registration No:{" "}
+                  {formData.doctorInfo?.medicalRegistrationNumber || "Not provided"}
+                </div>
+              </div>
+
+              <div style={{ flex: 1, textAlign: "right" }}>
+                Patient Details:
+                <div style={{ fontSize: "12px", marginBottom: "4px" }}>
+                  {formData.patientInfo?.patientName || "Unknown Patient"}
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#6b7280",
+                    marginBottom: "6px",
+                  }}
+                >
+                  {formData.patientInfo?.age || "Age not provided"} Years |{" "}
+                  {formData.patientInfo?.gender
+                    ? formData.patientInfo.gender.charAt(0).toUpperCase() +
+                      formData.patientInfo.gender.slice(1)
+                    : "Gender not provided"}
+                </div>
+                <div style={{ fontSize: "12px", color: "#6c757d" }}>
+                  {formData.patientInfo?.mobileNumber || "Contact not provided"}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="prescription-footer">
-          This prescription is computer generated and does not require physical
-          signature
-        </div>
+            <div className="prescription-content">
+              <div className="prescription-section">
+                <div className="section-header">📋 PATIENT HISTORY</div>
+                <div className="history-row">
+                  <div className="detail-item">
+                    <div className="detail-label">Chief Complaint:</div>
+                    <div className="detail-value">
+                      {formData.patientInfo?.chiefComplaint || "Not provided"}
+                    </div>
+                  </div>
+                  <div className="detail-item">
+                    <div className="detail-label">Past History:</div>
+                    <div className="detail-value">
+                      {formData.patientInfo?.pastMedicalHistory || "Not provided"}
+                    </div>
+                  </div>
+                  <div className="detail-item">
+                    <div className="detail-label">Family History:</div>
+                    <div className="detail-value">
+                      {formData.patientInfo?.familyMedicalHistory || "Not provided"}
+                    </div>
+                  </div>
+                  <div className="detail-item">
+                    <div className="detail-label">Examination:</div>
+                    <div className="detail-value">
+                      {formData.patientInfo?.physicalExamination || "Not provided"}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-        <div className="print-button-container">
-          <button className="print-button" onClick={handlePrintClick}>
-            <Printer size={16} style={{ marginRight: "8px" }} />
-            Print Prescription
-          </button>
-          <button className="whatsapp-button" onClick={handleWhatsAppClick}>
-            <FaWhatsapp
-              className="whatsapp-icon"
-              style={{ marginRight: "8px" }}
-            />
-            Share via WhatsApp
-          </button>
-          <button
-            className="save-button"
-            onClick={handleSaveClick}
-            disabled={isSaving}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </button>
-        </div>
+              <div className="prescription-section">
+                <div className="section-header">🩺 VITALS</div>
+                <div className="vitals-container">
+                  <div className="vitals-row">
+                    <div className="vital-item">
+                      <span className="vital-label">BP:</span>
+                      <span className="vital-value">
+                        {formData.vitals?.bp
+                          ? formData.vitals.bp
+                          : formData.vitals?.bpSystolic &&
+                            formData.vitals?.bpDiastolic
+                          ? `${formData.vitals.bpSystolic}/${formData.vitals.bpDiastolic}`
+                          : "Not provided"}{" "}
+                        mmHg
+                      </span>
+                    </div>
+                    <div className="vital-separator">|</div>
+                    <div className="vital-item">
+                      <span className="vital-label">Pulse:</span>
+                      <span className="vital-value">
+                        {formData.vitals?.pulseRate || "Not provided"} BPM
+                      </span>
+                    </div>
+                    <div className="vital-separator">|</div>
+                    <div className="vital-item">
+                      <span className="vital-label">Temp:</span>
+                      <span className="vital-value">
+                        {formData.vitals?.temperature || "Not provided"}°F
+                      </span>
+                    </div>
+                    <div className="vital-separator">|</div>
+                    <div className="vital-item">
+                      <span className="vital-label">SpO2:</span>
+                      <span className="vital-value">
+                        {formData.vitals?.spo2 || "Not provided"}%
+                      </span>
+                    </div>
+                    <div className="vital-separator">|</div>
+                    <div className="vital-item">
+                      <span className="vital-label">RR:</span>
+                      <span className="vital-value">
+                        {formData.vitals?.respiratoryRate || "Not provided"} breaths/min
+                      </span>
+                    </div>
+                    <div className="vital-separator">|</div>
+                    <div className="vital-item">
+                      <span className="vital-label">Height:</span>
+                      <span className="vital-value">
+                        {formData.vitals?.height || "Not provided"} cm
+                      </span>
+                    </div>
+                    <div className="vital-separator">|</div>
+                    <div className="vital-item">
+                      <span className="vital-label">Weight:</span>
+                      <span className="vital-value">
+                        {formData.vitals?.weight || "Not provided"} kg
+                      </span>
+                    </div>
+                    <div className="vital-separator">|</div>
+                    <div className="vital-item">
+                      <span className="vital-label">BMI:</span>
+                      <span className="vital-value">
+                        {formData.vitals?.bmi || "Not provided"}
+                      </span>
+                    </div>
+                    {formData.vitals?.other &&
+                      Object.entries(formData.vitals.other).map(([key, value]) => (
+                        <>
+                          <div className="vital-separator">|</div>
+                          <div className="vital-item" key={key}>
+                            <span className="vital-label">{key}:</span>
+                            <span className="vital-value">{value || "Not provided"}</span>
+                          </div>
+                        </>
+                      ))}
+                  </div>
+                </div>
+              </div>
+
+              {formData.diagnosis?.selectedTests?.length > 0 && (
+                <div className="prescription-section">
+                  <div className="section-header">🔬 TESTS</div>
+                  <div className="investigation-row">
+                    {formData.diagnosis.selectedTests.map((test, index) => (
+                      <div key={index} className="investigation-item">
+                        <div className="detail-value">{test.testName || test}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {formData.diagnosis?.testNotes && (
+                    <div className="notes-display">
+                      <div className="notes-label">Test Findings:</div>
+                      <div className="notes-content">
+                        {formData.diagnosis.testNotes}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {formData.diagnosis?.diagnosisList && (
+                <div className="prescription-section">
+                  <div className="section-header">🩺 DIAGNOSIS</div>
+                  <div className="diagnosis-row">
+                    {formData.diagnosis.diagnosisList
+                      .split(",")
+                      .map((diagnosis, index) => (
+                        <span key={index} className="diagnosis-tag">
+                          {diagnosis.trim().toUpperCase()}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {(formData.diagnosis?.medications?.length > 0 || formData.advice?.medicationNotes) && (
+                <div className="prescription-section">
+                  <div className="section-header">💊 MEDICATION</div>
+                  {formData.diagnosis?.medications?.length > 0 && (
+                    <>
+                      <table className="medication-table">
+                        <thead>
+                          <tr>
+                            <th className="table-header">Type</th>
+                            <th className="table-header">Medicine Name</th>
+                            <th className="table-header">Dosage</th>
+                            <th className="table-header">Frequency</th>
+                            <th className="table-header">Timings</th>
+                            <th className="table-header">Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {formData.diagnosis.medications.map((med, index) => (
+                            <tr key={index}>
+                              <td className="table-cell">
+                                {med.medicineType || "Not provided"}
+                              </td>
+                              <td className="table-cell">
+                                {med.medName || med.name || "Not provided"}
+                              </td>
+                              <td className="table-cell">
+                                {med.dosage || med.dosagePattern || "As directed"}
+                              </td>
+                              <td className="table-cell">{med.frequency || "Not provided"}</td>
+                              <td className="table-cell">
+                                {med.timings
+                                  ? med.timings.join(", ")
+                                  : med.timing || "Not provided"}
+                              </td>
+                              <td className="table-cell">{med.notes || "Not provided"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
+                  )}
+                  {formData.advice?.medicationNotes && (
+                    <div className="notes-display">
+                      <div className="notes-label">Medication Instructions:</div>
+                      <div className="notes-content">
+                        {formData.advice.medicationNotes}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {formData.advice?.advice && (
+                <div className="prescription-section">
+                  <div className="section-header">💡 ADVICE</div>
+                  <ul className="advice-list">
+                    {formData.advice.advice.split("\n").map(
+                      (item, index) =>
+                        item.trim() && (
+                          <li key={index} className="advice-item">
+                            <span className="bullet">•</span>
+                            <span>{item}</span>
+                          </li>
+                        )
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {formData.advice?.followUpDate && (
+                <div className="prescription-section">
+                  <div className="section-header">📅 FOLLOW-UP</div>
+                  <div className="follow-up-container">
+                    <div className="follow-up-date">
+                      Next Visit: {formatDate(formData.advice.followUpDate)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="signature">
+                {selectedClinic?.digitalSignature ? (
+                  <img
+                    src={selectedClinic.digitalSignature}
+                    alt="Digital Signature"
+                    className="digital-signature"
+                  />
+                ) : (
+                  <>
+                    <div style={{ height: "48px" }}></div>
+                    <div style={{ fontWeight: "bold" }}>
+                      DR. {formData.doctorInfo?.doctorName || "Unknown Doctor"}
+                    </div>
+                  </>
+                )}
+                <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                  <CheckCircle size={14} style={{ marginRight: "4px" }} />
+                  Digitally Signed
+                </div>
+              </div>
+            </div>
+
+            <div className="prescription-footer">
+              This prescription is computer generated and does not require physical
+              signature
+            </div>
+
+            <div className="print-button-container">
+              <button className="print-button" onClick={handlePrintClick}>
+                <Printer size={16} style={{ marginRight: "8px" }} />
+                Print Prescription
+              </button>
+              <button className="whatsapp-button" onClick={handleWhatsAppClick}>
+                <FaWhatsapp
+                  className="whatsapp-icon"
+                  style={{ marginRight: "8px" }}
+                />
+                Share via WhatsApp
+              </button>
+              <button
+                className="save-button"
+                onClick={handleSaveClick}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="animate-spin mr-2" size={16} />
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

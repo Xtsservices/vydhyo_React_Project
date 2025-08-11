@@ -171,7 +171,7 @@ const DoctorLayoutWrapper = () => {
       key: "eprescription",
       accessKey: "eprescription",
       label: (
-        <Link to="/doctor/doctorPages/EPrescription">Digital-Prescription</Link>
+        <Link to="/doctor/doctorPages/EPrescriptionList">Digital-Prescription</Link>
       ),
       icon: (
         <FontAwesomeIcon
