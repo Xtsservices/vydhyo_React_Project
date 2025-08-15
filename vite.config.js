@@ -17,4 +17,9 @@ export default defineConfig({
       'lodash',
     ],
   },
+  server: {
+    allowedHosts: ['vydhyo.com', 'www.vydhyo.com'],
+    host: true, // allows external access
+    port: 5173, // keep your existing dev port
+  },
 })
