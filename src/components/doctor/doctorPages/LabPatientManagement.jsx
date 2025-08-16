@@ -11,7 +11,7 @@ import {
   Popconfirm,
   Tag,
 } from "antd";
-import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
+import { CheckOutlined, CreditCardOutlined, PrinterOutlined } from "@ant-design/icons";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
@@ -59,13 +59,6 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
           }
           return true;
         });
-
-        // Sort by patientId descending
-        // filteredData.sort((a, b) => {
-        //   const idA = parseInt(a.patientId.replace(/\D/g, "")) || 0;
-        //   const idB = parseInt(b.patientId.replace(/\D/g, "")) || 0;
-        //   return idB - idA;
-        // });
 
         setPatients(filteredData);
         setPagination({
@@ -250,6 +243,137 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
     }
   };
 
+  const printInvoice = (patient) => {
+    const { patientName, patientId, tests, labData } = patient;
+    const totalAmount = tests.reduce(
+      (sum, test) => sum + (test.price || 0),
+      0
+    );
+
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Invoice</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 0; margin: 0; }
+              .invoice-container { max-width: 900px; margin: 0 auto; }
+              .header { 
+                width: 100%; 
+                padding: 10px 0; 
+                background-color: #f5f5f5; 
+                border-bottom: 2px solid #1890ff; 
+                box-sizing: border-box;
+              }
+              .header-logo { 
+                width: 100%; 
+                height: auto; 
+                max-height: 120px; 
+                object-fit: contain;
+                display: block;
+              }
+              .title { text-align: center; font-size: 28px; font-weight: bold; color: #1890ff; margin: 20px 0; text-transform: uppercase; }
+              .info-section { display: flex; justify-content: space-between; padding: 0 20px 20px 20px; font-size: 14px; }
+              .patient-info p, .pharmacy-info p { margin: 4px 0; }
+              table { width: 100%; border-collapse: collapse; margin: 20px; }
+              th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; font-size: 14px; }
+              th { background-color: #fafafa; font-weight: bold; }
+              .total-section { padding: 20px; text-align: right; background: #f9f9f9; border-top: 2px solid #1890ff; clear: both; }
+              .total-section table { width: 300px; float: right; border: none; margin: 0; }
+              .total-section td { border: none; padding: 8px; font-weight: bold; }
+              .footer { text-align: center; font-size: 12px; color: #666; padding: 20px; border-top: 1px solid #e0e0e0; clear: both; }
+            </style>
+          </head>
+          <body>
+            <div class="invoice-container">
+              <div class="header">
+                ${labData?.labHeaderUrl ? `
+                  <img 
+                    src="${labData.labHeaderUrl}" 
+                    class="header-logo"
+                    alt="Lab Header"
+                    onload="window.print()"
+                    onerror="this.style.display='none'; window.print()"
+                  />
+                ` : `
+                  <div style="font-size: 20px; font-weight: bold; color: #333; text-align: center; padding: 10px;">
+                    ${labData?.labName || 'Diagnostic Lab'}
+                  </div>
+                `}
+              </div>
+
+              <div class="title">
+                LAB TEST INVOICE
+              </div>
+
+              <div class="info-section">
+                <div class="patient-info">
+                  <p><strong>Patient Name:</strong> ${patientName}</p>
+                  <p><strong>Patient ID:</strong> ${patientId}</p>
+                  <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                </div>
+                <div class="pharmacy-info">
+                  ${labData?.labRegistrationNo ? `<p><strong>Reg No:</strong> ${labData.labRegistrationNo}</p>` : ''}
+                  ${labData?.labGst ? `<p><strong>GST:</strong> ${labData.labGst}</p>` : ''}
+                  ${labData?.labPan ? `<p><strong>PAN:</strong> ${labData.labPan}</p>` : ''}
+                  ${labData?.labAddress ? `<p><strong>Address:</strong> ${labData.labAddress}</p>` : ''}
+                </div>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Test Name</th>
+                    <th>Price (Incl. GST)</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tests.map(test => `
+                    <tr>
+                      <td>${test.testName}</td>
+                      <td>₹${test.price?.toFixed(2)}</td>
+                      <td>${test.status.charAt(0).toUpperCase() + test.status.slice(1)}</td>
+                      <td>${new Date(test.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+
+              <div class="total-section">
+                <table>
+                  <tr>
+                    <td><strong>Grand Total (Incl. GST):</strong></td>
+                    <td>₹${totalAmount.toFixed(2)}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div class="footer">
+                Thank you for choosing our lab services!<br />
+                ${labData?.labName || 'Diagnostic Lab'}
+              </div>
+            </div>
+            <script>
+              // Auto-print after the image loads or fails to load
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                  window.close();
+                }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else {
+      alert('Please allow popups for this site to print the invoice.');
+    }
+  };
+
   const handleTableChange = (pagination) => {
     getAllTestsPatientsByDoctorID(pagination.current, pagination.pageSize);
   };
@@ -267,7 +391,6 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
         ? prev.filter((id) => id !== patientId)
         : [...prev, patientId]
     );
-    // getAllTestsPatientsByDoctorID(pagination.current, pagination.pageSize);
   };
 
   // Main table columns
@@ -415,8 +538,6 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
     },
   ];
 
-  console.log(patients, "patients");
-
   return (
     <div>
       <ToastContainer />
@@ -509,30 +630,11 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
                           Total Amount: ₹ {totalAmount.toFixed(2)}
                         </Typography.Text>
 
-                        <Popconfirm
-                          title="Confirm Payment"
-                          description={
-                            <div style={{ textAlign: "center" }}>
-                              <Typography.Text>
-                                Cash ₹{totalAmount.toFixed(2)}
-                              </Typography.Text>
-                            </div>
-                          }
-                          onConfirm={() => handlePayment(record.patientId)}
-                          okText="Payment Done"
-                          cancelText="Cancel"
-                          disabled={isPaymentDone[record.patientId]}
-                        >
+                        {status === "completed" ? (
                           <Button
                             type="primary"
-                            icon={<CreditCardOutlined />}
-                            loading={paying[record.patientId]}
-                            disabled={
-                              totalAmount <= 0 ||
-                              paying[record.patientId] ||
-                              !hasPendingTests ||
-                              isPaymentDone[record.patientId]
-                            }
+                            icon={<PrinterOutlined />}
+                            onClick={() => printInvoice(record)}
                             style={{
                               background: "#1A3C6A",
                               borderColor: "#1A3C6A",
@@ -540,11 +642,46 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
                               marginTop: 8,
                             }}
                           >
-                            {hasPendingTests && !isPaymentDone[record.patientId]
-                              ? "Process Payment"
-                              : "Paid"}
+                            Print Invoice
                           </Button>
-                        </Popconfirm>
+                        ) : (
+                          <Popconfirm
+                            title="Confirm Payment"
+                            description={
+                              <div style={{ textAlign: "center" }}>
+                                <Typography.Text>
+                                  Cash ₹{totalAmount.toFixed(2)}
+                                </Typography.Text>
+                              </div>
+                            }
+                            onConfirm={() => handlePayment(record.patientId)}
+                            okText="Payment Done"
+                            cancelText="Cancel"
+                            disabled={isPaymentDone[record.patientId]}
+                          >
+                            <Button
+                              type="primary"
+                              icon={<CreditCardOutlined />}
+                              loading={paying[record.patientId]}
+                              disabled={
+                                totalAmount <= 0 ||
+                                paying[record.patientId] ||
+                                !hasPendingTests ||
+                                isPaymentDone[record.patientId]
+                              }
+                              style={{
+                                background: "#1A3C6A",
+                                borderColor: "#1A3C6A",
+                                color: "white",
+                                marginTop: 8,
+                              }}
+                            >
+                              {hasPendingTests && !isPaymentDone[record.patientId]
+                                ? "Process Payment"
+                                : "Paid"}
+                            </Button>
+                          </Popconfirm>
+                        )}
                       </Col>
                     </Row>
                   </Panel>

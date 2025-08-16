@@ -1,0 +1,233 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: white;
+  font-size: 14px;
+}
+
+@page {
+  margin: 15mm;
+  size: A4;
+}
+
+@media print {
+  @page {
+    margin: 15mm;
+    size: A4;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Hide browser default headers and footers */
+  @page {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-header: 0;
+    margin-footer: 0;
+  }
+}
+
+.invoice-container {
+  padding: 15px;
+  max-width: 210mm;
+  margin: 0 auto;
+}
+
+.invoice-content {
+  flex: 1;
+}
+
+.invoice-title-section {
+  text-align: center;
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+.main-invoice-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.invoice-header-section {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #eee;
+}
+
+.provider-info {
+  text-align: left;
+}
+
+.provider-name {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.contact-info p {
+  margin: 3px 0;
+  color: #666;
+}
+
+.invoice-details-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+.invoice-detail-item {
+  font-size: 14px;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #ddd;
+}
+
+.patient-info {
+  display: flex;
+  justify-content: space-between;
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 5px;
+}
+
+.patient-info p {
+  margin: 3px 0;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.data-table th, .data-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.data-table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.price-column {
+  text-align: right;
+}
+
+.section-total {
+  text-align: right;
+  margin-top: 8px;
+}
+
+.total-text {
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+}
+
+.grand-total-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.grand-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  border-top: 2px solid #333;
+  padding-top: 8px;
+  margin-top: 10px;
+}
+
+.footer {
+  text-align: center;
+  padding: 15px 0;
+  border-top: 1px solid #ddd;
+  color: #666;
+  background: white;
+}
+
+.powered-by {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  gap: 6px;
+  color: #666;
+  font-size: 12px;
+}
+
+.footer-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* Compact spacing for better space utilization */
+.compact-spacing {
+  margin-bottom: 15px;
+}
+
+.compact-spacing:last-child {
+  margin-bottom: 0;
+}
+
+.provider-logo {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.header-logo {
+  width: 150px;
+  height: auto;
+}
+
+/* Print specific styles */
+@media print {
+  .invoice-container {
+    min-height: 100vh;
+  }
+  
+  .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin-top: 0;
+  }
+}

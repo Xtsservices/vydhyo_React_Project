@@ -1,0 +1,682 @@
+
+/* BillingSystem Styles */
+.billing-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 24px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.billing-container.loading .card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.card {
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+}
+
+.card h1 {
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.error {
+  font-size: 18px;
+  color: #721c24;
+  margin-bottom: 20px;
+}
+
+.retry-button,
+.refresh-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.refresh-button {
+  margin-top: 20px;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.content h1 {
+  color: #1a1a1a;
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.search-bar {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.search-input-container {
+  position: relative;
+  width: 400px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 40px 10px 16px;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+.patient-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.patient-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.patient-header {
+  background-color: #f8f9fa;
+  padding: 0;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 200px 120px 60px 80px 120px 120px;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.patient-row {
+  display: grid;
+  grid-template-columns: 200px 120px 60px 80px 120px 120px;
+  padding: 16px;
+  align-items: center;
+}
+
+.patient-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.patient-row > div {
+  color: #6b7280;
+}
+
+.view-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.expandable-sections {
+  padding: 0 16px 16px 16px;
+}
+
+.section-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.section-header {
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-title-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+}
+
+.section-icon.pharmacy {
+  background-color: #3b82f6;
+}
+
+.section-icon.labs {
+  background-color: #10b981;
+}
+
+.section-icon.appointments {
+  background-color: #8b5cf6;
+}
+
+.section-title {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.section-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.expand-icon {
+  color: #6b7280;
+  font-size: 18px;
+}
+
+.section-content {
+  padding: 16px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.data-table th {
+  background-color: #f8f9fa;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: left;
+}
+
+.data-table td {
+  font-size: 12px;
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2),
+.data-table th:nth-child(3),
+.data-table td:nth-child(3),
+.data-table th:nth-child(4),
+.data-table td:nth-child(4),
+.data-table th:nth-child(7),
+.data-table td:nth-child(7) {
+  text-align: center;
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3),
+.data-table th:nth-child(5),
+.data-table td:nth-child(5),
+.data-table th:nth-child(6),
+.data-table td:nth-child(6),
+.data-table th:nth-child(8),
+.data-table td:nth-child(8) {
+  text-align: right;
+}
+
+.status {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status.pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status.completed {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status.failed {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.section-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.grand-total {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.total-amount {
+  font-size: 18px;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.print-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pay-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pay-button:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.pagination-button {
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background-color: white;
+  color: #374151;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.pagination-button:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.pagination-button.active {
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 600;
+}
+
+.pagination-ellipsis {
+  padding: 6px 8px;
+}
+
+/* DownloadTaxInvoice Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.modal-body {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.print-invoice-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+/* Invoice Print Styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: white;
+  font-size: 14px;
+}
+
+@page {
+  margin: 0;
+  size: A4;
+}
+
+@media print {
+  @page {
+    margin: 0;
+    size: A4;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Hide browser default headers and footers */
+  @page {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-header: 0;
+    margin-footer: 0;
+  }
+}
+
+.invoice-container {
+  padding: 15px;
+  max-width: 210mm;
+  margin: 0 auto;
+}
+
+.invoice-content {
+  flex: 1;
+}
+
+.invoice-title-section {
+  text-align: center;
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+.main-invoice-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.invoice-header-section {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #eee;
+}
+
+.provider-info {
+  text-align: left;
+}
+
+.provider-name {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.contact-info p {
+  margin: 3px 0;
+  color: #666;
+}
+
+.invoice-details-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+.invoice-detail-item {
+  font-size: 14px;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #ddd;
+}
+
+.patient-info {
+  display: flex;
+  justify-content: space-between;
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 5px;
+}
+
+.patient-info p {
+  margin: 3px 0;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.data-table th,
+.data-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.data-table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.price-column {
+  text-align: right;
+}
+
+.section-total {
+  text-align: right;
+  margin-top: 8px;
+}
+
+.total-text {
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+}
+
+.grand-total-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.grand-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  border-top: 2px solid #333;
+  padding-top: 8px;
+  margin-top: 10px;
+}
+
+.footer {
+  text-align: center;
+  padding: 15px 0;
+  border-top: 1px solid #ddd;
+  color: #666;
+  background: white;
+}
+
+.powered-by {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  gap: 6px;
+  color: #666;
+  font-size: 12px;
+}
+
+.footer-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.compact-spacing {
+  margin-bottom: 15px;
+}
+
+.compact-spacing:last-child {
+  margin-bottom: 0;
+}
+
+.provider-logo {
+  text-align: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.header-logo {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+@media print {
+  .invoice-container {
+    min-height: 100vh;
+  }
+  
+  .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin-top: 0;
+  }
+}

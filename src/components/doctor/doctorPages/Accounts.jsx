@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Card,
   Table,
@@ -8,7 +8,6 @@ import {
   Row,
   Col,
   Button,
-  DatePicker,
   Select,
   Input,
   Divider,
@@ -24,29 +23,36 @@ import {
   SearchOutlined,
   DownloadOutlined,
   EyeOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { apiGet, apiPost } from "../../../components/api";
 import "../../stylings/Accounts.css";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import moment from 'moment';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 const AccountsPage = () => {
   // Get user data from Redux
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  const datePickerRef = useRef(null);
 
   // State for filters
-  const [filterDate, setFilterDate] = useState([]);
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
   const [filterService, setFilterService] = useState();
   const [filterStatus, setFilterStatus] = useState("");
   const [searchText, setSearchText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-const navigate = useNavigate();
+  const navigate = useNavigate();
+
   // Data state
   const [transactions, setTransactions] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -65,6 +71,14 @@ const navigate = useNavigate();
     pendingTransactions: 0,
     recentTransactions: [],
   });
+
+  // Function to format display date
+  const formatDisplayDate = () => {
+    if (startDate && endDate) {
+      return `${moment(startDate).format('MMM D, YYYY')} - ${moment(endDate).format('MMM D, YYYY')}`;
+    }
+    return 'Select a date range';
+  };
 
   // Function to group transactions by patient name
   const groupTransactions = (transactions) => {
@@ -127,7 +141,6 @@ const navigate = useNavigate();
     date: txn.paidAt ? dayjs(txn.paidAt).format("DD-MMM-YYYY") : "-",
     service: txn.services || getServiceName(txn.paymentFrom),
     amount: txn.groupedCount > 1 ? txn.groupedAmount : (txn.finalAmount !== undefined ? txn.finalAmount : txn.actualAmount || 0),
-    // amount: txn.groupedAmount || txn.finalAmount || txn.actualAmount,
     status: txn.statuses || txn.paymentStatus || "-",
     paymentMethod: txn.paymentMethods || (txn.paymentMethod
       ? txn.paymentMethod.charAt(0).toUpperCase() + txn.paymentMethod.slice(1)
@@ -137,7 +150,6 @@ const navigate = useNavigate();
     allTransactions: txn.allTransactions || [txn],
   }));
 
-  console.log("transactions===",transactions)
   function getServiceName(paymentFrom) {
     switch (paymentFrom) {
       case "appointments":
@@ -192,9 +204,9 @@ const navigate = useNavigate();
       doctorId: doctorId,
     };
 
-    if (filterDate && filterDate.length === 2) {
-      payload.startDate = dayjs(filterDate[0]).format("YYYY-MM-DD");
-      payload.endDate = dayjs(filterDate[1]).format("YYYY-MM-DD");
+    if (startDate && endDate) {
+      payload.startDate = moment(startDate).format("YYYY-MM-DD");
+      payload.endDate = moment(endDate).format("YYYY-MM-DD");
     }
 
     try {
@@ -208,7 +220,7 @@ const navigate = useNavigate();
     } finally {
       setLoading(false);
     }
-  }, [doctorId, filterDate, filterService, filterStatus, searchText, currentPage]);
+  }, [doctorId, startDate, endDate, filterService, filterStatus, searchText, currentPage]);
 
   useEffect(() => {
     fetchTransactions();
@@ -548,7 +560,6 @@ const navigate = useNavigate();
               className="clickable-card-container"
               onClick={() => {
                 navigate("/doctor/doctorPages/TotalExpenditure");
-                // window.location.href = "/doctor/doctorPages/TotalExpenditure";
               }}
             >
               <Card className="summary-card clickable">
@@ -566,30 +577,6 @@ const navigate = useNavigate();
               </Card>
             </div>
           </Col>
-
-          {/* <Col xs={24} sm={12} md={6}>
-            <div
-              className="clickable-card-container"
-              onClick={() => {
-                window.location.href =
-                  "/doctor/doctorPages/PendingTransactions";
-              }}
-            >
-              <Card className="summary-card clickable">
-                <div className="card-icon-container">
-                  <div className="card-icon orange">
-                    <ClockCircleOutlined className="card-icon-inner" />
-                  </div>
-                </div>
-                <div>
-                  <Text className="card-amount">
-                    {accountSummary.pendingTransactions}
-                  </Text>
-                  <div className="card-label">Pending Transactions</div>
-                </div>
-              </Card>
-            </div>
-          </Col> */}
 
           <Col xs={24} sm={12} md={8}>
             <Card className="summary-card">
@@ -640,13 +627,42 @@ const navigate = useNavigate();
                 />
               </Col>
               <Col>
-                <RangePicker
-                  placeholder={["Start Date", "End Date"]}
-                  className="date-picker"
-                  onChange={setFilterDate}
-                  value={filterDate}
-                  allowClear
-                />
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <CalendarTodayIcon style={{ marginRight: '8px', color: '#1977f3' }} />
+                  <DatePicker
+                    ref={datePickerRef}
+                    selected={startDate}
+                    onChange={(dates) => {
+                      const [start, end] = dates;
+                      setStartDate(start);
+                      setEndDate(end);
+                    }}
+                    startDate={startDate}
+                    endDate={endDate}
+                    selectsRange
+                    isClearable
+                    placeholderText="Select a date range"
+                    className="custom-datepicker"
+                    maxDate={new Date()}
+                    customInput={
+                      <Button
+                        style={{
+                          borderRadius: '8px',
+                          border: '1px solid #d9d9d9',
+                          padding: '8px 16px',
+                          width: '250px',
+                          textAlign: 'left',
+                          backgroundColor: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}
+                      >
+                        <span>{formatDisplayDate()}</span>
+                      </Button>
+                    }
+                  />
+                </div>
               </Col>
               <Col>
                 <Select
