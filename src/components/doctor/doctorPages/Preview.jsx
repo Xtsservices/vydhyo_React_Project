@@ -216,6 +216,8 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     }
   };
 
+  console.log("Selected Clinic:", selectedClinic?.headerImage);
+
   return (
     <div>
       <ToastContainer />
