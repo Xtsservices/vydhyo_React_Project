@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Card, Typography, Button, DatePicker } from "antd";
+import { Card, Typography, Button } from "antd";
+import { DatePicker as AntDatePicker } from "antd";
 import {
   UserOutlined,
   LeftOutlined,
@@ -12,10 +13,12 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { apiGet } from "../../api";
-
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const { Title, Text } = Typography;
-const { RangePicker } = DatePicker;
+const { RangePicker } = AntDatePicker;
 
 // Sample feedback data
 const feedbacks = [
@@ -1241,12 +1244,23 @@ const ClinicAvailability = ({
     </Card>
   );
 };
+
 const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeChange }) => {
+  const datePickerRef = useRef(null);
+  
+  const formatDisplayDate = () => {
+    if (startDate && endDate) {
+      return `${moment(startDate).format('MMM D, YYYY')} - ${moment(endDate).format('MMM D, YYYY')}`;
+    }
+    return 'Select a date range';
+  };
+
   const handleDateChange = (dates) => {
-    if (dates && dates.length === 2) {
-      const start = dates[0].format('YYYY-MM-DD');
-      const end = dates[1].format('YYYY-MM-DD');
-      onDateRangeChange(start, end);
+    const [start, end] = dates;
+    if (start && end) {
+      const startFormatted = moment(start).format('YYYY-MM-DD');
+      const endFormatted = moment(end).format('YYYY-MM-DD');
+      onDateRangeChange(startFormatted, endFormatted);
     }
   };
 
@@ -1258,15 +1272,13 @@ const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeCha
         boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
         background: "white",
         marginTop: "2rem",
+        minWidth: "300px",
       }}
       bodyStyle={{ padding: "24px" }}
     >
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "24px",
+          marginBottom: "16px", // Space between title and date picker
         }}
       >
         <Title
@@ -1277,22 +1289,44 @@ const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeCha
             color: "#1a1a1a",
             fontSize: "18px",
             fontFamily: "Poppins, sans-serif",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
           }}
         >
           Revenue Summary
         </Title>
-       
+        <div style={{ display: "flex", alignItems: "center", marginTop: "8px" }}>
+          <CalendarTodayIcon style={{ marginRight: '8px', color: '#1977f3' }} />
+          <ReactDatePicker
+            ref={datePickerRef}
+            selected={startDate ? moment(startDate).toDate() : null}
+            onChange={handleDateChange}
+            startDate={startDate ? moment(startDate).toDate() : null}
+            endDate={endDate ? moment(endDate).toDate() : null}
+            selectsRange
+            isClearable
+            placeholderText="Select a date range"
+            maxDate={new Date()}
+            customInput={
+              <Button
+                style={{
+                  borderRadius: '8px',
+                  border: '1px solid #d9d9d9',
+                  padding: '8px 16px',
+                  width: '250px',
+                  textAlign: 'left',
+                  backgroundColor: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <span>{formatDisplayDate()}</span>
+              </Button>
+            }
+          />
+        </div>
       </div>
-       <RangePicker
-  className="date-picker"
-  placeholder={["Start Date", "End Date"]}
-  value={[moment(startDate), moment(endDate)]}
-  onChange={handleDateChange}
-  disabledDate={(current) => {
-    return current && current > moment().endOf('day');
-  }}
-  allowClear
-/>
       <div style={{ textAlign: "center" }}>
         <PieChart data={revenueSummaryData} />
       </div>
@@ -1494,7 +1528,7 @@ const DoctorDashboard = () => {
       console.error("Error fetching revenue summary:", error);
       setRevenueSummaryData([
         { label: "Appointment", value: 0, color: "#4285f4" },
-        { label: "Lab", value: 0, color: "#34a853" },
+        { label: "Lab", value: 0, color: "##34a853" },
         { label: "Pharmacy", value: 0, color: "#fbbc04" },
       ]);
     }

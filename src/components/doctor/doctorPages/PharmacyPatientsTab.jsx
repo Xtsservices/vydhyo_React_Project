@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Typography,
@@ -13,8 +13,10 @@ import {
   Popconfirm,
   Empty,
   Pagination,
+  Modal,
+  Descriptions,
 } from "antd";
-import { CheckOutlined, CreditCardOutlined } from "@ant-design/icons";
+import { CheckOutlined, CreditCardOutlined, PrinterOutlined, EyeOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { apiGet, apiPost } from "../../api";
 import { toast, ToastContainer } from "react-toastify";
@@ -25,7 +27,7 @@ const { Panel } = Collapse;
 
 const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTrigger }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5); // Default to API's limit
+  const [pageSize, setPageSize] = useState(5);
   const [loading, setLoading] = useState(false);
   const [patientData, setPatientData] = useState([]);
   const [totalPatients, setTotalPatients] = useState(0);
@@ -35,6 +37,9 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
   const [saving, setSaving] = useState({});
   const [paying, setPaying] = useState({});
   const [isPaymentDone, setIsPaymentDone] = useState({});
+  const [pharmacyDetails, setPharmacyDetails] = useState(null);
+  const [isPharmacyModalVisible, setIsPharmacyModalVisible] = useState(false);
+  const [loadingPharmacyDetails, setLoadingPharmacyDetails] = useState(false);
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
@@ -50,6 +55,37 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
       })
       .filter(Boolean);
   }
+
+  const fetchPharmacyDetails = async (addressId) => {
+    try {
+      setLoadingPharmacyDetails(true);
+      const response = await apiGet(
+        `/users/getPharmacyByClinicId/${addressId}`
+      );
+
+      if (response?.status === 200 && response?.data?.data) {
+        return response.data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching pharmacy details:", error);
+      toast.error(
+        error.response?.data?.message || "Error fetching pharmacy details",
+        { position: "top-right", autoClose: 5000 }
+      );
+      return null;
+    } finally {
+      setLoadingPharmacyDetails(false);
+    }
+  };
+
+  const showPharmacyDetails = async (addressId) => {
+    const details = await fetchPharmacyDetails(addressId);
+    if (details) {
+      setPharmacyDetails(details);
+      setIsPharmacyModalVisible(true);
+    }
+  };
 
   const fetchPharmacyPatients = async (page = 1, limit = pageSize) => {
     try {
@@ -71,7 +107,6 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
       if (response?.status === 200 && response?.data?.data) {
         dataArray = await filterPatientsData(response.data.data.patients);
 
-        // Sort by patientId numeric part descending
         dataArray.sort((a, b) => {
           const getIdNumber = (id) => parseInt(id.replace(/\D/g, "")) || 0;
           return getIdNumber(b.patientId) - getIdNumber(a.patientId);
@@ -97,11 +132,16 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
             patientId: patient.patientId || `PAT-${index}`,
             doctorId: patient.doctorId || "N/A",
             name: patient.patientName || "Unknown Patient",
-            medicines: patient.medicines || [],
+            medicines: patient.medicines.map(med => ({
+              ...med,
+              patientId: patient.patientId
+            })) || [],
             totalMedicines: patient.medicines?.length || 0,
             totalAmount: totalAmount,
             status: status,
             originalData: patient,
+            pharmacyData: patient.pharmacyData || null,
+            addressId: patient.addressId || null,
           };
         });
 
@@ -211,7 +251,6 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
         return;
       }
 
-      // Check if all medicine prices are confirmed (not in editable state)
       const hasUnconfirmedPrices = patient.medicines.some(med => 
         editablePrices.includes(med._id) && 
         (med.price !== null && med.price !== undefined)
@@ -259,6 +298,173 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
     }
   };
 
+  const handlePrint = (patient) => {
+    const { originalData, pharmacyData, medicines } = patient;
+    const totalAmount = medicines.reduce(
+      (sum, med) => sum + (med.price || 0) * (med.quantity || 1),
+      0
+    );
+
+    const gstDetails = medicines.map(med => {
+      const subtotal = (med.price || 0) * (med.quantity || 1);
+      const gstRate = med.gst || 0;
+      const cgstRate = med.cgst || 0;
+      
+      const gstAmount = subtotal * (gstRate / (100 + gstRate + cgstRate));
+      const cgstAmount = subtotal * (cgstRate / (100 + gstRate + cgstRate));
+      
+      return {
+        medName: med.medName,
+        price: med.price,
+        quantity: med.quantity,
+        gst: gstRate,
+        cgst: cgstRate,
+        subtotal,
+        gstAmount,
+        cgstAmount
+      };
+    });
+
+    const totalGST = gstDetails.reduce((sum, item) => sum + item.gstAmount, 0);
+    const totalCGST = gstDetails.reduce((sum, item) => sum + item.cgstAmount, 0);
+    const grandTotal = totalAmount;
+
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Invoice</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 0; margin: 0; }
+              .invoice-container { max-width: 900px; margin: 0 auto; }
+              .header { 
+                width: 100%; 
+                padding: 10px 0; 
+                background-color: #f5f5f5; 
+                border-bottom: 2px solid #1890ff; 
+                box-sizing: border-box;
+              }
+              .header-logo { 
+                width: 100%; 
+                height: auto; 
+                max-height: 120px; 
+                object-fit: contain;
+                display: block;
+              }
+              .title { text-align: center; font-size: 28px; font-weight: bold; color: #1890ff; margin: 20px 0; text-transform: uppercase; }
+              .info-section { display: flex; justify-content: space-between; padding: 0 20px 20px 20px; font-size: 14px; }
+              .patient-info p, .pharmacy-info p { margin: 4px 0; }
+              table { width: 100%; border-collapse: collapse; margin: 20px; }
+              th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; font-size: 14px; }
+              th { background-color: #fafafa; font-weight: bold; }
+              .total-section { padding: 20px; text-align: right; background: #f9f9f9; border-top: 2px solid #1890ff; clear: both; }
+              .total-section table { width: 300px; float: right; border: none; margin: 0; }
+              .total-section td { border: none; padding: 8px; font-weight: bold; }
+              .footer { text-align: center; font-size: 12px; color: #666; padding: 20px; border-top: 1px solid #e0e0e0; clear: both; }
+            </style>
+          </head>
+          <body>
+            <div class="invoice-container">
+              <div class="header">
+                ${pharmacyData?.pharmacyHeaderUrl ? `
+                  <img 
+                    src="${pharmacyData.pharmacyHeaderUrl}" 
+                    class="header-logo"
+                    alt="Pharmacy Header"
+                    onload="window.print()"
+                    onerror="this.style.display='none'; window.print()"
+                  />
+                ` : `
+                  <div style="font-size: 20px; font-weight: bold; color: #333; text-align: center; padding: 10px;">
+                    ${pharmacyData?.pharmacyName || 'Pharmacy'}
+                  </div>
+                `}
+              </div>
+
+              <div class="title">
+                TAX INVOICE
+              </div>
+
+              <div class="info-section">
+                <div class="patient-info">
+                  <p><strong>Patient Name:</strong> ${originalData.patientName}</p>
+                  <p><strong>Patient ID:</strong> ${originalData.patientId}</p>
+                  <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                </div>
+                <div class="pharmacy-info">
+                  ${pharmacyData?.pharmacyRegistrationNo ? `<p><strong>Reg No:</strong> ${pharmacyData.pharmacyRegistrationNo}</p>` : ''}
+                  ${pharmacyData?.pharmacyGst ? `<p><strong>GST:</strong> ${pharmacyData.pharmacyGst}</p>` : ''}
+                  ${pharmacyData?.pharmacyPan ? `<p><strong>PAN:</strong> ${pharmacyData.pharmacyPan}</p>` : ''}
+                  ${pharmacyData?.pharmacyAddress ? `<p><strong>Address:</strong> ${pharmacyData.pharmacyAddress}</p>` : ''}
+                </div>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Medicine</th>
+                    <th>Price (Incl. GST)</th>
+                    <th>Qty</th>
+                    <th>GST %</th>
+                    <th>CGST %</th>
+                    <th>Subtotal (Incl. GST)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${gstDetails.map((item, index) => `
+                    <tr key=${index}>
+                      <td>${item.medName}</td>
+                      <td>₹${item.price?.toFixed(2) || '0.00'}</td>
+                      <td>${item.quantity}</td>
+                      <td>${item.gst}%</td>
+                      <td>${item.cgst}%</td>
+                      <td>₹${item.subtotal.toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+
+              <div class="total-section">
+                <table>
+                  <tr>
+                    <td><strong>Total GST:</strong></td>
+                    <td>₹${totalGST.toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Total CGST:</strong></td>
+                    <td>₹${totalCGST.toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Grand Total (Incl. GST):</strong></td>
+                    <td>₹${grandTotal.toFixed(2)}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div class="footer">
+                Thank you for your purchase!<br />
+                All sales are final. Please contact us for any inquiries.
+              </div>
+            </div>
+            <script>
+              // Auto-print after the image loads or fails to load
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                  window.close();
+                }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else {
+      alert('Please allow popups for this site to print the invoice.');
+    }
+  };
+
   const medicineColumns = [
     {
       title: "Medicine Name",
@@ -269,7 +475,7 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
     {
       title: "Price",
       key: "price",
-      render: (_, medicine, index, patientId) => {
+      render: (_, medicine) => {
         const isEditable = editablePrices.includes(medicine._id);
         const isPriceInitiallyNull = medicine.price === null || medicine.price === undefined;
         return (
@@ -284,12 +490,12 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
                 (!isEditable && !isPriceInitiallyNull)
               }
               onFocus={() => !isEditable && enableEdit(medicine._id)}
-              onChange={(value) => handlePriceChange(patientId, medicine._id, value)}
+              onChange={(value) => handlePriceChange(medicine.patientId, medicine._id, value)}
             />
             <Button
               type="primary"
               icon={<CheckOutlined />}
-              onClick={() => handlePriceSave(patientId, medicine._id)}
+              onClick={() => handlePriceSave(medicine.patientId, medicine._id)}
               disabled={
                 medicine.price === null ||
                 medicine.price === undefined ||
@@ -358,7 +564,6 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
         </div>
       ),
     },
-    
     {
       title: "Status",
       dataIndex: "status",
@@ -375,11 +580,24 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
       key: "action",
       width: 120,
       render: (_, record) => (
-        <Button type="link" onClick={() => toggleCollapse(record.patientId)}>
-          {expandedKeys.includes(record.patientId)
-            ? "Hide Medicines"
-            : "View Medicines"}
-        </Button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <Button 
+            type="link" 
+            onClick={() => toggleCollapse(record.patientId)}
+          >
+            {expandedKeys.includes(record.patientId)
+              ? "Hide Medicines"
+              : "View Medicines"}
+          </Button>
+          {record.addressId && (
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => showPharmacyDetails(record.addressId)}
+              title="View Pharmacy Details"
+            />
+          )}
+        </div>
       ),
     },
   ];
@@ -438,12 +656,11 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
                   <Collapse defaultActiveKey={["1"]} style={{ background: "#f9fafb", borderRadius: "6px", border: "1px solid #e5e7eb" }}>
                     <Panel header="Medicine Details" key="1" style={{ background: "#ffffff", borderRadius: "6px", border: "none" }}>
                       <Table
-                        columns={medicineColumns.map((col) => ({
-                          ...col,
-                          render: (text, medicine, index) =>
-                            col.render ? col.render(text, medicine, index, record.patientId) : text,
+                        columns={medicineColumns}
+                        dataSource={record.medicines.map(med => ({
+                          ...med,
+                          key: med._id
                         }))}
-                        dataSource={record.medicines}
                         rowKey="_id"
                         pagination={false}
                         style={{ marginBottom: "16px" }}
@@ -453,31 +670,11 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
                           <Text strong style={{ marginRight: "16px" }}>
                             Total Amount: ₹ {totalAmount.toFixed(2)}
                           </Text>
-                          <Popconfirm
-                            title="Confirm Payment"
-                            description={
-                              <div style={{ textAlign: "center" }}>
-                                <Typography.Text>
-                                  Cash ₹{totalAmount.toFixed(2)}
-                                </Typography.Text>
-                              </div>
-                            }
-                            onConfirm={() => handlePayment(record.patientId)}
-                            okText="Payment Done"
-                            cancelText="Cancel"
-                            disabled={isPaymentDone[record.patientId] || status === "completed"}
-                          >
+                          {status === "completed" ? (
                             <Button
                               type="primary"
-                              icon={<CreditCardOutlined />}
-                              loading={paying[record.patientId]}
-                              disabled={
-                                totalAmount <= 0 ||
-                                paying[record.patientId] ||
-                                !hasPending ||
-                                isPaymentDone[record.patientId] ||
-                                status === "completed"
-                              }
+                              icon={<PrinterOutlined />}
+                              onClick={() => handlePrint(record)}
                               style={{
                                 background: "#1A3C6A",
                                 borderColor: "#1A3C6A",
@@ -485,17 +682,53 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
                                 marginTop: 8,
                               }}
                             >
-                              {hasPending && !isPaymentDone[record.patientId] && status !== "completed"
-                                ? "Process Payment"
-                                : "Paid"}
+                              Print Invoice
                             </Button>
-                          </Popconfirm>
+                          ) : (
+                            <Popconfirm
+                              title="Confirm Payment"
+                              description={
+                                <div style={{ textAlign: "center" }}>
+                                  <Typography.Text>
+                                    Cash ₹{totalAmount.toFixed(2)}
+                                  </Typography.Text>
+                                </div>
+                              }
+                              onConfirm={() => handlePayment(record.patientId)}
+                              okText="Payment Done"
+                              cancelText="Cancel"
+                              disabled={isPaymentDone[record.patientId] || status === "completed"}
+                            >
+                              <Button
+                                type="primary"
+                                icon={<CreditCardOutlined />}
+                                loading={paying[record.patientId]}
+                                disabled={
+                                  totalAmount <= 0 ||
+                                  paying[record.patientId] ||
+                                  !hasPending ||
+                                  isPaymentDone[record.patientId] ||
+                                  status === "completed"
+                                }
+                                style={{
+                                  background: "#1A3C6A",
+                                  borderColor: "#1A3C6A",
+                                  color: "white",
+                                  marginTop: 8,
+                                }}
+                              >
+                                {hasPending && !isPaymentDone[record.patientId] && status !== "completed"
+                                  ? "Process Payment"
+                                  : "Paid"}
+                              </Button>
+                            </Popconfirm>
+                          )}
                         </Col>
                       </Row>
                     </Panel>
                   </Collapse>
                 );
-              },
+              }
             }}
           />
 
@@ -518,6 +751,58 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
           </div>
         </Spin>
       </Card>
+
+      {/* Pharmacy Details Modal */}
+      <Modal
+        title="Pharmacy Details"
+        visible={isPharmacyModalVisible}
+        onCancel={() => setIsPharmacyModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setIsPharmacyModalVisible(false)}>
+            Close
+          </Button>,
+        ]}
+        width={800}
+      >
+        <Spin spinning={loadingPharmacyDetails}>
+          {pharmacyDetails ? (
+            <Descriptions bordered column={2}>
+              <Descriptions.Item label="Pharmacy Name" span={2}>
+                {pharmacyDetails.pharmacyName}
+              </Descriptions.Item>
+              <Descriptions.Item label="Registration Number">
+                {pharmacyDetails.pharmacyRegistrationNo || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="GST Number">
+                {pharmacyDetails.pharmacyGst || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="PAN Number">
+                {pharmacyDetails.pharmacyPan || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Address" span={2}>
+                {pharmacyDetails.pharmacyAddress || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Contact Number">
+                {pharmacyDetails.pharmacyContactNo || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Email">
+                {pharmacyDetails.pharmacyEmail || "N/A"}
+              </Descriptions.Item>
+              {pharmacyDetails.pharmacyHeaderUrl && (
+                <Descriptions.Item label="Header Image" span={2}>
+                  <img
+                    src={pharmacyDetails.pharmacyHeaderUrl}
+                    alt="Pharmacy Header"
+                    style={{ maxWidth: "100%", maxHeight: "200px" }}
+                  />
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+          ) : (
+            <Empty description="No pharmacy details found" />
+          )}
+        </Spin>
+      </Modal>
     </div>
   );
 };

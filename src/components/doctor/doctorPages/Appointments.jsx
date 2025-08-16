@@ -39,6 +39,9 @@ import { apiGet, apiPost } from "../../api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector } from "react-redux";
+import DateRangePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -79,6 +82,9 @@ const Appointment = () => {
     pageSize: 5,
     total: 0,
   });
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const datePickerRef = useRef(null);
 
   const getStatusTag = (status) => {
     const statusConfig = {
@@ -404,6 +410,9 @@ const Appointment = () => {
   };
 
   const handleDateRangeChange = (dates) => {
+    const [start, end] = dates;
+    setStartDate(start);
+    setEndDate(end);
     setFilters((prev) => ({
       ...prev,
       dateRange: dates,
@@ -415,6 +424,13 @@ const Appointment = () => {
       ...prev,
       selectedFilterDate: date,
     }));
+  };
+
+  const formatDisplayDate = () => {
+    if (startDate && endDate) {
+      return `${moment(startDate).format('MMM D, YYYY')} - ${moment(endDate).format('MMM D, YYYY')}`;
+    }
+    return 'Select a date range';
   };
 
   const renderActionMenu = (record) => (
@@ -541,22 +557,45 @@ const Appointment = () => {
                   View all your schedules and appointments in one place
                 </Text>
               </Col>
-
             </Row>
 
             <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', padding: '4px' }}>
-
               <br />
               <Col span={24}>
-                <RangePicker
-                  value={filters.dateRange}
-                  onChange={handleDateRangeChange}
-                  style={{ width: '50%' }}
-                  disabledDate={(current) => {
-                    return current && current > moment().endOf('day');
-                  }}
-                  allowClear={true}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', marginRight: '0.5rem' }}>
+                  <CalendarTodayIcon style={{ marginRight: '8px', color: '#1977f3' }} />
+                  <div style={{ position: 'relative' }}>
+                    <DateRangePicker
+                      ref={datePickerRef}
+                      selected={startDate}
+                      onChange={handleDateRangeChange}
+                      startDate={startDate}
+                      endDate={endDate}
+                      selectsRange
+                      isClearable
+                      placeholderText="Select a date range"
+                      className="custom-datepicker"
+                      maxDate={new Date()}
+                      customInput={
+                        <Button
+                          style={{
+                            borderRadius: '8px',
+                            border: '1px solid #d9d9d9',
+                            padding: '8px 16px',
+                            width: '250px',
+                            textAlign: 'left',
+                            backgroundColor: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}
+                        >
+                          <span>{formatDisplayDate()}</span>
+                        </Button>
+                      }
+                    />
+                  </div>
+                </div>
               </Col>
               <br />
 
@@ -662,10 +701,11 @@ const Appointment = () => {
                 <Select
                   className="filters-select"
                   value={filters.status}
-                  onChange={(value) => handleFilterChange("type", value)}
+                  onChange={(value) => handleFilterChange("status", value)}
                 >
                   <Option value="all">All Status</Option>
                   <Option value="scheduled">Scheduled</Option>
+                  <Option value="completed">Completed</Option>
                   <Option value="cancelled">Cancelled</Option>
                 </Select>
               </Col>

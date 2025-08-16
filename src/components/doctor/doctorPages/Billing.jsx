@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
-import DownloadTaxInvoice from "../../Models/DownloadTaxInvoice";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {debounce} from '../../../utils'
+import { debounce } from "../../../utils";
+import "../../stylings/invoice-styles.css";
 
 // Utility function to calculate age from DOB
 const calculateAge = (dob) => {
@@ -12,7 +12,7 @@ const calculateAge = (dob) => {
   try {
     const [day, month, year] = dob.split("-").map(Number);
     const dobDate = new Date(year, month - 1, day);
-    const today = new Date(2025, 6, 17); // July 17, 2025
+    const today = new Date();
     let age = today.getFullYear() - dobDate.getFullYear();
     const monthDiff = today.getMonth() - dobDate.getMonth();
     if (
@@ -45,17 +45,22 @@ const transformPatientData = (result, user) => {
       appointmentFees: appointment?.feeDetails?.finalAmount || 0,
       addressId: appointment.addressId,
       clinicName: appointment.addressId
-        ? user?.addresses?.find((addr) => addr.addressId === appointment.addressId)
-            ?.clinicName || "N/A"
+        ? user?.addresses?.find(
+            (addr) => addr.addressId === appointment.addressId
+          )?.clinicName || "N/A"
         : "N/A",
-      appointmentDate: appointment.appointmentDate 
-        ? new Date(appointment.appointmentDate).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
+      appointmentDate: appointment.appointmentDate
+        ? new Date(appointment.appointmentDate).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
           })
         : "N/A",
       appointmentTime: appointment.appointmentTime || "N/A",
+      status: appointment.status
+        ? appointment.status.charAt(0).toUpperCase() +
+          appointment.status.slice(1)
+        : "Pending",
     }));
 
     const totalTestAmount = tests.reduce(
@@ -82,12 +87,12 @@ const transformPatientData = (result, user) => {
       mobile: patient.mobile || "Not Provided",
       bloodgroup: patient.bloodgroup || "Not Specified",
       prescriptionCreatedAt: patient.prescriptionCreatedAt
-        ? new Date(patient.prescriptionCreatedAt).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+        ? new Date(patient.prescriptionCreatedAt).toLocaleString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
           })
         : "N/A",
       appointmentDetails,
@@ -101,14 +106,15 @@ const transformPatientData = (result, user) => {
           test.status?.charAt(0).toUpperCase() + test.status?.slice(1) ||
           "Unknown",
         createdDate: test.createdAt
-          ? new Date(test.createdAt).toLocaleString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
+          ? new Date(test.createdAt).toLocaleString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
             })
           : "N/A",
+        labDetails: test.labDetails || {},
       })),
       medicines: medicines.map((med, idx) => ({
         id: `M${index}${idx}`,
@@ -123,14 +129,15 @@ const transformPatientData = (result, user) => {
           med.status?.charAt(0).toUpperCase() + med.status?.slice(1) ||
           "Unknown",
         createdDate: med.createdAt
-          ? new Date(med.createdAt).toLocaleString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
+          ? new Date(med.createdAt).toLocaleString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
             })
           : "N/A",
+        pharmacyDetails: med.pharmacyDetails || {},
       })),
       totalTestAmount,
       totalMedicineAmount,
@@ -141,21 +148,24 @@ const transformPatientData = (result, user) => {
 };
 
 const BillingSystem = () => {
-  const hasfetchPatients = useRef(false)
+  const hasfetchPatients = useRef(false);
   const debouncedMarkAsPaidMap = useRef({});
 
   const [patients, setPatients] = useState([]);
   const [expandedPatients, setExpandedPatients] = useState({});
+  const [expandedSections, setExpandedSections] = useState({});
   const [billingCompleted, setBillingCompleted] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
   const maxRetries = 3;
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 5,
     total: 0,
   });
+  const [viewModePatientId, setViewModePatientId] = useState(null);
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
@@ -165,6 +175,16 @@ const BillingSystem = () => {
     console.log("Computing transformedPatients", { patients, user });
     return transformPatientData(patients, user);
   }, [patients, user]);
+
+  // Filter patients based on search term
+  const filteredPatients = useMemo(() => {
+    if (!searchTerm) return transformedPatients;
+    return transformedPatients.filter(
+      (patient) =>
+        patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        patient.patientId.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [transformedPatients, searchTerm]);
 
   const fetchPatients = async (page = 1, pageSize = 5) => {
     if (!user || !doctorId) {
@@ -218,7 +238,7 @@ const BillingSystem = () => {
 
   useEffect(() => {
     if (user && doctorId) {
-      hasfetchPatients.current = true
+      hasfetchPatients.current = true;
       fetchPatients(pagination.current, pagination.pageSize);
     } else {
       setLoading(false);
@@ -226,14 +246,15 @@ const BillingSystem = () => {
     }
   }, [user, doctorId, pagination.current, pagination.pageSize]);
 
-  const handlePatientExpand = (patientId) => {
-    setExpandedPatients((prev) => ({
+  const handleSectionExpand = (patientId, section) => {
+    const key = `${patientId}-${section}`;
+    setExpandedSections((prev) => ({
       ...prev,
-      [patientId]: !prev[patientId],
+      [key]: !prev[key],
     }));
   };
 
-  const calculateTotals = (patient) => {
+  const calculateSectionTotals = (patient) => {
     const medicineTotal = patient.medicines.reduce(
       (sum, med) =>
         sum +
@@ -245,26 +266,55 @@ const BillingSystem = () => {
         sum + (test.status === "Pending" && test.price ? test.price : 0),
       0
     );
-    const grandTotal = medicineTotal + testTotal;
-    return { medicineTotal, testTotal, grandTotal };
+    const appointmentTotal = patient.appointmentDetails.reduce(
+      (sum, appt) =>
+        sum +
+        (appt.status === "Pending" && appt.appointmentFees
+          ? appt.appointmentFees
+          : 0),
+      0
+    );
+    return { medicineTotal, testTotal, appointmentTotal };
   };
 
-  const handleMarkAsPaid = async (patientId) => {
-    if (isPaymentInProgress[patientId]) return;
+  const handleMarkAsPaid = async (patientId, type) => {
+    if (isPaymentInProgress[`${patientId}-${type}`]) return;
 
-    setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: true }));
+    setIsPaymentInProgress((prev) => ({
+      ...prev,
+      [`${patientId}-${type}`]: true,
+    }));
     const patient = transformedPatients.find((p) => p.id === patientId);
-    if (!patient) return;
+    if (!patient) {
+      setIsPaymentInProgress((prev) => ({
+        ...prev,
+        [`${patientId}-${type}`]: false,
+      }));
+      return;
+    }
 
-    const pendingTests = patient.tests.filter(
-      (test) => test.status === "Pending"
-    );
-    const pendingMedicines = patient.medicines.filter(
-      (med) => med.status === "Pending"
-    );
+    let pendingTests = [];
+    let pendingMedicines = [];
+
+    if (type === "pharmacy") {
+      pendingMedicines = patient.medicines.filter(
+        (med) => med.status === "Pending"
+      );
+    } else if (type === "labs") {
+      pendingTests = patient.tests.filter((test) => test.status === "Pending");
+    } else if (type === "all") {
+      pendingTests = patient.tests.filter((test) => test.status === "Pending");
+      pendingMedicines = patient.medicines.filter(
+        (med) => med.status === "Pending"
+      );
+    }
 
     if (pendingTests.length === 0 && pendingMedicines.length === 0) {
-      toast.error("No pending tests or medicines to pay for.");
+      toast.error(`No pending ${type === "all" ? "items" : type} to pay for.`);
+      setIsPaymentInProgress((prev) => ({
+        ...prev,
+        [`${patientId}-${type}`]: false,
+      }));
       return;
     }
 
@@ -290,8 +340,12 @@ const BillingSystem = () => {
         })),
     };
 
-    if (payload.medicines.length === 0 && payload.tests.length === 0) {
+    if (payload.tests.length === 0 && payload.medicines.length === 0) {
       toast.error("At least one test or medicine must be provided.");
+      setIsPaymentInProgress((prev) => ({
+        ...prev,
+        [`${patientId}-${type}`]: false,
+      }));
       return;
     }
 
@@ -304,16 +358,18 @@ const BillingSystem = () => {
       if (response.status === 200) {
         setPatients((prevPatients) =>
           prevPatients.map((p) =>
-            p.id === patientId
+            p.patientId === patient.patientId
               ? {
                   ...p,
                   tests: p.tests.map((test) =>
-                    test.status === "Pending"
+                    test.status === "Pending" &&
+                    (type === "labs" || type === "all")
                       ? { ...test, status: "Completed" }
                       : test
                   ),
                   medicines: p.medicines.map((med) =>
-                    med.status === "Pending"
+                    med.status === "Pending" &&
+                    (type === "pharmacy" || type === "all")
                       ? { ...med, status: "Completed" }
                       : med
                   ),
@@ -322,49 +378,577 @@ const BillingSystem = () => {
           )
         );
 
-        setBillingCompleted((prev) => ({ ...prev, [patientId]: true }));
-        toast.success("Payment processed successfully!");
+        setBillingCompleted((prev) => ({
+          ...prev,
+          [patientId]: {
+            ...prev[patientId],
+            [type]: true,
+          },
+        }));
+        toast.success(
+          `Payment processed successfully for ${
+            type === "all"
+              ? "all items"
+              : type === "pharmacy"
+              ? "pharmacy"
+              : "labs"
+          }!`
+        );
       } else {
-        setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: false }));
         throw new Error("Failed to process payment");
       }
     } catch (err) {
       console.error("Error processing payment:", err);
       toast.error("Failed to process payment. Please try again.");
-      setIsPaymentInProgress((prev) => ({ ...prev, [patientId]: false }));
+    } finally {
+      setIsPaymentInProgress((prev) => ({
+        ...prev,
+        [`${patientId}-${type}`]: false,
+      }));
     }
   };
 
-  const handlePayClick = (patientId) => {
-    if (!debouncedMarkAsPaidMap.current[patientId]) {
-      debouncedMarkAsPaidMap.current[patientId] = debounce(
-        () => handleMarkAsPaid(patientId),
+  const handlePayClick = (patientId, type = "all") => {
+    const key = `${patientId}-${type}`;
+    if (!debouncedMarkAsPaidMap.current[key]) {
+      debouncedMarkAsPaidMap.current[key] = debounce(
+        () => handleMarkAsPaid(patientId, type),
         1000
       );
     }
-    debouncedMarkAsPaidMap.current[patientId]();
+    debouncedMarkAsPaidMap.current[key]();
   };
 
-  const handlePageChange = (page, pageSize) => {
+  const handlePrintInvoice = (type, patientId) => {
+    const patient = transformedPatients.find((p) => p.id === patientId);
+    if (!patient) return;
+
+    let provider = {};
+    let headerUrl = "";
+    let providerName = "N/A";
+    let contactInfoHTML = "";
+    let sectionHTML = "";
+    let total = 0;
+
+    const patientNumber = patient.patientId.replace(/\D/g, "");
+    const invoiceNumber = `INV-${patientNumber.padStart(3, "0")}`;
+    const billingDate = new Date().toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+    const billingTime = new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    if (type === "pharmacy") {
+      const completedMedicines = patient.medicines.filter(
+        (med) => med.status === "Completed"
+      );
+      const pharmacy = patient.medicines[0]?.pharmacyDetails || {};
+      headerUrl = pharmacy.pharmacyHeaderUrl || "";
+      providerName = pharmacy.pharmacyName || "N/A";
+      contactInfoHTML = `
+        <p>${pharmacy.pharmacyAddress || "N/A"}</p>
+        <p>GST: ${pharmacy.pharmacyGst || "N/A"}</p>
+        <p>PAN: ${pharmacy.pharmacyPan || "N/A"}</p>
+        <p>Registration No: ${pharmacy.pharmacyRegistrationNo || "N/A"}</p>
+      `;
+      total = completedMedicines.reduce(
+        (sum, med) => sum + med.price * med.quantity,
+        0
+      );
+      if (completedMedicines.length > 0) {
+        sectionHTML = `
+          <div class="section compact-spacing">
+            <h3 class="section-title">Medicines</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Quantity</th>
+                  <th>Price (₹)</th>
+                  <th>Subtotal (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${completedMedicines
+                  .map(
+                    (med) => `
+                  <tr>
+                    <td>${med.id}</td>
+                    <td>${med.name}</td>
+                    <td>${med.quantity}</td>
+                    <td>${med.price.toFixed(2)}</td>
+                    <td>${(med.price * med.quantity).toFixed(2)}</td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            <div class="section-total">
+              <p class="total-text">Medicine Total: ₹${total.toFixed(2)}</p>
+            </div>
+          </div>
+        `;
+      }
+    } else if (type === "labs") {
+      const completedTests = patient.tests.filter(
+        (test) => test.status === "Completed"
+      );
+      const lab = patient.tests[0]?.labDetails || {};
+      headerUrl = lab.labHeaderUrl || "";
+      providerName = lab.labName || "N/A";
+      contactInfoHTML = `
+        <p>${lab.labAddress || "N/A"}</p>
+        <p>GST: ${lab.labGst || "N/A"}</p>
+        <p>PAN: ${lab.labPan || "N/A"}</p>
+        <p>Registration No: ${lab.labRegistrationNo || "N/A"}</p>
+      `;
+      total = completedTests.reduce((sum, test) => sum + test.price, 0);
+      if (completedTests.length > 0) {
+        sectionHTML = `
+          <div class="section compact-spacing">
+            <h3 class="section-title">Tests</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Price (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${completedTests
+                  .map(
+                    (test) => `
+                  <tr>
+                    <td>${test.id}</td>
+                    <td>${test.name}</td>
+                    <td class="price-column">${test.price.toFixed(2)}</td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            <div class="section-total">
+              <p class="total-text">Test Total: ₹${total.toFixed(2)}</p>
+            </div>
+          </div>
+        `;
+      }
+    } else if (type === "appointments") {
+      const completedAppointments = patient.appointmentDetails.filter(
+        (appt) => appt.status === "Completed"
+      );
+      const appointment = patient.appointmentDetails[0] || {};
+      const clinic =
+        user?.addresses?.find(
+          (addr) => addr.addressId === appointment.addressId
+        ) || {};
+      headerUrl = "";
+      providerName = clinic.clinicName || "N/A";
+      contactInfoHTML = `
+        <p>${clinic.address || "N/A"}</p>
+        <p>${clinic.city || "N/A"}, ${clinic.state || "N/A"} ${
+        clinic.pincode || "N/A"
+      }</p>
+        <p>Phone: ${clinic.mobile || "N/A"}</p>
+      `;
+      total = completedAppointments.reduce(
+        (sum, appt) => sum + appt.appointmentFees,
+        0
+      );
+      if (completedAppointments.length > 0) {
+        sectionHTML = `
+          <div class="section compact-spacing">
+            <h3 class="section-title">Appointments</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Clinic</th>
+                  <th>Price (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${completedAppointments
+                  .map(
+                    (appt) => `
+                  <tr>
+                    <td>${appt.appointmentId}</td>
+                    <td>${appt.appointmentType}</td>
+                    <td>${appt.appointmentDate}</td>
+                    <td>${appt.appointmentTime}</td>
+                    <td>${appt.clinicName}</td>
+                    <td class="price-column">${appt.appointmentFees.toFixed(
+                      2
+                    )}</td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            <div class="section-total">
+              <p class="total-text">Appointment Total: ₹${total.toFixed(2)}</p>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    const headerHTML = headerUrl
+      ? `<div class="provider-logo"><img class="header-logo" src="${headerUrl}" alt="Header Logo" /></div>`
+      : "";
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Invoice</title>
+          <style>
+            html, body {
+              margin: 0;
+              padding: 0;
+              font-family: Arial, sans-serif;
+              background: white;
+              font-size: 14px;
+            }
+
+            @page {
+              margin: 0;
+              size: A4;
+            }
+
+            @media print {
+              @page {
+                margin: 0;
+                size: A4;
+              }
+              
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              
+              /* Hide browser default headers and footers */
+              @page {
+                margin-top: 0;
+                margin-bottom: 0;
+                margin-header: 0;
+                margin-footer: 0;
+              }
+            }
+
+            .invoice-container {
+              padding: 15px;
+              max-width: 210mm;
+              margin: 0 auto;
+            }
+
+            .invoice-content {
+              flex: 1;
+            }
+
+            .invoice-title-section {
+              text-align: center;
+              margin-top: 30px;
+              margin-bottom: 20px;
+            }
+
+            .main-invoice-title {
+              font-size: 28px;
+              font-weight: bold;
+              color: #333;
+              margin: 0;
+            }
+
+            .invoice-header-section {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 20px;
+              padding-bottom: 15px;
+              border-bottom: 2px solid #eee;
+            }
+
+            .provider-info {
+              text-align: left;
+            }
+
+            .provider-name {
+              font-size: 20px;
+              font-weight: bold;
+              color: #333;
+              margin-bottom: 8px;
+            }
+
+            .contact-info p {
+              margin: 3px 0;
+              color: #666;
+            }
+
+            .invoice-details-top {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 20px;
+              padding: 12px;
+              background-color: #f8f9fa;
+              border-radius: 5px;
+            }
+
+            .invoice-detail-item {
+              font-size: 14px;
+            }
+
+            .section {
+              margin-bottom: 20px;
+            }
+
+            .section-title {
+              font-size: 16px;
+              font-weight: bold;
+              color: #333;
+              margin-bottom: 10px;
+              padding-bottom: 5px;
+              border-bottom: 1px solid #ddd;
+            }
+
+            .patient-info {
+              display: flex;
+              justify-content: space-between;
+              background-color: #f8f9fa;
+              padding: 12px;
+              border-radius: 5px;
+            }
+
+            .patient-info p {
+              margin: 3px 0;
+            }
+
+            .data-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 10px;
+            }
+
+            .data-table th, .data-table td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+
+            .data-table th {
+              background-color: #f8f9fa;
+              font-weight: bold;
+            }
+
+            .price-column {
+              text-align: right;
+            }
+
+            .section-total {
+              text-align: right;
+              margin-top: 8px;
+            }
+
+            .total-text {
+              font-weight: bold;
+              font-size: 14px;
+              color: #333;
+            }
+
+            .grand-total-section {
+              margin-top: 20px;
+              padding: 15px;
+              background-color: #f8f9fa;
+              border-radius: 5px;
+            }
+
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 8px;
+              font-size: 14px;
+            }
+
+            .grand-total-row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 16px;
+              font-weight: bold;
+              color: #333;
+              border-top: 2px solid #333;
+              padding-top: 8px;
+              margin-top: 10px;
+            }
+
+            .footer {
+              text-align: center;
+              padding: 15px 0;
+              border-top: 1px solid #ddd;
+              color: #666;
+              background: white;
+            }
+
+            .powered-by {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-top: 8px;
+              gap: 6px;
+              color: #666;
+              font-size: 12px;
+            }
+
+            .footer-logo {
+              width: 18px;
+              height: 18px;
+              object-fit: contain;
+            }
+
+            /* Compact spacing for better space utilization */
+            .compact-spacing {
+              margin-bottom: 15px;
+            }
+
+            .compact-spacing:last-child {
+              margin-bottom: 0;
+            }
+
+            .provider-logo {
+              text-align: center;
+              margin-bottom: 10px;
+              width: 100%;
+            }
+
+            .header-logo {
+              width: 100%;
+              height: 150px;
+              object-fit: cover;
+              display: block;
+              margin: 0;
+              padding: 0;
+            }
+
+            /* Print specific styles */
+            @media print {
+              .invoice-container {
+                min-height: 100vh;
+              }
+              
+              .footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                margin-top: 0;
+              }
+            }
+          </style>
+        </head>
+        <body onload="window.print();window.close();">
+          <div class="invoice-container">
+            <div class="invoice-content">
+              ${headerHTML}
+
+              <div class="invoice-header-section compact-spacing">
+                <div class="provider-info">
+                  <div class="provider-name">${providerName}</div>
+                  <div class="contact-info">
+                    <p>Doctor: ${user?.firstname || "N/A"} ${
+      user?.lastname || "N/A"
+    }</p>
+                  </div>
+                </div>
+                <div class="invoice-details">
+                  <div class="invoice-detail-item"><strong>Invoice No:</strong> #${invoiceNumber}</div>
+                  <div class="invoice-detail-item"><strong>Date:</strong> ${billingDate}</div>
+                  <div class="invoice-detail-item"><strong>Time:</strong> ${billingTime}</div>
+                </div>
+              </div>
+
+              <div class="provider-details">
+                ${contactInfoHTML}
+              </div>
+
+              <div class="section compact-spacing">
+                <h3 class="section-title">Patient Information</h3>
+                <div class="patient-info">
+                  <div>
+                    <p><strong>Patient ID:</strong> ${patient.patientId}</p>
+                    <p><strong>First Name:</strong> ${patient.firstname}</p>
+                    <p><strong>Last Name:</strong> ${patient.lastname}</p>
+                    <p><strong>Mobile:</strong> ${patient.mobile}</p>
+                  </div>
+                  <div>
+                    <p><strong>Age:</strong> ${patient.age}</p>
+                    <p><strong>Gender:</strong> ${patient.gender}</p>
+                  </div>
+                </div>
+              </div>
+
+              ${sectionHTML}
+
+              <div class="grand-total-section">
+                <div class="grand-total-row">
+                  <span>Grand Total:</span>
+                  <span>₹${total.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p>Thank you for choosing Vydhyo</p>
+              <div class="powered-by">
+                <img src="../assets/logo.png" alt="Vydhyo Logo" class="footer-logo">
+                <span>Powered by Vydhyo</span>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+  };
+
+  const handlePageChange = (page) => {
     setPagination((prev) => ({
       ...prev,
       current: page,
-      pageSize: pageSize,
     }));
+  };
+
+  const handleViewClick = (patientId) => {
+    setViewModePatientId(viewModePatientId === patientId ? null : patientId);
   };
 
   if (loading) {
     return (
-      <div style={{
+      <div
+        style={{
           fontFamily: "Arial, sans-serif",
           padding: "20px",
-          backgroundColor: "#f5f5f5",
+          backgroundColor: "#f8f9fa",
           minHeight: "100vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-        }}>
-        <div style={{
+        }}
+      >
+        <div
+          style={{
             maxWidth: "1200px",
             margin: "0 auto",
             backgroundColor: "white",
@@ -372,8 +956,10 @@ const BillingSystem = () => {
             boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
             padding: "30px",
             textAlign: "center",
-          }}>
-          <div style={{
+          }}
+        >
+          <div
+            style={{
               border: "4px solid #007bff",
               borderRadius: "50%",
               width: "40px",
@@ -381,7 +967,8 @@ const BillingSystem = () => {
               borderTopColor: "transparent",
               animation: "spin 1s linear infinite",
               margin: "0 auto 20px",
-            }}/>
+            }}
+          />
           <p style={{ fontSize: "18px", color: "#666" }}>Loading patients...</p>
           <style>{`
             @keyframes spin {
@@ -396,16 +983,19 @@ const BillingSystem = () => {
 
   if (error) {
     return (
-      <div style={{
+      <div
+        style={{
           fontFamily: "Arial, sans-serif",
           padding: "20px",
-          backgroundColor: "#f5f5f5",
+          backgroundColor: "#f8f9fa",
           minHeight: "100vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-        }}>
-        <div style={{
+        }}
+      >
+        <div
+          style={{
             maxWidth: "1200px",
             margin: "0 auto",
             backgroundColor: "white",
@@ -413,22 +1003,27 @@ const BillingSystem = () => {
             boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
             padding: "30px",
             textAlign: "center",
-          }}>
-          <h1 style={{
+          }}
+        >
+          <h1
+            style={{
               color: "#333",
               marginBottom: "30px",
               fontSize: "28px",
               fontWeight: "bold",
-            }}>
-            Patient Billing System
+            }}
+          >
+            Billing
           </h1>
-          <p style={{ fontSize: "18px", color: "#721c24", marginBottom: "20px" }}>
+          <p
+            style={{ fontSize: "18px", color: "#721c24", marginBottom: "20px" }}
+          >
             {error}
           </p>
           <button
             onClick={() => {
               setRetryCount(0);
-              hasfetchPatients.current = false
+              hasfetchPatients.current = false;
               fetchPatients(pagination.current, pagination.pageSize);
             }}
             style={{
@@ -451,16 +1046,19 @@ const BillingSystem = () => {
 
   if (!user || !doctorId) {
     return (
-      <div style={{
+      <div
+        style={{
           fontFamily: "Arial, sans-serif",
           padding: "20px",
-          backgroundColor: "#f5f5f5",
+          backgroundColor: "#f8f9fa",
           minHeight: "100vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-        }}>
-        <div style={{
+        }}
+      >
+        <div
+          style={{
             maxWidth: "1200px",
             margin: "0 auto",
             backgroundColor: "white",
@@ -468,14 +1066,17 @@ const BillingSystem = () => {
             boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
             padding: "30px",
             textAlign: "center",
-          }}>
-          <h1 style={{
+          }}
+        >
+          <h1
+            style={{
               color: "#333",
               marginBottom: "30px",
               fontSize: "28px",
               fontWeight: "bold",
-            }}>
-            Patient Billing System
+            }}
+          >
+            Billing
           </h1>
           <p style={{ fontSize: "18px", color: "#666" }}>
             Waiting for user data to load...
@@ -487,16 +1088,19 @@ const BillingSystem = () => {
 
   if (transformedPatients.length === 0) {
     return (
-      <div style={{
+      <div
+        style={{
           fontFamily: "Arial, sans-serif",
           padding: "20px",
-          backgroundColor: "#f5f5f5",
+          backgroundColor: "#f8f9fa",
           minHeight: "100vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-        }}>
-        <div style={{
+        }}
+      >
+        <div
+          style={{
             maxWidth: "1200px",
             margin: "0 auto",
             backgroundColor: "white",
@@ -504,14 +1108,17 @@ const BillingSystem = () => {
             boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
             padding: "30px",
             textAlign: "center",
-          }}>
-          <h1 style={{
+          }}
+        >
+          <h1
+            style={{
               color: "#333",
               marginBottom: "30px",
               fontSize: "28px",
               fontWeight: "bold",
-            }}>
-            Patient Billing System
+            }}
+          >
+            Billing
           </h1>
           <p style={{ fontSize: "18px", color: "#666" }}>
             No patients found for this doctor.
@@ -519,7 +1126,7 @@ const BillingSystem = () => {
           <button
             onClick={() => {
               setRetryCount(0);
-              hasfetchPatients.current = false
+              hasfetchPatients.current = false;
               fetchPatients(pagination.current, pagination.pageSize);
             }}
             style={{
@@ -542,701 +1149,1232 @@ const BillingSystem = () => {
   }
 
   return (
-    <div style={{
-        fontFamily: "Arial, sans-serif",
-        padding: "_year",
-        backgroundColor: "#f5f5f5",
+    <div
+      style={{
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        padding: "24px",
+        backgroundColor: "#f8f9fa",
         minHeight: "100vh",
-      }}>
-      <div style={{
+      }}
+    >
+      <div
+        style={{
           maxWidth: "1200px",
           margin: "0 auto",
-          backgroundColor: "white",
-          borderRadius: "8px",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-          padding: "30px",
-        }}>
-        <h1 style={{
-            color: "#333",
-            marginBottom: "30px",
-            textAlign: "center",
-            fontSize: "28px",
-            fontWeight: "bold",
-          }}>
-          Patient Billing System
+        }}
+      >
+        <h1
+          style={{
+            color: "#1a1a1a",
+            marginBottom: "24px",
+            fontSize: "24px",
+            fontWeight: "600",
+          }}
+        >
+          Billing
         </h1>
 
-        <table style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            marginBottom: "20px",
-          }}>
-          <thead>
-            <tr style={{ backgroundColor: "#f8f9fa" }}>
-              <th style={{
-                  padding: "12px 15px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #ddd",
-                  fontWeight: "bold",
-                }}></th>
-              <th style={{
-                  padding: "12px 15px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #ddd",
-                  fontWeight: "bold",
-                }}>
-                Patient ID
-              </th>
-              <th style={{
-                  padding: "12px 15px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #ddd",
-                  fontWeight: "bold",
-                }}>
-                Patient Name
-              </th>
-              <th style={{
-                  padding: "12px 15px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #ddd",
-                  fontWeight: "bold",
-                }}>
-                Mobile
-              </th>
-              <th style={{
-                  padding: "12px 15px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #ddd",
-                  fontWeight: "bold",
-                }}>
-                Age
-              </th>
-              <th style={{
-                  padding: "12px 15px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #ddd",
-                  fontWeight: "bold",
-                }}>
-                Gender
-              </th>
-              <th style={{
-                  padding: "12px 15px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #ddd",
-                  fontWeight: "bold",
-                }}>
-                Prescription Date
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {transformedPatients.map((patient) => {
-              const totals = calculateTotals(patient);
-              return (
-                <React.Fragment key={patient.id}>
-                  <tr style={{
-                      borderBottom: "1px solid #eee",
-                      backgroundColor: expandedPatients[patient.id]
-                        ? "#f0f8ff"
-                        : "white",
-                    }}>
-                    <td style={{ padding: "12px 15px" }}>
-                      <button
-                        onClick={() => handlePatientExpand(patient.id)}
+        {/* Search Bar */}
+        <div
+          style={{
+            marginBottom: "24px",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <div style={{ position: "relative", width: "400px" }}>
+            <input
+              type="text"
+              placeholder="Search patient by name or ID"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 40px 10px 16px",
+                border: "1px solid #e1e5e9",
+                borderRadius: "6px",
+                fontSize: "14px",
+                outline: "none",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#9ca3af",
+              }}
+            >
+              🔍
+            </div>
+          </div>
+        </div>
+
+        {/* Patient Cards */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {filteredPatients.map((patient) => {
+            const totals = calculateSectionTotals(patient);
+            const grandTotal =
+              totals.medicineTotal + totals.testTotal + totals.appointmentTotal;
+            const isViewMode = viewModePatientId === patient.id;
+
+            return (
+              <div
+                key={patient.id}
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Patient Header */}
+                <div
+                  style={{
+                    backgroundColor: "#f8f9fa",
+                    padding: "0",
+                  }}
+                >
+                  {/* Table Header */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "200px 120px 60px 80px 120px 120px",
+                      padding: "12px 16px",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      color: "#6b7280",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      borderBottom: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <div>Patient Name</div>
+                    <div>Patient ID</div>
+                    <div>Age</div>
+                    <div>Gender</div>
+                    <div>Last Visit</div>
+                    <div>Action</div>
+                  </div>
+
+                  {/* Patient Row */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "200px 120px 60px 80px 120px 120px",
+                      padding: "16px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <div
                         style={{
-                          background: "#007bff",
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                          backgroundColor: "#e5e7eb",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "16px",
+                          fontWeight: "600",
+                          color: "#374151",
+                        }}
+                      >
+                        {patient.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontWeight: "500", color: "#1f2937" }}>
+                        {patient.name}
+                      </span>
+                    </div>
+                    <div style={{ color: "#6b7280" }}>{patient.patientId}</div>
+                    <div style={{ color: "#6b7280" }}>{patient.age}</div>
+                    <div style={{ color: "#6b7280" }}>{patient.gender}</div>
+                    <div style={{ color: "#6b7280" }}>
+                      {patient.prescriptionCreatedAt}
+                    </div>
+                    <div>
+                      <button
+                        onClick={() => handleViewClick(patient.id)}
+                        style={{
+                          backgroundColor: "#007bff",
                           color: "white",
                           border: "none",
                           borderRadius: "4px",
-                          padding: "8px 12px",
+                          padding: "6px 12px",
                           cursor: "pointer",
-                          fontSize: "14px",
-                          fontWeight: "bold",
+                          fontSize: "12px",
                         }}
                       >
-                        {expandedPatients[patient.id] ? "−" : "+"}
+                        View
                       </button>
-                    </td>
-                    <td style={{ padding: "12px 15px" }}>
-                      {patient.patientId}
-                    </td>
-                    <td style={{ padding: "12px 15px", fontWeight: "500" }}>
-                      {patient.name}
-                    </td>
-                    <td style={{ padding: "12px 15px" }}>{patient.mobile}</td>
-                    <td style={{ padding: "12px 15px" }}>{patient.age}</td>
-                    <td style={{ padding: "12px 15px" }}>{patient.gender}</td>
-                    <td style={{ padding: "12px 15px" }}>{patient.prescriptionCreatedAt}</td>
-                  </tr>
+                    </div>
+                  </div>
+                </div>
 
-                  {expandedPatients[patient.id] && (
-                    <tr>
-                      <td colSpan="8" style={{ padding: "0" }}>
-                        <div style={{
+                {/* Expandable Sections (only shown in view mode) */}
+                {isViewMode && (
+                  <div style={{ padding: "0 16px 16px 16px" }}>
+                    {/* Pharmacy Section */}
+                    {patient.medicines.length > 0 && (
+                      <div
+                        style={{
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          marginBottom: "12px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            padding: "12px 16px",
                             backgroundColor: "#f8f9fa",
-                            padding: "20px",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                            margin: "10px",
-                          }}>
-                          <div style={{
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                          onClick={() =>
+                            handleSectionExpand(patient.id, "pharmacy")
+                          }
+                        >
+                          <div
+                            style={{
                               display: "flex",
-                              justifyContent: "space-between",
                               alignItems: "center",
-                              marginBottom: "20px",
-                            }}>
-                            <h3 style={{
-                                margin: "0",
-                                color: "#333",
-                                fontSize: "20px",
-                              }}>
-                              Patient Details
-                            </h3>
-                            <button
-                              onClick={() => handlePatientExpand(patient.id)}
+                              gap: "12px",
+                            }}
+                          >
+                            <div
                               style={{
-                                background: "none",
-                                border: "none",
-                                fontSize: "18px",
-                                cursor: "pointer",
-                                color: "#666",
+                                width: "32px",
+                                height: "32px",
+                                borderRadius: "8px",
+                                backgroundColor: "#3b82f6",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "white",
+                                fontSize: "16px",
                               }}
                             >
-                              ✕
-                            </button>
-                          </div>
-
-                          {/* Patient Info */}
-                          <div style={{
-                              backgroundColor: "white",
-                              padding: "15px",
-                              borderRadius: "4px",
-                              marginBottom: "20px",
-                              border: "1px solid #ddd",
-                            }}>
-                            <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>
-                              Patient Information
-                            </h4>
-                            <div style={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 1fr",
-                                gap: "10px",
-                              }}>
-                              <p style={{ margin: "5px 0" }}>
-                                <strong>Patient ID:</strong> {patient.patientId}
-                              </p>
-                              <p style={{ margin: "5px 0" }}>
-                                <strong>First Name:</strong> {patient.firstname}
-                              </p>
-                              <p style={{ margin: "5px 0" }}>
-                                <strong>Last Name:</strong> {patient.lastname}
-                              </p>
-                              <p style={{ margin: "5px 0" }}>
-                                <strong>Age:</strong> {patient.age}
-                              </p>
-                              <p style={{ margin: "5px 0" }}>
-                                <strong>Gender:</strong> {patient.gender}
-                              </p>
-                              <p style={{ margin: "5px 0" }}>
-                                <strong>Mobile:</strong> {patient.mobile}
-                              </p>
-                              <p style={{ margin: "5px 0" }}>
-                                <strong>Prescription Date:</strong> {patient.prescriptionCreatedAt}
-                              </p>
+                              💊
                             </div>
-                          </div>
-
-                          {/* Appointment Details Section */}
-                          {patient.appointmentDetails.length > 0 && (
-                            <div style={{
-                                backgroundColor: "white",
-                                padding: "15px",
-                                borderRadius: "4px",
-                                marginBottom: "20px",
-                                border: "1px solid #ddd",
-                              }}>
-                              <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
-                                Appointment Details
-                              </h4>
-                              <table style={{
-                                  width: "100%",
-                                  borderCollapse: "collapse",
-                                }}>
-                                <thead>
-                                  <tr>
-                                    <th style={{
-                                        padding: "12px 15px",
-                                        borderBottom: "1px solid #ddd",
-                                        textAlign: "left",
-                                      }}>
-                                      AppointmentId
-                                    </th>
-                                    <th style={{
-                                        padding: "12px 15px",
-                                        borderBottom: "1px solid #ddd",
-                                        textAlign: "left",
-                                      }}>
-                                      Appointment Type
-                                    </th>
-                                    <th style={{
-                                        padding: "12px 15px",
-                                        borderBottom: "1px solid #ddd",
-                                        textAlign: "left",
-                                      }}>
-                                      Date
-                                    </th>
-                                    <th style={{
-                                        padding: "12px 15px",
-                                        borderBottom: "1px solid #ddd",
-                                        textAlign: "left",
-                                      }}>
-                                      Time
-                                    </th>
-                                    <th style={{
-                                        padding: "12px 15px",
-                                        borderBottom: "1px solid #ddd",
-                                        textAlign: "left",
-                                      }}>
-                                      Clinic Name
-                                    </th>
-                                    <th style={{
-                                        padding: "12px 15px",
-                                        borderBottom: "1px solid #ddd",
-                                        textAlign: "left",
-                                      }}>
-                                      Price (₹)
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {patient.appointmentDetails.map(
-                                    (appointment, index) => (
-                                      <tr key={index}>
-                                        <td style={{ padding: "12px 15px" }}>
-                                          {appointment.appointmentId}
-                                        </td>
-                                        <td style={{ padding: "12px 15px" }}>
-                                          {appointment.appointmentType}
-                                        </td>
-                                        <td style={{ padding: "12px 15px" }}>
-                                          {appointment.appointmentDate}
-                                        </td>
-                                        <td style={{ padding: "12px 15px" }}>
-                                          {appointment.appointmentTime}
-                                        </td>
-                                        <td style={{ padding: "12px 15px" }}>
-                                          {appointment.clinicName}
-                                        </td>
-                                        <td style={{ padding: "12px 15px" }}>
-                                          {appointment.appointmentFees}
-                                        </td>
-                                      </tr>
-                                    )
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                          {/* Medicines Section */}
-                          {patient.medicines.length > 0 && (
-                            <div style={{
-                                backgroundColor: "white",
-                                padding: "15px",
-                                borderRadius: "4px",
-                                marginBottom: "20px",
-                                border: "1px solid #ddd",
-                              }}>
-                              <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
-                                Medicines Prescribed
-                              </h4>
-                              <table style={{
-                                  width: "100%",
-                                  borderCollapse: "collapse",
-                                }}>
-                                <thead>
-                                  <tr style={{ backgroundColor: "#f8f9fa" }}>
-                                    <th style={{
-                                        padding: "10px",
-                                        textAlign: "left",
-                                        borderBottom: "1px solid #ddd",
-                                      }}>
-                                      Medicine Name
-                                    </th>
-                                    <th style={{
-                                        padding: "10px",
-                                        textAlign: "left",
-                                        borderBottom: "1px solid #ddd",
-                                      }}>
-                                      Quantity
-                                    </th>
-                                    <th style={{
-                                        padding: "10px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #ddd",
-                                      }}>
-                                      Price (₹)
-                                    </th>
-                                    <th style={{
-                                        padding: "10px",
-                                        textAlign: "center",
-                                        borderBottom: "1px solid #ddd",
-                                      }}>
-                                      Status
-                                    </th>
-                                    <th style={{
-                                        padding: "10px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #ddd",
-                                      }}>
-                                      Gst (₹)
-                                    </th>
-                                    <th style={{
-                                        padding: "10px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #ddd",
-                                      }}>
-                                      Cgst (₹)
-                                    </th>
-                                    <th style={{
-                                        padding: "10px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #ddd",
-                                      }}>
-                                      Created Date
-                                    </th>
-                                    <th style={{
-                                        padding: "10px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #ddd",
-                                      }}>
-                                      Subtotal (₹)
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {patient.medicines.map((medicine) => (
-                                    <tr key={medicine.id}>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                        }}>
-                                        {medicine.name}
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                        }}>
-                                        {medicine.quantity}
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "right",
-                                        }}>
-                                        {medicine.price
-                                          ? medicine.price.toFixed(2)
-                                          : "N/A"}
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "center",
-                                        }}>
-                                        <span style={{
-                                            padding: "4px 8px",
-                                            borderRadius: "12px",
-                                            fontSize: "12px",
-                                            fontWeight: "bold",
-                                            backgroundColor:
-                                              medicine.status === "Pending"
-                                                ? "#fff3cd"
-                                                : "#d4edda",
-                                            color:
-                                              medicine.status === "Pending"
-                                                ? "#856404"
-                                                : "#155724",
-                                          }}>
-                                          {medicine.status}
-                                        </span>
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                        }}>
-                                        {medicine.gst}
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                        }}>
-                                        {medicine.cgst}
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                        }}>
-                                        {medicine.createdDate}
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "right",
-                                        }}>
-                                        {medicine.price
-                                          ? (
-                                              medicine.quantity * medicine.price
-                                            ).toFixed(2)
-                                          : "N/A"}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                              <div style={{
-                                  textAlign: "right",
-                                  marginTop: "10px",
-                                }}>
-                                <strong>
-                                  Medicine Total: ₹
-                                  {patient.totalMedicineAmount.toFixed(2)}
-                                </strong>
+                            <div>
+                              <div
+                                style={{ fontWeight: "500", color: "#1f2937" }}
+                              >
+                                Pharmacy
+                              </div>
+                              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                                View medicines and billing
                               </div>
                             </div>
-                          )}
+                          </div>
+                          <div style={{ color: "#6b7280", fontSize: "18px" }}>
+                            {expandedSections[`${patient.id}-pharmacy`]
+                              ? "−"
+                              : ">"}
+                          </div>
+                        </div>
 
-                          {/* Tests Section */}
-                          <div style={{
-                              backgroundColor: "white",
-                              padding: "15px",
-                              borderRadius: "4px",
-                              marginBottom: "20px",
-                              border: "1px solid #ddd",
-                            }}>
-                            <h4 style={{ margin: "0 0 15px 0", color: "#333" }}>
-                              Tests Conducted
-                            </h4>
-                            <table style={{
+                        {expandedSections[`${patient.id}-pharmacy`] && (
+                          <div style={{ padding: "16px" }}>
+                            <table
+                              style={{
                                 width: "100%",
                                 borderCollapse: "collapse",
-                              }}>
+                              }}
+                            >
                               <thead>
                                 <tr style={{ backgroundColor: "#f8f9fa" }}>
-                                  <th style={{
-                                      padding: "10px",
+                                  <th
+                                    style={{
+                                      padding: "8px",
                                       textAlign: "left",
-                                      borderBottom: "1px solid #ddd",
-                                    }}>
-                                    Test Name
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Medicine Name
                                   </th>
-                                  <th style={{
-                                      padding: "10px",
-                                      textAlign: "right",
-                                      borderBottom: "1px solid #ddd",
-                                    }}>
-                                    Price (₹)
-                                  </th>
-                                  <th style={{
-                                      padding: "10px",
+                                  <th
+                                    style={{
+                                      padding: "8px",
                                       textAlign: "center",
-                                      borderBottom: "1px solid #ddd",
-                                    }}>
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Quantity
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "right",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Unit Price
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "center",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
                                     Status
                                   </th>
-                                  <th style={{
-                                      padding: "10px",
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "right",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Gst
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "right",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Cgst
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "center",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Created Date
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "right",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Subtotal
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {patient.medicines.map((medicine) => (
+                                  <tr key={medicine.id}>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {medicine.name}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "center",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {medicine.quantity}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {medicine.price
+                                        ? medicine.price.toFixed(2)
+                                        : "N/A"}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "center",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          padding: "2px 8px",
+                                          borderRadius: "12px",
+                                          fontSize: "11px",
+                                          fontWeight: "600",
+                                          backgroundColor:
+                                            medicine.status === "Pending"
+                                              ? "#fef3c7"
+                                              : "#dcfce7",
+                                          color:
+                                            medicine.status === "Pending"
+                                              ? "#92400e"
+                                              : "#166534",
+                                        }}
+                                      >
+                                        {medicine.status}
+                                      </span>
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {medicine.gst}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {medicine.cgst}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "center",
+                                        borderBottom: "1px solid #f3f4f6",
+                                        fontSize: "12px",
+                                      }}
+                                    >
+                                      {medicine.createdDate}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {medicine.price
+                                        ? (
+                                            medicine.quantity * medicine.price
+                                          ).toFixed(2)
+                                        : "N/A"}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginTop: "16px",
+                                paddingTop: "16px",
+                                borderTop: "1px solid #f3f4f6",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontSize: "18px",
+                                  fontWeight: "600",
+                                  color: "#1f2937",
+                                }}
+                              >
+                                Grand Total
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "18px",
+                                  fontWeight: "600",
+                                  color: "#10b981",
+                                }}
+                              >
+                                ₹{totals.medicineTotal.toFixed(2)}
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: "12px",
+                                marginTop: "16px",
+                              }}
+                            >
+                              <button
+                                onClick={() =>
+                                  handlePrintInvoice("pharmacy", patient.id)
+                                }
+                                style={{
+                                  backgroundColor: "#3b82f6",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  padding: "8px 16px",
+                                  fontSize: "14px",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                }}
+                              >
+                                🖨️ Print Invoice
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handlePayClick(patient.id, "pharmacy")
+                                }
+                                disabled={
+                                  totals.medicineTotal === 0 ||
+                                  isPaymentInProgress[
+                                    `${patient.id}-pharmacy`
+                                  ] ||
+                                  billingCompleted[patient.id]?.pharmacy
+                                }
+                                style={{
+                                  backgroundColor:
+                                    totals.medicineTotal === 0 ||
+                                    isPaymentInProgress[
+                                      `${patient.id}-pharmacy`
+                                    ] ||
+                                    billingCompleted[patient.id]?.pharmacy
+                                      ? "#d1d5db"
+                                      : "#28a745",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  padding: "8px 16px",
+                                  fontSize: "14px",
+                                  cursor:
+                                    totals.medicineTotal === 0 ||
+                                    isPaymentInProgress[
+                                      `${patient.id}-pharmacy`
+                                    ] ||
+                                    billingCompleted[patient.id]?.pharmacy
+                                      ? "not-allowed"
+                                      : "pointer",
+                                }}
+                              >
+                                {isPaymentInProgress[`${patient.id}-pharmacy`]
+                                  ? "Processing..."
+                                  : "Pay Pharmacy"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Labs Section */}
+                    {patient.tests.length > 0 && (
+                      <div
+                        style={{
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          marginBottom: "12px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            padding: "12px 16px",
+                            backgroundColor: "#f8f9fa",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                          onClick={() => handleSectionExpand(patient.id, "labs")}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "12px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "32px",
+                                height: "32px",
+                                borderRadius: "8px",
+                                backgroundColor: "#10b981",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "white",
+                                fontSize: "16px",
+                              }}
+                            >
+                              🧪
+                            </div>
+                            <div>
+                              <div
+                                style={{ fontWeight: "500", color: "#1f2937" }}
+                              >
+                                Labs
+                              </div>
+                              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                                View lab reports and billing
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ color: "#6b7280", fontSize: "18px" }}>
+                            {expandedSections[`${patient.id}-labs`] ? "−" : ">"}
+                          </div>
+                        </div>
+
+                        {expandedSections[`${patient.id}-labs`] && (
+                          <div style={{ padding: "16px" }}>
+                            <table
+                              style={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                              }}
+                            >
+                              <thead>
+                                <tr style={{ backgroundColor: "#f8f9fa" }}>
+                                  <th
+                                    style={{
+                                      padding: "8px",
                                       textAlign: "left",
-                                      borderBottom: "1px solid #ddd",
-                                    }}>
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Test Name
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "right",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Price (₹)
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "center",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Status
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "center",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
                                     Created Date
                                   </th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {patient.tests.length > 0 ? (
-                                  patient.tests.map((test) => (
-                                    <tr key={test.id}>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                        }}>
-                                        {test.name}
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "right",
-                                        }}>
-                                        {test.price
-                                          ? test.price
-                                          : "N/A"}
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "center",
-                                        }}>
-                                        <span style={{
-                                            padding: "4px 8px",
-                                            borderRadius: "12px",
-                                            fontSize: "12px",
-                                            fontWeight: "bold",
-                                            backgroundColor:
-                                              test.status === "Completed"
-                                                ? "#d4edda"
-                                                : test.status === "Pending"
-                                                ? "#fff3cd"
-                                                : "#f8d7da",
-                                            color:
-                                              test.status === "Completed"
-                                                ? "#155724"
-                                                : test.status === "Pending"
-                                                ? "#856404"
-                                                : "#721c24",
-                                          }}>
-                                          {test.status}
-                                        </span>
-                                      </td>
-                                      <td style={{
-                                          padding: "10px",
-                                          borderBottom: "1px solid #eee",
-                                        }}>
-                                        {test.createdDate}
-                                      </td>
-                                    </tr>
-                                  ))
-                                ) : (
-                                  <tr>
+                                {patient.tests.map((test) => (
+                                  <tr key={test.id}>
                                     <td
-                                      colSpan="4"
                                       style={{
-                                        padding: "10px",
-                                        textAlign: "center",
+                                        padding: "8px",
+                                        borderBottom: "1px solid #f3f4f6",
                                       }}
                                     >
-                                      No tests conducted
+                                      {test.name}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {test.price ? test.price.toFixed(2) : "N/A"}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "center",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          padding: "2px 8px",
+                                          borderRadius: "12px",
+                                          fontSize: "11px",
+                                          fontWeight: "600",
+                                          backgroundColor:
+                                            test.status === "Completed"
+                                              ? "#dcfce7"
+                                              : test.status === "Pending"
+                                              ? "#fef3c7"
+                                              : "#fee2e2",
+                                          color:
+                                            test.status === "Completed"
+                                              ? "#166534"
+                                              : test.status === "Pending"
+                                              ? "#92400e"
+                                              : "#dc2626",
+                                        }}
+                                      >
+                                        {test.status}
+                                      </span>
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "center",
+                                        borderBottom: "1px solid #f3f4f6",
+                                        fontSize: "12px",
+                                      }}
+                                    >
+                                      {test.createdDate}
                                     </td>
                                   </tr>
-                                )}
+                                ))}
                               </tbody>
                             </table>
-                            <div style={{ textAlign: "right", marginTop: "10px" }}>
-                              <strong>
-                                Test Total: ₹{" "}
-                                {patient.totalTestAmount.toFixed(2)}
-                              </strong>
-                            </div>
-                          </div>
 
-                          <div style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              backgroundColor: "#e9ecef",
-                              padding: "15px",
-                              borderRadius: "4px",
-                            }}>
-                            <div style={{
-                                fontSize: "18px",
-                                fontWeight: "bold",
-                                color: "#333",
-                              }}>
-                              Grand Total: ₹{patient.grandTotal.toFixed(2)}
-                            </div>
-                            <div>
-                              <DownloadTaxInvoice patient={patient} user={user} />
-                              <button
-                                onClick={() => handleMarkAsPaid(patient.id)}
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginTop: "16px",
+                                paddingTop: "16px",
+                                borderTop: "1px solid #f3f4f6",
+                              }}
+                            >
+                              <div
                                 style={{
-                                  background: "#28a745",
-                                  color: "white",
-                                  border: "none",
-                                  borderRadius: "4px",
-                                  padding: "10px 20px",
-                                  cursor:
-                                    totals.grandTotal > 0 &&
-                                    !isPaymentInProgress[patient.id] &&
-                                    !billingCompleted[patient.id]
-                                      ? "pointer"
-                                      : "not-allowed",
-                                  fontSize: "16px",
-                                  fontWeight: "bold",
-                                  marginLeft: "10px",
-                                  opacity:
-                                    totals.grandTotal > 0 &&
-                                    !isPaymentInProgress[patient.id] &&
-                                    !billingCompleted[patient.id]
-                                      ? 1
-                                      : 0.6,
-                                }}
-                                disabled={
-                                  totals.grandTotal <= 0 ||
-                                  isPaymentInProgress[patient.id] ||
-                                  billingCompleted[patient.id]
-                                }
-                                onMouseOver={(e) => {
-                                  if (totals.grandTotal <= 0) {
-                                    toast.info(
-                                      "No pending payments available for this patient."
-                                    );
-                                  }
+                                  fontSize: "18px",
+                                  fontWeight: "600",
+                                  color: "#1f2937",
                                 }}
                               >
-                                Pay
+                                Grand Total
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "18px",
+                                  fontWeight: "600",
+                                  color: "#10b981",
+                                }}
+                              >
+                                ₹{totals.testTotal.toFixed(2)}
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: "12px",
+                                marginTop: "16px",
+                              }}
+                            >
+                              <button
+                                onClick={() =>
+                                  handlePrintInvoice("labs", patient.id)
+                                }
+                                style={{
+                                  backgroundColor: "#3b82f6",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  padding: "8px 16px",
+                                  fontSize: "14px",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                }}
+                              >
+                                🖨️ Print Invoice
+                              </button>
+                              <button
+                                onClick={() => handlePayClick(patient.id, "labs")}
+                                disabled={
+                                  totals.testTotal === 0 ||
+                                  isPaymentInProgress[`${patient.id}-labs`] ||
+                                  billingCompleted[patient.id]?.labs
+                                }
+                                style={{
+                                  backgroundColor:
+                                    totals.testTotal === 0 ||
+                                    isPaymentInProgress[`${patient.id}-labs`] ||
+                                    billingCompleted[patient.id]?.labs
+                                      ? "#d1d5db"
+                                      : "#28a745",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  padding: "8px 16px",
+                                  fontSize: "14px",
+                                  cursor:
+                                    totals.testTotal === 0 ||
+                                    isPaymentInProgress[`${patient.id}-labs`] ||
+                                    billingCompleted[patient.id]?.labs
+                                      ? "not-allowed"
+                                      : "pointer",
+                                }}
+                              >
+                                {isPaymentInProgress[`${patient.id}-labs`]
+                                  ? "Processing..."
+                                  : "Pay Labs"}
                               </button>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+                        )}
+                      </div>
+                    )}
 
-        <div style={{
+                    {/* Appointment Types Section */}
+                    {patient.appointmentDetails.length > 0 && (
+                      <div
+                        style={{
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          marginBottom: "12px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            padding: "12px 16px",
+                            backgroundColor: "#f8f9fa",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                          onClick={() =>
+                            handleSectionExpand(patient.id, "appointments")
+                          }
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "12px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "32px",
+                                height: "32px",
+                                borderRadius: "8px",
+                                backgroundColor: "#8b5cf6",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "white",
+                                fontSize: "16px",
+                              }}
+                            >
+                              📅
+                            </div>
+                            <div>
+                              <div
+                                style={{ fontWeight: "500", color: "#1f2937" }}
+                              >
+                                Appointment Types
+                              </div>
+                              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                                View appointments and billing
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ color: "#6b7280", fontSize: "18px" }}>
+                            {expandedSections[`${patient.id}-appointments`]
+                              ? "−"
+                              : ">"}
+                          </div>
+                        </div>
+
+                        {expandedSections[`${patient.id}-appointments`] && (
+                          <div style={{ padding: "16px" }}>
+                            <table
+                              style={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                              }}
+                            >
+                              <thead>
+                                <tr style={{ backgroundColor: "#f8f9fa" }}>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "left",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Appointment ID
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "left",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Type
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "center",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Date
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "center",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Time
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "left",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Clinic
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "right",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Price (₹)
+                                  </th>
+                                  <th
+                                    style={{
+                                      padding: "8px",
+                                      textAlign: "center",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    Status
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {patient.appointmentDetails.map((appointment) => (
+                                  <tr key={appointment.id}>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {appointment.appointmentId}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {appointment.appointmentType}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "center",
+                                        borderBottom: "1px solid #f3f4f6",
+                                        fontSize: "12px",
+                                      }}
+                                    >
+                                      {appointment.appointmentDate}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "center",
+                                        borderBottom: "1px solid #f3f4f6",
+                                        fontSize: "12px",
+                                      }}
+                                    >
+                                      {appointment.appointmentTime}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {appointment.clinicName}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "right",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      {appointment.appointmentFees
+                                        ? appointment.appointmentFees.toFixed(2)
+                                        : "0.00"}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "8px",
+                                        textAlign: "center",
+                                        borderBottom: "1px solid #f3f4f6",
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          padding: "2px 8px",
+                                          borderRadius: "12px",
+                                          fontSize: "11px",
+                                          fontWeight: "600",
+                                          backgroundColor:
+                                            appointment.status === "Pending"
+                                              ? "#fef3c7"
+                                              : "#dcfce7",
+                                          color:
+                                            appointment.status === "Pending"
+                                              ? "#92400e"
+                                              : "#166534",
+                                        }}
+                                      >
+                                        {appointment.status}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginTop: "16px",
+                                paddingTop: "16px",
+                                borderTop: "1px solid #f3f4f6",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontSize: "18px",
+                                  fontWeight: "600",
+                                  color: "#1f2937",
+                                }}
+                              >
+                                Grand Total
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "18px",
+                                  fontWeight: "600",
+                                  color: "#10b981",
+                                }}
+                              >
+                                ₹{totals.appointmentTotal.toFixed(2)}
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: "12px",
+                                marginTop: "16px",
+                              }}
+                            >
+                              <button
+                                onClick={() =>
+                                  handlePrintInvoice("appointments", patient.id)
+                                }
+                                style={{
+                                  backgroundColor: "#3b82f6",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  padding: "8px 16px",
+                                  fontSize: "14px",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                }}
+                              >
+                                🖨️ Print Invoice
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Pagination */}
+        <div
+          style={{
             display: "flex",
-            justifyContent: "center",
-            marginTop: "20px",
-          }}>
-          <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-            }}>
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: "24px",
+            fontSize: "14px",
+            color: "#6b7280",
+          }}
+        >
+          <div>Showing 1-8 of {filteredPatients.length} patients</div>
+          <div style={{ display: "flex", gap: "8px" }}>
             <button
-              onClick={() => handlePageChange(pagination.current - 1, pagination.pageSize)}
+              onClick={() =>
+                handlePageChange(Math.max(1, pagination.current - 1))
+              }
               disabled={pagination.current === 1}
               style={{
-                background: pagination.current === 1 ? "#ccc" : "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                padding: "8px 12px",
+                padding: "6px 12px",
+                border: "1px solid #e5e7eb",
+                borderRadius: "6px",
+                backgroundColor: pagination.current === 1 ? "#f3f4f6" : "white",
+                color: pagination.current === 1 ? "#9ca3af" : "#374151",
                 cursor: pagination.current === 1 ? "not-allowed" : "pointer",
                 fontSize: "14px",
               }}
             >
               Previous
             </button>
-            <span style={{ fontSize: "16px" }}>
-              Page {pagination.current} of {pagination.total}
-            </span>
+
+            {[...Array(Math.min(5, pagination.total))].map((_, index) => {
+              const pageNum = index + 1;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  style={{
+                    padding: "6px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    backgroundColor:
+                      pagination.current === pageNum ? "#3b82f6" : "white",
+                    color: pagination.current === pageNum ? "white" : "#374151",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: pagination.current === pageNum ? "600" : "400",
+                  }}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            {pagination.total > 5 && (
+              <>
+                <span style={{ padding: "6px 8px" }}>...</span>
+                <button
+                  onClick={() => handlePageChange(pagination.total)}
+                  style={{
+                    padding: "6px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    backgroundColor:
+                      pagination.current === pagination.total
+                        ? "#3b82f6"
+                        : "white",
+                    color:
+                      pagination.current === pagination.total
+                        ? "white"
+                        : "#374151",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                  }}
+                >
+                  {pagination.total}
+                </button>
+              </>
+            )}
+
             <button
-              onClick={() => handlePageChange(pagination.current + 1, pagination.pageSize)}
+              onClick={() =>
+                handlePageChange(
+                  Math.min(pagination.total, pagination.current + 1)
+                )
+              }
               disabled={pagination.current >= pagination.total}
               style={{
-                background:
-                  pagination.current >= pagination.total 
-                    ? "#ccc"
-                    : "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                padding: "8px 12px",
+                padding: "6px 12px",
+                border: "1px solid #e5e7eb",
+                borderRadius: "6px",
+                backgroundColor:
+                  pagination.current >= pagination.total ? "#f3f4f6" : "white",
+                color:
+                  pagination.current >= pagination.total
+                    ? "#9ca3af"
+                    : "#374151",
                 cursor:
-                  pagination.current >= pagination.total 
+                  pagination.current >= pagination.total
                     ? "not-allowed"
                     : "pointer",
                 fontSize: "14px",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Table,
   Input,
@@ -22,10 +22,9 @@ import { useSelector } from "react-redux";
 import moment from 'moment';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { DateRange } from 'react-date-range';
-import 'react-date-range/dist/styles.css'; // main style file
-import 'react-date-range/dist/theme/default.css'; // theme css file
-import { format } from 'date-fns';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -35,14 +34,8 @@ const TotalExpenditureScreen = () => {
   const user = useSelector((state) => state.currentUserData);
   const userId = user?.userId;
   const [searchText, setSearchText] = useState('');
-  const [state, setState] = useState([
-    {
-      startDate: new Date(),
-      endDate: new Date(),
-      key: 'selection'
-    }
-  ]);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
   const [transactionType, setTransactionType] = useState('Transaction Type');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -51,6 +44,7 @@ const TotalExpenditureScreen = () => {
   const [expenses, setExpenses] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [fetching, setFetching] = useState(false);
+  const datePickerRef = useRef(null);
 
   // Expense categories for dropdown
   const expenseCategories = [
@@ -90,8 +84,8 @@ const TotalExpenditureScreen = () => {
   };
 
   useEffect(() => {
-    fetchExpenses(state[0].startDate, state[0].endDate);
-  }, [state]);
+    fetchExpenses(startDate, endDate);
+  }, [startDate, endDate]);
 
   const columns = [
     {
@@ -146,13 +140,8 @@ const TotalExpenditureScreen = () => {
       );
       setExpenses(filtered);
     } else {
-      fetchExpenses(state[0].startDate, state[0].endDate);
+      fetchExpenses(startDate, endDate);
     }
-  };
-
-  const handleDateRangeChange = (item) => {
-    setState([item.selection]);
-    setShowDatePicker(false);
   };
 
   const showModal = () => {
@@ -194,7 +183,7 @@ const TotalExpenditureScreen = () => {
           pauseOnHover: true,
           draggable: true,
         });
-        await fetchExpenses(state[0].startDate, state[0].endDate);
+        await fetchExpenses(startDate, endDate);
       }
       
       setIsModalVisible(false);
@@ -218,7 +207,10 @@ const TotalExpenditureScreen = () => {
   };
 
   const formatDisplayDate = () => {
-    return `${format(state[0].startDate, 'MMM d, yyyy')} - ${format(state[0].endDate, 'MMM d, yyyy')}`;
+    if (startDate && endDate) {
+      return `${moment(startDate).format('MMM D, YYYY')} - ${moment(endDate).format('MMM D, YYYY')}`;
+    }
+    return 'Select a date range';
   };
 
   return (
@@ -257,52 +249,44 @@ const TotalExpenditureScreen = () => {
           alignItems: 'center',
           position: 'relative'
         }}>
-          <div style={{ position: 'relative' }}>
-            <Button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              icon={<CalendarOutlined />}
-              style={{
-                borderRadius: '8px',
-                border: '1px solid #d9d9d9',
-                padding: '8px 16px',
-                width: '250px',
-                textAlign: 'left',
-                backgroundColor: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <span>{formatDisplayDate()}</span>
-            </Button>
-            {showDatePicker && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                zIndex: 1000,
-                marginTop: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                borderRadius: '8px'
-              }}>
-                <DateRange
-                  editableDateInputs={true}
-                  onChange={handleDateRangeChange}
-                  moveRangeOnFirstSelection={false}
-                  ranges={state}
-                  maxDate={new Date()}
-                />
-              </div>
-            )}
+          <div style={{ display: 'flex', alignItems: 'center', marginRight: '0.5rem' }}>
+            <CalendarTodayIcon style={{ marginRight: '8px', color: '#1977f3' }} />
+            <div style={{ position: 'relative' }}>
+              <DatePicker
+                ref={datePickerRef}
+                selected={startDate}
+                onChange={(dates) => {
+                  const [start, end] = dates;
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
+                startDate={startDate}
+                endDate={endDate}
+                selectsRange
+                isClearable
+                placeholderText="Select a date range"
+                className="custom-datepicker"
+                maxDate={new Date()}
+                customInput={
+                  <Button
+                    style={{
+                      borderRadius: '8px',
+                      border: '1px solid #d9d9d9',
+                      padding: '8px 16px',
+                      width: '250px',
+                      textAlign: 'left',
+                      backgroundColor: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <span>{formatDisplayDate()}</span>
+                  </Button>
+                }
+              />
+            </div>
           </div>
-{/*           
-          <Input
-            placeholder="Search transactions..."
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => handleSearch(e.target.value)}
-            style={{ width: 250 }}
-          /> */}
         </div>
 
         {/* Transaction History Section */}

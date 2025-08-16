@@ -97,9 +97,54 @@
   text-align: justify;
 }
 
+
 .clinic-search-input:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Simple Pharmacy Details Modal Styles */
+.pharmacy-details-container {
+  padding: 24px;
+  background: white;
+}
+
+.pharmacy-details-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pharmacy-details-row:last-child {
+  border-bottom: none;
+}
+
+.pharmacy-details-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+  min-width: 160px;
+}
+
+.pharmacy-details-value {
+  color: #1f2937;
+  font-size: 14px;
+  flex: 1;
+  text-align: right;
+}
+
+.pharmacy-header-preview {
+  margin-top: 8px;
+  text-align: right;
+}
+
+.pharmacy-header-image {
+  max-width: 200px;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
 }
 
 .clinic-search-button {

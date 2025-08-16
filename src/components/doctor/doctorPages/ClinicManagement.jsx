@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { Edit, Plus, Search, X, Trash2, Upload ,Image,Eye} from "lucide-react";
+import { Edit, Plus, Search, X, Trash2, Upload, Eye } from "lucide-react";
 import {
   GoogleMap,
   useLoadScript,
@@ -20,19 +20,27 @@ export default function ClinicManagement() {
     googleMapsApiKey: googleAPI,
     libraries,
   });
-    const hasfetchClinics = useRef(false);
+  const hasfetchClinics = useRef(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showHeaderModal, setShowHeaderModal] = useState(false);
   const [showImagePreviewModal, setShowImagePreviewModal] = useState(false);
+  const [showLabModal, setShowLabModal] = useState(false);
+  const [showPharmacyModal, setShowPharmacyModal] = useState(false);
+  const [showPharmacyDetailsModal, setShowPharmacyDetailsModal] = useState(false);
+  const [showLabDetailsModal, setShowLabDetailsModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-   const [previewTitle, setPreviewTitle] = useState("");
-    const [selectedHeaderImage, setSelectedHeaderImage] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState("");
+  const [selectedHeaderImage, setSelectedHeaderImage] = useState(null);
   const [selectedDigitalSignature, setSelectedDigitalSignature] = useState(null);
+  const [selectedPharmacyHeader, setSelectedPharmacyHeader] = useState(null);
+  const [selectedLabHeader, setSelectedLabHeader] = useState(null);
   const [clinics, setClinics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pharmacyDetails, setPharmacyDetails] = useState(null);
+  const [labDetails, setLabDetails] = useState(null);
   const [formData, setFormData] = useState({
     type: "Clinic",
     clinicName: "",
@@ -47,12 +55,28 @@ export default function ClinicManagement() {
     latitude: "",
     longitude: "",
     addressId: "",
+    pharmacyName: "",
+    pharmacyRegNum: "",
+    pharmacyGST: "",
+    pharmacyPAN: "",
+    pharmacyAddress: "",
+    labName: "",
+    labRegNum: "",
+    labGST: "",
+    labPAN: "",
+    labAddress: "",
   });
   const [headerFile, setHeaderFile] = useState(null);
   const [headerPreview, setHeaderPreview] = useState(null);
-   const [signatureFile, setSignatureFile] = useState(null);
+  const [signatureFile, setSignatureFile] = useState(null);
   const [signaturePreview, setSignaturePreview] = useState(null);
+  const [pharmacyHeaderFile, setPharmacyHeaderFile] = useState(null);
+  const [pharmacyHeaderPreview, setPharmacyHeaderPreview] = useState(null);
+  const [labHeaderFile, setLabHeaderFile] = useState(null);
+  const [labHeaderPreview, setLabHeaderPreview] = useState(null);
   const [selectedClinicForHeader, setSelectedClinicForHeader] = useState(null);
+  const [selectedClinicForLab, setSelectedClinicForLab] = useState(null);
+  const [selectedClinicForPharmacy, setSelectedClinicForPharmacy] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 });
   const [markerPosition, setMarkerPosition] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -63,6 +87,8 @@ export default function ClinicManagement() {
   const mapRef = useRef(null);
   const fileInputRef = useRef(null);
   const signatureFileInputRef = useRef(null);
+  const pharmacyFileInputRef = useRef(null);
+  const labFileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchClinics = async () => {
@@ -100,10 +126,26 @@ export default function ClinicManagement() {
     };
 
     if (user && doctorId && !hasfetchClinics.current) {
-      hasfetchClinics.current = true
+      hasfetchClinics.current = true;
       fetchClinics();
     }
   }, [user, doctorId]);
+
+  const refreshClinics = async () => {
+    try {
+      const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
+      if (response.status === 200 && response.data?.status === "success") {
+        const allClinics = response.data.data || [];
+        const activeClinics = allClinics.filter((clinic) => clinic.status === "Active");
+        const sortedClinics = [...activeClinics].sort((a, b) => {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+        setClinics(sortedClinics);
+      }
+    } catch (err) {
+      console.error("Error refreshing clinics:", err);
+    }
+  };
 
   const getStatusStyle = (status) => {
     switch (status) {
@@ -261,7 +303,25 @@ export default function ClinicManagement() {
       latitude: "",
       longitude: "",
       addressId: "",
+      pharmacyName: "",
+      pharmacyRegNum: "",
+      pharmacyGST: "",
+      pharmacyPAN: "",
+      pharmacyAddress: "",
+      labName: "",
+      labRegNum: "",
+      labGST: "",
+      labPAN: "",
+      labAddress: "",
     });
+    setHeaderFile(null);
+    setHeaderPreview(null);
+    setSignatureFile(null);
+    setSignaturePreview(null);
+    setPharmacyHeaderFile(null);
+    setPharmacyHeaderPreview(null);
+    setLabHeaderFile(null);
+    setLabHeaderPreview(null);
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -299,7 +359,25 @@ export default function ClinicManagement() {
       latitude: clinic.latitude?.toString() || "",
       longitude: clinic.longitude?.toString() || "",
       addressId: clinic.addressId,
+      pharmacyName: clinic.pharmacyName || "",
+      pharmacyRegNum: clinic.pharmacyRegNum || "",
+      pharmacyGST: clinic.pharmacyGST || "",
+      pharmacyPAN: clinic.pharmacyPAN || "",
+      pharmacyAddress: clinic.pharmacyAddress || "",
+      labName: clinic.labName || "",
+      labRegNum: clinic.labRegNum || "",
+      labGST: clinic.labGST || "",
+      labPAN: clinic.labPAN || "",
+      labAddress: clinic.labAddress || "",
     });
+    setHeaderFile(null);
+    setHeaderPreview(clinic.headerImage || null);
+    setSignatureFile(null);
+    setSignaturePreview(clinic.digitalSignature || null);
+    setPharmacyHeaderFile(null);
+    setPharmacyHeaderPreview(clinic.pharmacyHeaderImage || null);
+    setLabHeaderFile(null);
+    setLabHeaderPreview(clinic.labHeaderImage || null);
 
     if (clinic.latitude && clinic.longitude) {
       const lat = parseFloat(clinic.latitude);
@@ -317,23 +395,71 @@ export default function ClinicManagement() {
     setShowHeaderModal(true);
     setHeaderFile(null);
     setHeaderPreview(null);
-     setSignatureFile(null);
+    setSignatureFile(null);
     setSignaturePreview(null);
   };
 
-  const handleFileChange2 = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setHeaderFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setHeaderPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+  const handleAddLab = (clinic) => {
+    setSelectedClinicForLab(clinic);
+    setShowLabModal(true);
+    setFormData({
+      labName: clinic.labName || "",
+      labRegNum: clinic.labRegNum || "",
+      labGST: clinic.labGST || "",
+      labPAN: clinic.labPAN || "",
+      labAddress: clinic.labAddress || "",
+      addressId: clinic.addressId,
+    });
+    setLabHeaderFile(null);
+    setLabHeaderPreview(clinic.labHeaderImage || null);
+  };
+
+  const handleAddPharmacy = (clinic) => {
+    setSelectedClinicForPharmacy(clinic);
+    setShowPharmacyModal(true);
+    setFormData({
+      pharmacyName: clinic.pharmacyName || "",
+      pharmacyRegNum: clinic.pharmacyRegNum || "",
+      pharmacyGST: clinic.pharmacyGST || "",
+      pharmacyPAN: clinic.pharmacyPAN || "",
+      pharmacyAddress: clinic.pharmacyAddress || "",
+      addressId: clinic.addressId,
+    });
+    setPharmacyHeaderFile(null);
+    setPharmacyHeaderPreview(clinic.pharmacyHeaderImage || null);
+  };
+
+  const handleViewPharmacyDetails = async (clinic) => {
+    try {
+      const response = await apiGet(`/users/getPharmacyByClinicId/${clinic.addressId}`);
+      if (response.status === 200) {
+        setPharmacyDetails(response.data.data);
+        setShowPharmacyDetailsModal(true);
+      } else {
+        toast.error("Failed to fetch pharmacy details");
+      }
+    } catch (err) {
+      console.error("Error fetching pharmacy details:", err);
+      toast.error("Failed to fetch pharmacy details");
     }
   };
 
-   const handleFileChange = (e, type) => {
+  const handleViewLabDetails = async (clinic) => {
+    try {
+      const response = await apiGet(`/users/getLabByClinicId/${clinic.addressId}`);
+      if (response.status === 200) {
+        setLabDetails(response.data.data);
+        setShowLabDetailsModal(true);
+      } else {
+        toast.error("Failed to fetch lab details");
+      }
+    } catch (err) {
+      console.error("Error fetching lab details:", err);
+      toast.error("Failed to fetch lab details");
+    }
+  };
+
+  const handleFileChange = (e, type) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -344,6 +470,12 @@ export default function ClinicManagement() {
         } else if (type === "signature") {
           setSignatureFile(file);
           setSignaturePreview(reader.result);
+        } else if (type === "pharmacyHeader") {
+          setPharmacyHeaderFile(file);
+          setPharmacyHeaderPreview(reader.result);
+        } else if (type === "labHeader") {
+          setLabHeaderFile(file);
+          setLabHeaderPreview(reader.result);
         }
       };
       reader.readAsDataURL(file);
@@ -356,7 +488,7 @@ export default function ClinicManagement() {
     try {
       const formData = new FormData();
       formData.append("file", headerFile);
-       if (signatureFile) {
+      if (signatureFile) {
         formData.append("signature", signatureFile);
       }
       formData.append("addressId", selectedClinicForHeader.addressId);
@@ -370,22 +502,161 @@ export default function ClinicManagement() {
       if (response.status === 200 || response.status === 201) {
         toast.success("Header uploaded successfully");
         setShowHeaderModal(false);
-        // Refresh clinics list
-        const refreshResponse = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
-        if (refreshResponse.status === 200 && refreshResponse.data?.status === "success") {
-          const allClinics = refreshResponse.data.data || [];
-          const activeClinics = allClinics.filter((clinic) => clinic.status === "Active");
-          const sortedClinics = [...activeClinics].sort((a, b) => {
-            return new Date(b.createdAt) - new Date(a.createdAt);
-          });
-          setClinics(sortedClinics);
-        }
+        await refreshClinics();
       } else {
         toast.error(response.data?.message || "Failed to upload header");
       }
     } catch (err) {
       console.error("Header upload error:", err);
       toast.error(err.message || "Failed to upload header");
+    }
+  };
+
+  const handleLabSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedClinicForLab || !doctorId) return;
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("userId", doctorId);
+      formDataToSend.append("addressId", selectedClinicForLab.addressId);
+      formDataToSend.append("labName", formData.labName);
+      formDataToSend.append("labRegistrationNo", formData.labRegNum);
+      formDataToSend.append("labGst", formData.labGST);
+      formDataToSend.append("labPan", formData.labPAN);
+      formDataToSend.append("labAddress", formData.labAddress);
+      if (labHeaderFile) {
+        formDataToSend.append("labHeader", labHeaderFile);
+      }
+
+      // First try without bypass
+      const response = await apiPost("/users/addLabToClinic", formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Lab details added successfully");
+        setShowLabModal(false);
+        await refreshClinics();
+      } else {
+        toast.error(response.data?.message || "Failed to add lab details");
+      }
+    } catch (err) {
+      if (err.response?.data?.status === "warning" && err.response?.data?.data?.labId) {
+        // Show confirmation dialog for conflict
+        const shouldLink = window.confirm(
+          err.response.data.message
+        );
+        
+        if (shouldLink) {
+          // Retry with bypassCheck=true
+          const formDataToSend = new FormData();
+          formDataToSend.append("userId", doctorId);
+          formDataToSend.append("addressId", selectedClinicForLab.addressId);
+          formDataToSend.append("labName", formData.labName);
+          formDataToSend.append("labRegistrationNo", formData.labRegNum);
+          formDataToSend.append("labGst", formData.labGST);
+          formDataToSend.append("labPan", formData.labPAN);
+          formDataToSend.append("labAddress", formData.labAddress);
+          if (labHeaderFile) {
+            formDataToSend.append("labHeader", labHeaderFile);
+          }
+          formDataToSend.append("bypassCheck", "true");
+
+          const bypassResponse = await apiPost("/users/addLabToClinic?bypassCheck=true", formDataToSend, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
+
+          if (bypassResponse.status === 200 || bypassResponse.status === 201) {
+            toast.success("Lab linked successfully");
+            setShowLabModal(false);
+            await refreshClinics();
+          } else {
+            toast.error(bypassResponse.data?.message || "Failed to link lab");
+          }
+        }
+      } else {
+        console.error("Lab submit error:", err);
+        toast.error(err.message || "Failed to add lab details");
+      }
+    }
+  };
+
+  const handlePharmacySubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedClinicForPharmacy || !doctorId) return;
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("userId", doctorId);
+      formDataToSend.append("addressId", selectedClinicForPharmacy.addressId);
+      formDataToSend.append("pharmacyName", formData.pharmacyName);
+      formDataToSend.append("pharmacyRegistrationNo", formData.pharmacyRegNum);
+      formDataToSend.append("pharmacyGst", formData.pharmacyGST);
+      formDataToSend.append("pharmacyPan", formData.pharmacyPAN);
+      formDataToSend.append("pharmacyAddress", formData.pharmacyAddress);
+      if (pharmacyHeaderFile) {
+        formDataToSend.append("pharmacyHeader", pharmacyHeaderFile);
+      }
+
+      // First try without bypass
+      const response = await apiPost("/users/addPharmacyToClinic", formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Pharmacy details added successfully");
+        setShowPharmacyModal(false);
+        await refreshClinics();
+      } else {
+        toast.error(response.data?.message || "Failed to add pharmacy details");
+      }
+    } catch (err) {
+      if (err.response?.data?.status === "warning" && err.response?.data?.data?.pharmacyId) {
+        // Show confirmation dialog for conflict
+        const shouldLink = window.confirm(
+          err.response.data.message
+        );
+        
+        if (shouldLink) {
+          // Retry with bypassCheck=true
+          const formDataToSend = new FormData();
+          formDataToSend.append("userId", doctorId);
+          formDataToSend.append("addressId", selectedClinicForPharmacy.addressId);
+          formDataToSend.append("pharmacyName", formData.pharmacyName);
+          formDataToSend.append("pharmacyRegistrationNo", formData.pharmacyRegNum);
+          formDataToSend.append("pharmacyGst", formData.pharmacyGST);
+          formDataToSend.append("pharmacyPan", formData.pharmacyPAN);
+          formDataToSend.append("pharmacyAddress", formData.pharmacyAddress);
+          if (pharmacyHeaderFile) {
+            formDataToSend.append("pharmacyHeader", pharmacyHeaderFile);
+          }
+          formDataToSend.append("bypassCheck", "true");
+
+          const bypassResponse = await apiPost("/users/addPharmacyToClinic?bypassCheck=true", formDataToSend, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
+
+          if (bypassResponse.status === 200 || bypassResponse.status === 201) {
+            toast.success("Pharmacy linked successfully");
+            setShowPharmacyModal(false);
+            await refreshClinics();
+          } else {
+            toast.error(bypassResponse.data?.message || "Failed to link pharmacy");
+          }
+        }
+      } else {
+        console.error("Pharmacy submit error:", err);
+        toast.error(err.message || "Failed to add pharmacy details");
+      }
     }
   };
 
@@ -397,7 +668,6 @@ export default function ClinicManagement() {
       return;
     }
 
-    // Validate mobile number starts with 6,7,8, or 9
     if (formData.mobile && !/^[6-9]/.test(formData.mobile)) {
       toast.error("Mobile number must start with 6, 7, 8, or 9");
       return;
@@ -405,74 +675,102 @@ export default function ClinicManagement() {
 
     try {
       let response;
+      const formDataToSend = new FormData();
+      formDataToSend.append("type", formData.type);
+      formDataToSend.append("clinicName", formData.clinicName);
+      formDataToSend.append("address", formData.address);
+      formDataToSend.append("city", formData.city);
+      formDataToSend.append("state", formData.state);
+      formDataToSend.append("country", formData.country);
+      formDataToSend.append("mobile", formData.mobile);
+      formDataToSend.append("pincode", formData.pincode);
+      formDataToSend.append("startTime", formData.startTime || "09:00");
+      formDataToSend.append("endTime", formData.endTime || "17:00");
+      formDataToSend.append("latitude", formData.latitude);
+      formDataToSend.append("longitude", formData.longitude);
+      if (headerFile) {
+        formDataToSend.append("file", headerFile);
+      }
+      if (signatureFile) {
+        formDataToSend.append("signature", signatureFile);
+      }
+      if (formData.labName) {
+        formDataToSend.append("labName", formData.labName);
+      }
+      if (formData.labRegNum) {
+        formDataToSend.append("labRegistrationNo", formData.labRegNum);
+      }
+      if (formData.labGST) {
+        formDataToSend.append("labGst", formData.labGST);
+      }
+      if (formData.labPAN) {
+        formDataToSend.append("labPan", formData.labPAN);
+      }
+      if (formData.labAddress) {
+        formDataToSend.append("labAddress", formData.labAddress);
+      }
+      if (labHeaderFile) {
+        formDataToSend.append("labHeader", labHeaderFile);
+      }
+      if (formData.pharmacyName) {
+        formDataToSend.append("pharmacyName", formData.pharmacyName);
+      }
+      if (formData.pharmacyRegNum) {
+        formDataToSend.append("pharmacyRegistrationNo", formData.pharmacyRegNum);
+      }
+      if (formData.pharmacyGST) {
+        formDataToSend.append("pharmacyGst", formData.pharmacyGST);
+      }
+      if (formData.pharmacyPAN) {
+        formDataToSend.append("pharmacyPan", formData.pharmacyPAN);
+      }
+      if (formData.pharmacyAddress) {
+        formDataToSend.append("pharmacyAddress", formData.pharmacyAddress);
+      }
+      if (pharmacyHeaderFile) {
+        formDataToSend.append("pharmacyHeader", pharmacyHeaderFile);
+      }
+
       console.log("Submitting with doctorId:", doctorId, "FormData:", formData);
       if (isEditing) {
-        const updateData = {
-          addressId: formData.addressId,
-          clinicName: formData.clinicName,
-          mobile: formData.mobile,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          country: formData.country,
-          pincode: formData.pincode,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
-          startTime: formData.startTime,
-          endTime: formData.endTime,
-          location: {
-            type: "Point",
-            coordinates: [
-              parseFloat(formData.longitude),
-              parseFloat(formData.latitude),
-            ],
+        formDataToSend.append("addressId", formData.addressId);
+        formDataToSend.append("location", JSON.stringify({
+          type: "Point",
+          coordinates: [parseFloat(formData.longitude), parseFloat(formData.latitude)],
+        }));
+        response = await apiPut("/users/updateAddress", formDataToSend, {
+          headers: {
+            "Content-Type": "multipart/form-data",
           },
-        };
-        response = await apiPut("/users/updateAddress", updateData);
+        });
         console.log("Update API Response:", response);
 
         if (response.status === 200 && response.data?.status === "success") {
           toast.success(response.data?.message || "Clinic updated successfully");
-           setShowModal(false);
+          setShowModal(false);
         } else {
-          toast.error(response.data?.message || "Failed to update clinic");
+          toast.warning(response.data?.message || "Failed to update clinic");
           throw new Error(response.data?.message || "Failed to update clinic");
         }
       } else {
-        const newClinicData = {
-          ...formData,
-          userId: doctorId,
-          startTime: formData.startTime || "09:00",
-          endTime: formData.endTime || "17:00",
-        };
-        delete newClinicData.addressId;
-        response = await apiPost("/users/addAddress", newClinicData);
+        formDataToSend.append("userId", doctorId);
+        response = await apiPost("/users/addAddressFromWeb", formDataToSend, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
         console.log("Add API Response:", response);
 
-        if (response.status === 200 ||response.status ===201) {
+        if (response.status === 200 || response.status === 201) {
           toast.success(response.data?.message || "Clinic added successfully");
-           setShowModal(false);
+          setShowModal(false);
         } else {
-          toast.error(response.data?.message || "Failed to add clinic");
+          toast.warning(response.data?.message || "Failed to add clinic");
           throw new Error(response.data?.message || "Failed to add clinic");
         }
       }
 
-      const refreshResponse = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
-      console.log("Refresh API Response:", refreshResponse);
-
-      if (
-        refreshResponse.status === 200 &&
-        refreshResponse.data?.status === "success"
-      ) {
-        const allClinics = refreshResponse.data.data || [];
-        const activeClinics = allClinics.filter((clinic) => clinic.status === "Active");
-        const sortedClinics = [...activeClinics].sort((a, b) => {
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        });
-        setClinics(sortedClinics);
-      }
-
+      await refreshClinics();
       setShowModal(false);
       setFormData({
         type: "Clinic",
@@ -488,15 +786,32 @@ export default function ClinicManagement() {
         latitude: "",
         longitude: "",
         addressId: "",
+        pharmacyName: "",
+        pharmacyRegNum: "",
+        pharmacyGST: "",
+        pharmacyPAN: "",
+        pharmacyAddress: "",
+        labName: "",
+        labRegNum: "",
+        labGST: "",
+        labPAN: "",
+        labAddress: "",
       });
+      setHeaderFile(null);
+      setHeaderPreview(null);
+      setSignatureFile(null);
+      setSignaturePreview(null);
+      setPharmacyHeaderFile(null);
+      setPharmacyHeaderPreview(null);
+      setLabHeaderFile(null);
+      setLabHeaderPreview(null);
     } catch (err) {
       const errorMessage =
-  err?.response?.data?.message?.message ||  // nested message
-  err?.response?.data?.message ||          // fallback if just a string
-  err?.message ||                          // generic JS error
-  "Something went wrong";                  // ultimate fallback
-
-toast.error(errorMessage);
+        err?.response?.data?.message?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Something went wrong";
+      toast.error(errorMessage);
       console.error("Submit error:", err?.response?.data?.message?.message);
     }
   };
@@ -537,7 +852,25 @@ toast.error(errorMessage);
       latitude: "",
       longitude: "",
       addressId: "",
+      pharmacyName: "",
+      pharmacyRegNum: "",
+      pharmacyGST: "",
+      pharmacyPAN: "",
+      pharmacyAddress: "",
+      labName: "",
+      labRegNum: "",
+      labGST: "",
+      labPAN: "",
+      labAddress: "",
     });
+    setHeaderFile(null);
+    setHeaderPreview(null);
+    setSignatureFile(null);
+    setSignaturePreview(null);
+    setPharmacyHeaderFile(null);
+    setPharmacyHeaderPreview(null);
+    setLabHeaderFile(null);
+    setLabHeaderPreview(null);
     setMapCenter({ lat: 20.5937, lng: 78.9629 });
     setMarkerPosition(null);
   };
@@ -546,7 +879,65 @@ toast.error(errorMessage);
     setShowHeaderModal(false);
     setHeaderFile(null);
     setHeaderPreview(null);
+    setSignatureFile(null);
+    setSignaturePreview(null);
     setSelectedClinicForHeader(null);
+  };
+
+  const handleLabCancel = () => {
+    setShowLabModal(false);
+    setLabHeaderFile(null);
+    setLabHeaderPreview(null);
+    setSelectedClinicForLab(null);
+    setFormData((prev) => ({
+      ...prev,
+      labName: "",
+      labRegNum: "",
+      labGST: "",
+      labPAN: "",
+      labAddress: "",
+    }));
+  };
+
+  const handlePharmacyCancel = () => {
+    setShowPharmacyModal(false);
+    setPharmacyHeaderFile(null);
+    setPharmacyHeaderPreview(null);
+    setSelectedClinicForPharmacy(null);
+    setFormData((prev) => ({
+      ...prev,
+      pharmacyName: "",
+      pharmacyRegNum: "",
+      pharmacyGST: "",
+      pharmacyPAN: "",
+      pharmacyAddress: "",
+    }));
+  };
+
+  const handleClosePharmacyDetails = () => {
+    setShowPharmacyDetailsModal(false);
+    setPharmacyDetails(null);
+  };
+
+  const handleCloseLabDetails = () => {
+    setShowLabDetailsModal(false);
+    setLabDetails(null);
+  };
+
+  const handleViewImage = (headerImage, digitalSignature, pharmacyHeaderImage, labHeaderImage) => {
+    setSelectedHeaderImage(headerImage);
+    setSelectedDigitalSignature(digitalSignature);
+    setSelectedPharmacyHeader(pharmacyHeaderImage);
+    setSelectedLabHeader(labHeaderImage);
+    setShowImagePreviewModal(true);
+  };
+
+  const handleCloseImagePreview = () => {
+    setShowImagePreviewModal(false);
+    setSelectedHeaderImage(null);
+    setSelectedDigitalSignature(null);
+    setSelectedPharmacyHeader(null);
+    setSelectedLabHeader(null);
   };
 
   const filteredClinics = clinics.filter(
@@ -562,19 +953,6 @@ toast.error(errorMessage);
   if (!isLoaded) {
     return <div>Loading...</div>;
   }
-
-   const handleViewImage = (headerImage, digitalSignature) => {
-     setSelectedHeaderImage(headerImage);
-    setSelectedDigitalSignature(digitalSignature);
-    // setSelectedImage(image);
-    //  setPreviewTitle(title);
-    setShowImagePreviewModal(true);
-  };
-   const handleCloseImagePreview = () => {
-    setShowImagePreviewModal(false);
-     setSelectedHeaderImage(null);
-    setSelectedDigitalSignature(null);
-  };
 
   return (
     <div className="clinic-management-container">
@@ -617,7 +995,9 @@ toast.error(errorMessage);
                 <th className="clinic-table-th">Type</th>
                 <th className="clinic-table-th">Address</th>
                 <th className="clinic-table-th">Contact</th>
-                  <th className="clinic-table-th">Header Image</th>
+                <th className="clinic-table-th">Header Image</th>
+                <th className="clinic-table-th">Pharmacy</th>
+                <th className="clinic-table-th">Lab</th>
                 <th className="clinic-table-th">Status</th>
                 <th className="clinic-table-th">Action</th>
               </tr>
@@ -632,23 +1012,60 @@ toast.error(errorMessage);
                       {clinic.address}, {clinic.city}, {clinic.state}, {clinic.country} {clinic.pincode}
                     </td>
                     <td className="clinic-table-td">{clinic.mobile}</td>
-                     <td className="clinic-table-td">
-                     {clinic.headerImage ? (
+                    <td className="clinic-table-td">
+                      {clinic.headerImage ? (
                         <button
                           className="clinic-view-image-button"
                           title="View Header Image"
-                          
-                          onClick={() => handleViewImage(clinic.headerImage, clinic.digitalSignature)}
+                          onClick={() => handleViewImage(clinic.headerImage, clinic.digitalSignature, clinic.pharmacyHeaderImage, clinic.labHeaderImage)}
                         >
                           <Eye size={16} />
                         </button>
                       ) : (
-                         <button
+                        <button
                           className="clinic-upload-button"
                           title="Upload Header"
                           onClick={() => handleUploadHeader(clinic)}
                         >
                           <Upload size={16} />
+                        </button>
+                      )}
+                    </td>
+                    <td className="clinic-table-td">
+                      {clinic.pharmacyName ? (
+                        <button
+                          className="clinic-view-image-button"
+                          title="View Pharmacy Details"
+                          onClick={() => handleViewPharmacyDetails(clinic)}
+                        >
+                          <Eye size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          className="clinic-upload-button"
+                          title="Add Pharmacy Details"
+                          onClick={() => handleAddPharmacy(clinic)}
+                        >
+                          <Plus size={16} />
+                        </button>
+                      )}
+                    </td>
+                    <td className="clinic-table-td">
+                      {clinic.labName ? (
+                        <button
+                          className="clinic-view-image-button"
+                          title="View Lab Details"
+                          onClick={() => handleViewLabDetails(clinic)}
+                        >
+                          <Eye size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          className="clinic-upload-button"
+                          title="Add Lab Details"
+                          onClick={() => handleAddLab(clinic)}
+                        >
+                          <Plus size={16} />
                         </button>
                       )}
                     </td>
@@ -681,7 +1098,7 @@ toast.error(errorMessage);
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="clinic-table-td no-clinics">
+                  <td colSpan="9" className="clinic-table-td no-clinics">
                     {clinics.length === 0 ? "No active clinics found" : "No matching active clinics found"}
                   </td>
                 </tr>
@@ -784,7 +1201,6 @@ toast.error(errorMessage);
                       maxLength={10}
                       onChange={(e) => {
                         const onlyDigits = e.target.value.replace(/\D/g, "");
-                        // Only update if first digit is 6-9 or field is empty
                         if (onlyDigits === "" || /^[6-9]/.test(onlyDigits)) {
                           handleInputChange({
                             target: {
@@ -835,6 +1251,288 @@ toast.error(errorMessage);
                   </div>
                 </div>
 
+                <div className="clinic-form-group">
+                  <label className="clinic-form-label">Clinic Header Image</label>
+                  <div className="header-upload-container">
+                    {headerPreview ? (
+                      <div className="header-preview-container">
+                        <img
+                          src={headerPreview}
+                          alt="Header preview"
+                          className="header-preview-image"
+                        />
+                        <button
+                          className="header-change-button"
+                          onClick={() => fileInputRef.current.click()}
+                        >
+                          Change Image
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="header-upload-placeholder"
+                        onClick={() => fileInputRef.current.click()}
+                      >
+                        <Upload size={24} />
+                        <p>Click to upload header image</p>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={(e) => handleFileChange(e, "header")}
+                      accept="image/*"
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                  <p className="header-upload-note">
+                    Note: This image will be used as the header for prescriptions from this clinic.
+                  </p>
+                </div>
+
+                <div className="clinic-form-group">
+                  <label className="clinic-form-label">Digital Signature (Optional)</label>
+                  <div className="header-upload-container">
+                    {signaturePreview ? (
+                      <div className="header-preview-container">
+                        <img
+                          src={signaturePreview}
+                          alt="Signature preview"
+                          className="header-preview-image"
+                        />
+                        <button
+                          className="header-change-button"
+                          onClick={() => signatureFileInputRef.current.click()}
+                        >
+                          Change Signature
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="header-upload-placeholder"
+                        onClick={() => signatureFileInputRef.current.click()}
+                      >
+                        <Upload size={24} />
+                        <p>Click to upload digital signature</p>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={signatureFileInputRef}
+                      onChange={(e) => handleFileChange(e, "signature")}
+                      accept="image/*"
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                  <p className="header-upload-note">
+                    Note: This signature will be used on prescriptions (optional).
+                  </p>
+                </div>
+
+                <h3 className="clinic-modal-subheader">Lab Details (Optional)</h3>
+                <div className="clinic-form-group">
+                  <label className="clinic-form-label">Lab Name</label>
+                  <input
+                    type="text"
+                    name="labName"
+                    placeholder="Enter lab name"
+                    className="clinic-form-input"
+                    value={formData.labName}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="clinic-form-row">
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Lab Registration Number</label>
+                    <input
+                      type="text"
+                      name="labRegNum"
+                      placeholder="Enter registration number"
+                      className="clinic-form-input"
+                      value={formData.labRegNum}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Lab GST Number</label>
+                    <input
+                      type="text"
+                      name="labGST"
+                      placeholder="Enter GST number"
+                      className="clinic-form-input"
+                      value={formData.labGST}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="clinic-form-row">
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Lab PAN</label>
+                    <input
+                      type="text"
+                      name="labPAN"
+                      placeholder="Enter PAN number"
+                      className="clinic-form-input"
+                      value={formData.labPAN}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Lab Address</label>
+                    <input
+                      type="text"
+                      name="labAddress"
+                      placeholder="Enter lab address"
+                      className="clinic-form-input"
+                      value={formData.labAddress}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="clinic-form-group">
+                  <label className="clinic-form-label">Lab Header Image (Optional)</label>
+                  <div className="header-upload-container">
+                    {labHeaderPreview ? (
+                      <div className="header-preview-container">
+                        <img
+                          src={labHeaderPreview}
+                          alt="Lab header preview"
+                          className="header-preview-image"
+                        />
+                        <button
+                          className="header-change-button"
+                          onClick={() => labFileInputRef.current.click()}
+                        >
+                          Change Image
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="header-upload-placeholder"
+                        onClick={() => labFileInputRef.current.click()}
+                      >
+                        <Upload size={24} />
+                        <p>Click to upload lab header image</p>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={labFileInputRef}
+                      onChange={(e) => handleFileChange(e, "labHeader")}
+                      accept="image/*"
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                  <p className="header-upload-note">
+                    Note: This image will be used as the header for lab-related documents.
+                  </p>
+                </div>
+
+                <h3 className="clinic-modal-subheader">Pharmacy Details (Optional)</h3>
+                <div className="clinic-form-group">
+                  <label className="clinic-form-label">Pharmacy Name</label>
+                  <input
+                    type="text"
+                    name="pharmacyName"
+                    placeholder="Enter pharmacy name"
+                    className="clinic-form-input"
+                    value={formData.pharmacyName}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="clinic-form-row">
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Pharmacy Registration Number</label>
+                    <input
+                      type="text"
+                      name="pharmacyRegNum"
+                      placeholder="Enter registration number"
+                      className="clinic-form-input"
+                      value={formData.pharmacyRegNum}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Pharmacy GST Number</label>
+                    <input
+                      type="text"
+                      name="pharmacyGST"
+                      placeholder="Enter GST number"
+                      className="clinic-form-input"
+                      value={formData.pharmacyGST}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="clinic-form-row">
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Pharmacy PAN</label>
+                    <input
+                      type="text"
+                      name="pharmacyPAN"
+                      placeholder="Enter PAN number"
+                      className="clinic-form-input"
+                      value={formData.pharmacyPAN}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="clinic-form-col">
+                    <label className="clinic-form-label">Pharmacy Address</label>
+                    <input
+                      type="text"
+                      name="pharmacyAddress"
+                      placeholder="Enter pharmacy address"
+                      className="clinic-form-input"
+                      value={formData.pharmacyAddress}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="clinic-form-group">
+                  <label className="clinic-form-label">Pharmacy Header Image (Optional)</label>
+                  <div className="header-upload-container">
+                    {pharmacyHeaderPreview ? (
+                      <div className="header-preview-container">
+                        <img
+                          src={pharmacyHeaderPreview}
+                          alt="Pharmacy header preview"
+                          className="header-preview-image"
+                        />
+                        <button
+                          className="header-change-button"
+                          onClick={() => pharmacyFileInputRef.current.click()}
+                        >
+                          Change Image
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="header-upload-placeholder"
+                        onClick={() => pharmacyFileInputRef.current.click()}
+                      >
+                        <Upload size={24} />
+                        <p>Click to upload pharmacy header image</p>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={pharmacyFileInputRef}
+                      onChange={(e) => handleFileChange(e, "pharmacyHeader")}
+                      accept="image/*"
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                  <p className="header-upload-note">
+                    Note: This image will be used as the header for pharmacy-related documents.
+                  </p>
+                </div>
+
                 <div className="clinic-button-group">
                   <button
                     type="button"
@@ -861,17 +1559,17 @@ toast.error(errorMessage);
           <div className="clinic-modal-overlay" onClick={handleHeaderCancel}>
             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
               <h2 className="clinic-modal-header">
-                Upload Header  and Signature for {selectedClinicForHeader?.clinicName}
+                Upload Header and Signature for {selectedClinicForHeader?.clinicName}
               </h2>
-              
+
               <div className="clinic-form-group">
                 <label className="clinic-form-label">Header Image</label>
                 <div className="header-upload-container">
                   {headerPreview ? (
                     <div className="header-preview-container">
-                      <img 
-                        src={headerPreview} 
-                        alt="Header preview" 
+                      <img
+                        src={headerPreview}
+                        alt="Header preview"
                         className="header-preview-image"
                       />
                       <button
@@ -882,7 +1580,7 @@ toast.error(errorMessage);
                       </button>
                     </div>
                   ) : (
-                    <div 
+                    <div
                       className="header-upload-placeholder"
                       onClick={() => fileInputRef.current.click()}
                     >
@@ -893,9 +1591,9 @@ toast.error(errorMessage);
                   <input
                     type="file"
                     ref={fileInputRef}
-                      onChange={(e) => handleFileChange(e, "header")}
+                    onChange={(e) => handleFileChange(e, "header")}
                     accept="image/*"
-                    style={{ display: 'none' }}
+                    style={{ display: "none" }}
                   />
                 </div>
                 <p className="header-upload-note">
@@ -903,14 +1601,14 @@ toast.error(errorMessage);
                 </p>
               </div>
 
-                <div className="clinic-form-group">
+              <div className="clinic-form-group">
                 <label className="clinic-form-label">Digital Signature (Optional)</label>
                 <div className="header-upload-container">
                   {signaturePreview ? (
                     <div className="header-preview-container">
-                      <img 
-                        src={signaturePreview} 
-                        alt="Signature preview" 
+                      <img
+                        src={signaturePreview}
+                        alt="Signature preview"
                         className="header-preview-image"
                       />
                       <button
@@ -921,7 +1619,7 @@ toast.error(errorMessage);
                       </button>
                     </div>
                   ) : (
-                    <div 
+                    <div
                       className="header-upload-placeholder"
                       onClick={() => signatureFileInputRef.current.click()}
                     >
@@ -934,14 +1632,13 @@ toast.error(errorMessage);
                     ref={signatureFileInputRef}
                     onChange={(e) => handleFileChange(e, "signature")}
                     accept="image/*"
-                    style={{ display: 'none' }}
+                    style={{ display: "none" }}
                   />
                 </div>
                 <p className="header-upload-note">
                   Note: This signature will be used on prescriptions (optional).
                 </p>
               </div>
-
 
               <div className="clinic-button-group">
                 <button
@@ -965,23 +1662,279 @@ toast.error(errorMessage);
           </div>
         )}
 
-          {showImagePreviewModal && (
+        {showLabModal && (
+          <div className="clinic-modal-overlay" onClick={handleLabCancel}>
+            <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 className="clinic-modal-header">
+                {selectedClinicForLab?.labName ? "Edit Lab Details for" : "Add Lab Details for"} {selectedClinicForLab?.clinicName}
+              </h2>
+
+              <div className="clinic-form-group">
+                <label className="clinic-form-label">Lab Name</label>
+                <input
+                  type="text"
+                  name="labName"
+                  placeholder="Enter lab name"
+                  className="clinic-form-input"
+                  value={formData.labName}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="clinic-form-row">
+                <div className="clinic-form-col">
+                  <label className="clinic-form-label">Lab Registration Number</label>
+                  <input
+                    type="text"
+                    name="labRegNum"
+                    placeholder="Enter registration number"
+                    className="clinic-form-input"
+                    value={formData.labRegNum}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="clinic-form-col">
+                  <label className="clinic-form-label">Lab GST Number</label>
+                  <input
+                    type="text"
+                    name="labGST"
+                    placeholder="Enter GST number"
+                    className="clinic-form-input"
+                    value={formData.labGST}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+
+              <div className="clinic-form-row">
+                <div className="clinic-form-col">
+                  <label className="clinic-form-label">Lab PAN</label>
+                  <input
+                    type="text"
+                    name="labPAN"
+                    placeholder="Enter PAN number"
+                    className="clinic-form-input"
+                    value={formData.labPAN}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="clinic-form-col">
+                  <label className="clinic-form-label">Lab Address</label>
+                  <input
+                    type="text"
+                    name="labAddress"
+                    placeholder="Enter lab address"
+                    className="clinic-form-input"
+                    value={formData.labAddress}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+
+              <div className="clinic-form-group">
+                <label className="clinic-form-label">Lab Header Image (Optional)</label>
+                <div className="header-upload-container">
+                  {labHeaderPreview ? (
+                    <div className="header-preview-container">
+                      <img
+                        src={labHeaderPreview}
+                        alt="Lab header preview"
+                        className="header-preview-image"
+                      />
+                      <button
+                        className="header-change-button"
+                        onClick={() => labFileInputRef.current.click()}
+                      >
+                        Change Image
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="header-upload-placeholder"
+                      onClick={() => labFileInputRef.current.click()}
+                    >
+                      <Upload size={24} />
+                      <p>Click to upload lab header image</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={labFileInputRef}
+                    onChange={(e) => handleFileChange(e, "labHeader")}
+                    accept="image/*"
+                    style={{ display: "none" }}
+                  />
+                </div>
+                <p className="header-upload-note">
+                  Note: This image will be used as the header for lab-related documents.
+                </p>
+              </div>
+
+              <div className="clinic-button-group">
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handleLabCancel}
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="clinic-confirm-button"
+                  onClick={handleLabSubmit}
+                >
+                  Save Lab Details
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showPharmacyModal && (
+          <div className="clinic-modal-overlay" onClick={handlePharmacyCancel}>
+            <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 className="clinic-modal-header">
+                {selectedClinicForPharmacy?.pharmacyName ? "Edit Pharmacy Details for" : "Add Pharmacy Details for"} {selectedClinicForPharmacy?.clinicName}
+              </h2>
+
+              <div className="clinic-form-group">
+                <label className="clinic-form-label">Pharmacy Name</label>
+                <input
+                  type="text"
+                  name="pharmacyName"
+                  placeholder="Enter pharmacy name"
+                  className="clinic-form-input"
+                  value={formData.pharmacyName}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="clinic-form-row">
+                <div className="clinic-form-col">
+                  <label className="clinic-form-label">Pharmacy Registration Number</label>
+                  <input
+                    type="text"
+                    name="pharmacyRegNum"
+                    placeholder="Enter registration number"
+                    className="clinic-form-input"
+                    value={formData.pharmacyRegNum}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="clinic-form-col">
+                  <label className="clinic-form-label">Pharmacy GST Number</label>
+                  <input
+                    type="text"
+                    name="pharmacyGST"
+                    placeholder="Enter GST number"
+                    className="clinic-form-input"
+                    value={formData.pharmacyGST}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+
+              <div className="clinic-form-row">
+                <div className="clinic-form-col">
+                  <label className="clinic-form-label">Pharmacy PAN</label>
+                  <input
+                    type="text"
+                    name="pharmacyPAN"
+                    placeholder="Enter PAN number"
+                    className="clinic-form-input"
+                    value={formData.pharmacyPAN}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="clinic-form-col">
+                  <label className="clinic-form-label">Pharmacy Address</label>
+                  <input
+                    type="text"
+                    name="pharmacyAddress"
+                    placeholder="Enter pharmacy address"
+                    className="clinic-form-input"
+                    value={formData.pharmacyAddress}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+
+              <div className="clinic-form-group">
+                <label className="clinic-form-label">Pharmacy Header Image (Optional)</label>
+                <div className="header-upload-container">
+                  {pharmacyHeaderPreview ? (
+                    <div className="header-preview-container">
+                      <img
+                        src={pharmacyHeaderPreview}
+                        alt="Pharmacy header preview"
+                        className="header-preview-image"
+                      />
+                      <button
+                        className="header-change-button"
+                        onClick={() => pharmacyFileInputRef.current.click()}
+                      >
+                        Change Image
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="header-upload-placeholder"
+                      onClick={() => pharmacyFileInputRef.current.click()}
+                    >
+                      <Upload size={24} />
+                      <p>Click to upload pharmacy header image</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={pharmacyFileInputRef}
+                    onChange={(e) => handleFileChange(e, "pharmacyHeader")}
+                    accept="image/*"
+                    style={{ display: "none" }}
+                  />
+                </div>
+                <p className="header-upload-note">
+                  Note: This image will be used as the header for pharmacy-related documents.
+                </p>
+              </div>
+
+              <div className="clinic-button-group">
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handlePharmacyCancel}
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="clinic-confirm-button"
+                  onClick={handlePharmacySubmit}
+                >
+                  Save Pharmacy Details
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showImagePreviewModal && (
           <div className="clinic-modal-overlay" onClick={handleCloseImagePreview}>
             <div className="clinic-modal image-preview-modal" onClick={(e) => e.stopPropagation()}>
               <h2 className="clinic-modal-header">Header and Signature Preview</h2>
               <div className="image-preview-container">
-                <div className="image-preview-section">
-                  <h3>Header Image</h3>
-                  {selectedHeaderImage ? (
+                {selectedHeaderImage && (
+                  <div className="image-preview-section">
+                    <h3>Header Image</h3>
                     <img
                       src={selectedHeaderImage}
                       alt="Header Preview"
                       className="image-preview"
                     />
-                  ) : (
-                    <p>No header image available</p>
-                  )}
-                </div>
+                  </div>
+                )}
                 {selectedDigitalSignature && (
                   <div className="image-preview-section">
                     <h3>Digital Signature</h3>
@@ -992,12 +1945,152 @@ toast.error(errorMessage);
                     />
                   </div>
                 )}
+                {selectedPharmacyHeader && (
+                  <div className="image-preview-section">
+                    <h3>Pharmacy Header Image</h3>
+                    <img
+                      src={selectedPharmacyHeader}
+                      alt="Pharmacy Header Preview"
+                      className="image-preview"
+                    />
+                  </div>
+                )}
+                {selectedLabHeader && (
+                  <div className="image-preview-section">
+                    <h3>Lab Header Image</h3>
+                    <img
+                      src={selectedLabHeader}
+                      alt="Lab Header Preview"
+                      className="image-preview"
+                    />
+                  </div>
+                )}
               </div>
               <div className="clinic-button-group">
                 <button
                   type="button"
                   className="clinic-cancel-button"
                   onClick={handleCloseImagePreview}
+                >
+                  <X size={16} />
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showPharmacyDetailsModal && pharmacyDetails && (
+          <div className="clinic-modal-overlay" onClick={handleClosePharmacyDetails}>
+            <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 className="clinic-modal-header">Pharmacy Details</h2>
+              
+              <div className="pharmacy-details-container">
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Pharmacy ID:</span>
+                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyId}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Pharmacy Name:</span>
+                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyName}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Registration Number:</span>
+                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyRegistrationNo}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">GST Number:</span>
+                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyGst}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">PAN Number:</span>
+                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyPan}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Address:</span>
+                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyAddress}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Updated At:</span>
+                  <span className="pharmacy-details-value">{new Date(pharmacyDetails.updatedAt).toLocaleString()}</span>
+                </div>
+                {pharmacyDetails.pharmacyHeader && (
+                  <div className="pharmacy-details-row">
+                    <span className="pharmacy-details-label">Header Image:</span>
+                    <div className="pharmacy-header-preview">
+                      <img 
+                        src={pharmacyDetails.pharmacyHeader} 
+                        alt="Pharmacy Header" 
+                        className="pharmacy-header-image"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="clinic-button-group">
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handleClosePharmacyDetails}
+                >
+                  <X size={16} />
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showLabDetailsModal && labDetails && (
+          <div className="clinic-modal-overlay" onClick={handleCloseLabDetails}>
+            <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 className="clinic-modal-header">Lab Details</h2>
+              
+              <div className="pharmacy-details-container">
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Lab Name:</span>
+                  <span className="pharmacy-details-value">{labDetails.labName}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Registration Number:</span>
+                  <span className="pharmacy-details-value">{labDetails.labRegistrationNo}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">GST Number:</span>
+                  <span className="pharmacy-details-value">{labDetails.labGst}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">PAN Number:</span>
+                  <span className="pharmacy-details-value">{labDetails.labPan}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Address:</span>
+                  <span className="pharmacy-details-value">{labDetails.labAddress}</span>
+                </div>
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Updated At:</span>
+                  <span className="pharmacy-details-value">{new Date(labDetails.updatedAt).toLocaleString()}</span>
+                </div>
+                {labDetails.labHeader && (
+                  <div className="pharmacy-details-row">
+                    <span className="pharmacy-details-label">Header Image:</span>
+                    <div className="pharmacy-header-preview">
+                      <img 
+                        src={labDetails.labHeader} 
+                        alt="Lab Header" 
+                        className="pharmacy-header-image"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="clinic-button-group">
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handleCloseLabDetails}
                 >
                   <X size={16} />
                   Close
