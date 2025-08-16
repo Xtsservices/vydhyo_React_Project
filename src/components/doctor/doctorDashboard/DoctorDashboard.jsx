@@ -13,12 +13,9 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { apiGet } from "../../api";
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const { Title, Text } = Typography;
-const { RangePicker } = AntDatePicker;
 
 // Sample feedback data
 const feedbacks = [
@@ -1295,37 +1292,6 @@ const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeCha
         >
           Revenue Summary
         </Title>
-        <div style={{ display: "flex", alignItems: "center", marginTop: "8px" }}>
-          <CalendarTodayIcon style={{ marginRight: '8px', color: '#1977f3' }} />
-          <ReactDatePicker
-            ref={datePickerRef}
-            selected={startDate ? moment(startDate).toDate() : null}
-            onChange={handleDateChange}
-            startDate={startDate ? moment(startDate).toDate() : null}
-            endDate={endDate ? moment(endDate).toDate() : null}
-            selectsRange
-            isClearable
-            placeholderText="Select a date range"
-            maxDate={new Date()}
-            customInput={
-              <Button
-                style={{
-                  borderRadius: '8px',
-                  border: '1px solid #d9d9d9',
-                  padding: '8px 16px',
-                  width: '250px',
-                  textAlign: 'left',
-                  backgroundColor: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <span>{formatDisplayDate()}</span>
-              </Button>
-            }
-          />
-        </div>
       </div>
       <div style={{ textAlign: "center" }}>
         <PieChart data={revenueSummaryData} />
