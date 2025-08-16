@@ -1,0 +1,61 @@
+name: Auto Versioning
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write   # this is required so bot can push tags
+
+jobs:
+  versioning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed to fetch tags
+
+      - name: Get Current Version
+        id: get_version
+        run: |
+          if git tag --list | grep -q '^V'; then
+            latest_tag=$(git describe --tags --abbrev=0)
+          else
+            latest_tag="V1.0.0"  # Default starting version
+            git tag $latest_tag
+            git push origin $latest_tag
+          fi
+          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+
+      - name: Determine Version Bump
+        id: bump
+        run: |
+          commit_message=$(git log -1 --pretty=%B)
+          major=$(echo "${latest_tag}" | cut -d. -f1 | sed 's/V//')
+          minor=$(echo "${latest_tag}" | cut -d. -f2)
+          patch=$(echo "${latest_tag}" | cut -d. -f3)
+
+          if echo "$commit_message" | grep -qi "major"; then
+            major=$((major + 1))
+            minor=0
+            patch=0
+          elif echo "$commit_message" | grep -qi "minor"; then
+            minor=$((minor + 1))
+            patch=0
+          else
+            patch=$((patch + 1))
+          fi
+
+          new_tag="V${major}.${minor}.${patch}"
+          echo "new_tag=$new_tag" >> $GITHUB_ENV
+
+      - name: Create Git Tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # built-in token
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag ${{ env.new_tag }}
+          git push origin ${{ env.new_tag }}
