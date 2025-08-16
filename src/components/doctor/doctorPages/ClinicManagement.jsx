@@ -760,8 +760,39 @@ export default function ClinicManagement() {
           },
         });
         console.log("Add API Response:", response);
+        if (response.status === 200 && response.data?.status === "warning") {
+        // Handle duplicate registration number
+        const { message, data } = response.data;
+        const isPharmacyConflict = data?.pharmacyId;
+        const isLabConflict = data?.labId;
+        const entity = isPharmacyConflict ? "pharmacy" : "lab";
+        const confirmMessage = `${message} Do you want to link this ${entity}?`;
 
-        if (response.status === 200 || response.status === 201) {
+        const shouldLink = window.confirm(confirmMessage);
+
+        if (shouldLink) {
+          // Retry with bypassCheck=true
+          // formDataToSend.append("bypassCheck", "true");
+          const bypassResponse = await apiPost("/users/addAddressFromWeb?bypassCheck=true", formDataToSend, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
+
+          if (bypassResponse.status === 200 || bypassResponse.status === 201) {
+            toast.success(bypassResponse.data?.message || `Clinic and ${entity} linked successfully`);
+            setShowModal(false);
+          } else {
+            toast.warning(bypassResponse.data?.message || `Failed to link ${entity}`);
+            throw new Error(bypassResponse.data?.message || `Failed to link ${entity}`);
+          }
+        } else {
+          toast.info(`Cancelled linking ${entity}`);
+          return;
+        }
+      }
+
+        else if (response.status === 200 || response.status === 201) {
           toast.success(response.data?.message || "Clinic added successfully");
           setShowModal(false);
         } else {
