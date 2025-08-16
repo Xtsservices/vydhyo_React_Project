@@ -44,8 +44,8 @@ const EPrescriptionList = () => {
   const [filters, setFilters] = useState({
     clinic: "all",
     type: "all",
-    status: "all",
-    selectedFilterDate: null,
+    status: "scheduled", // Default to scheduled
+    selectedFilterDate: moment(),
   });
   const [pagination, setPagination] = useState({
     current: 1,
@@ -95,7 +95,7 @@ const EPrescriptionList = () => {
     try {
       const patientId = appointment.userId;
       if (!patientId) {
-        message.error("Patient ID not found");
+        toast.error("Patient ID not found");
         return;
       }
 
@@ -126,10 +126,10 @@ const EPrescriptionList = () => {
     try {
       const queryParams = new URLSearchParams({
         doctorId,
-        ...(searchText && { searchText }),
+        status: "scheduled", // Always filter for scheduled appointments
+        ...(searchText && { searchText: searchText.trim() }), // Trim search text
         ...(filters.clinic !== "all" && { clinic: filters.clinic }),
         ...(filters.type !== "all" && { appointmentType: filters.type }),
-        ...(filters.status !== "all" && { status: filters.status }),
         ...(filters.selectedFilterDate && {
           date: filters.selectedFilterDate.format("YYYY-MM-DD")
         }),
@@ -163,8 +163,13 @@ const EPrescriptionList = () => {
   const getAppointmentsCount = async () => {
     setLoading(true);
     try {
+      const queryParams = new URLSearchParams({
+        doctorId,
+        status: "scheduled", // Count only scheduled appointments
+      });
+
       const response = await apiGet(
-        `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}`
+        `/appointment/getAppointmentsCountByDoctorID?${queryParams.toString()}`
       );
 
       if (response.status === 200) {
@@ -189,9 +194,14 @@ const EPrescriptionList = () => {
     }
   }, [user, doctorId]);
 
+  // Debounce search
   useEffect(() => {
-    getAppointments();
-  }, [filters]);
+    const delayDebounceFn = setTimeout(() => {
+      getAppointments();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchText, filters]);
 
   const handleFilterChange = (filterName, value) => {
     setFilters((prev) => ({
@@ -216,7 +226,6 @@ const EPrescriptionList = () => {
       >
         Digital-Prescription
       </Menu.Item>
-
       <Menu.Item
         key="view-previous-prescriptions"
         onClick={() => handleViewPreviousPrescriptions(record)}
@@ -296,8 +305,8 @@ const EPrescriptionList = () => {
                 <Input
                   placeholder="Search by Patient Name or Appointment ID or email or mobile"
                   prefix={<SearchOutlined />}
-                  value={searchText.toUpperCase()}
-                  onChange={(e) => setSearchText(e.target.value.toLowerCase())}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
                   className="filters-input"
                 />
               </Col>
@@ -318,22 +327,9 @@ const EPrescriptionList = () => {
               </Col>
 
               <Col xs={24} sm={12} md={4}>
-                <Select
-                  className="filters-select"
-                  value={filters.status}
-                  onChange={(value) => handleFilterChange("status", value)}
-                >
-                  <Option value="all">All Status</Option>
-                  <Option value="scheduled">Scheduled</Option>
-                  <Option value="completed">Completed</Option>
-                  <Option value="cancelled">Cancelled</Option>
-                </Select>
-              </Col>
-
-              <Col xs={24} sm={12} md={4}>
                 <input
                   type="date"
-                  value={filters.selectedFilterDate ? filters.selectedFilterDate.format("YYYY-MM-DD") : ""}
+                  value={filters.selectedFilterDate ? filters.selectedFilterDate.format("YYYY-MM-DD") : moment().format("YYYY-MM-DD")}
                   onChange={(e) => {
                     const dateValue = e.target.value;
                     handleDateChange(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
