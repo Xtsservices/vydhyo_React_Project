@@ -30,6 +30,7 @@ const calculateAge = (dob) => {
 
 // Utility function to transform patient data
 const transformPatientData = (result, user) => {
+  console.log(user, "complete user details")
   if (!user || !result) return [];
   return result.map((patient, index) => {
     const appointments = Array.isArray(patient.appointments)
@@ -37,6 +38,8 @@ const transformPatientData = (result, user) => {
       : [];
     const tests = Array.isArray(patient.tests) ? patient.tests : [];
     const medicines = Array.isArray(patient.medicines) ? patient.medicines : [];
+
+    
 
     const appointmentDetails = appointments.map((appointment, idx) => ({
       id: `A${index}${idx}`,
@@ -61,6 +64,11 @@ const transformPatientData = (result, user) => {
         ? appointment.status.charAt(0).toUpperCase() +
           appointment.status.slice(1)
         : "Pending",
+      clinicHeaderUrl: appointment.addressId
+        ? user?.addresses?.find(
+            (addr) => addr.addressId === appointment.addressId
+          )?.headerImage || "N/A"
+        : "N/A",
     }));
 
     const totalTestAmount = tests.reduce(
@@ -210,7 +218,8 @@ const BillingSystem = () => {
       );
 
       if (response?.status === 200 && response?.data?.data) {
-        setPatients(response.data.data.reverse());
+        console.log("Fetched patients:", response.data.data);
+        setPatients(response.data.data);
         setPagination({
           current: page,
           pageSize: pageSize,
@@ -278,135 +287,129 @@ const BillingSystem = () => {
   };
 
   const handleMarkAsPaid = async (patientId, type) => {
-    if (isPaymentInProgress[`${patientId}-${type}`]) return;
+  if (isPaymentInProgress[`${patientId}-${type}`]) return;
 
+  const isPending = (s) => String(s || "").toLowerCase() === "pending";
+
+  setIsPaymentInProgress((prev) => ({
+    ...prev,
+    [`${patientId}-${type}`]: true,
+  }));
+
+  const patient = transformedPatients.find((p) => p.id === patientId);
+  if (!patient) {
     setIsPaymentInProgress((prev) => ({
       ...prev,
-      [`${patientId}-${type}`]: true,
+      [`${patientId}-${type}`]: false,
     }));
-    const patient = transformedPatients.find((p) => p.id === patientId);
-    if (!patient) {
-      setIsPaymentInProgress((prev) => ({
-        ...prev,
-        [`${patientId}-${type}`]: false,
-      }));
-      return;
-    }
+    return;
+  }
 
-    let pendingTests = [];
-    let pendingMedicines = [];
+  let pendingTests = [];
+  let pendingMedicines = [];
 
-    if (type === "pharmacy") {
-      pendingMedicines = patient.medicines.filter(
-        (med) => med.status === "Pending"
-      );
-    } else if (type === "labs") {
-      pendingTests = patient.tests.filter((test) => test.status === "Pending");
-    } else if (type === "all") {
-      pendingTests = patient.tests.filter((test) => test.status === "Pending");
-      pendingMedicines = patient.medicines.filter(
-        (med) => med.status === "Pending"
-      );
-    }
+  if (type === "pharmacy") {
+    pendingMedicines = (patient.medicines || []).filter((m) => isPending(m.status));
+  } else if (type === "labs") {
+    pendingTests = (patient.tests || []).filter((t) => isPending(t.status));
+  } else if (type === "all") {
+    pendingTests = (patient.tests || []).filter((t) => isPending(t.status));
+    pendingMedicines = (patient.medicines || []).filter((m) => isPending(m.status));
+  }
 
-    if (pendingTests.length === 0 && pendingMedicines.length === 0) {
-      toast.error(`No pending ${type === "all" ? "items" : type} to pay for.`);
-      setIsPaymentInProgress((prev) => ({
-        ...prev,
-        [`${patientId}-${type}`]: false,
-      }));
-      return;
-    }
+  if (pendingTests.length === 0 && pendingMedicines.length === 0) {
+    toast.error(`No pending ${type === "all" ? "items" : type} to pay for.`);
+    setIsPaymentInProgress((prev) => ({
+      ...prev,
+      [`${patientId}-${type}`]: false,
+    }));
+    return;
+  }
 
-    const payload = {
-      patientId: patient.patientId,
-      doctorId: doctorId,
-      tests: pendingTests
-        .filter((test) => test.price > 0)
-        .map((test) => ({
-          testId: test.testId,
-          labTestID: test.labTestID,
-          status: "pending",
-          price: test.price,
-        })),
-      medicines: pendingMedicines
-        .filter((med) => med.price > 0)
-        .map((med) => ({
-          medicineId: med.medicineId,
-          pharmacyMedID: med.pharmacyMedID,
-          quantity: med.quantity,
-          status: "pending",
-          price: med.price,
-        })),
-    };
-
-    if (payload.tests.length === 0 && payload.medicines.length === 0) {
-      toast.error("At least one test or medicine must be provided.");
-      setIsPaymentInProgress((prev) => ({
-        ...prev,
-        [`${patientId}-${type}`]: false,
-      }));
-      return;
-    }
-
-    try {
-      const response = await apiPost(
-        "/receptionist/totalBillPayFromReception",
-        payload
-      );
-
-      if (response.status === 200) {
-        setPatients((prevPatients) =>
-          prevPatients.map((p) =>
-            p.patientId === patient.patientId
-              ? {
-                  ...p,
-                  tests: p.tests.map((test) =>
-                    test.status === "Pending" &&
-                    (type === "labs" || type === "all")
-                      ? { ...test, status: "Completed" }
-                      : test
-                  ),
-                  medicines: p.medicines.map((med) =>
-                    med.status === "Pending" &&
-                    (type === "pharmacy" || type === "all")
-                      ? { ...med, status: "Completed" }
-                      : med
-                  ),
-                }
-              : p
-          )
-        );
-
-        setBillingCompleted((prev) => ({
-          ...prev,
-          [patientId]: {
-            ...prev[patientId],
-            [type]: true,
-          },
-        }));
-        toast.success(
-          `Payment processed successfully for ${
-            type === "all"
-              ? "all items"
-              : type === "pharmacy"
-              ? "pharmacy"
-              : "labs"
-          }!`
-        );
-      } else {
-        throw new Error("Failed to process payment");
-      }
-    } catch (err) {
-      console.error("Error processing payment:", err);
-      toast.error("Failed to process payment. Please try again.");
-    } finally {
-      setIsPaymentInProgress((prev) => ({
-        ...prev,
-        [`${patientId}-${type}`]: false,
-      }));
-    }
+  const payload = {
+    patientId: patient.patientId,
+    doctorId: doctorId,
+    tests: pendingTests
+      .filter((test) => Number(test.price) > 0)
+      .map((test) => ({
+        testId: test.testId,
+        labTestID: test.labTestID,
+        status: "pending", // backend expects lowercase
+        price: test.price,
+      })),
+    medicines: pendingMedicines
+      .filter((med) => Number(med.price) > 0)
+      .map((med) => ({
+        medicineId: med.medicineId,
+        pharmacyMedID: med.pharmacyMedID,
+        quantity: med.quantity,
+        status: "pending", // backend expects lowercase
+        price: med.price,
+      })),
   };
+
+  if (payload.tests.length === 0 && payload.medicines.length === 0) {
+    toast.error("At least one test or medicine must be provided.");
+    setIsPaymentInProgress((prev) => ({
+      ...prev,
+      [`${patientId}-${type}`]: false,
+    }));
+    return;
+  }
+
+  try {
+    const response = await apiPost("/receptionist/totalBillPayFromReception", payload);
+
+    if (response.status === 200) {
+      // ✅ Optimistic UI update — flip local 'pending' -> 'completed' (lowercase to match API)
+      fetchPatients();
+      // setPatients((prevPatients) =>
+      //   prevPatients.map((p) =>
+      //     p.patientId === patient.patientId
+      //       ? {
+      //           ...p,
+      //           tests: (p.tests || []).map((test) =>
+      //             isPending(test.status) && (type === "labs" || type === "all")
+      //               ? { ...test, status: "completed" }
+      //               : test
+      //           ),
+      //           medicines: (p.medicines || []).map((med) =>
+      //             isPending(med.status) && (type === "pharmacy" || type === "all")
+      //               ? { ...med, status: "completed" }
+      //               : med
+      //           ),
+      //         }
+      //       : p
+      //   )
+      // );
+
+      // setBillingCompleted((prev) => ({
+      //   ...prev,
+      //   [patientId]: {
+      //     ...prev[patientId],
+      //     [type]: true,
+      //   },
+      // }));
+
+      toast.success(
+        `Payment processed successfully for ${
+          type === "all" ? "all items" : type === "pharmacy" ? "pharmacy" : "labs"
+        }!`
+      );
+    } else {
+      throw new Error("Failed to process payment");
+    }
+  } catch (err) {
+    console.error("Error processing payment:", err);
+    toast.error("Failed to process payment. Please try again.");
+  } finally {
+    setIsPaymentInProgress((prev) => ({
+      ...prev,
+      [`${patientId}-${type}`]: false,
+    }));
+  }
+};
+
 
   const handlePayClick = (patientId, type = "all") => {
     const key = `${patientId}-${type}`;
@@ -419,509 +422,370 @@ const BillingSystem = () => {
     debouncedMarkAsPaidMap.current[key]();
   };
 
-  const handlePrintInvoice = (type, patientId) => {
-    const patient = transformedPatients.find((p) => p.id === patientId);
-    if (!patient) return;
+const handlePrintInvoice = (type, patientId) => {
+  const patient = transformedPatients.find((p) => p.id === patientId);
+  if (!patient) return;
 
-    let provider = {};
-    let headerUrl = "";
-    let providerName = "N/A";
-    let contactInfoHTML = "";
-    let sectionHTML = "";
-    let total = 0;
+  // Open the print window ASAP to keep user gesture context
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    // Fallback if popups are blocked
+    toast?.error?.("Please allow pop-ups to print the invoice.");
+    return;
+  }
 
-    const patientNumber = patient.patientId.replace(/\D/g, "");
-    const invoiceNumber = `INV-${patientNumber.padStart(3, "0")}`;
-    const billingDate = new Date().toLocaleDateString("en-US", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-    const billingTime = new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+  const isCompleted = (s) => {
+    const v = String(s || "").toLowerCase();
+    return v === "completed" || v === "complete" || v === "paid";
+  };
 
-    if (type === "pharmacy") {
-      const completedMedicines = patient.medicines.filter(
-        (med) => med.status === "Completed"
-      );
-      const pharmacy = patient.medicines[0]?.pharmacyDetails || {};
-      headerUrl = pharmacy.pharmacyHeaderUrl || "";
-      providerName = pharmacy.pharmacyName || "N/A";
-      contactInfoHTML = `
-        <p>${pharmacy.pharmacyAddress || "N/A"}</p>
-        <p>GST: ${pharmacy.pharmacyGst || "N/A"}</p>
-        <p>PAN: ${pharmacy.pharmacyPan || "N/A"}</p>
-        <p>Registration No: ${pharmacy.pharmacyRegistrationNo || "N/A"}</p>
-      `;
-      total = completedMedicines.reduce(
-        (sum, med) => sum + med.price * med.quantity,
-        0
-      );
-      if (completedMedicines.length > 0) {
-        sectionHTML = `
-          <div class="section compact-spacing">
-            <h3 class="section-title">Medicines</h3>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Quantity</th>
-                  <th>Price (₹)</th>
-                  <th>Subtotal (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${completedMedicines
-                  .map(
-                    (med) => `
-                  <tr>
-                    <td>${med.id}</td>
-                    <td>${med.name}</td>
-                    <td>${med.quantity}</td>
-                    <td>${med.price.toFixed(2)}</td>
-                    <td>${(med.price * med.quantity).toFixed(2)}</td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-            <div class="section-total">
-              <p class="total-text">Medicine Total: ₹${total.toFixed(2)}</p>
-            </div>
-          </div>
-        `;
-      }
-    } else if (type === "labs") {
-      const completedTests = patient.tests.filter(
-        (test) => test.status === "Completed"
-      );
-      const lab = patient.tests[0]?.labDetails || {};
-      headerUrl = lab.labHeaderUrl || "";
-      providerName = lab.labName || "N/A";
-      contactInfoHTML = `
-        <p>${lab.labAddress || "N/A"}</p>
-        <p>GST: ${lab.labGst || "N/A"}</p>
-        <p>PAN: ${lab.labPan || "N/A"}</p>
-        <p>Registration No: ${lab.labRegistrationNo || "N/A"}</p>
-      `;
-      total = completedTests.reduce((sum, test) => sum + test.price, 0);
-      if (completedTests.length > 0) {
-        sectionHTML = `
-          <div class="section compact-spacing">
-            <h3 class="section-title">Tests</h3>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Price (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${completedTests
-                  .map(
-                    (test) => `
-                  <tr>
-                    <td>${test.id}</td>
-                    <td>${test.name}</td>
-                    <td class="price-column">${test.price.toFixed(2)}</td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-            <div class="section-total">
-              <p class="total-text">Test Total: ₹${total.toFixed(2)}</p>
-            </div>
-          </div>
-        `;
-      }
-    } else if (type === "appointments") {
-      const completedAppointments = patient.appointmentDetails.filter(
-        (appt) => appt.status === "Completed"
-      );
-      const appointment = patient.appointmentDetails[0] || {};
-      const clinic =
-        user?.addresses?.find(
-          (addr) => addr.addressId === appointment.addressId
-        ) || {};
-      headerUrl = "";
-      providerName = clinic.clinicName || "N/A";
-      contactInfoHTML = `
-        <p>${clinic.address || "N/A"}</p>
-        <p>${clinic.city || "N/A"}, ${clinic.state || "N/A"} ${
-        clinic.pincode || "N/A"
-      }</p>
-        <p>Phone: ${clinic.mobile || "N/A"}</p>
-      `;
-      total = completedAppointments.reduce(
-        (sum, appt) => sum + appt.appointmentFees,
-        0
-      );
-      if (completedAppointments.length > 0) {
-        sectionHTML = `
-          <div class="section compact-spacing">
-            <h3 class="section-title">Appointments</h3>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Type</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Clinic</th>
-                  <th>Price (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${completedAppointments
-                  .map(
-                    (appt) => `
-                  <tr>
-                    <td>${appt.appointmentId}</td>
-                    <td>${appt.appointmentType}</td>
-                    <td>${appt.appointmentDate}</td>
-                    <td>${appt.appointmentTime}</td>
-                    <td>${appt.clinicName}</td>
-                    <td class="price-column">${appt.appointmentFees.toFixed(
-                      2
-                    )}</td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-            <div class="section-total">
-              <p class="total-text">Appointment Total: ₹${total.toFixed(2)}</p>
-            </div>
-          </div>
-        `;
-      }
-    }
+  let headerUrl = "";
+  let providerName = "N/A";
+  let contactInfoHTML = "";
+  let sectionHTML = "";
+  let total = 0;
 
-    const headerHTML = headerUrl
-      ? `<div class="provider-logo"><img class="header-logo" src="${headerUrl}" alt="Header Logo" /></div>`
-      : "";
+  const patientNumber = String(patient.patientId || "").replace(/\D/g, "");
+  const invoiceNumber = `INV-${patientNumber.padStart(3, "0")}`;
+  const now = new Date();
+  const billingDate = now.toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" });
+  const billingTime = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
 
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Invoice</title>
-          <style>
-            html, body {
-              margin: 0;
-              padding: 0;
-              font-family: Arial, sans-serif;
-              background: white;
-              font-size: 14px;
-            }
+  if (type === "pharmacy") {
+    const completedMedicines = (patient.medicines || []).filter((m) => isCompleted(m.status));
+    const pharmacyDetails =
+      completedMedicines[0]?.pharmacyDetails ||
+      patient.medicines?.[0]?.pharmacyDetails ||
+      {};
 
-            @page {
-              margin: 0;
-              size: A4;
-            }
-
-            @media print {
-              @page {
-                margin: 0;
-                size: A4;
-              }
-              
-              body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
-              
-              /* Hide browser default headers and footers */
-              @page {
-                margin-top: 0;
-                margin-bottom: 0;
-                margin-header: 0;
-                margin-footer: 0;
-              }
-            }
-
-            .invoice-container {
-              padding: 15px;
-              max-width: 210mm;
-              margin: 0 auto;
-            }
-
-            .invoice-content {
-              flex: 1;
-            }
-
-            .invoice-title-section {
-              text-align: center;
-              margin-top: 30px;
-              margin-bottom: 20px;
-            }
-
-            .main-invoice-title {
-              font-size: 28px;
-              font-weight: bold;
-              color: #333;
-              margin: 0;
-            }
-
-            .invoice-header-section {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 20px;
-              padding-bottom: 15px;
-              border-bottom: 2px solid #eee;
-            }
-
-            .provider-info {
-              text-align: left;
-            }
-
-            .provider-name {
-              font-size: 20px;
-              font-weight: bold;
-              color: #333;
-              margin-bottom: 8px;
-            }
-
-            .contact-info p {
-              margin: 3px 0;
-              color: #666;
-            }
-
-            .invoice-details-top {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 20px;
-              padding: 12px;
-              background-color: #f8f9fa;
-              border-radius: 5px;
-            }
-
-            .invoice-detail-item {
-              font-size: 14px;
-            }
-
-            .section {
-              margin-bottom: 20px;
-            }
-
-            .section-title {
-              font-size: 16px;
-              font-weight: bold;
-              color: #333;
-              margin-bottom: 10px;
-              padding-bottom: 5px;
-              border-bottom: 1px solid #ddd;
-            }
-
-            .patient-info {
-              display: flex;
-              justify-content: space-between;
-              background-color: #f8f9fa;
-              padding: 12px;
-              border-radius: 5px;
-            }
-
-            .patient-info p {
-              margin: 3px 0;
-            }
-
-            .data-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 10px;
-            }
-
-            .data-table th, .data-table td {
-              border: 1px solid #ddd;
-              padding: 8px;
-              text-align: left;
-            }
-
-            .data-table th {
-              background-color: #f8f9fa;
-              font-weight: bold;
-            }
-
-            .price-column {
-              text-align: right;
-            }
-
-            .section-total {
-              text-align: right;
-              margin-top: 8px;
-            }
-
-            .total-text {
-              font-weight: bold;
-              font-size: 14px;
-              color: #333;
-            }
-
-            .grand-total-section {
-              margin-top: 20px;
-              padding: 15px;
-              background-color: #f8f9fa;
-              border-radius: 5px;
-            }
-
-            .total-row {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 8px;
-              font-size: 14px;
-            }
-
-            .grand-total-row {
-              display: flex;
-              justify-content: space-between;
-              font-size: 16px;
-              font-weight: bold;
-              color: #333;
-              border-top: 2px solid #333;
-              padding-top: 8px;
-              margin-top: 10px;
-            }
-
-            .footer {
-              text-align: center;
-              padding: 15px 0;
-              border-top: 1px solid #ddd;
-              color: #666;
-              background: white;
-            }
-
-            .powered-by {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-top: 8px;
-              gap: 6px;
-              color: #666;
-              font-size: 12px;
-            }
-
-            .footer-logo {
-              width: 18px;
-              height: 18px;
-              object-fit: contain;
-            }
-
-            /* Compact spacing for better space utilization */
-            .compact-spacing {
-              margin-bottom: 15px;
-            }
-
-            .compact-spacing:last-child {
-              margin-bottom: 0;
-            }
-
-            .provider-logo {
-              text-align: center;
-              margin-bottom: 10px;
-              width: 100%;
-            }
-
-            .header-logo {
-              width: 100%;
-              height: 150px;
-              object-fit: cover;
-              display: block;
-              margin: 0;
-              padding: 0;
-            }
-
-            /* Print specific styles */
-            @media print {
-              .invoice-container {
-                min-height: 100vh;
-              }
-              
-              .footer {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                margin-top: 0;
-              }
-            }
-          </style>
-        </head>
-        <body onload="window.print();window.close();">
-          <div class="invoice-container">
-            <div class="invoice-content">
-              ${headerHTML}
-
-              <div class="invoice-header-section compact-spacing">
-                <div class="provider-info">
-                  <div class="provider-name">${providerName}</div>
-                  <div class="contact-info">
-                    <p>Doctor: ${user?.firstname || "N/A"} ${
-      user?.lastname || "N/A"
-    }</p>
-                  </div>
-                </div>
-                <div class="invoice-details">
-                  <div class="invoice-detail-item"><strong>Invoice No:</strong> #${invoiceNumber}</div>
-                  <div class="invoice-detail-item"><strong>Date:</strong> ${billingDate}</div>
-                  <div class="invoice-detail-item"><strong>Time:</strong> ${billingTime}</div>
-                </div>
-              </div>
-
-              <div class="provider-details">
-                ${contactInfoHTML}
-              </div>
-
-              <div class="section compact-spacing">
-                <h3 class="section-title">Patient Information</h3>
-                <div class="patient-info">
-                  <div>
-                    <p><strong>Patient ID:</strong> ${patient.patientId}</p>
-                    <p><strong>First Name:</strong> ${patient.firstname}</p>
-                    <p><strong>Last Name:</strong> ${patient.lastname}</p>
-                    <p><strong>Mobile:</strong> ${patient.mobile}</p>
-                  </div>
-                  <div>
-                    <p><strong>Age:</strong> ${patient.age}</p>
-                    <p><strong>Gender:</strong> ${patient.gender}</p>
-                  </div>
-                </div>
-              </div>
-
-              ${sectionHTML}
-
-              <div class="grand-total-section">
-                <div class="grand-total-row">
-                  <span>Grand Total:</span>
-                  <span>₹${total.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="footer">
-              <p>Thank you for choosing Vydhyo</p>
-              <div class="powered-by">
-                <img src="../assets/logo.png" alt="Vydhyo Logo" class="footer-logo">
-                <span>Powered by Vydhyo</span>
-              </div>
-            </div>
-          </div>
-        </body>
-      </html>
+    headerUrl = pharmacyDetails.pharmacyHeaderUrl || "";
+    providerName = pharmacyDetails.pharmacyName || "N/A";
+    contactInfoHTML = `
+      <p>${pharmacyDetails.pharmacyAddress || "N/A"}</p>
+      <p>GST: ${pharmacyDetails.pharmacyGst || "N/A"}</p>
+      <p>PAN: ${pharmacyDetails.pharmacyPan || "N/A"}</p>
+      <p>Registration No: ${pharmacyDetails.pharmacyRegistrationNo || "N/A"}</p>
     `;
 
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-  };
+    total = completedMedicines.reduce(
+      (sum, med) => sum + (Number(med.price) || 0) * (Number(med.quantity) || 0),
+      0
+    );
+
+    if (!completedMedicines.length) {
+      printWindow.close();
+      toast?.error?.("No completed medicines to print.");
+      return;
+    }
+
+    sectionHTML = `
+      <div class="section compact-spacing">
+        <h3 class="section-title">Medicines</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Quantity</th>
+              <th>Price (₹)</th>
+              <th>Subtotal (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${completedMedicines.map((med) => `
+              <tr>
+                <td>${med.id || med.medicineId || ""}</td>
+                <td>${med.name || med.medName || ""}</td>
+                <td>${med.quantity}</td>
+                <td>${Number(med.price || 0).toFixed(2)}</td>
+                <td>${((Number(med.price) || 0) * (Number(med.quantity) || 0)).toFixed(2)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        <div class="section-total">
+          <p class="total-text">Medicine Total: ₹${total.toFixed(2)}</p>
+        </div>
+      </div>
+    `;
+  } else if (type === "labs") {
+    const completedTests = (patient.tests || []).filter((t) => isCompleted(t.status));
+    const labDetails =
+      completedTests[0]?.labDetails || patient.tests?.[0]?.labDetails || {};
+
+    headerUrl = labDetails.labHeaderUrl || "";
+    providerName = labDetails.labName || "N/A";
+    contactInfoHTML = `
+      <p>${labDetails.labAddress || "N/A"}</p>
+      <p>GST: ${labDetails.labGst || "N/A"}</p>
+      <p>PAN: ${labDetails.labPan || "N/A"}</p>
+      <p>Registration No: ${labDetails.labRegistrationNo || "N/A"}</p>
+    `;
+
+    total = completedTests.reduce((sum, test) => sum + (Number(test.price) || 0), 0);
+
+    if (!completedTests.length) {
+      printWindow.close();
+      toast?.error?.("No completed tests to print.");
+      return;
+    }
+
+    sectionHTML = `
+      <div class="section compact-spacing">
+        <h3 class="section-title">Tests</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Price (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${completedTests.map((test) => `
+              <tr>
+                <td>${test.id || test.testId || ""}</td>
+                <td>${test.name || test.testName || ""}</td>
+                <td class="price-column">${Number(test.price || 0).toFixed(2)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        <div class="section-total">
+          <p class="total-text">Test Total: ₹${total.toFixed(2)}</p>
+        </div>
+      </div>
+    `;
+  } else if (type === "appointments") {
+    const appts = patient.appointmentDetails || patient.appointments || [];
+    const completedAppointments = appts.filter((a) => isCompleted('completed' || ''));
+    const firstAppt = appts[0] || {};
+
+    const clinic = (user?.addresses || []).find((addr) => addr.addressId === firstAppt.addressId) || {};
+    headerUrl = clinic.clinicHeaderUrl || clinic.clinicHeader || "";
+    providerName = clinic.clinicName || "N/A";
+    contactInfoHTML = `
+      <p>${clinic.address || "N/A"}</p>
+      <p>${clinic.city || "N/A"}, ${clinic.state || "N/A"} ${clinic.pincode || "N/A"}</p>
+      <p>Phone: ${clinic.mobile || "N/A"}</p>
+    `;
+
+    total = completedAppointments.reduce((sum, a) => sum + (Number(a.appointmentFees) || 0), 0);
+
+    if (!completedAppointments.length) {
+      printWindow.close();
+      toast?.error?.("No completed appointments to print.");
+      return;
+    }
+
+    sectionHTML = `
+      <div class="section compact-spacing">
+        <h3 class="section-title">Appointments</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Clinic</th>
+              <th>Price (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${completedAppointments.map((appt) => `
+              <tr>
+                <td>${appt.appointmentId || ""}</td>
+                <td>${appt.appointmentType || ""}</td>
+                <td>${appt.appointmentDate || ""}</td>
+                <td>${appt.appointmentTime || ""}</td>
+                <td>${appt.clinicName || providerName || ""}</td>
+                <td class="price-column">${Number(appt.appointmentFees || 0).toFixed(2)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        <div class="section-total">
+          <p class="total-text">Appointment Total: ₹${total.toFixed(2)}</p>
+        </div>
+      </div>
+    `;
+  } else {
+    printWindow.close();
+    toast?.error?.("Unknown invoice type.");
+    return;
+  }
+
+  const headerSectionHTML = headerUrl
+    ? `
+      <div class="invoice-header-image-only">
+        <img src="${headerUrl}" alt="Header" />
+      </div>
+    `
+    : "";
+
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Invoice</title>
+        <meta charset="utf-8" />
+        <style>
+          html, body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #fff; font-size: 14px; }
+          @page { margin: 0; size: A4; }
+          @media print {
+            @page { margin: 0; size: A4; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+          .invoice-container { padding: 15px; max-width: 210mm; margin: 0 auto; }
+          .invoice-content { flex: 1; }
+
+          .invoice-header-image-only { width: 100%; margin-bottom: 12px; page-break-inside: avoid; }
+          .invoice-header-image-only img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: contain; background: #fff; }
+
+          .invoice-header-section { display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
+          .provider-info { text-align: left; }
+          .provider-name { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 6px; }
+          .contact-info p { margin: 3px 0; color: #444; }
+          .invoice-details { text-align: right; }
+          .invoice-detail-item { font-size: 14px; }
+
+          .section { margin-bottom: 20px; }
+          .section-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd; }
+
+          .patient-info { display: flex; justify-content: space-between; background-color: #f8f9fa; padding: 12px; border-radius: 5px; }
+          .patient-info p { margin: 3px 0; }
+
+          .data-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+          .data-table th, .data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          .data-table th { background-color: #f8f9fa; font-weight: bold; }
+          .price-column { text-align: right; }
+
+          .section-total { text-align: right; margin-top: 8px; }
+          .total-text { font-weight: bold; font-size: 14px; color: #333; }
+
+          .grand-total-section { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+          .grand-total-row { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: #333; border-top: 2px solid #333; padding-top: 8px; margin-top: 10px; }
+
+          .footer { text-align: center; padding: 15px 0; border-top: 1px solid #ddd; color: #666; background: #fff; }
+          .powered-by { display: flex; align-items: center; justify-content: center; margin-top: 8px; gap: 6px; color: #666; font-size: 12px; }
+          .footer-logo { width: 18px; height: 18px; object-fit: contain; }
+
+          .compact-spacing { margin-bottom: 15px; }
+          .compact-spacing:last-child { margin-bottom: 0; }
+
+          @media print {
+            .invoice-container { min-height: 100vh; }
+            .footer { position: fixed; bottom: 0; left: 0; right: 0; margin-top: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <div class="invoice-content">
+            ${headerSectionHTML}
+
+            <div class="invoice-header-section compact-spacing">
+              <div class="provider-info">
+                <div class="provider-name">${providerName}</div>
+                <div class="contact-info">
+                  <p>Doctor: ${user?.firstname || "N/A"} ${user?.lastname || "N/A"}</p>
+                </div>
+              </div>
+              <div class="invoice-details">
+                <div class="invoice-detail-item"><strong>Invoice No:</strong> #${invoiceNumber}</div>
+                <div class="invoice-detail-item"><strong>Date:</strong> ${billingDate}</div>
+                <div class="invoice-detail-item"><strong>Time:</strong> ${billingTime}</div>
+              </div>
+            </div>
+
+            <div class="provider-details">
+              ${contactInfoHTML}
+            </div>
+
+            <div class="section compact-spacing">
+              <h3 class="section-title">Patient Information</h3>
+              <div class="patient-info">
+                <div>
+                  <p><strong>Patient ID:</strong> ${patient.patientId}</p>
+                  <p><strong>First Name:</strong> ${patient.firstname}</p>
+                  <p><strong>Last Name:</strong> ${patient.lastname}</p>
+                  <p><strong>Mobile:</strong> ${patient.mobile}</p>
+                </div>
+                <div>
+                  <p><strong>Age:</strong> ${patient.age}</p>
+                  <p><strong>Gender:</strong> ${patient.gender}</p>
+                </div>
+              </div>
+            </div>
+
+            ${sectionHTML}
+
+            <div class="grand-total-section">
+              <div class="grand-total-row">
+                <span>Grand Total:</span>
+                <span>₹${total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Thank you for choosing Vydhyo</p>
+            <div class="powered-by">
+              <img src="../assets/logo.png" alt="Vydhyo Logo" class="footer-logo">
+              <span>Powered by Vydhyo</span>
+            </div>
+          </div>
+        </div>
+
+        <script>
+          (function() {
+            function triggerPrint() {
+              try { window.focus(); } catch (e) {}
+              try { window.print(); } catch (e) {}
+            }
+
+            function waitForImagesAndPrint() {
+              var imgs = Array.from(document.images || []);
+              if (imgs.length === 0) { return triggerPrint(); }
+
+              var loaded = 0;
+              var done = false;
+              function check() {
+                if (done) return;
+                loaded++;
+                if (loaded >= imgs.length) {
+                  done = true;
+                  triggerPrint();
+                }
+              }
+              imgs.forEach(function(img) {
+                if (img.complete) {
+                  check();
+                } else {
+                  img.addEventListener('load', check, { once: true });
+                  img.addEventListener('error', check, { once: true });
+                }
+              });
+            }
+
+            if (document.readyState === 'complete') {
+              waitForImagesAndPrint();
+            } else {
+              window.addEventListener('load', waitForImagesAndPrint, { once: true });
+            }
+          })();
+        </script>
+      </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(printContent);
+  printWindow.document.close();
+};
+
+
 
   const handlePageChange = (page) => {
     setPagination((prev) => ({
@@ -1326,645 +1190,665 @@ const BillingSystem = () => {
                   <div style={{ padding: "0 16px 16px 16px" }}>
                     {/* Pharmacy Section */}
                     {patient.medicines.length > 0 && (
-                      <div
+  <div
+    style={{
+      border: "1px solid #e5e7eb",
+      borderRadius: "8px",
+      marginBottom: "12px",
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        padding: "12px 16px",
+        backgroundColor: "#f8f9fa",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+      onClick={() => handleSectionExpand(patient.id, "pharmacy")}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+        }}
+      >
+        <div
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "8px",
+            backgroundColor: "#3b82f6",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "white",
+            fontSize: "16px",
+          }}
+        >
+          💊
+        </div>
+        <div>
+          <div style={{ fontWeight: "500", color: "#1f2937" }}>Pharmacy</div>
+          <div style={{ fontSize: "12px", color: "#6b7280" }}>
+            View medicines and billing
+          </div>
+        </div>
+      </div>
+      <div style={{ color: "#6b7280", fontSize: "18px" }}>
+        {expandedSections[`${patient.id}-pharmacy`] ? "−" : ">"}
+      </div>
+    </div>
+
+    {expandedSections[`${patient.id}-pharmacy`] && (
+      <div style={{ padding: "16px" }}>
+        {/*
+          ✅ New: compute if any medicine is completed.
+          Accepts "complete", "completed", or "paid" (case-insensitive).
+        */}
+        {(() => {
+          const hasCompletedPharmacyItem = Array.isArray(patient.medicines) &&
+            patient.medicines.some((m) => {
+              const s = String(m.status || "").toLowerCase();
+              return s === "complete" || s === "completed" || s === "paid";
+            });
+          const printDisabled = !hasCompletedPharmacyItem;
+
+          return (
+            <>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: "#f8f9fa" }}>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Medicine Name
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Quantity
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "right",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Unit Price
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Status
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "right",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Gst
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "right",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Cgst
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Created Date
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "right",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Subtotal
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {patient.medicines.map((medicine) => (
+                    <tr key={medicine.id}>
+                      <td
                         style={{
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "8px",
-                          marginBottom: "12px",
-                          overflow: "hidden",
+                          padding: "8px",
+                          borderBottom: "1px solid #f3f4f6",
                         }}
                       >
-                        <div
+                        {medicine.name}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "center",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        {medicine.quantity}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "right",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        {medicine.price ? medicine.price.toFixed(2) : "N/A"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "center",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        <span
                           style={{
-                            padding: "12px 16px",
-                            backgroundColor: "#f8f9fa",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            backgroundColor:
+                              medicine.status === "Pending" ? "#fef3c7" : "#dcfce7",
+                            color:
+                              medicine.status === "Pending" ? "#92400e" : "#166534",
                           }}
-                          onClick={() =>
-                            handleSectionExpand(patient.id, "pharmacy")
-                          }
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "12px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "32px",
-                                height: "32px",
-                                borderRadius: "8px",
-                                backgroundColor: "#3b82f6",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "white",
-                                fontSize: "16px",
-                              }}
-                            >
-                              💊
-                            </div>
-                            <div>
-                              <div
-                                style={{ fontWeight: "500", color: "#1f2937" }}
-                              >
-                                Pharmacy
-                              </div>
-                              <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                                View medicines and billing
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ color: "#6b7280", fontSize: "18px" }}>
-                            {expandedSections[`${patient.id}-pharmacy`]
-                              ? "−"
-                              : ">"}
-                          </div>
-                        </div>
+                          {medicine.status}
+                        </span>
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "right",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        {medicine.gst}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "right",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        {medicine.cgst}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "center",
+                          borderBottom: "1px solid #f3f4f6",
+                          fontSize: "12px",
+                        }}
+                      >
+                        {medicine.createdDate}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "right",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        {medicine.price
+                          ? (medicine.quantity * medicine.price).toFixed(2)
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-                        {expandedSections[`${patient.id}-pharmacy`] && (
-                          <div style={{ padding: "16px" }}>
-                            <table
-                              style={{
-                                width: "100%",
-                                borderCollapse: "collapse",
-                              }}
-                            >
-                              <thead>
-                                <tr style={{ backgroundColor: "#f8f9fa" }}>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "left",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Medicine Name
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "center",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Quantity
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "right",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Unit Price
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "center",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Status
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "right",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Gst
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "right",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Cgst
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "center",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Created Date
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "right",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Subtotal
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {patient.medicines.map((medicine) => (
-                                  <tr key={medicine.id}>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {medicine.name}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "center",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {medicine.quantity}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {medicine.price
-                                        ? medicine.price.toFixed(2)
-                                        : "N/A"}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "center",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          padding: "2px 8px",
-                                          borderRadius: "12px",
-                                          fontSize: "11px",
-                                          fontWeight: "600",
-                                          backgroundColor:
-                                            medicine.status === "Pending"
-                                              ? "#fef3c7"
-                                              : "#dcfce7",
-                                          color:
-                                            medicine.status === "Pending"
-                                              ? "#92400e"
-                                              : "#166534",
-                                        }}
-                                      >
-                                        {medicine.status}
-                                      </span>
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {medicine.gst}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {medicine.cgst}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "center",
-                                        borderBottom: "1px solid #f3f4f6",
-                                        fontSize: "12px",
-                                      }}
-                                    >
-                                      {medicine.createdDate}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {medicine.price
-                                        ? (
-                                            medicine.quantity * medicine.price
-                                          ).toFixed(2)
-                                        : "N/A"}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: "16px",
+                  paddingTop: "16px",
+                  borderTop: "1px solid #f3f4f6",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#1f2937",
+                  }}
+                >
+                  Grand Total
+                </div>
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#10b981",
+                  }}
+                >
+                  ₹{totals.medicineTotal.toFixed(2)}
+                </div>
+              </div>
 
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                marginTop: "16px",
-                                paddingTop: "16px",
-                                borderTop: "1px solid #f3f4f6",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "18px",
-                                  fontWeight: "600",
-                                  color: "#1f2937",
-                                }}
-                              >
-                                Grand Total
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "18px",
-                                  fontWeight: "600",
-                                  color: "#10b981",
-                                }}
-                              >
-                                ₹{totals.medicineTotal.toFixed(2)}
-                              </div>
-                            </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "12px",
+                  marginTop: "16px",
+                }}
+              >
+                {/* ✅ Print Invoice now disabled unless at least one item is complete */}
+                <button
+                  onClick={() => handlePrintInvoice("pharmacy", patient.id)}
+                  disabled={printDisabled}
+                  style={{
+                    backgroundColor: printDisabled ? "#9ca3af" : "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    cursor: printDisabled ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    opacity: printDisabled ? 0.8 : 1,
+                  }}
+                  title={
+                    printDisabled
+                      ? "Enable once at least one medicine is Completed"
+                      : "Print Invoice"
+                  }
+                >
+                  🖨️ Print Invoice
+                </button>
 
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                                gap: "12px",
-                                marginTop: "16px",
-                              }}
-                            >
-                              <button
-                                onClick={() =>
-                                  handlePrintInvoice("pharmacy", patient.id)
-                                }
-                                style={{
-                                  backgroundColor: "#3b82f6",
-                                  color: "white",
-                                  border: "none",
-                                  borderRadius: "6px",
-                                  padding: "8px 16px",
-                                  fontSize: "14px",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "6px",
-                                }}
-                              >
-                                🖨️ Print Invoice
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handlePayClick(patient.id, "pharmacy")
-                                }
-                                disabled={
-                                  totals.medicineTotal === 0 ||
-                                  isPaymentInProgress[
-                                    `${patient.id}-pharmacy`
-                                  ] ||
-                                  billingCompleted[patient.id]?.pharmacy
-                                }
-                                style={{
-                                  backgroundColor:
-                                    totals.medicineTotal === 0 ||
-                                    isPaymentInProgress[
-                                      `${patient.id}-pharmacy`
-                                    ] ||
-                                    billingCompleted[patient.id]?.pharmacy
-                                      ? "#d1d5db"
-                                      : "#28a745",
-                                  color: "white",
-                                  border: "none",
-                                  borderRadius: "6px",
-                                  padding: "8px 16px",
-                                  fontSize: "14px",
-                                  cursor:
-                                    totals.medicineTotal === 0 ||
-                                    isPaymentInProgress[
-                                      `${patient.id}-pharmacy`
-                                    ] ||
-                                    billingCompleted[patient.id]?.pharmacy
-                                      ? "not-allowed"
-                                      : "pointer",
-                                }}
-                              >
-                                {isPaymentInProgress[`${patient.id}-pharmacy`]
-                                  ? "Processing..."
-                                  : "Pay Pharmacy"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                <button
+                  onClick={() => handlePayClick(patient.id, "pharmacy")}
+                  disabled={
+                    totals.medicineTotal === 0 ||
+                    isPaymentInProgress[`${patient.id}-pharmacy`] ||
+                    billingCompleted[patient.id]?.pharmacy
+                  }
+                  style={{
+                    backgroundColor:
+                      totals.medicineTotal === 0 ||
+                      isPaymentInProgress[`${patient.id}-pharmacy`] ||
+                      billingCompleted[patient.id]?.pharmacy
+                        ? "#d1d5db"
+                        : "#28a745",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    cursor:
+                      totals.medicineTotal === 0 ||
+                      isPaymentInProgress[`${patient.id}-pharmacy`] ||
+                      billingCompleted[patient.id]?.pharmacy
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
+                >
+                  {isPaymentInProgress[`${patient.id}-pharmacy`]
+                    ? "Processing..."
+                    : "Pay Pharmacy"}
+                </button>
+              </div>
+            </>
+          );
+        })()}
+      </div>
+    )}
+  </div>
+)}
+
 
                     {/* Labs Section */}
                     {patient.tests.length > 0 && (
-                      <div
+  <div
+    style={{
+      border: "1px solid #e5e7eb",
+      borderRadius: "8px",
+      marginBottom: "12px",
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        padding: "12px 16px",
+        backgroundColor: "#f8f9fa",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+      onClick={() => handleSectionExpand(patient.id, "labs")}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+        }}
+      >
+        <div
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "8px",
+            backgroundColor: "#10b981",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "white",
+            fontSize: "16px",
+          }}
+        >
+          🧪
+        </div>
+        <div>
+          <div style={{ fontWeight: "500", color: "#1f2937" }}>Labs</div>
+          <div style={{ fontSize: "12px", color: "#6b7280" }}>
+            View lab reports and billing
+          </div>
+        </div>
+      </div>
+      <div style={{ color: "#6b7280", fontSize: "18px" }}>
+        {expandedSections[`${patient.id}-labs`] ? "−" : ">"}
+      </div>
+    </div>
+
+    {expandedSections[`${patient.id}-labs`] && (
+      <div style={{ padding: "16px" }}>
+        {(() => {
+          // ✅ Only change: enable Print Invoice if ANY test is completed/paid
+          const completedAliases = ["complete", "completed", "paid"];
+          const hasCompletedLabItem =
+            Array.isArray(patient.tests) &&
+            patient.tests.some((t) =>
+              completedAliases.includes(String(t.status || "").toLowerCase())
+            );
+          const printDisabled = !hasCompletedLabItem;
+
+          return (
+            <>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: "#f8f9fa" }}>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Test Name
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "right",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Price (₹)
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Status
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Created Date
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {patient.tests.map((test) => (
+                    <tr key={test.id}>
+                      <td
                         style={{
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "8px",
-                          marginBottom: "12px",
-                          overflow: "hidden",
+                          padding: "8px",
+                          borderBottom: "1px solid #f3f4f6",
                         }}
                       >
-                        <div
+                        {test.name}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "right",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        {test.price ? test.price.toFixed(2) : "N/A"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "center",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        <span
                           style={{
-                            padding: "12px 16px",
-                            backgroundColor: "#f8f9fa",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            backgroundColor:
+                              test.status === "Completed"
+                                ? "#dcfce7"
+                                : test.status === "Pending"
+                                ? "#fef3c7"
+                                : "#fee2e2",
+                            color:
+                              test.status === "Completed"
+                                ? "#166534"
+                                : test.status === "Pending"
+                                ? "#92400e"
+                                : "#dc2626",
                           }}
-                          onClick={() => handleSectionExpand(patient.id, "labs")}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "12px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "32px",
-                                height: "32px",
-                                borderRadius: "8px",
-                                backgroundColor: "#10b981",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "white",
-                                fontSize: "16px",
-                              }}
-                            >
-                              🧪
-                            </div>
-                            <div>
-                              <div
-                                style={{ fontWeight: "500", color: "#1f2937" }}
-                              >
-                                Labs
-                              </div>
-                              <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                                View lab reports and billing
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ color: "#6b7280", fontSize: "18px" }}>
-                            {expandedSections[`${patient.id}-labs`] ? "−" : ">"}
-                          </div>
-                        </div>
+                          {test.status}
+                        </span>
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "center",
+                          borderBottom: "1px solid #f3f4f6",
+                          fontSize: "12px",
+                        }}
+                      >
+                        {test.createdDate}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-                        {expandedSections[`${patient.id}-labs`] && (
-                          <div style={{ padding: "16px" }}>
-                            <table
-                              style={{
-                                width: "100%",
-                                borderCollapse: "collapse",
-                              }}
-                            >
-                              <thead>
-                                <tr style={{ backgroundColor: "#f8f9fa" }}>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "left",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Test Name
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "right",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Price (₹)
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "center",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Status
-                                  </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "center",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Created Date
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {patient.tests.map((test) => (
-                                  <tr key={test.id}>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {test.name}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {test.price ? test.price.toFixed(2) : "N/A"}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "center",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          padding: "2px 8px",
-                                          borderRadius: "12px",
-                                          fontSize: "11px",
-                                          fontWeight: "600",
-                                          backgroundColor:
-                                            test.status === "Completed"
-                                              ? "#dcfce7"
-                                              : test.status === "Pending"
-                                              ? "#fef3c7"
-                                              : "#fee2e2",
-                                          color:
-                                            test.status === "Completed"
-                                              ? "#166534"
-                                              : test.status === "Pending"
-                                              ? "#92400e"
-                                              : "#dc2626",
-                                        }}
-                                      >
-                                        {test.status}
-                                      </span>
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "center",
-                                        borderBottom: "1px solid #f3f4f6",
-                                        fontSize: "12px",
-                                      }}
-                                    >
-                                      {test.createdDate}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: "16px",
+                  paddingTop: "16px",
+                  borderTop: "1px solid #f3f4f6",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#1f2937",
+                  }}
+                >
+                  Grand Total
+                </div>
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#10b981",
+                  }}
+                >
+                  ₹{totals.testTotal.toFixed(2)}
+                </div>
+              </div>
 
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                marginTop: "16px",
-                                paddingTop: "16px",
-                                borderTop: "1px solid #f3f4f6",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "18px",
-                                  fontWeight: "600",
-                                  color: "#1f2937",
-                                }}
-                              >
-                                Grand Total
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "18px",
-                                  fontWeight: "600",
-                                  color: "#10b981",
-                                }}
-                              >
-                                ₹{totals.testTotal.toFixed(2)}
-                              </div>
-                            </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "12px",
+                  marginTop: "16px",
+                }}
+              >
+                {/* ✅ Print Invoice disabled unless at least one test is completed/paid */}
+                <button
+                  onClick={() => handlePrintInvoice("labs", patient.id)}
+                  disabled={printDisabled}
+                  style={{
+                    backgroundColor: printDisabled ? "#9ca3af" : "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    cursor: printDisabled ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    opacity: printDisabled ? 0.8 : 1,
+                  }}
+                  title={
+                    printDisabled
+                      ? "Enable once at least one test is Completed"
+                      : "Print Invoice"
+                  }
+                >
+                  🖨️ Print Invoice
+                </button>
 
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                                gap: "12px",
-                                marginTop: "16px",
-                              }}
-                            >
-                              <button
-                                onClick={() =>
-                                  handlePrintInvoice("labs", patient.id)
-                                }
-                                style={{
-                                  backgroundColor: "#3b82f6",
-                                  color: "white",
-                                  border: "none",
-                                  borderRadius: "6px",
-                                  padding: "8px 16px",
-                                  fontSize: "14px",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "6px",
-                                }}
-                              >
-                                🖨️ Print Invoice
-                              </button>
-                              <button
-                                onClick={() => handlePayClick(patient.id, "labs")}
-                                disabled={
-                                  totals.testTotal === 0 ||
-                                  isPaymentInProgress[`${patient.id}-labs`] ||
-                                  billingCompleted[patient.id]?.labs
-                                }
-                                style={{
-                                  backgroundColor:
-                                    totals.testTotal === 0 ||
-                                    isPaymentInProgress[`${patient.id}-labs`] ||
-                                    billingCompleted[patient.id]?.labs
-                                      ? "#d1d5db"
-                                      : "#28a745",
-                                  color: "white",
-                                  border: "none",
-                                  borderRadius: "6px",
-                                  padding: "8px 16px",
-                                  fontSize: "14px",
-                                  cursor:
-                                    totals.testTotal === 0 ||
-                                    isPaymentInProgress[`${patient.id}-labs`] ||
-                                    billingCompleted[patient.id]?.labs
-                                      ? "not-allowed"
-                                      : "pointer",
-                                }}
-                              >
-                                {isPaymentInProgress[`${patient.id}-labs`]
-                                  ? "Processing..."
-                                  : "Pay Labs"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                <button
+                  onClick={() => handlePayClick(patient.id, "labs")}
+                  disabled={
+                    totals.testTotal === 0 ||
+                    isPaymentInProgress[`${patient.id}-labs`] ||
+                    billingCompleted[patient.id]?.labs
+                  }
+                  style={{
+                    backgroundColor:
+                      totals.testTotal === 0 ||
+                      isPaymentInProgress[`${patient.id}-labs`] ||
+                      billingCompleted[patient.id]?.labs
+                        ? "#d1d5db"
+                        : "#28a745",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    cursor:
+                      totals.testTotal === 0 ||
+                      isPaymentInProgress[`${patient.id}-labs`] ||
+                      billingCompleted[patient.id]?.labs
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
+                >
+                  {isPaymentInProgress[`${patient.id}-labs`]
+                    ? "Processing..."
+                    : "Pay Labs"}
+                </button>
+              </div>
+            </>
+          );
+        })()}
+      </div>
+    )}
+  </div>
+)}
+
 
                     {/* Appointment Types Section */}
                     {patient.appointmentDetails.length > 0 && (
@@ -2190,16 +2074,16 @@ const BillingSystem = () => {
                                           fontSize: "11px",
                                           fontWeight: "600",
                                           backgroundColor:
-                                            appointment.status === "Pending"
+                                            appointment.appointmentStatus === "Pending"
                                               ? "#fef3c7"
                                               : "#dcfce7",
                                           color:
-                                            appointment.status === "Pending"
+                                            appointment.appointmentStatus === "Pending"
                                               ? "#92400e"
                                               : "#166534",
                                         }}
                                       >
-                                        {appointment.status}
+                                        Completed
                                       </span>
                                     </td>
                                   </tr>
