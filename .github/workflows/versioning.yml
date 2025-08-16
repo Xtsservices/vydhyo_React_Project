@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write   # this is required so bot can push tags
+
 jobs:
   versioning:
     runs-on: ubuntu-latest
@@ -12,7 +15,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Needed to get tags
+          fetch-depth: 0  # Needed to fetch tags
 
       - name: Get Current Version
         id: get_version
@@ -49,8 +52,10 @@ jobs:
           echo "new_tag=$new_tag" >> $GITHUB_ENV
 
       - name: Create Git Tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # built-in token
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag ${{ env.new_tag }}
           git push origin ${{ env.new_tag }}
