@@ -82,8 +82,10 @@ const Appointment = () => {
     pageSize: 5,
     total: 0,
   });
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  // const [startDate, setStartDate] = useState(new Date());
+  // const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(moment().startOf('month').toDate());
+const [endDate, setEndDate] = useState(moment().endOf('month').toDate());
   const datePickerRef = useRef(null);
 
   const getStatusTag = (status) => {
@@ -333,7 +335,7 @@ const getAppointmentsCount = async () => {
       startDateForCount = moment().startOf('month').format("YYYY-MM-DD");
       endDateForCount = moment().endOf('month').format("YYYY-MM-DD");
     }
-
+console.log("date===", startDateForCount, endDateForCount)
     const response = await apiGet(
       `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}&startDate=${startDateForCount}&endDate=${endDateForCount}`
     );
