@@ -262,6 +262,8 @@ const generatePDF = async () => {
     }
   };
 
+  console.log("Selected Clinic:", selectedClinic?.headerImage);
+
   return (
     <div>
       <ToastContainer />
