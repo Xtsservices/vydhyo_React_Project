@@ -14,6 +14,8 @@ import { useSelector } from "react-redux";
 import moment from "moment";
 import { apiGet } from "../../api";
 import "react-datepicker/dist/react-datepicker.css";
+import DatePicker from "react-datepicker";
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 const { Title, Text } = Typography;
 
@@ -331,7 +333,7 @@ const AppointmentsCard = ({ dashboardData }) => (
           display: "block",
           fontFamily: "Poppins, sans-serif",
         }}
-        >
+      >
         Today's Appointments
       </Text>
     </div>
@@ -1241,10 +1243,9 @@ const ClinicAvailability = ({
     </Card>
   );
 };
-
 const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeChange }) => {
   const datePickerRef = useRef(null);
-  
+
   const formatDisplayDate = () => {
     if (startDate && endDate) {
       return `${moment(startDate).format('MMM D, YYYY')} - ${moment(endDate).format('MMM D, YYYY')}`;
@@ -1253,12 +1254,8 @@ const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeCha
   };
 
   const handleDateChange = (dates) => {
-    const [start, end] = dates;
-    if (start && end) {
-      const startFormatted = moment(start).format('YYYY-MM-DD');
-      const endFormatted = moment(end).format('YYYY-MM-DD');
-      onDateRangeChange(startFormatted, endFormatted);
-    }
+    const [start, end] = dates || [null, null];
+    onDateRangeChange(start ? moment(start).format('YYYY-MM-DD') : null, end ? moment(end).format('YYYY-MM-DD') : null);
   };
 
   return (
@@ -1273,11 +1270,8 @@ const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeCha
       }}
       bodyStyle={{ padding: "24px" }}
     >
-      <div
-        style={{
-          marginBottom: "16px", // Space between title and date picker
-        }}
-      >
+      {/* Header with title only */}
+      <div style={{ marginBottom: "16px" }}>
         <Title
           level={4}
           style={{
@@ -1286,13 +1280,53 @@ const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeCha
             color: "#1a1a1a",
             fontSize: "18px",
             fontFamily: "Poppins, sans-serif",
-            whiteSpace: "nowrap",
-            textOverflow: "ellipsis",
           }}
         >
           Revenue Summary
         </Title>
       </div>
+
+      {/* Date picker section below the title */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        marginBottom: "20px",
+        gap: "8px"
+      }}>
+        <CalendarTodayIcon style={{ color: '#1977f3', fontSize: '18px' }} />
+        <DatePicker
+          ref={datePickerRef}
+          selected={startDate ? moment(startDate).toDate() : null}
+          onChange={handleDateChange}
+          startDate={startDate ? moment(startDate).toDate() : null}
+          endDate={endDate ? moment(endDate).toDate() : null}
+          selectsRange
+          isClearable
+          placeholderText="Select a date range"
+          className="custom-datepicker"
+          maxDate={new Date()}
+          dateFormat="MMM d, yyyy"
+          customInput={
+            <Button
+              style={{
+                borderRadius: '8px',
+                border: '1px solid #d9d9d9',
+                padding: '8px 16px',
+                width: '200px',
+                textAlign: 'left',
+                backgroundColor: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span>{formatDisplayDate()}</span>
+            </Button>
+          }
+        />
+      </div>
+
+      {/* Pie chart */}
       <div style={{ textAlign: "center" }}>
         <PieChart data={revenueSummaryData} />
       </div>
@@ -1336,8 +1370,8 @@ const DoctorDashboard = () => {
   const formattedDate = `${year}-${month}-${day}`;
   const firstDayOfMonth = `${year}-${month}-01`;
   const [selectedDate, setSelectedDate] = useState(formattedDate);
-  const [revenueStartDate, setRevenueStartDate] = useState(firstDayOfMonth);
-  const [revenueEndDate, setRevenueEndDate] = useState(formattedDate);
+  const [revenueStartDate, setRevenueStartDate] = useState(formattedDate);
+const [revenueEndDate, setRevenueEndDate] = useState(formattedDate);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [revenueSummaryData, setRevenueSummaryData] = useState([
     { label: "Appointment", value: 0, color: "#4285f4" },
@@ -1463,42 +1497,51 @@ const DoctorDashboard = () => {
     }
   };
 
-  const getRevenueSummary = async (start, end) => {
-    try {
-      const response = await apiGet(
-        `/finance/getDoctorRevenueSummaryThismonth?startDate=${start}&endDate=${end}`
-      );
-      if (response.data.status === "success") {
-        const data = response.data.data;
-        setRevenueSummaryData([
-          {
-            label: "Appointment",
-            value: data.appointment || 0,
-            color: "#4285f4",
-          },
-          { label: "Lab", value: data.lab || 0, color: "#34a853" },
-          { label: "Pharmacy", value: data.pharmacy || 0, color: "#fbbc04" },
-        ]);
-      } else {
-        console.error(
-          "Revenue summary API response status is not success:",
-          response.data
-        );
-        setRevenueSummaryData([
-          { label: "Appointment", value: 0, color: "#4285f4" },
-          { label: "Lab", value: 0, color: "#34a853" },
-          { label: "Pharmacy", value: 0, color: "#fbbc04" },
-        ]);
-      }
-    } catch (error) {
-      console.error("Error fetching revenue summary:", error);
+const getRevenueSummary = async (start, end) => {
+  try {
+    if (!start || !end) {
+      // Optionally set default data or skip the API call
       setRevenueSummaryData([
         { label: "Appointment", value: 0, color: "#4285f4" },
-        { label: "Lab", value: 0, color: "##34a853" },
+        { label: "Lab", value: 0, color: "#34a853" },
+        { label: "Pharmacy", value: 0, color: "#fbbc04" },
+      ]);
+      return;
+    }
+    const response = await apiGet(
+      `/finance/getDoctorRevenueSummaryThismonth?startDate=${start}&endDate=${end}`
+    );
+    if (response.data.status === "success") {
+      const data = response.data.data;
+      setRevenueSummaryData([
+        {
+          label: "Appointment",
+          value: data.appointment || 0,
+          color: "#4285f4",
+        },
+        { label: "Lab", value: data.lab || 0, color: "#34a853" },
+        { label: "Pharmacy", value: data.pharmacy || 0, color: "#fbbc04" },
+      ]);
+    } else {
+      console.error(
+        "Revenue summary API response status is not success:",
+        response.data
+      );
+      setRevenueSummaryData([
+        { label: "Appointment", value: 0, color: "#4285f4" },
+        { label: "Lab", value: 0, color: "#34a853" },
         { label: "Pharmacy", value: 0, color: "#fbbc04" },
       ]);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching revenue summary:", error);
+    setRevenueSummaryData([
+      { label: "Appointment", value: 0, color: "#4285f4" },
+      { label: "Lab", value: 0, color: "#34a853" },
+      { label: "Pharmacy", value: 0, color: "#fbbc04" },
+    ]);
+  }
+};
 
   const updatePatientAppointmentsData = (appointmentsList, date) => {
     const today = date || moment().format("YYYY-MM-DD");
@@ -1552,16 +1595,17 @@ const DoctorDashboard = () => {
       getRevenueSummary(start, end);
     }
   };
-
-  useEffect(() => {
-    if (user && doctorId && !hasFetchedIntialRender.current) {
-      getAppointments();
-      getTodayAppointmentCount();
+useEffect(() => {
+  if (user && doctorId && !hasFetchedIntialRender.current) {
+    getAppointments();
+    getTodayAppointmentCount();
+    if (revenueStartDate && revenueEndDate) {
       getRevenueSummary(revenueStartDate, revenueEndDate);
-      getTodayRevenue();
-      hasFetchedIntialRender.current = true;
     }
-  }, [user, doctorId, revenueStartDate, revenueEndDate]);
+    getTodayRevenue();
+    hasFetchedIntialRender.current = true;
+  }
+}, [user, doctorId]);
 
   return (
     <>

@@ -23,92 +23,136 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     });
   };
 
-  const generatePDF = async () => {
-    try {
-      const input = document.getElementById("prescription-container");
-      if (!input) {
-        throw new Error("Could not find the prescription container element");
-      }
-
-      const originalStyles = {
-        boxShadow: input.style.boxShadow,
-        padding: input.style.padding,
-        margin: input.style.margin,
-        overflow: input.style.overflow,
-      };
-
-      const printButtonContainer = input.querySelector(".print-button-container");
-      const originalButtonDisplay = printButtonContainer?.style.display;
-      if (printButtonContainer) {
-        printButtonContainer.style.display = "none";
-      }
-
-      input.style.boxShadow = "none";
-      input.style.padding = "0";
-      input.style.margin = "0";
-      input.style.overflow = "visible";
-
-      const canvas = await html2canvas(input, {
-        scale: 2,
-        useCORS: true,
-        logging: true,
-        backgroundColor: "#ffffff",
-        scrollY: -window.scrollY,
-        windowWidth: document.documentElement.scrollWidth,
-        windowHeight: document.documentElement.scrollHeight,
-      });
-
-      Object.assign(input.style, originalStyles);
-      if (printButtonContainer) {
-        printButtonContainer.style.display = originalButtonDisplay;
-      }
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-      const pageHeight = 297;
-      let heightLeft = pdfHeight;
-      let position = 0;
-
-      while (heightLeft > 0) {
-        pdf.addImage(
-          imgData,
-          "PNG",
-          10,
-          position,
-          pdfWidth,
-          pdfHeight,
-          null,
-          "FAST"
-        );
-        heightLeft -= pageHeight;
-        position -= pageHeight;
-        if (heightLeft > 0) pdf.addPage();
-      }
-
-      const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
-      const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
-
-      console.log("Generated PDF Blob:", {
-        type: pdfBlob.type,
-        size: pdfBlob.size,
-        filename: `${appointmentId}.pdf`,
-      });
-
-      return pdfBlob;
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate prescription PDF");
-      throw error;
+const generatePDF = async () => {
+  try {
+    const input = document.getElementById("prescription-container");
+    if (!input) {
+      throw new Error("Could not find the prescription container element");
     }
-  };
+
+    // Store original styles
+    const originalStyles = {
+      boxShadow: input.style.boxShadow,
+      padding: input.style.padding,
+      margin: input.style.margin,
+      overflow: input.style.overflow,
+    };
+
+    // Hide print buttons
+    const printButtonContainer = input.querySelector(".print-button-container");
+    const originalButtonDisplay = printButtonContainer?.style.display;
+    if (printButtonContainer) {
+      printButtonContainer.style.display = "none";
+    }
+
+    // Reset container styles for better capture
+    input.style.boxShadow = "none";
+    input.style.padding = "20px";
+    input.style.margin = "0";
+    input.style.overflow = "visible";
+    input.style.width = "210mm"; // A4 width
+    input.style.minHeight = "297mm"; // A4 height
+
+    // Wait for images to load and convert to base64
+    const images = input.querySelectorAll('img');
+    for (let img of images) {
+      if (img.src && !img.src.startsWith('data:')) {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Wait for image to load
+          await new Promise((resolve, reject) => {
+            const tempImg = new Image();
+            tempImg.crossOrigin = "anonymous";
+            tempImg.onload = () => {
+              canvas.width = tempImg.naturalWidth;
+              canvas.height = tempImg.naturalHeight;
+              ctx.drawImage(tempImg, 0, 0);
+              
+              // Convert to base64 and replace src
+              const dataURL = canvas.toDataURL('image/png');
+              img.src = dataURL;
+              resolve();
+            };
+            tempImg.onerror = () => resolve(); // Continue even if image fails
+            tempImg.src = img.src;
+          });
+        } catch (error) {
+          console.warn("Failed to convert image to base64:", error);
+        }
+      }
+    }
+
+    // Small delay to ensure DOM updates
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Capture with html2canvas
+    const canvas = await html2canvas(input, {
+      scale: 3, // Higher scale for better quality
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+      width: input.scrollWidth,
+      height: input.scrollHeight,
+      windowWidth: input.scrollWidth,
+      windowHeight: input.scrollHeight,
+      scrollX: 0,
+      scrollY: 0,
+      foreignObjectRendering: true,
+    });
+
+    // Restore original styles
+    Object.assign(input.style, originalStyles);
+    if (printButtonContainer) {
+      printButtonContainer.style.display = originalButtonDisplay;
+    }
+
+    // Generate PDF
+    const imgData = canvas.toDataURL("image/png", 1.0);
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    // Add first page
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pdfHeight;
+
+    // Add additional pages if needed
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+    }
+
+    const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
+    const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
+
+    console.log("Generated PDF Blob:", {
+      type: pdfBlob.type,
+      size: pdfBlob.size,
+      filename: `${appointmentId}.pdf`,
+    });
+
+    return pdfBlob;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    toast.error("Failed to generate prescription PDF");
+    throw error;
+  }
+};
 
   const handleWhatsAppClick = async () => {
     try {
@@ -128,7 +172,9 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
       const originalElement = document.getElementById("prescription-container");
       const clone = originalElement.cloneNode(true);
 
-      const printButtonContainer = clone.querySelector(".print-button-container");
+      const printButtonContainer = clone.querySelector(
+        ".print-button-container"
+      );
       if (printButtonContainer) {
         printButtonContainer.remove();
       }
@@ -250,15 +296,21 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                       <div>
                         <div className="clinic-name">
                           {selectedClinic.clinicName
-                            ? selectedClinic.clinicName.charAt(0).toUpperCase() +
+                            ? selectedClinic.clinicName
+                                .charAt(0)
+                                .toUpperCase() +
                               selectedClinic.clinicName.slice(1)
                             : "Clinic Name"}
                         </div>
                       </div>
                     </div>
                     <div className="contact-info">
-                      <div>📍 {selectedClinic.address || "Address not provided"}</div>
-                      <div>📞 {selectedClinic.mobile || "Contact not provided"}</div>
+                      <div>
+                        📍 {selectedClinic.address || "Address not provided"}
+                      </div>
+                      <div>
+                        📞 {selectedClinic.mobile || "Contact not provided"}
+                      </div>
                     </div>
                   </>
                 )
@@ -290,12 +342,14 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                     marginBottom: "6px",
                   }}
                 >
-                  {formData.doctorInfo?.qualifications || "Qualifications not provided"} |{" "}
-                  {formData.doctorInfo?.specialization || "Specialist"}
+                  {formData.doctorInfo?.qualifications ||
+                    "Qualifications not provided"}{" "}
+                  | {formData.doctorInfo?.specialization || "Specialist"}
                 </div>
                 <div style={{ fontSize: "13px", color: "#6c757d" }}>
                   Medical Registration No:{" "}
-                  {formData.doctorInfo?.medicalRegistrationNumber || "Not provided"}
+                  {formData.doctorInfo?.medicalRegistrationNumber ||
+                    "Not provided"}
                 </div>
               </div>
 
@@ -336,19 +390,22 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   <div className="detail-item">
                     <div className="detail-label">Past History:</div>
                     <div className="detail-value">
-                      {formData.patientInfo?.pastMedicalHistory || "Not provided"}
+                      {formData.patientInfo?.pastMedicalHistory ||
+                        "Not provided"}
                     </div>
                   </div>
                   <div className="detail-item">
                     <div className="detail-label">Family History:</div>
                     <div className="detail-value">
-                      {formData.patientInfo?.familyMedicalHistory || "Not provided"}
+                      {formData.patientInfo?.familyMedicalHistory ||
+                        "Not provided"}
                     </div>
                   </div>
                   <div className="detail-item">
                     <div className="detail-label">Examination:</div>
                     <div className="detail-value">
-                      {formData.patientInfo?.physicalExamination || "Not provided"}
+                      {formData.patientInfo?.physicalExamination ||
+                        "Not provided"}
                     </div>
                   </div>
                 </div>
@@ -395,7 +452,8 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                     <div className="vital-item">
                       <span className="vital-label">RR:</span>
                       <span className="vital-value">
-                        {formData.vitals?.respiratoryRate || "Not provided"} breaths/min
+                        {formData.vitals?.respiratoryRate || "Not provided"}{" "}
+                        breaths/min
                       </span>
                     </div>
                     <div className="vital-separator">|</div>
@@ -420,15 +478,19 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                       </span>
                     </div>
                     {formData.vitals?.other &&
-                      Object.entries(formData.vitals.other).map(([key, value]) => (
-                        <>
-                          <div className="vital-separator">|</div>
-                          <div className="vital-item" key={key}>
-                            <span className="vital-label">{key}:</span>
-                            <span className="vital-value">{value || "Not provided"}</span>
-                          </div>
-                        </>
-                      ))}
+                      Object.entries(formData.vitals.other).map(
+                        ([key, value]) => (
+                          <>
+                            <div className="vital-separator">|</div>
+                            <div className="vital-item" key={key}>
+                              <span className="vital-label">{key}:</span>
+                              <span className="vital-value">
+                                {value || "Not provided"}
+                              </span>
+                            </div>
+                          </>
+                        )
+                      )}
                   </div>
                 </div>
               </div>
@@ -439,7 +501,9 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   <div className="investigation-row">
                     {formData.diagnosis.selectedTests.map((test, index) => (
                       <div key={index} className="investigation-item">
-                        <div className="detail-value">{test.testName || test}</div>
+                        <div className="detail-value">
+                          {test.testName || test}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -469,7 +533,8 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                 </div>
               )}
 
-              {(formData.diagnosis?.medications?.length > 0 || formData.advice?.medicationNotes) && (
+              {(formData.diagnosis?.medications?.length > 0 ||
+                formData.advice?.medicationNotes) && (
                 <div className="prescription-section">
                   <div className="section-header">💊 MEDICATION</div>
                   {formData.diagnosis?.medications?.length > 0 && (
@@ -495,15 +560,21 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                                 {med.medName || med.name || "Not provided"}
                               </td>
                               <td className="table-cell">
-                                {med.dosage || med.dosagePattern || "As directed"}
+                                {med.dosage ||
+                                  med.dosagePattern ||
+                                  "As directed"}
                               </td>
-                              <td className="table-cell">{med.frequency || "Not provided"}</td>
+                              <td className="table-cell">
+                                {med.frequency || "Not provided"}
+                              </td>
                               <td className="table-cell">
                                 {med.timings
                                   ? med.timings.join(", ")
                                   : med.timing || "Not provided"}
                               </td>
-                              <td className="table-cell">{med.notes || "Not provided"}</td>
+                              <td className="table-cell">
+                                {med.notes || "Not provided"}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -512,7 +583,9 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   )}
                   {formData.advice?.medicationNotes && (
                     <div className="notes-display">
-                      <div className="notes-label">Medication Instructions:</div>
+                      <div className="notes-label">
+                        Medication Instructions:
+                      </div>
                       <div className="notes-content">
                         {formData.advice.medicationNotes}
                       </div>
@@ -572,8 +645,8 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
             </div>
 
             <div className="prescription-footer">
-              This prescription is computer generated and does not require physical
-              signature
+              This prescription is computer generated and does not require
+              physical signature
             </div>
 
             <div className="print-button-container">

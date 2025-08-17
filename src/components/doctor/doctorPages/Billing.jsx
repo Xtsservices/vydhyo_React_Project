@@ -293,12 +293,16 @@ const BillingSystem = () => {
     let pendingMedicines = [];
 
     if (type === "pharmacy") {
+
       pendingMedicines = (patient.medicines || []).filter((m) => isPending(m.status));
+
     } else if (type === "labs") {
       pendingTests = (patient.tests || []).filter((t) => isPending(t.status));
     } else if (type === "all") {
       pendingTests = (patient.tests || []).filter((t) => isPending(t.status));
+
       pendingMedicines = (patient.medicines || []).filter((m) => isPending(m.status));
+
     }
 
     if (pendingTests.length === 0 && pendingMedicines.length === 0) {
@@ -318,7 +322,9 @@ const BillingSystem = () => {
         .map((test) => ({
           testId: test.testId,
           labTestID: test.labTestID,
+
           status: "pending",
+
           price: test.price,
         })),
       medicines: pendingMedicines
@@ -327,7 +333,9 @@ const BillingSystem = () => {
           medicineId: med.medicineId,
           pharmacyMedID: med.pharmacyMedID,
           quantity: med.quantity,
+
           status: "pending",
+
           price: med.price,
         })),
     };
@@ -342,6 +350,7 @@ const BillingSystem = () => {
     }
 
     try {
+
       const response = await apiPost("/receptionist/totalBillPayFromReception", payload);
 
       if (response.status === 200) {
@@ -349,6 +358,7 @@ const BillingSystem = () => {
         toast.success(
           `Payment processed successfully for ${
             type === "all" ? "all items" : type === "pharmacy" ? "pharmacy" : "labs"
+
           }!`
         );
       } else {
@@ -383,6 +393,7 @@ const BillingSystem = () => {
     // Open the print window ASAP to keep user gesture context
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
+
       toast?.error?.("Please allow pop-ups to print the invoice.");
       return;
     }
@@ -431,6 +442,7 @@ const BillingSystem = () => {
 
       total = completedMedicines.reduce(
         (sum, med) => sum + (Number(med.price) || 0) * (Number(med.quantity) || 0),
+
         0
       );
 
@@ -441,6 +453,7 @@ const BillingSystem = () => {
       }
 
       sectionHTML = `
+
         <div class="section compact-spacing">
           <h3 class="section-title">Medicines</h3>
           <table class="data-table">
@@ -480,9 +493,11 @@ const BillingSystem = () => {
       const completedTests = (patient.tests || []).filter((t) => isCompleted(t.status));
       const labDetails = completedTests[0]?.labDetails || patient.tests?.[0]?.labDetails || {};
 
+
       headerUrl = labDetails.labHeaderUrl || "";
       providerName = labDetails.labName || "N/A";
       contactInfoHTML = `
+
         <p>${labDetails.labAddress || "N/A"}</p>
         <p>GST: ${labDetails.labGst || "N/A"}</p>
         <p>PAN: ${labDetails.labPan || "N/A"}</p>
@@ -491,6 +506,7 @@ const BillingSystem = () => {
 
       total = completedTests.reduce((sum, test) => sum + (Number(test.price) || 0), 0);
 
+
       if (!completedTests.length) {
         printWindow.close();
         toast?.error?.("No completed tests to print.");
@@ -498,6 +514,7 @@ const BillingSystem = () => {
       }
 
       sectionHTML = `
+
         <div class="section compact-spacing">
           <h3 class="section-title">Tests</h3>
           <table class="data-table">
@@ -555,10 +572,12 @@ const BillingSystem = () => {
         <p>Phone: ${addr.mobile || "N/A"}</p>
       `;
 
+
       total = completedAppointments.reduce(
         (sum, a) => sum + (Number(a.appointmentFees) || 0),
         0
       );
+
 
       // if (!completedAppointments.length) {
       //   printWindow.close();
@@ -690,6 +709,7 @@ const BillingSystem = () => {
                   <div class="invoice-detail-item"><strong>Invoice No:</strong> #${invoiceNumber}</div>
                   <div class="invoice-detail-item"><strong>Date:</strong> ${billingDate}</div>
                   <div class="invoice-detail-item"><strong>Time:</strong> ${billingTime}</div>
+
                 </div>
               </div>
 
@@ -763,6 +783,7 @@ const BillingSystem = () => {
                 });
               }
 
+
               if (document.readyState === 'complete') {
                 waitForImagesAndPrint();
               } else {
@@ -773,6 +794,7 @@ const BillingSystem = () => {
         </body>
       </html>
     `;
+
 
     printWindow.document.open();
     printWindow.document.write(printContent);
@@ -1010,12 +1032,16 @@ const BillingSystem = () => {
         padding: "24px",
         backgroundColor: "#f8f9fa",
         minHeight: "100vh",
+        display: "flex", // Add this
+        justifyContent: "center", // Add this
       }}
     >
       <div
         style={{
-          maxWidth: "1200px",
+          maxWidth: "1400px", // Increased width
           margin: "0 auto",
+          width: "100%", // Add this
+          padding: "0 20px", // Add some side padding
         }}
       >
         <h1
@@ -1106,7 +1132,7 @@ const BillingSystem = () => {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "200px 120px 60px 80px 120px 120px",
+                      gridTemplateColumns: "1fr 1fr 80px 100px 180px 120px",
                       padding: "12px 16px",
                       fontSize: "12px",
                       fontWeight: "600",
@@ -1128,7 +1154,7 @@ const BillingSystem = () => {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "200px 120px 60px 80px 120px 120px",
+                      gridTemplateColumns: "1fr 1fr 80px 100px 180px 120px",
                       padding: "16px",
                       alignItems: "center",
                     }}
@@ -1207,7 +1233,9 @@ const BillingSystem = () => {
                             alignItems: "center",
                             justifyContent: "space-between",
                           }}
+
                           onClick={() => handleSectionExpand(patient.id, "pharmacy")}
+
                         >
                           <div
                             style={{
@@ -1232,27 +1260,33 @@ const BillingSystem = () => {
                               💊
                             </div>
                             <div>
+
                               <div style={{ fontWeight: "500", color: "#1f2937" }}>
                                 Pharmacy
                               </div>
                               <div style={{ fontSize: "12px", color: "#6b7280" }}>
+
                                 View medicines and billing
                               </div>
                             </div>
                           </div>
                           <div style={{ color: "#6b7280", fontSize: "18px" }}>
-                            {expandedSections[`${patient.id}-pharmacy`] ? "−" : ">"}
+
+
                           </div>
                         </div>
 
                         {expandedSections[`${patient.id}-pharmacy`] && (
                           <div style={{ padding: "16px" }}>
+
                             {(() => {
                               const hasCompletedPharmacyItem =
                                 Array.isArray(patient.medicines) &&
                                 patient.medicines.some((m) => {
+
                                   const s = String(m.status || "").toLowerCase();
                                   return s === "complete" || s === "completed" || s === "paid";
+
                                 });
                               const printDisabled = !hasCompletedPharmacyItem;
 
@@ -1265,7 +1299,9 @@ const BillingSystem = () => {
                                     }}
                                   >
                                     <thead>
+
                                       <tr style={{ backgroundColor: "#f8f9fa" }}>
+
                                         <th
                                           style={{
                                             padding: "8px",
@@ -1383,7 +1419,9 @@ const BillingSystem = () => {
                                               borderBottom: "1px solid #f3f4f6",
                                             }}
                                           >
+
                                             {medicine.price ? medicine.price.toFixed(2) : "N/A"}
+
                                           </td>
                                           <td
                                             style={{
@@ -1399,9 +1437,10 @@ const BillingSystem = () => {
                                                 fontSize: "11px",
                                                 fontWeight: "600",
                                                 backgroundColor:
+
                                                   medicine.status === "Pending" ? "#fef3c7" : "#dcfce7",
                                                 color:
-                                                  medicine.status === "Pending" ? "#92400e" : "#166534",
+
                                               }}
                                             >
                                               {medicine.status}
@@ -1443,7 +1482,9 @@ const BillingSystem = () => {
                                             }}
                                           >
                                             {medicine.price
+
                                               ? (medicine.quantity * medicine.price).toFixed(2)
+
                                               : "N/A"}
                                           </td>
                                         </tr>
@@ -1489,17 +1530,21 @@ const BillingSystem = () => {
                                       marginTop: "16px",
                                     }}
                                   >
+
                                     <button
                                       onClick={() => handlePrintInvoice("pharmacy", patient.id)}
                                       disabled={printDisabled}
                                       style={{
                                         backgroundColor: printDisabled ? "#9ca3af" : "#3b82f6",
+
                                         color: "white",
                                         border: "none",
                                         borderRadius: "6px",
                                         padding: "8px 16px",
                                         fontSize: "14px",
+
                                         cursor: printDisabled ? "not-allowed" : "pointer",
+
                                         display: "flex",
                                         alignItems: "center",
                                         gap: "6px",
@@ -1515,16 +1560,20 @@ const BillingSystem = () => {
                                     </button>
 
                                     <button
+
                                       onClick={() => handlePayClick(patient.id, "pharmacy")}
                                       disabled={
                                         totals.medicineTotal === 0 ||
                                         isPaymentInProgress[`${patient.id}-pharmacy`] ||
+
                                         billingCompleted[patient.id]?.pharmacy
                                       }
                                       style={{
                                         backgroundColor:
                                           totals.medicineTotal === 0 ||
+
                                           isPaymentInProgress[`${patient.id}-pharmacy`] ||
+
                                           billingCompleted[patient.id]?.pharmacy
                                             ? "#d1d5db"
                                             : "#28a745",
@@ -1535,13 +1584,17 @@ const BillingSystem = () => {
                                         fontSize: "14px",
                                         cursor:
                                           totals.medicineTotal === 0 ||
+
                                           isPaymentInProgress[`${patient.id}-pharmacy`] ||
+
                                           billingCompleted[patient.id]?.pharmacy
                                             ? "not-allowed"
                                             : "pointer",
                                       }}
                                     >
+
                                       {isPaymentInProgress[`${patient.id}-pharmacy`]
+
                                         ? "Processing..."
                                         : "Pay Pharmacy"}
                                     </button>
@@ -1573,7 +1626,9 @@ const BillingSystem = () => {
                             alignItems: "center",
                             justifyContent: "space-between",
                           }}
+
                           onClick={() => handleSectionExpand(patient.id, "labs")}
+
                         >
                           <div
                             style={{
@@ -1598,8 +1653,10 @@ const BillingSystem = () => {
                               🧪
                             </div>
                             <div>
+
                               <div style={{ fontWeight: "500", color: "#1f2937" }}>Labs</div>
                               <div style={{ fontSize: "12px", color: "#6b7280" }}>
+
                                 View lab reports and billing
                               </div>
                             </div>
@@ -1612,7 +1669,9 @@ const BillingSystem = () => {
                         {expandedSections[`${patient.id}-labs`] && (
                           <div style={{ padding: "16px" }}>
                             {(() => {
+
                               const completedAliases = ["complete", "completed", "paid"];
+
                               const hasCompletedLabItem =
                                 Array.isArray(patient.tests) &&
                                 patient.tests.some((t) =>
@@ -1631,7 +1690,9 @@ const BillingSystem = () => {
                                     }}
                                   >
                                     <thead>
+
                                       <tr style={{ backgroundColor: "#f8f9fa" }}>
+
                                         <th
                                           style={{
                                             padding: "8px",
@@ -1696,7 +1757,9 @@ const BillingSystem = () => {
                                               borderBottom: "1px solid #f3f4f6",
                                             }}
                                           >
+
                                             {test.price ? test.price.toFixed(2) : "N/A"}
+
                                           </td>
                                           <td
                                             style={{
@@ -1781,17 +1844,21 @@ const BillingSystem = () => {
                                       marginTop: "16px",
                                     }}
                                   >
+
                                     <button
                                       onClick={() => handlePrintInvoice("labs", patient.id)}
                                       disabled={printDisabled}
                                       style={{
                                         backgroundColor: printDisabled ? "#9ca3af" : "#3b82f6",
+
                                         color: "white",
                                         border: "none",
                                         borderRadius: "6px",
                                         padding: "8px 16px",
                                         fontSize: "14px",
+
                                         cursor: printDisabled ? "not-allowed" : "pointer",
+
                                         display: "flex",
                                         alignItems: "center",
                                         gap: "6px",
@@ -1807,16 +1874,20 @@ const BillingSystem = () => {
                                     </button>
 
                                     <button
+
                                       onClick={() => handlePayClick(patient.id, "labs")}
                                       disabled={
                                         totals.testTotal === 0 ||
                                         isPaymentInProgress[`${patient.id}-labs`] ||
+
                                         billingCompleted[patient.id]?.labs
                                       }
                                       style={{
                                         backgroundColor:
                                           totals.testTotal === 0 ||
+
                                           isPaymentInProgress[`${patient.id}-labs`] ||
+
                                           billingCompleted[patient.id]?.labs
                                             ? "#d1d5db"
                                             : "#28a745",
@@ -1827,7 +1898,9 @@ const BillingSystem = () => {
                                         fontSize: "14px",
                                         cursor:
                                           totals.testTotal === 0 ||
+
                                           isPaymentInProgress[`${patient.id}-labs`] ||
+
                                           billingCompleted[patient.id]?.labs
                                             ? "not-allowed"
                                             : "pointer",
@@ -1895,7 +1968,9 @@ const BillingSystem = () => {
                               <div style={{ fontWeight: "500", color: "#1f2937" }}>
                                 Appointment Types
                               </div>
-                              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                              <div
+                                style={{ fontSize: "12px", color: "#6b7280" }}
+                              >
                                 View appointments and billing
                               </div>
                             </div>
@@ -1997,72 +2072,69 @@ const BillingSystem = () => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {patient.appointmentDetails.map((appointment) => (
-                                  <tr key={appointment.id}>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {appointment.appointmentId}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {appointment.appointmentType}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "center",
-                                        borderBottom: "1px solid #f3f4f6",
-                                        fontSize: "12px",
-                                      }}
-                                    >
-                                      {appointment.appointmentDate}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "center",
-                                        borderBottom: "1px solid #f3f4f6",
-                                        fontSize: "12px",
-                                      }}
-                                    >
-                                      {appointment.appointmentTime}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {appointment.clinicName}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "right",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      {appointment.appointmentFees
-                                        ? appointment.appointmentFees.toFixed(2)
-                                        : "0.00"}
-                                    </td>
-                                    <td
-                                      style={{
-                                        padding: "8px",
-                                        textAlign: "center",
-                                        borderBottom: "1px solid #f3f4f6",
-                                      }}
-                                    >
-                                      <span
+                                {patient.appointmentDetails.map(
+                                  (appointment) => (
+                                    <tr key={appointment.id}>
+                                      <td
                                         style={{
+                                          padding: "8px",
+                                          borderBottom: "1px solid #f3f4f6",
+                                        }}
+                                      >
+                                        {appointment.appointmentId}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "8px",
+                                          borderBottom: "1px solid #f3f4f6",
+                                        }}
+                                      >
+                                        {appointment.appointmentType}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "8px",
+                                          textAlign: "center",
+                                          borderBottom: "1px solid #f3f4f6",
+                                          fontSize: "12px",
+                                        }}
+                                      >
+                                        {appointment.appointmentDate}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "8px",
+                                          textAlign: "center",
+                                          borderBottom: "1px solid #f3f4f6",
+                                          fontSize: "12px",
+                                        }}
+                                      >
+                                        {appointment.appointmentTime}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "8px",
+                                          borderBottom: "1px solid #f3f4f6",
+                                        }}
+                                      >
+                                        {appointment.clinicName}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "8px",
+                                          textAlign: "right",
+                                          borderBottom: "1px solid #f3f4f6",
+                                        }}
+                                      >
+                                        {appointment.appointmentFees
+                                          ? appointment.appointmentFees.toFixed(
+                                              2
+                                            )
+                                          : "0.00"}
+                                      </td>
+                                      <td
+                                        style={{
+
                                           padding: "2px 8px",
                                           borderRadius: "12px",
                                           fontSize: "11px",
@@ -2075,13 +2147,33 @@ const BillingSystem = () => {
                                             appointment.status === "Completed"
                                               ? "#92400e"
                                               : "#166534",
+
                                         }}
                                       >
-                                        Completed
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
+                                        <span
+                                          style={{
+                                            padding: "2px 8px",
+                                            borderRadius: "12px",
+                                            fontSize: "11px",
+                                            fontWeight: "600",
+                                            backgroundColor:
+                                              appointment.appointmentStatus ===
+                                              "Pending"
+                                                ? "#fef3c7"
+                                                : "#dcfce7",
+                                            color:
+                                              appointment.appointmentStatus ===
+                                              "Pending"
+                                                ? "#92400e"
+                                                : "#166534",
+                                          }}
+                                        >
+                                          Completed
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  )
+                                )}
                               </tbody>
                             </table>
 
