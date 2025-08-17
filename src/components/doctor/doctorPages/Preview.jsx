@@ -584,7 +584,7 @@ const generatePDF = async () => {
                   {formData.advice?.medicationNotes && (
                     <div className="notes-display">
                       <div className="notes-label">
-                        Medication Instructions:
+                        General Notes:
                       </div>
                       <div className="notes-content">
                         {formData.advice.medicationNotes}
