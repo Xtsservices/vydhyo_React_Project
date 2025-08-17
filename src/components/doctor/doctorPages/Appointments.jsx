@@ -318,40 +318,49 @@ const Appointment = () => {
     }
   };
 
-  const getAppointmentsCount = async () => {
-    setLoading(true);
-    try {
-      const startDate = filters.dateRange ? filters.dateRange[0].format("YYYY-MM-DD") : moment().startOf('month').format("YYYY-MM-DD");
-      const endDate = filters.dateRange ? filters.dateRange[1].format("YYYY-MM-DD") : moment().endOf('month').format("YYYY-MM-DD");
-
-      const response = await apiGet(
-        `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}&startDate=${startDate}&endDate=${endDate}`
-      );
-
-      if (response.status === 200) {
-        const count = response?.data?.data;
-        setTotalAppointmentsCount(count.total);
-        setScheduledAppointmentsCount(count.scheduled);
-        setCompletedAppointmentsCount(count.completed);
-        setCancledAppointmentsCount(count.cancelled);
-      } else {
-        message.error("Failed to fetch appointments count");
-      }
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-      message.error("Error fetching appointments");
-    } finally {
-      setLoading(false);
+// Replace your existing getAppointmentsCount function with this updated version:
+const getAppointmentsCount = async () => {
+  setLoading(true);
+  try {
+    let startDateForCount, endDateForCount;
+    
+    if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
+      // Use the selected date range
+      startDateForCount = moment(filters.dateRange[0]).format("YYYY-MM-DD");
+      endDateForCount = moment(filters.dateRange[1]).format("YYYY-MM-DD");
+    } else {
+      // Default to current month if no date range selected
+      startDateForCount = moment().startOf('month').format("YYYY-MM-DD");
+      endDateForCount = moment().endOf('month').format("YYYY-MM-DD");
     }
-  };
 
-  useEffect(() => {
-    if (user && doctorId && !hasgetAppointments.current) {
-      getAppointments();
-      getAppointmentsCount();
-      hasgetAppointments.current = true;
+    const response = await apiGet(
+      `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}&startDate=${startDateForCount}&endDate=${endDateForCount}`
+    );
+
+    if (response.status === 200) {
+      const count = response?.data?.data;
+      setTotalAppointmentsCount(count.total);
+      setScheduledAppointmentsCount(count.scheduled);
+      setCompletedAppointmentsCount(count.completed);
+      setCancledAppointmentsCount(count.cancelled);
+    } else {
+      message.error("Failed to fetch appointments count");
     }
-  }, [user, doctorId]);
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    message.error("Error fetching appointments");
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Add this new useEffect after your existing useEffects
+useEffect(() => {
+  if (user && doctorId) {
+    getAppointmentsCount();
+  }
+}, [filters.dateRange, user, doctorId]); // This will trigger whenever dateRange changes
 
   useEffect(() => {
     getAppointments();
