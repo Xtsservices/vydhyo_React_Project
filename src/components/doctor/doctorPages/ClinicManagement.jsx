@@ -653,18 +653,74 @@ export default function ClinicManagement() {
           },
         });
         console.log("Add API Response:", response);
-        if (response.status === 200 && response.data?.status === "warning") {
-          const { message, data } = response.data;
-          const isPharmacyConflict = data?.pharmacyId;
-          const isLabConflict = data?.labId;
-          const entity = isPharmacyConflict ? "pharmacy" : "lab";
-          setWarningMessage(`${message} Do you want to link this ${entity}?`);
-          setWarningEntity(entity);
-          setBypassFormData(formDataToSend);
-          setBypassEndpoint("/users/addAddressFromWeb?bypassCheck=true");
-          setShowWarningModal(true);
-          return;
-        } else if (response.status === 200 || response.status === 201) {
+      if (response.status === 200 && response.data?.status === "warning") {
+        const { message, data } = response.data;
+        const isPharmacyConflict = data?.pharmacyId;
+        const isLabConflict = data?.labId;
+        const entity = isPharmacyConflict ? "pharmacy" : "lab";
+        setWarningMessage(`${message} Do you want to link this ${entity}?`);
+        setWarningEntity(entity);
+        const bypassData = new FormData();
+        bypassData.append("userId", doctorId);
+        bypassData.append("type", formData.type);
+        bypassData.append("clinicName", formData.clinicName);
+        bypassData.append("address", formData.address);
+        bypassData.append("city", formData.city);
+        bypassData.append("state", formData.state);
+        bypassData.append("country", formData.country);
+        bypassData.append("mobile", formData.mobile);
+        bypassData.append("pincode", formData.pincode);
+        bypassData.append("startTime", formData.startTime || "09:00");
+        bypassData.append("endTime", formData.endTime || "17:00");
+        bypassData.append("latitude", formData.latitude);
+        bypassData.append("longitude", formData.longitude);
+        if (headerFile) {
+          bypassData.append("file", headerFile);
+        }
+        if (signatureFile) {
+          bypassData.append("signature", signatureFile);
+        }
+        if (formData.labName) {
+          bypassData.append("labName", formData.labName);
+        }
+        if (formData.labRegNum) {
+          bypassData.append("labRegistrationNo", formData.labRegNum);
+        }
+        if (formData.labGST) {
+          bypassData.append("labGst", formData.labGST);
+        }
+        if (formData.labPAN) {
+          bypassData.append("labPan", formData.labPAN);
+        }
+        if (formData.labAddress) {
+          bypassData.append("labAddress", formData.labAddress);
+        }
+        if (labHeaderFile) {
+          bypassData.append("labHeader", labHeaderFile);
+        }
+        if (formData.pharmacyName) {
+          bypassData.append("pharmacyName", formData.pharmacyName);
+        }
+        if (formData.pharmacyRegNum) {
+          bypassData.append("pharmacyRegistrationNo", formData.pharmacyRegNum);
+        }
+        if (formData.pharmacyGST) {
+          bypassData.append("pharmacyGst", formData.pharmacyGST);
+        }
+        if (formData.pharmacyPAN) {
+          bypassData.append("pharmacyPan", formData.pharmacyPAN);
+        }
+        if (formData.pharmacyAddress) {
+          bypassData.append("pharmacyAddress", formData.pharmacyAddress);
+        }
+        if (pharmacyHeaderFile) {
+          bypassData.append("pharmacyHeader", pharmacyHeaderFile);
+        }
+        setBypassFormData(bypassData);
+        setBypassEndpoint("/users/addAddressFromWeb?bypassCheck=true");
+        setShowWarningModal(true);
+        return;
+      }else if (response.status === 200 || response.status === 201) {
           toast.success(response.data?.message || "Clinic added successfully");
           setShowModal(false);
         } else {
@@ -710,7 +766,27 @@ export default function ClinicManagement() {
         },
       });
 
-      if (response.status === 200 || response.status === 201) {
+      if (response.status === 200 && response.data?.status === "warning") {
+           
+        setWarningMessage(response.data.message);
+        setWarningEntity("lab");
+        const bypassData = new FormData();
+        bypassData.append("userId", doctorId);
+        bypassData.append("addressId", selectedClinicForLab.addressId);
+        bypassData.append("labName", formData.labName);
+        bypassData.append("labRegistrationNo", formData.labRegNum);
+        bypassData.append("labGst", formData.labGST);
+        bypassData.append("labPan", formData.labPAN);
+        bypassData.append("labAddress", formData.labAddress);
+        if (labHeaderFile) {
+          bypassData.append("labHeader", labHeaderFile);
+        }
+        bypassData.append("bypassCheck", "true");
+        setBypassFormData(bypassData);
+        setBypassEndpoint("/users/addLabToClinic?bypassCheck=true");
+        setShowWarningModal(true);
+      }
+    else  if (response.status === 200 || response.status === 201) {
         toast.success("Lab details added successfully");
         setShowLabModal(false);
         await refreshClinics();
@@ -766,7 +842,27 @@ export default function ClinicManagement() {
         },
       });
 
-      if (response.status === 200 || response.status === 201) {
+        if (response.status === 200 && response.data?.status === "warning") {
+           
+        setWarningMessage(response.data.message);
+        setWarningEntity("pharmacy");
+        const bypassData = new FormData();
+        bypassData.append("userId", doctorId);
+        bypassData.append("addressId", selectedClinicForPharmacy.addressId);
+        bypassData.append("pharmacyName", formData.pharmacyName);
+        bypassData.append("pharmacyRegistrationNo", formData.pharmacyRegNum);
+        bypassData.append("pharmacyGst", formData.pharmacyGST);
+        bypassData.append("pharmacyPan", formData.pharmacyPAN);
+        bypassData.append("pharmacyAddress", formData.pharmacyAddress);
+        if (pharmacyHeaderFile) {
+          bypassData.append("pharmacyHeader", pharmacyHeaderFile);
+        }
+        bypassData.append("bypassCheck", "true");
+        setBypassFormData(bypassData);
+        setBypassEndpoint("/users/addPharmacyToClinic?bypassCheck=true");
+        setShowWarningModal(true);
+      }
+      else if (response.status === 200 || response.status === 201) {
         toast.success("Pharmacy details added successfully");
         setShowPharmacyModal(false);
         await refreshClinics();
