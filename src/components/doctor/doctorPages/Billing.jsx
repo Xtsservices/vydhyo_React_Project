@@ -1439,7 +1439,7 @@ const BillingSystem = () => {
                                                 backgroundColor:
 
                                                   medicine.status === "Pending" ? "#fef3c7" : "#dcfce7",
-                                                color:
+                                                color: medicine.status === "Pending" ? "#92400e" : "#166534",
 
                                               }}
                                             >
