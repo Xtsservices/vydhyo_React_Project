@@ -729,7 +729,6 @@ useEffect(() => {
                     const dateValue = e.target.value;
                     handleDateChange(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
                   }}
-                  max={moment().format("YYYY-MM-DD")}
                   style={{
                     width: "100%",
                     padding: "4px",
