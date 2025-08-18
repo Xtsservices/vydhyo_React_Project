@@ -44,6 +44,15 @@ const transformPatientData = (result, user) => {
       appointmentType: appointment.appointmentType,
       appointmentFees: appointment?.feeDetails?.finalAmount || 0,
       addressId: appointment.addressId,
+      updatedAt:appointment.createdAt
+          ? new Date(appointment.createdAt).toLocaleString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "N/A",
       clinicName: appointment.addressId
         ? user?.addresses?.find(
             (addr) => addr.addressId === appointment.addressId
@@ -474,8 +483,8 @@ const handlePrintInvoice = (type, patientId) => {
     const completedAppointments = (patient.appointmentDetails || []).filter((a) => isCompleted(a?.status));
     if (completedAppointments.length > 0) {
       const firstAppt = completedAppointments[0];
-      itemDate = firstAppt.appointmentDate
-        ? new Date(`${firstAppt.appointmentDate} ${firstAppt.appointmentTime || ''}`).toLocaleString("en-US", {
+      itemDate = firstAppt.updatedAt
+        ? new Date(` ${firstAppt.updatedAt || ''}`).toLocaleString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
@@ -821,7 +830,7 @@ const handlePrintInvoice = (type, patientId) => {
                   <p><strong>Age:</strong> ${patient.age}</p>
                   <p><strong>Gender:</strong> ${patient.gender}</p>
                   <p><strong>Referred by Dr.</strong> ${user?.firstname || "N/A"} ${user?.lastname || "N/A"}</p>
-                  <p><strong>Appointment Date&Time:</strong> ${itemDate}</p>
+                  <p><strong>Date Time:</strong> ${itemDate}</p>
                   <div class="invoice-detail-item"><strong>Invoice No:</strong> #${invoiceNumber}</div>
                 </div>
               </div>
