@@ -193,11 +193,13 @@ const [endDate, setEndDate] = useState(moment().endOf('month').toDate());
       }
     } catch (error) {
       console.error("Cancellation error:", error);
+     
       const errorMsg =
         error.response?.data?.message ||
         "Failed to cancel appointment. Please try again.";
-      message.error(errorMsg);
-      toast.error(errorMsg);
+        console.log("Cancellation error:", errorMsg.message);
+      // message.error(errorMsg);
+      toast.error(errorMsg.message || "Failed to cancel appointment");
     } finally {
       setCancelLoading(false);
     }
