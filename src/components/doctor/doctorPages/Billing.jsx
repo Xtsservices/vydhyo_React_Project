@@ -425,19 +425,11 @@ const BillingSystem = () => {
     debouncedMarkAsPaidMap.current[key]();
   };
 
+// --- REPLACE YOUR handlePrintInvoice WITH THIS VERSION --- //
 const handlePrintInvoice = (type, patientId) => {
   const patient = transformedPatients.find((p) => p.id === patientId);
-  console.log("Patient for invoice:", patient);
   if (!patient) return;
 
-  // Open the print window ASAP to keep user gesture context
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    toast?.error?.("Please allow pop-ups to print the invoice.");
-    return;
-  }
-
-  // Robust completion detector: "completed", "complete", "paid"
   const isCompleted = (s) => {
     const v = String(s || "").toLowerCase();
     return v === "completed" || v === "complete" || v === "paid";
@@ -446,9 +438,7 @@ const handlePrintInvoice = (type, patientId) => {
   let itemDate = "N/A";
 
   if (type === "pharmacy") {
-    console.log("Processing pharmacy invoice for patient:", patient);
     const completedMedicines = (patient.medicines || []).filter((m) => isCompleted(m.status));
-    console.log("Completed medicines for invoice:", completedMedicines);
     if (completedMedicines.length === 1) {
       itemDate = completedMedicines[0].updatedDate
         ? new Date(completedMedicines[0].updatedDate).toLocaleString("en-US", {
@@ -484,7 +474,7 @@ const handlePrintInvoice = (type, patientId) => {
     if (completedAppointments.length > 0) {
       const firstAppt = completedAppointments[0];
       itemDate = firstAppt.updatedAt
-        ? new Date(` ${firstAppt.updatedAt || ''}`).toLocaleString("en-US", {
+        ? new Date(`${firstAppt.updatedAt || ""}`).toLocaleString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
@@ -508,17 +498,6 @@ const handlePrintInvoice = (type, patientId) => {
 
   const patientNumber = String(patient.patientId || "").replace(/\D/g, "");
   const invoiceNumber = `INV-${patientNumber.padStart(3, "0")}`;
-  const now = new Date();
-  const billingDate = now.toLocaleDateString("en-US", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  const billingTime = now.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
 
   if (type === "pharmacy") {
     const completedMedicines = (patient.medicines || []).filter((m) => isCompleted(m.status));
@@ -527,15 +506,13 @@ const handlePrintInvoice = (type, patientId) => {
       patient.medicines?.[0]?.pharmacyDetails ||
       {};
 
-    // Check if pharmacyDetails is empty or null
     const isPharmacyDetailsEmptyOrNull =
       !pharmacyDetails ||
       Object.keys(pharmacyDetails).length === 0 ||
       Object.values(pharmacyDetails).every((value) => value === null || value === undefined);
 
     if (isPharmacyDetailsEmptyOrNull) {
-      printWindow.close();
-      toast.error("Please fill the pharmacy details to generate a bill.");
+      toast?.error?.("Please fill the pharmacy details to generate a bill.");
       return;
     }
 
@@ -555,7 +532,6 @@ const handlePrintInvoice = (type, patientId) => {
     );
 
     if (!completedMedicines.length) {
-      printWindow.close();
       toast?.error?.("No completed medicines to print.");
       return;
     }
@@ -599,15 +575,13 @@ const handlePrintInvoice = (type, patientId) => {
     const completedTests = (patient.tests || []).filter((t) => isCompleted(t.status));
     const labDetails = completedTests[0]?.labDetails || patient.tests?.[0]?.labDetails || {};
 
-    // Check if labDetails is empty or null
     const isLabDetailsEmptyOrNull =
       !labDetails ||
       Object.keys(labDetails).length === 0 ||
       Object.values(labDetails).every((value) => value === null || value === undefined);
 
     if (isLabDetailsEmptyOrNull) {
-      printWindow.close();
-      toast.error("Please fill the lab details to generate a bill.");
+      toast?.error?.("Please fill the lab details to generate a bill.");
       return;
     }
 
@@ -621,13 +595,9 @@ const handlePrintInvoice = (type, patientId) => {
       <p>Registration No: ${labDetails.labRegistrationNo || "N/A"}</p>
     `;
 
-    total = completedTests.reduce(
-      (sum, test) => sum + (Number(test.price) || 0),
-      0
-    );
+    total = completedTests.reduce((sum, test) => sum + (Number(test.price) || 0), 0);
 
     if (!completedTests.length) {
-      printWindow.close();
       toast?.error?.("No completed tests to print.");
       return;
     }
@@ -668,15 +638,13 @@ const handlePrintInvoice = (type, patientId) => {
     const firstAppt = completedAppointments[0] || appts[0] || {};
     const addr = (user?.addresses || []).find((a) => a.addressId === firstAppt.addressId) || {};
 
-    // Check if address details are empty or null
     const isAddressEmptyOrNull =
       !addr ||
       Object.keys(addr).length === 0 ||
       Object.values(addr).every((value) => value === null || value === undefined);
 
     if (isAddressEmptyOrNull) {
-      printWindow.close();
-      toast.error("Please fill the appointment address details to generate a bill.");
+      toast?.error?.("Please fill the appointment address details to generate a bill.");
       return;
     }
 
@@ -689,13 +657,9 @@ const handlePrintInvoice = (type, patientId) => {
       <p>Phone: ${addr.mobile || "N/A"}</p>
     `;
 
-    total = completedAppointments.reduce(
-      (sum, a) => sum + (Number(a.appointmentFees) || 0),
-      0
-    );
+    total = completedAppointments.reduce((sum, a) => sum + (Number(a.appointmentFees) || 0), 0);
 
     if (!completedAppointments.length) {
-      printWindow.close();
       toast?.error?.("No completed appointments to print.");
       return;
     }
@@ -715,9 +679,9 @@ const handlePrintInvoice = (type, patientId) => {
           <tbody>
             ${completedAppointments
               .map(
-                (appt) => `
+                (appt, idx) => `
               <tr>
-                <td>1.</td>
+                <td>${idx + 1}.</td>
                 <td>Consultation Bill</td>
                 <td class="price-column">${Number(appt.appointmentFees || 0).toFixed(2)}</td>
                 <td>${appt.appointmentType || ""}</td>
@@ -733,12 +697,9 @@ const handlePrintInvoice = (type, patientId) => {
       </div>
     `;
   } else {
-    printWindow.close();
     toast?.error?.("Unknown invoice type.");
     return;
   }
-
-  console.log(headerUrl, "Header URL for invoice");
 
   const headerSectionHTML = headerUrl
     ? `
@@ -748,12 +709,14 @@ const handlePrintInvoice = (type, patientId) => {
     `
     : "";
 
-  const printContent = `
+  // Build the printable HTML (no Back link, no history hacks)
+  const printHTML = `
     <!DOCTYPE html>
     <html>
       <head>
         <title>Invoice</title>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
         <style>
           html, body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #fff; font-size: 14px; }
           @page { margin: 0; size: A4; }
@@ -761,25 +724,11 @@ const handlePrintInvoice = (type, patientId) => {
             @page { margin: 0; size: A4; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           }
-          .invoice-container {
-            padding: 15px;
-            max-width: 210mm;
-            margin: 0 auto;
-            min-height: calc(100vh - 30px);
-            display: flex;
-            flex-direction: column;
-          }
-          .invoice-content {
-            flex: 1;
-          }
+          .invoice-container { padding: 15px; max-width: 210mm; margin: 0 auto; min-height: calc(100vh - 30px); display: flex; flex-direction: column; }
+          .invoice-content { flex: 1; }
           .invoice-header-image-only { width: 100%; margin-bottom: 12px; page-break-inside: avoid; }
           .invoice-header-image-only img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: contain; background: #fff; }
-          .invoice-header-section { display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
-          .provider-info { text-align: left; }
           .provider-name { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 6px; }
-          .contact-info p { margin: 3px 0; color: #444; }
-          .invoice-details { text-align: right; }
-          .invoice-detail-item { font-size: 14px; }
           .section { margin-bottom: 20px; }
           .section-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd; }
           .patient-info { display: flex; justify-content: space-between; background-color: #f8f9fa; padding: 12px; border-radius: 5px; }
@@ -797,26 +746,12 @@ const handlePrintInvoice = (type, patientId) => {
           .footer-logo { width: 18px; height: 18px; object-fit: contain; }
           .compact-spacing { margin-bottom: 15px; }
           .compact-spacing:last-child { margin-bottom: 0; }
-          @media print {
-            .footer { position: relative; margin-top: auto; }
-            .invoice-container { min-height: auto; height: auto; }
-            .footer { page-break-before: avoid; }
-          }
         </style>
       </head>
       <body>
         <div class="invoice-container">
           <div class="invoice-content">
-            ${headerSectionHTML}
-            ${
-              headerSectionHTML
-                ? ""
-                : `
-            <div class="provider-details">
-              ${contactInfoHTML}
-            </div>
-            `
-            }
+            ${headerSectionHTML || `<div class="provider-details">${contactInfoHTML}</div>`}
             <div class="section compact-spacing">
               <h3 class="section-title">Patient Information</h3>
               <div class="patient-info">
@@ -853,47 +788,89 @@ const handlePrintInvoice = (type, patientId) => {
         </div>
         <script>
           (function() {
-            function triggerPrint() {
-              try { window.focus(); } catch (e) {}
-              try { window.print(); } catch (e) {}
-            }
-            function waitForImagesAndPrint() {
+            function waitForImagesAndThen(cb) {
               var imgs = Array.from(document.images || []);
-              if (imgs.length === 0) { return triggerPrint(); }
-              var loaded = 0;
-              var done = false;
-              function check() {
-                if (done) return;
-                loaded++;
-                if (loaded >= imgs.length) {
-                  done = true;
-                  triggerPrint();
-                }
-              }
-              imgs.forEach(function(img) {
-                if (img.complete) {
-                  check();
-                } else {
-                  img.addEventListener('load', check, { once: true });
-                  img.addEventListener('error', check, { once: true });
+              if (imgs.length === 0) return cb();
+              var remaining = imgs.length, done = false;
+              function check(){ if(done) return; remaining--; if(remaining <= 0){ done = true; cb(); } }
+              imgs.forEach(function(img){
+                if (img.complete) { check(); }
+                else {
+                  img.addEventListener('load', check, { once:true });
+                  img.addEventListener('error', check, { once:true });
                 }
               });
+              setTimeout(function(){ if(!done) cb(); }, 2500);
             }
-            if (document.readyState === 'complete') {
-              waitForImagesAndPrint();
-            } else {
-              window.addEventListener('load', waitForImagesAndPrint, { once: true });
-            }
+            waitForImagesAndThen(function(){
+              try { window.focus(); } catch(e) {}
+              try { window.print(); } catch(e) {}
+            });
           })();
         </script>
       </body>
     </html>
   `;
 
-  printWindow.document.open();
-  printWindow.document.write(printContent);
-  printWindow.document.close();
+  // === Print via an offscreen iframe (same tab, no UI replacement) ===
+  const existing = document.getElementById("vydhyo-print-iframe");
+  if (existing) existing.remove();
+
+  const iframe = document.createElement("iframe");
+  iframe.id = "vydhyo-print-iframe";
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.style.visibility = "hidden";
+  iframe.setAttribute("aria-hidden", "true");
+
+  document.body.appendChild(iframe);
+
+  const cleanup = () => {
+    try { iframe.remove(); } catch {}
+  };
+
+  const onAfterPrint = () => {
+    // Most browsers fire this on the main window even when printing an iframe
+    window.removeEventListener("afterprint", onAfterPrint);
+    cleanup();
+  };
+
+  window.addEventListener("afterprint", onAfterPrint);
+
+  const writeAndPrint = () => {
+    try {
+      const doc = iframe.contentWindow?.document;
+      if (!doc) {
+        cleanup();
+        toast?.error?.("Could not access print frame.");
+        return;
+      }
+      doc.open();
+      doc.write(printHTML);
+      doc.close();
+
+      // Fallback cleanup in case afterprint doesn't fire (older browsers)
+      setTimeout(() => cleanup(), 8000);
+    } catch (e) {
+      cleanup();
+      console.error("Print error:", e);
+      toast?.error?.("Failed to open print preview.");
+    }
+  };
+
+  // Ensure iframe is ready
+  if (iframe.contentWindow?.document?.readyState === "complete") {
+    writeAndPrint();
+  } else {
+    iframe.onload = writeAndPrint;
+  }
 };
+
+
 
   const handlePageChange = (page) => {
     setPagination((prev) => ({
@@ -1618,7 +1595,7 @@ const handlePrintInvoice = (type, patientId) => {
                                         color: "#1f2937",
                                       }}
                                     >
-                                      Grand Total
+                                      Balance To Be Collected
                                     </div>
                                     <div
                                       style={{
@@ -1949,7 +1926,7 @@ const handlePrintInvoice = (type, patientId) => {
                                         color: "#1f2937",
                                       }}
                                     >
-                                      Grand Total
+                                      Balance To Be Collected
                                     </div>
                                     <div
                                       style={{
@@ -2327,7 +2304,7 @@ const handlePrintInvoice = (type, patientId) => {
                                   color: "#1f2937",
                                 }}
                               >
-                                Grand Total
+                                      Balance To Be Collected
                               </div>
                               <div
                                 style={{
