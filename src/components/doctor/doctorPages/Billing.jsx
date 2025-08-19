@@ -438,53 +438,56 @@ const handlePrintInvoice = (type, patientId) => {
   let itemDate = "N/A";
 
   if (type === "pharmacy") {
-    const completedMedicines = (patient.medicines || []).filter((m) => isCompleted(m.status));
-    if (completedMedicines.length === 1) {
-      itemDate = completedMedicines[0].updatedDate
-        ? new Date(completedMedicines[0].updatedDate).toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          })
-        : completedMedicines[0].createdDate;
-    } else if (completedMedicines.length > 1) {
-      itemDate = completedMedicines[0].createdDate;
-    }
-  } else if (type === "labs") {
-    const completedTests = (patient.tests || []).filter((t) => isCompleted(t.status));
-    if (completedTests.length === 1) {
-      itemDate = completedTests[0].updatedAt
-        ? new Date(completedTests[0].updatedAt).toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          })
-        : completedTests[0].createdDate;
-    } else if (completedTests.length > 1) {
-      itemDate = completedTests[0].createdDate;
-    }
-  } else if (type === "appointments") {
-    const completedAppointments = (patient.appointmentDetails || []).filter((a) => isCompleted(a?.status));
-    if (completedAppointments.length > 0) {
-      const firstAppt = completedAppointments[0];
-      itemDate = firstAppt.updatedAt
-        ? new Date(`${firstAppt.updatedAt || ""}`).toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          })
-        : "N/A";
-    }
+  const completedMedicines = (patient.medicines || []).filter((m) => isCompleted(m.status));
+  if (completedMedicines.length > 0) {
+    const firstMed = completedMedicines[0];
+    itemDate = firstMed.updatedDate
+      ? new Date(firstMed.updatedDate).toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "N/A";
   }
+}
+ else if (type === "labs") {
+  const completedTests = (patient.tests || []).filter((t) => isCompleted(t.status));
+  if (completedTests.length > 0) {
+    const firstTest = completedTests[0];
+    itemDate = firstTest.updatedAt
+      ? new Date(firstTest.updatedAt).toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "N/A";
+  }
+}
+ else if (type === "appointments") {
+  const completedAppointments = (patient.appointmentDetails || []).filter((a) => isCompleted(a?.status));
+  if (completedAppointments.length > 0) {
+    const firstAppt = completedAppointments[0];
+    itemDate = firstAppt.updatedAt
+      ? new Date(firstAppt.updatedAt).toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "N/A";
+  }
+}
+
+
+  console.log("mmmmmmmm",itemDate)
 
   const appts = patient.appointmentDetails || patient.appointments || [];
   const completedAppointments = appts.filter((a) => isCompleted(a?.status));
