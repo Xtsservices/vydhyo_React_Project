@@ -1311,15 +1311,16 @@
 }
 
 /* Print Styles */
+/* Print Styles */
 @media print {
   @page {
     size: A4;
-    margin: 0.5in;
+    margin: 0cm 1cm;
   }
 
   * {
     -webkit-print-color-adjust: exact !important;
-    accent-color: exact !important;
+    color-adjust: exact !important;
   }
 
   body {
@@ -1347,6 +1348,14 @@
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
+    font-size: 12px !important;
+    /* Ensure height is controlled by JS */
+    height: auto !important;
+    overflow: visible !important;
+    page-break-before: avoid !important; /* Prevent unnecessary page breaks before */
+    page-break-after: auto !important; /* Allow page break after if content overflows */
+    break-before: avoid !important;
+    break-after: auto !important;
   }
 
   .print-button-container {
@@ -1359,41 +1368,50 @@
 
   .prescription-content {
     padding: 0 !important;
-  }
-
-  .prescription-container {
-    font-size: 12px !important;
+    margin: 0 !important; /* Remove margins to reduce height */
   }
 
   .prescription-section {
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 8px !important; /* Reduce margin to minimize height */
   }
 
   .prescription-header {
     background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%) !important;
     color: white !important;
+    padding: 10px !important; /* Reduce padding */
+    page-break-inside: avoid !important;
+  }
+
+  .prescription-header:has(.header-image) {
+    background: none !important;
+    color: inherit !important;
+    padding: 0 !important;
   }
 
   .diagnosis-tag {
     background: #fff3cd !important;
     color: #856404 !important;
+    padding: 4px 8px !important; /* Reduce padding */
   }
 
   .follow-up {
     background: #d4edda !important;
     color: #155724 !important;
+    padding: 8px !important; /* Reduce padding */
+    page-break-inside: avoid !important;
   }
 
   .medications-section {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    min-height: 0 !important;
+    margin-bottom: 8px !important; /* Reduce margin */
   }
 
   .medication-table {
     width: 100% !important;
     table-layout: auto !important;
-    overflow: visible !important;
     page-break-inside: avoid !important;
     border-collapse: collapse !important;
   }
@@ -1409,5 +1427,53 @@
 
   .medication-item {
     font-size: 9pt !important;
+    padding: 8px !important; /* Reduce padding */
+  }
+
+  .signature {
+    page-break-inside: avoid !important;
+    margin-top: 8px !important; /* Reduce margin */
+  }
+
+  .prescription-footer {
+    page-break-before: avoid !important;
+    page-break-inside: avoid !important;
+    break-before: avoid !important;
+    break-inside: avoid !important;
+    margin-top: 4px !important; /* Reduce margin */
+    padding: 4px !important; /* Reduce padding */
+  }
+
+  /* Reduce heights and margins for specific elements */
+  .common-textarea,
+  .investigation-textarea,
+  .diagnosis-textarea,
+  .history-textarea,
+  .note-textarea {
+    min-height: 0 !important; /* Remove min-height to allow shrinking */
+    height: auto !important;
+    padding: 6px !important; /* Reduce padding */
+    margin: 0 !important; /* Remove margins */
+  }
+
+  .patient-details-grid,
+  .history-grid,
+  .vitals-grid,
+  .investigation-grid,
+  .other-vitals-grid {
+    gap: 8px !important; /* Reduce gaps */
+  }
+
+  .detail-item,
+  .vital-item,
+  .investigation-item {
+    font-size: 10px !important; /* Smaller font to save space */
+  }
+
+  .clinic-info,
+  .contact-info,
+  .doctor-info {
+    margin-bottom: 8px !important; /* Reduce margins */
+    padding: 8px !important; /* Reduce padding */
   }
 }

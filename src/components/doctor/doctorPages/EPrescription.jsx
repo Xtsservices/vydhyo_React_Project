@@ -285,9 +285,13 @@ const EPrescription = () => {
       const response = await apiPost("/pharmacy/addPrescription", formattedData);
 
       if (response?.status === 201) {
-        toast.success("Prescription successfully added");
-        console.log("Prescription Response:", response);
-
+      // Change this line to show different messages based on action type
+      const successMessage = type === "save" 
+        ? "Prescription saved successfully" 
+        : "Prescription successfully added";
+      
+      toast.success(successMessage);
+      console.log("Prescription Response:", response);
         if (type === "print") {
           window.print();
         } else if (type === "whatsapp") {

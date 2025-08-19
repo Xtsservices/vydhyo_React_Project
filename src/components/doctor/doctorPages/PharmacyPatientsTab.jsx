@@ -298,170 +298,306 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
     }
   };
 
-  const handlePrint = (patient) => {
-    const { originalData, pharmacyData, medicines } = patient;
-    const totalAmount = medicines.reduce(
-      (sum, med) => sum + (med.price || 0) * (med.quantity || 1),
-      0
-    );
+const handlePrint = (patient) => {
+  const { originalData, pharmacyData, medicines } = patient;
+  const completedMedicines = medicines.filter((med) => ["completed", "complete", "paid"].includes(med.status.toLowerCase()));
 
-    const gstDetails = medicines.map(med => {
-      const subtotal = (med.price || 0) * (med.quantity || 1);
-      const gstRate = med.gst || 0;
-      const cgstRate = med.cgst || 0;
-      
-      const gstAmount = subtotal * (gstRate / (100 + gstRate + cgstRate));
-      const cgstAmount = subtotal * (cgstRate / (100 + gstRate + cgstRate));
-      
-      return {
-        medName: med.medName,
-        price: med.price,
-        quantity: med.quantity,
-        gst: gstRate,
-        cgst: cgstRate,
-        subtotal,
-        gstAmount,
-        cgstAmount
-      };
+  if (!completedMedicines.length) {
+    toast.error("No completed medicines to print.", {
+      position: "top-right",
+      autoClose: 5000,
     });
+    return;
+  }
 
-    const totalGST = gstDetails.reduce((sum, item) => sum + item.gstAmount, 0);
-    const totalCGST = gstDetails.reduce((sum, item) => sum + item.cgstAmount, 0);
-    const grandTotal = totalAmount;
+  const isPharmacyDetailsEmptyOrNull =
+    !pharmacyData ||
+    Object.keys(pharmacyData).length === 0 ||
+    Object.values(pharmacyData).every((value) => value === null || value === undefined);
 
-    const printWindow = window.open('', '', 'height=600,width=800');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Invoice</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 0; margin: 0; }
-              .invoice-container { max-width: 900px; margin: 0 auto; }
-              .header { 
-                width: 100%; 
-                padding: 10px 0; 
-                background-color: #f5f5f5; 
-                border-bottom: 2px solid #1890ff; 
-                box-sizing: border-box;
+  if (isPharmacyDetailsEmptyOrNull) {
+    toast.error("Please fill the pharmacy details to generate a bill.", {
+      position: "top-right",
+      autoClose: 5000,
+    });
+    return;
+  }
+
+  // Create a hidden iframe
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  document.body.appendChild(iframe);
+
+  const iframeDoc = iframe.contentWindow.document;
+
+  const total = completedMedicines.reduce(
+    (sum, med) => sum + (Number(med.price) || 0) * (Number(med.quantity) || 1),
+    0
+  );
+  const patientNumber = String(originalData.patientId || "").replace(/\D/g, "");
+  const invoiceNumber = `INV-${patientNumber.padStart(3, "0")}`;
+  const billingDate = new Date().toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const itemDate = completedMedicines.length === 1
+    ? (completedMedicines[0].updatedAt
+        ? new Date(completedMedicines[0].updatedAt).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })
+        : new Date(completedMedicines[0].createdAt).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          }))
+    : new Date(completedMedicines[0].createdAt).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+  const [firstName, ...lastNameParts] = originalData.patientName.split(" ");
+  const lastName = lastNameParts.join(" ") || "";
+  const headerUrl = pharmacyData?.pharmacyHeaderUrl || "";
+  const providerName = pharmacyData?.pharmacyName || "Pharmacy";
+  const contactInfoHTML = `
+    <div class="provider-name">${providerName}</div>
+    <p>${pharmacyData?.pharmacyAddress || "N/A"}</p>
+    <p>GST: ${pharmacyData?.pharmacyGst || "N/A"}</p>
+    <p>PAN: ${pharmacyData?.pharmacyPan || "N/A"}</p>
+    <p>Registration No: ${pharmacyData?.pharmacyRegistrationNo || "N/A"}</p>
+  `;
+  const sectionHTML = `
+    <div class="section compact-spacing">
+      <h3 class="section-title">Medicines</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>SL No.</th>
+            <th>Name</th>
+            <th>Price (₹)</th>
+            <th>Quantity</th>
+            <th>GST (%)</th>
+            <th>CGST (%)</th>
+            <th>Subtotal (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${completedMedicines
+            .map(
+              (med, idx) => {
+                const subtotal = (Number(med.price) || 0) * (Number(med.quantity) || 1);
+                return `
+                <tr>
+                  <td>${idx + 1}.</td>
+                  <td>${med.medName || ""}</td>
+                  <td class="price-column">${Number(med.price || 0).toFixed(2)}</td>
+                  <td>${Number(med.quantity || 1)}</td>
+                  <td>${Number(med.gst || 0)}</td>
+                  <td>${Number(med.cgst || 0)}</td>
+                  <td class="price-column">${subtotal.toFixed(2)}</td>
+                </tr>
+              `;
               }
-              .header-logo { 
-                width: 100%; 
-                height: auto; 
-                max-height: 120px; 
-                object-fit: contain;
-                display: block;
-              }
-              .title { text-align: center; font-size: 28px; font-weight: bold; color: #1890ff; margin: 20px 0; text-transform: uppercase; }
-              .info-section { display: flex; justify-content: space-between; padding: 0 20px 20px 20px; font-size: 14px; }
-              .patient-info p, .pharmacy-info p { margin: 4px 0; }
-              table { width: 100%; border-collapse: collapse; margin: 20px; }
-              th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; font-size: 14px; }
-              th { background-color: #fafafa; font-weight: bold; }
-              .total-section { padding: 20px; text-align: right; background: #f9f9f9; border-top: 2px solid #1890ff; clear: both; }
-              .total-section table { width: 300px; float: right; border: none; margin: 0; }
-              .total-section td { border: none; padding: 8px; font-weight: bold; }
-              .footer { text-align: center; font-size: 12px; color: #666; padding: 20px; border-top: 1px solid #e0e0e0; clear: both; }
-            </style>
-          </head>
-          <body>
-            <div class="invoice-container">
-              <div class="header">
-                ${pharmacyData?.pharmacyHeaderUrl ? `
-                  <img 
-                    src="${pharmacyData.pharmacyHeaderUrl}" 
-                    class="header-logo"
-                    alt="Pharmacy Header"
-                    onload="window.print()"
-                    onerror="this.style.display='none'; window.print()"
-                  />
-                ` : `
-                  <div style="font-size: 20px; font-weight: bold; color: #333; text-align: center; padding: 10px;">
-                    ${pharmacyData?.pharmacyName || 'Pharmacy'}
-                  </div>
-                `}
-              </div>
+            )
+            .join("")}
+        </tbody>
+      </table>
+      <div class="section-total">
+        <p class="gst-text" style="margin: 0; font-size: 13px; color: #000000ff;">GST included</p>
+        <p class="total-text">Medicines Total: ₹${total.toFixed(2)}</p>
+      </div>
+    </div>
+  `;
+  const headerSectionHTML = headerUrl
+    ? `
+      <div class="invoice-header-image-only">
+        <img src="${headerUrl}" alt="Header" />
+      </div>
+    `
+    : "";
 
-              <div class="title">
-                TAX INVOICE
-              </div>
-
-              <div class="info-section">
-                <div class="patient-info">
-                  <p><strong>Patient Name:</strong> ${originalData.patientName}</p>
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Invoice</title>
+        <meta charset="utf-8" />
+        <style>
+          html, body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #fff; font-size: 14px; }
+          @page { margin: 0; size: A4; }
+          @media print {
+            @page { margin: 0; size: A4; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+          .invoice-container {
+            padding: 15px;
+            max-width: 210mm;
+            margin: 0 auto;
+            min-height: calc(100vh - 30px);
+            display: flex;
+            flex-direction: column;
+          }
+          .invoice-content {
+            flex: 1;
+          }
+          .invoice-header-image-only { width: 100%; margin-bottom: 12px; page-break-inside: avoid; }
+          .invoice-header-image-only img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: contain; background: #fff; }
+          .invoice-header-section { display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
+          .provider-info { text-align: left; }
+          .provider-name { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 6px; }
+          .contact-info p { margin: 3px 0; color: #444; }
+          .invoice-details { text-align: right; }
+          .invoice-detail-item { font-size: 14px; }
+          .section { margin-bottom: 20px; }
+          .section-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd; }
+          .patient-info { display: flex; justify-content: space-between; background-color: #f8f9fa; padding: 12px; border-radius: 5px; }
+          .patient-info p { margin: 3px 0; }
+          .data-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+          .data-table th, .data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          .data-table th { background-color: #f8f9fa; font-weight: bold; }
+          .price-column { text-align: right; }
+          .section-total { text-align: right; margin-top: 8px; }
+          .total-text { font-weight: bold; font-size: 14px; color: #333; }
+          .grand-total-section { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+          .grand-total-row { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: #333; border-top: 2px solid #333; padding-top: 8px; margin-top: 10px; }
+          .footer { text-align: center; padding: 15px 0; border-top: 1px solid #ddd; color: #666; background: #fff; }
+          .powered-by { display: flex; align-items: center; justify-content: center; margin-top: 8px; gap: 6px; color: #666; font-size: 12px; }
+          .footer-logo { width: 18px; height: 18px; object-fit: contain; }
+          .compact-spacing { margin-bottom: 15px; }
+          .compact-spacing:last-child { margin-bottom: 0; }
+          @media print {
+            .footer { position: relative; margin-top: auto; }
+            .invoice-container { min-height: auto; height: auto; }
+            .footer { page-break-before: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <div class="invoice-content">
+            ${headerSectionHTML}
+            ${
+              headerSectionHTML
+                ? ""
+                : `
+            <div class="provider-details">
+              ${contactInfoHTML}
+            </div>
+            `
+            }
+            <div class="section compact-spacing">
+              <h3 class="section-title">Patient Information</h3>
+              <div class="patient-info">
+                <div>
                   <p><strong>Patient ID:</strong> ${originalData.patientId}</p>
-                  <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                  <p><strong>First Name:</strong> ${firstName}</p>
+                  <p><strong>Last Name:</strong> ${lastName}</p>
+                  <p><strong>Mobile:</strong> ${originalData.mobile || "Not Provided"}</p>
                 </div>
-                <div class="pharmacy-info">
-                  ${pharmacyData?.pharmacyRegistrationNo ? `<p><strong>Reg No:</strong> ${pharmacyData.pharmacyRegistrationNo}</p>` : ''}
-                  ${pharmacyData?.pharmacyGst ? `<p><strong>GST:</strong> ${pharmacyData.pharmacyGst}</p>` : ''}
-                  ${pharmacyData?.pharmacyPan ? `<p><strong>PAN:</strong> ${pharmacyData.pharmacyPan}</p>` : ''}
-                  ${pharmacyData?.pharmacyAddress ? `<p><strong>Address:</strong> ${pharmacyData.pharmacyAddress}</p>` : ''}
+                <div>
+                
+                  <p><strong>Referred by Dr.</strong> ${user?.firstname || "N/A"} ${user?.lastname || "N/A"}</p>
+                  <p><strong>Appointment Date&Time:</strong> ${itemDate}</p>
+                  <div class="invoice-detail-item"><strong>Invoice No:</strong> #${invoiceNumber}</div>
                 </div>
-              </div>
-
-              <table>
-                <thead>
-                  <tr>
-                    <th>Medicine</th>
-                    <th>Price (Incl. GST)</th>
-                    <th>Qty</th>
-                    <th>GST %</th>
-                    <th>CGST %</th>
-                    <th>Subtotal (Incl. GST)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${gstDetails.map((item, index) => `
-                    <tr key=${index}>
-                      <td>${item.medName}</td>
-                      <td>₹${item.price?.toFixed(2) || '0.00'}</td>
-                      <td>${item.quantity}</td>
-                      <td>${item.gst}%</td>
-                      <td>${item.cgst}%</td>
-                      <td>₹${item.subtotal.toFixed(2)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-
-              <div class="total-section">
-                <table>
-                  <tr>
-                    <td><strong>Total GST:</strong></td>
-                    <td>₹${totalGST.toFixed(2)}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Total CGST:</strong></td>
-                    <td>₹${totalCGST.toFixed(2)}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Grand Total (Incl. GST):</strong></td>
-                    <td>₹${grandTotal.toFixed(2)}</td>
-                  </tr>
-                </table>
-              </div>
-
-              <div class="footer">
-                Thank you for your purchase!<br />
-                All sales are final. Please contact us for any inquiries.
               </div>
             </div>
-            <script>
-              // Auto-print after the image loads or fails to load
-              window.onload = function() {
-                setTimeout(function() {
-                  window.print();
-                  window.close();
-                }, 500);
-              };
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    } else {
-      alert('Please allow popups for this site to print the invoice.');
+            ${sectionHTML}
+            <div class="grand-total-section">
+              <div class="grand-total-row">
+                <span>Grand Total:</span>
+                <span>₹${total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            <p>Thank you for choosing Vydhyo</p>
+            <div class="powered-by">
+              <img src="../assets/logo.png" alt="Vydhyo Logo" class="footer-logo">
+              <span>Powered by Vydhyo</span>
+            </div>
+          </div>
+        </div>
+        <script>
+          (function() {
+            function triggerPrint() {
+              try { window.focus(); } catch (e) {}
+              try { window.print(); } catch (e) {}
+              // Remove iframe after printing
+              setTimeout(() => {
+                document.body.removeChild(document.querySelector('iframe'));
+              }, 1000);
+            }
+            function waitForImagesAndPrint() {
+              var imgs = Array.from(document.images || []);
+              if (imgs.length === 0) { return triggerPrint(); }
+              var loaded = 0;
+              var done = false;
+              function check() {
+                if (done) return;
+                loaded++;
+                if (loaded >= imgs.length) {
+                  done = true;
+                  triggerPrint();
+                }
+              }
+              imgs.forEach(function(img) {
+                if (img.complete) {
+                  check();
+                } else {
+                  img.addEventListener('load', check, { once: true });
+                  img.addEventListener('error', check, { once: true });
+                }
+              });
+            }
+            if (document.readyState === 'complete') {
+              waitForImagesAndPrint();
+            } else {
+              window.addEventListener('load', waitForImagesAndPrint, { once: true });
+            }
+          })();
+        </script>
+      </body>
+    </html>
+  `;
+
+  iframeDoc.open();
+  iframeDoc.write(printContent);
+  iframeDoc.close();
+};
+
+  // Utility function to calculate age from DOB
+  const calculateAge = (dob) => {
+    if (!dob) return "N/A";
+    try {
+      const [day, month, year] = dob.split("-").map(Number);
+      const dobDate = new Date(year, month - 1, day);
+      const today = new Date();
+      let age = today.getFullYear() - dobDate.getFullYear();
+      const monthDiff = today.getMonth() - dobDate.getMonth();
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < dobDate.getDate())
+      ) {
+        age--;
+      }
+      return age >= 0 ? age : "N/A";
+    } catch (err) {
+      console.error("Error calculating age:", err);
+      return "N/A";
     }
   };
 
