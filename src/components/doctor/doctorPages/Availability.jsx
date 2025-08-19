@@ -39,7 +39,7 @@ const { Panel } = Collapse;
 
 const AvailabilityScreen = () => {
   const today = new Date();
-const hasfetchClinicsForDoctor = useRef(false)
+  const hasfetchClinicsForDoctor = useRef(false)
 
   const fullWeek = [
     "Monday",
@@ -50,9 +50,9 @@ const hasfetchClinicsForDoctor = useRef(false)
     "Saturday",
     "Sunday",
   ];
-  
+
   const todayDate = moment();
-  const todayName = todayDate.format("dddd"); 
+  const todayName = todayDate.format("dddd");
   const startIndex = fullWeek.indexOf(todayName);
   const orderedDays = [...fullWeek.slice(startIndex), ...fullWeek.slice(0, startIndex)];
 
@@ -129,7 +129,7 @@ const hasfetchClinicsForDoctor = useRef(false)
     try {
       setLoading(true);
       const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`);
-      
+
       if (response.status === 200 && response.data?.status === "success") {
         const activeClinics = response.data.data
           .filter((address) => address.status === "Active")
@@ -291,84 +291,84 @@ const hasfetchClinicsForDoctor = useRef(false)
 
 
   const [slotPopup, setSlotPopup] = useState({
-  open: false,
-  title: "",
-  content: "",
-});
+    open: false,
+    title: "",
+    content: "",
+  });
 
-const openSlotPopup = (title, content) =>
-  setSlotPopup({ open: true, title, content });
+  const openSlotPopup = (title, content) =>
+    setSlotPopup({ open: true, title, content });
 
-const closeSlotPopup = () =>
-  setSlotPopup((p) => ({ ...p, open: false }));
+  const closeSlotPopup = () =>
+    setSlotPopup((p) => ({ ...p, open: false }));
 
 
-const handleAddAvailableSlots = async () => {
-  try {
-    setLoading(true);
+  const handleAddAvailableSlots = async () => {
+    try {
+      setLoading(true);
 
-    const getDateRangeArray = (fromDate, endDate) => {
-      const dates = [];
-      let currentDate = moment(fromDate, "YYYY-MM-DD");
-      const end = moment(endDate, "YYYY-MM-DD");
-      while (currentDate.isSameOrBefore(end)) {
-        dates.push(currentDate.format("YYYY-MM-DD"));
-        currentDate.add(1, "days");
+      const getDateRangeArray = (fromDate, endDate) => {
+        const dates = [];
+        let currentDate = moment(fromDate, "YYYY-MM-DD");
+        const end = moment(endDate, "YYYY-MM-DD");
+        while (currentDate.isSameOrBefore(end)) {
+          dates.push(currentDate.format("YYYY-MM-DD"));
+          currentDate.add(1, "days");
+        }
+        return dates;
+      };
+
+      const fromDate = selectedDate?.format("YYYY-MM-DD");
+      const endDate = selectedEndDate?.format("YYYY-MM-DD");
+      const selectedDates =
+        fromDate && endDate ? getDateRangeArray(fromDate, endDate) : [fromDate];
+
+      const response = await apiPost("/appointment/createSlotsForDoctor", {
+        doctorId,
+        dates: selectedDates,
+        startTime: moment(`${availableStartTime}:00 ${availableStartPeriod}`, "hh:mm A").format("HH:mm"),
+        endTime: moment(`${availableEndTime}:00 ${availableEndPeriod}`, "hh:mm A").format("HH:mm"),
+        interval: availableDuration,
+        isAvailable: true,
+        addressId: selectedClinic,
+      });
+
+      console.log("response", response);
+
+      if (response?.data?.status === "success") {
+        const reasons = Array.isArray(response?.data?.results)
+          ? response.data.results.map((r) => r?.reason).filter(Boolean)
+          : [];
+
+        // Prefer reasons (joined lines). Fallback to server message. Fallback to a friendly default.
+        const popupMsg =
+          (reasons.length ? reasons.join("\n") : response?.data?.message) ||
+          "Available slots created successfully.";
+
+        // Show popup (always on success)
+        openSlotPopup("Slot creation result", popupMsg);
+
+        // Keep your toasts if you like
+        if (reasons.length) {
+          toast.warning(popupMsg);
+        }
+        toast.success(response?.data?.message || "Available slots created successfully");
+
+        fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
+      } else {
+        const errMsg = response?.data?.message || "Failed to create available slots";
+        openSlotPopup("Unable to create slots", errMsg);
+        message.error(errMsg);
       }
-      return dates;
-    };
-
-    const fromDate = selectedDate?.format("YYYY-MM-DD");
-    const endDate = selectedEndDate?.format("YYYY-MM-DD");
-    const selectedDates =
-      fromDate && endDate ? getDateRangeArray(fromDate, endDate) : [fromDate];
-
-    const response = await apiPost("/appointment/createSlotsForDoctor", {
-      doctorId,
-      dates: selectedDates,
-      startTime: moment(`${availableStartTime}:00 ${availableStartPeriod}`, "hh:mm A").format("HH:mm"),
-      endTime: moment(`${availableEndTime}:00 ${availableEndPeriod}`, "hh:mm A").format("HH:mm"),
-      interval: availableDuration,
-      isAvailable: true,
-      addressId: selectedClinic,
-    });
-
-    console.log("response", response);
-
-    if (response?.data?.status === "success") {
-      const reasons = Array.isArray(response?.data?.results)
-        ? response.data.results.map((r) => r?.reason).filter(Boolean)
-        : [];
-
-      // Prefer reasons (joined lines). Fallback to server message. Fallback to a friendly default.
-      const popupMsg =
-        (reasons.length ? reasons.join("\n") : response?.data?.message) ||
-        "Available slots created successfully.";
-
-      // Show popup (always on success)
-      openSlotPopup("Slot creation result", popupMsg);
-
-      // Keep your toasts if you like
-      if (reasons.length) {
-        toast.warning(popupMsg);
-      }
-      toast.success(response?.data?.message || "Available slots created successfully");
-
-      fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
-    } else {
-      const errMsg = response?.data?.message || "Failed to create available slots";
-      openSlotPopup("Unable to create slots", errMsg);
+    } catch (error) {
+      console.error("Error creating available slots:", error);
+      const errMsg = error?.response?.data?.message || "Failed to create available slots";
+      openSlotPopup("Error", errMsg);
       message.error(errMsg);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error creating available slots:", error);
-    const errMsg = error?.response?.data?.message || "Failed to create available slots";
-    openSlotPopup("Error", errMsg);
-    message.error(errMsg);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
 
@@ -407,7 +407,7 @@ const handleAddAvailableSlots = async () => {
     }
   };
 
- const handleAddUnavailableSlots = async () => {
+  const handleAddUnavailableSlots = async () => {
     try {
       setLoading(true);
       const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
@@ -426,7 +426,7 @@ const handleAddAvailableSlots = async () => {
       //   const slotTime = moment(slot.originalTime, "HH:mm");
       //   return slotTime.isSameOrAfter(startTime) && slotTime.isSameOrBefore(endTime);
       // });
-      
+
       const slotsToMarkUnavailable = availableSlots.filter((slot) => {
         const slotTime = moment(slot.originalTime, "HH:mm");
         return slotTime.isSameOrAfter(startTime) && slotTime.isBefore(endTime);
@@ -483,7 +483,7 @@ const handleAddAvailableSlots = async () => {
           availableSlots: updatedAvailableSlots,
           unavailableSlots: newUnavailableSlots,
         });
-          toast.success( "Slots marked as unavailable successfully");
+        toast.success("Slots marked as unavailable successfully");
 
         message.success("Slots marked as unavailable successfully");
       } else {
@@ -597,7 +597,7 @@ const handleAddAvailableSlots = async () => {
     }
   };
 
- const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedSlotTime, setSelectedSlotTime] = useState(null);
 
   const showModal = (slotTime) => {
@@ -605,86 +605,86 @@ const handleAddAvailableSlots = async () => {
     setIsModalVisible(true);
   };
 
-const handleOk = async (type) => {
-  console.log(type, "selected string")
-  const date = dayjs(selectedDate).format("YYYY-MM-DD");
-   const { availableSlots, unavailableSlots } = getCurrentClinicSlots(); 
-  console.log("Selected Slot Time:", selectedSlotTime);
-  console.log("Available Slots:", availableSlots);
-  console.log("Available Slots:", unavailableSlots);
+  const handleOk = async (type) => {
+    console.log(type, "selected string")
+    const date = dayjs(selectedDate).format("YYYY-MM-DD");
+    const { availableSlots, unavailableSlots } = getCurrentClinicSlots();
+    console.log("Selected Slot Time:", selectedSlotTime);
+    console.log("Available Slots:", availableSlots);
+    console.log("Available Slots:", unavailableSlots);
 
-  const slots = type ==='available' ?availableSlots:unavailableSlots
+    const slots = type === 'available' ? availableSlots : unavailableSlots
 
-  // Convert 12-hour time (e.g., "09:15 AM") to 24-hour format ("09:15")
-  const convertTo24Hour = (time12h) => {
-    console.log(time12h)
-    if (typeof time12h !== 'string') {
-    console.error("Invalid time format:", time12h);
-    return null;
-  }
-    const [time, modifier] = time12h?.split(" ");
-    let [hours, minutes] = time?.split(":").map(Number);
-    if (modifier === "PM" && hours !== 12) {
-      hours += 12;
+    // Convert 12-hour time (e.g., "09:15 AM") to 24-hour format ("09:15")
+    const convertTo24Hour = (time12h) => {
+      console.log(time12h)
+      if (typeof time12h !== 'string') {
+        console.error("Invalid time format:", time12h);
+        return null;
+      }
+      const [time, modifier] = time12h?.split(" ");
+      let [hours, minutes] = time?.split(":").map(Number);
+      if (modifier === "PM" && hours !== 12) {
+        hours += 12;
+      }
+      if (modifier === "AM" && hours === 12) {
+        hours = 0;
+      }
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    };
+    // Prepare the payload
+    let payload = {
+      doctorId: doctorId,
+      addressId: selectedClinic,
+      date: date,
+      slotTimes: [],
+    };
+
+    if (selectedSlotTime?.length > 0) {
+      payload.slotTimes = [convertTo24Hour(selectedSlotTime)];
+    } else {
+
+      payload.slotTimes = slots
+        .map((item, index) => {
+          console.log(`Item[${index}] =`, item);
+          return convertTo24Hour(item?.time);
+        })
+        .filter(Boolean); // remove any null/undefined results
+
     }
-    if (modifier === "AM" && hours === 12) {
-      hours = 0;
+
+    console.log("Payload for deleting slots:", payload);
+
+    try {
+
+
+      const res = await apiDelete(
+        `/appointment/deleteDoctorSlots`,
+        payload
+      );
+      console.log(res, "complete response")
+      if (res.status === 200) {
+        toast.success(res.data.message || "slot deleted successfully")
+        setSelectedSlotTime([])
+        fetchSlotsForDate(date)
+      } else {
+        toast.error(res.data.message)
+      }
+
+      // Update UI: remove deleted slots
+      // if (selectedSlotTime) {
+      //   setUnavailableSlots((prev) =>
+      //     prev.filter((slot) => slot.time !== selectedSlotTime)
+      //   );
+      // } else {
+      //   setUnavailableSlots([]);
+      // }
+
+      setIsModalVisible(false);
+    } catch (error) {
+      console.error("Error deleting slot:", error);
     }
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
   };
-  // Prepare the payload
-  let payload = {
-    doctorId: doctorId,
-    addressId: selectedClinic,
-    date: date,
-    slotTimes: [],
-  };
-
-  if (selectedSlotTime?.length>0) {
-    payload.slotTimes = [convertTo24Hour(selectedSlotTime)];
-  } else {
-   
-   payload.slotTimes = slots
-  .map((item, index) => {
-    console.log(`Item[${index}] =`, item);
-    return convertTo24Hour(item?.time);
-  })
-  .filter(Boolean); // remove any null/undefined results
-
-  }
-
-  console.log("Payload for deleting slots:", payload);
-
-  try {
-
-    
-    const res = await apiDelete(
-      `/appointment/deleteDoctorSlots`,
-      payload
-    );
-    console.log(res, "complete response")
-    if (res.status === 200) {
-      toast.success(res.data.message|| "slot deleted successfully")
-      setSelectedSlotTime([])
-  fetchSlotsForDate(date)
-    }else{
-      toast.error(res.data.message)
-    }
-
-    // Update UI: remove deleted slots
-    // if (selectedSlotTime) {
-    //   setUnavailableSlots((prev) =>
-    //     prev.filter((slot) => slot.time !== selectedSlotTime)
-    //   );
-    // } else {
-    //   setUnavailableSlots([]);
-    // }
-
-    setIsModalVisible(false);
-  } catch (error) {
-    console.error("Error deleting slot:", error);
-  }
-};
 
 
   const handleCancel = () => {
@@ -864,11 +864,11 @@ const handleOk = async (type) => {
               >
                 Add Available Slots
               </Button>
-              
+
             </Space>
           </Col>
 
-           <Col xs={12} sm={6}>
+          <Col xs={12} sm={6}>
             <Space>
               <Button
                 type="primary"
@@ -879,63 +879,63 @@ const handleOk = async (type) => {
               >
                 Delete Slots
               </Button>
-              
+
             </Space>
           </Col>
         </Row>
 
         {/* Slots Display */}
         <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
-         {availableSlots.map((slot, index) => {
-  const isToday =
-    selectedDate && selectedDate.isSame(new Date(), "day");
+          {availableSlots.map((slot, index) => {
+            const isToday =
+              selectedDate && selectedDate.isSame(new Date(), "day");
 
-  // Convert slot time (e.g., "10:30 AM") and current time to comparable Date objects
-  const slotDateTime = isToday
-    ? new Date(`${selectedDate.format("YYYY-MM-DD")} ${slot.time}`)
-    : null;
+            // Convert slot time (e.g., "10:30 AM") and current time to comparable Date objects
+            const slotDateTime = isToday
+              ? new Date(`${selectedDate.format("YYYY-MM-DD")} ${slot.time}`)
+              : null;
 
-  const isPastTime =
-    isToday && slotDateTime && slotDateTime < new Date();
+            const isPastTime =
+              isToday && slotDateTime && slotDateTime < new Date();
 
-  return (
-    <Col key={index} xs={12} sm={8} md={6} lg={4}>
-      <Button
-        onClick={() => showModal(slot.time)}
-        disabled={isPastTime}
-        block
-        style={{
-          height: 48,
-          borderRadius: 8,
-          border: "1px solid #52c41a",
-          backgroundColor: isPastTime ? "#f5f5f5" : "#DCFCE7",
-          color: isPastTime ? "#999" : "#52c41a",
-          fontWeight: "bold",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        icon={<ClockCircleOutlined />}
-      >
-        {slot.time}
-      </Button>
-    </Col>
-  );
-})}
+            return (
+              <Col key={index} xs={12} sm={8} md={6} lg={4}>
+                <Button
+                  onClick={() => showModal(slot.time)}
+                  disabled={isPastTime}
+                  block
+                  style={{
+                    height: 48,
+                    borderRadius: 8,
+                    border: "1px solid #52c41a",
+                    backgroundColor: isPastTime ? "#f5f5f5" : "#DCFCE7",
+                    color: isPastTime ? "#999" : "#52c41a",
+                    fontWeight: "bold",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  icon={<ClockCircleOutlined />}
+                >
+                  {slot.time}
+                </Button>
+              </Col>
+            );
+          })}
 
         </Row>
-        
-      <Modal
-        title="Confirm Delete"
-        open={isModalVisible}
-        onOk={() => handleOk('available')}
-        onCancel={handleCancel}
-        okText="Yes, Delete"
-        okType="danger"
-        cancelText="Cancel"
-      >
-        <p>Are you sure you want to delete the slot: <strong>{selectedSlotTime}</strong>?</p>
-      </Modal>
+
+        <Modal
+          title="Confirm Delete"
+          open={isModalVisible}
+          onOk={() => handleOk('available')}
+          onCancel={handleCancel}
+          okText="Yes, Delete"
+          okType="danger"
+          cancelText="Cancel"
+        >
+          <p>Are you sure you want to delete the slot: <strong>{selectedSlotTime}</strong>?</p>
+        </Modal>
 
         <Divider />
       </>
@@ -1067,7 +1067,7 @@ const handleOk = async (type) => {
           </Col>
 
           {/* Duration */}
-         
+
 
           {/* Action Buttons */}
           <Col xs={12} sm={6}>
@@ -1081,7 +1081,7 @@ const handleOk = async (type) => {
               >
                 Add Unavailable Slots
               </Button>
-              
+
             </Space>
           </Col>
 
@@ -1090,13 +1090,13 @@ const handleOk = async (type) => {
               <Button
                 type="primary"
                 danger
-               onClick={() => handleOk('unavailable')}
+                onClick={() => handleOk('unavailable')}
                 icon={<StopOutlined />}
                 style={{ fontWeight: "bold" }}
               >
                 Delete Slots
               </Button>
-              
+
             </Space>
           </Col>
         </Row>
@@ -1118,7 +1118,7 @@ const handleOk = async (type) => {
             <Col key={index} xs={12} sm={8} md={6} lg={4}>
               <Button
                 block
-                 onClick={() => showModal(slot.time)}
+                onClick={() => showModal(slot.time)}
                 style={{
                   height: 48,
                   borderRadius: 8,
@@ -1152,23 +1152,23 @@ const handleOk = async (type) => {
   };
 
   const handleDayClick = (day) => {
-  setSelectedDay(day);
+    setSelectedDay(day);
 
-  const todayIndex = moment().isoWeekday(); // 1 (Monday) - 7 (Sunday)
-  const selectedIndex = fullWeek.indexOf(day) + 1; // 1-based to match isoWeekday
+    const todayIndex = moment().isoWeekday(); // 1 (Monday) - 7 (Sunday)
+    const selectedIndex = fullWeek.indexOf(day) + 1; // 1-based to match isoWeekday
 
-  let diff = selectedIndex - todayIndex;
+    let diff = selectedIndex - todayIndex;
     // Only move to next week if the selected day is before today
-  if (diff < 0) {
-    diff += 7;
-  }
-  // if (diff <= 0) {
-  //   diff += 7; // Move to the *next* occurrence if same day or past day
-  // }
+    if (diff < 0) {
+      diff += 7;
+    }
+    // if (diff <= 0) {
+    //   diff += 7; // Move to the *next* occurrence if same day or past day
+    // }
 
-  const date = moment().add(diff, "days");
-  setSelectedDate(date);
-};
+    const date = moment().add(diff, "days");
+    setSelectedDate(date);
+  };
 
 
   // const handleDayClick = (day) => {
@@ -1198,7 +1198,6 @@ const handleOk = async (type) => {
   value={selectedClinic}
   onChange={setSelectedClinic}
   style={{ width: 250 }}
-  suffixIcon={<DownOutlined />}
   loading={loading}
   showSearch
   optionFilterProp="children"
@@ -1206,6 +1205,8 @@ const handleOk = async (type) => {
     option.children.toLowerCase().includes(input.toLowerCase())
   }
   placeholder="Search and select clinic"
+  dropdownStyle={{ minWidth: 250 }}
+  allowClear
 >
   {clinics.map((clinic) => (
     <Option key={clinic.value} value={clinic.value}>
@@ -1220,57 +1221,57 @@ const handleOk = async (type) => {
           <Card
             title={
               <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  }}
->
-  <Space>
-    <Text strong>Manage Availability for:</Text>
-    <Text strong>Start Date:</Text>
-    <input
-      type="date"
-      style={{
-        alignSelf: "flex-end",
-        borderRadius: "12px",
-        background: "#F6F6F6",
-        padding: "0.4rem",
-        color: "#1977f3",
-        width: "120px",
-        border: "1px solid #d9d9d9",
-        marginBottom: 16,
-      }}
-      min={moment().format("YYYY-MM-DD")}
-      value={selectedDate ? selectedDate.format("YYYY-MM-DD") : ""}
-      onChange={(e) => {
-        const dateValue = e.target.value;
-        setSelectedDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
-      }}
-    />
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Space>
+                  <Text strong>Manage Availability for:</Text>
+                  <Text strong>Start Date:</Text>
+                  <input
+                    type="date"
+                    style={{
+                      alignSelf: "flex-end",
+                      borderRadius: "12px",
+                      background: "#F6F6F6",
+                      padding: "0.4rem",
+                      color: "#1977f3",
+                      width: "120px",
+                      border: "1px solid #d9d9d9",
+                      marginBottom: 16,
+                    }}
+                    min={moment().format("YYYY-MM-DD")}
+                    value={selectedDate ? selectedDate.format("YYYY-MM-DD") : ""}
+                    onChange={(e) => {
+                      const dateValue = e.target.value;
+                      setSelectedDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
+                    }}
+                  />
 
-    <Text strong>End Date:</Text>
-    <input
-      type="date"
-      style={{
-        alignSelf: "flex-end",
-        borderRadius: "12px",
-        background: "#F6F6F6",
-        padding: "0.4rem",
-        color: "#1977f3",
-        width: "120px",
-        border: "1px solid #d9d9d9",
-        marginBottom: 16,
-      }}
-      min={moment().format("YYYY-MM-DD")}
-      value={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ""}
-      onChange={(e) => {
-        const dateValue = e.target.value;
-        setSelectedEndDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
-      }}
-    />
-  </Space>
-</div>
+                  <Text strong>End Date:</Text>
+                  <input
+                    type="date"
+                    style={{
+                      alignSelf: "flex-end",
+                      borderRadius: "12px",
+                      background: "#F6F6F6",
+                      padding: "0.4rem",
+                      color: "#1977f3",
+                      width: "120px",
+                      border: "1px solid #d9d9d9",
+                      marginBottom: 16,
+                    }}
+                    min={moment().format("YYYY-MM-DD")}
+                    value={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ""}
+                    onChange={(e) => {
+                      const dateValue = e.target.value;
+                      setSelectedEndDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
+                    }}
+                  />
+                </Space>
+              </div>
             }
             style={{ borderRadius: 12, marginBottom: 24 }}
             bodyStyle={{ padding: 24 }}
