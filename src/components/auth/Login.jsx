@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
 import { toast } from "react-toastify";
@@ -8,10 +8,12 @@ import "react-toastify/dist/ReactToastify.css";
 import Illustration from "./Illustration";
 import LoginForm from "./LoginForm";
 import "../../components/stylings/Login.css";
-import { apiPostWithoutToken } from "../api";
-import { useDispatch } from "react-redux";
+import { apiGet, apiPostWithoutToken } from "../api";
+import { useDispatch, useSelector } from "react-redux";
 
 const Login = () => {
+  const user = useSelector((state) => state.currentUserData);
+
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -206,6 +208,80 @@ const Login = () => {
     })`;
   };
 
+const getToken = () => localStorage.getItem("accessToken");
+
+
+  const getCurrentUserData = async () => {
+    try {
+
+      console.log("Fetching user data from API");
+      const response = await apiGet("/users/getUser");
+      const userData = response.data?.data;
+      console.log("userDatafrom app.jsx",userData)
+      if (userData) {
+        //fetch current DoctorData
+  const doctorId = userData?.role === "doctor" ? userData?.userId : userData?.createdBy;
+
+         const response = await apiGet(`/users/getUser?userId=${doctorId}`);
+                const docData = response.data?.data;
+          console.log(docData, "userdetais")
+           const redirectRoute = getRouteFromUserType(
+          userData?.role 
+        );
+
+           dispatch({
+          type: "doctorData",
+          payload: docData,
+        });
+
+        dispatch({
+          type: "currentUserData",
+          payload: userData,
+        });
+        navigate(redirectRoute)
+         
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+
+
+  useEffect(() => {
+    if(!getToken()) {
+navigate("/login");
+    }
+    
+    else if (getToken()) {
+      getCurrentUserData();
+    }
+  }, [user]);
+
+  const getDoctorDa = async () => {
+    try {
+const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
+         const response = await apiGet(`/users/getUser?userId=${doctorId}`);
+                const docData = response.data?.data;
+          console.log(docData, "docData")
+          
+
+           dispatch({
+          type: "doctorData",
+          payload: docData,
+        });
+    }catch (error) {
+      console.error("Error fetching doctor data:", error);
+    }
+    
+  }
+
+  useEffect(() => {
+if(user){
+  getDoctorDa()
+}
+  },[user])
   return (
     <div
       className="login-container"
