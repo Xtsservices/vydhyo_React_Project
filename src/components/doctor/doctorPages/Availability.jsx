@@ -1195,30 +1195,25 @@ const AvailabilityScreen = () => {
             Select Clinic:
           </Text>
           <Select
-            value={selectedClinic}
-            onChange={setSelectedClinic}
-            style={{ width: 250 }}
-            suffixIcon={<DownOutlined />}
-            loading={loading}
-            showSearch
-            optionFilterProp="children"
-            filterOption={(input, option) =>
-              option.children.toLowerCase().includes(input.toLowerCase())
-            }
-            placeholder="Search and select clinic"
-            dropdownStyle={{ minWidth: 250 }}
-            allowClear
-            onDropdownVisibleChange={(open) => {
-              // Optional: Handle dropdown open/close events if needed
-              console.log("Dropdown visible:", open);
-            }}
-          >
-            {clinics.map((clinic) => (
-              <Option key={clinic.value} value={clinic.value}>
-                {clinic.label}
-              </Option>
-            ))}
-          </Select>
+  value={selectedClinic}
+  onChange={setSelectedClinic}
+  style={{ width: 250 }}
+  loading={loading}
+  showSearch
+  optionFilterProp="children"
+  filterOption={(input, option) =>
+    option.children.toLowerCase().includes(input.toLowerCase())
+  }
+  placeholder="Search and select clinic"
+  dropdownStyle={{ minWidth: 250 }}
+  allowClear
+>
+  {clinics.map((clinic) => (
+    <Option key={clinic.value} value={clinic.value}>
+      {clinic.label}
+    </Option>
+  ))}
+</Select>
         </Card>
 
         <Spin spinning={loading}>
