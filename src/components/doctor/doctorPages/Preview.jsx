@@ -30,6 +30,7 @@ const generatePDF = async () => {
       throw new Error("Could not find the prescription container element");
     }
 
+    // Store original styles
     const originalStyles = {
       boxShadow: input.style.boxShadow,
       padding: input.style.padding,
@@ -45,30 +46,37 @@ const generatePDF = async () => {
       printButtonContainer.style.display = "none";
     }
 
-    // Apply styles to minimize content height and ensure accurate rendering
+    // Apply minimal styles for rendering (remove only problematic styles)
     input.style.boxShadow = "none";
-    input.style.padding = "0";
-    input.style.margin = "0";
     input.style.overflow = "visible";
     input.style.maxHeight = "none";
     input.style.height = "auto";
 
-    // Wait for all images to load
-    const images = input.querySelectorAll('img');
+    // Wait for images to load
+    const images = input.querySelectorAll("img");
     const loadPromises = Array.from(images).map((img) => {
-      if (img.complete) {
-        return Promise.resolve();
-      }
+      if (img.complete) return Promise.resolve();
       return new Promise((resolve) => {
         img.onload = resolve;
-        img.onerror = resolve; // Proceed even if error
+        img.onerror = resolve;
       });
     });
     await Promise.all(loadPromises);
 
-    // Ensure the container is fully rendered
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Brief delay for rendering
+    // Ensure rendering is complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
+    // Initialize jsPDF
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth(); // Use full width, rely on existing CSS margins
+    const pageHeight = pdf.internal.pageSize.getHeight(); // Full A4 height
+
+    // Capture the entire container
     const canvas = await html2canvas(input, {
       scale: 2,
       useCORS: true,
@@ -76,55 +84,67 @@ const generatePDF = async () => {
       backgroundColor: "#ffffff",
       scrollY: -window.scrollY,
       windowWidth: document.documentElement.scrollWidth,
-      windowHeight: input.scrollHeight, // Use element's scroll height
+      windowHeight: input.scrollHeight,
     });
+
+    const imgData = canvas.toDataURL("image/png");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    // Calculate the number of pages
+    const pageContentHeight = pageHeight;
+    const totalPages = Math.ceil(pdfHeight / pageContentHeight);
+
+    // Render each page with clipping
+    for (let page = 0; page < totalPages; page++) {
+      // Calculate source rectangle for this page in canvas pixels
+      const srcY = page * pageContentHeight * (imgProps.height / pdfHeight);
+      const srcHeight = Math.min(
+        pageContentHeight * (imgProps.height / pdfHeight),
+        imgProps.height - srcY
+      );
+
+      // Create a temporary canvas to clip the image
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = imgProps.width;
+      tempCanvas.height = srcHeight;
+      const ctx = tempCanvas.getContext("2d");
+      ctx.drawImage(
+        canvas,
+        0,
+        srcY,
+        imgProps.width,
+        srcHeight,
+        0,
+        0,
+        imgProps.width,
+        srcHeight
+      );
+
+      const pageImgData = tempCanvas.toDataURL("image/png");
+
+      // Add clipped image to PDF
+      pdf.addImage(
+        pageImgData,
+        "PNG",
+        0, // No extra left margin
+        0, // No extra top margin
+        pdfWidth,
+        (srcHeight * pdfWidth) / imgProps.width, // Scaled height
+        null,
+        "FAST"
+      );
+
+      // Add new page if more content remains
+      if (page < totalPages - 1) {
+        pdf.addPage();
+      }
+    }
 
     // Restore original styles
     Object.assign(input.style, originalStyles);
     if (printButtonContainer) {
       printButtonContainer.style.display = originalButtonDisplay;
-    }
-
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-    const pageHeight = 297; // A4 page height in mm
-    const heightThreshold = 10; // Minimum overflow height (mm) to justify a new page
-    let heightLeft = pdfHeight;
-
-    // Add the first page
-    pdf.addImage(
-      imgData,
-      "PNG",
-      10,
-      0,
-      pdfWidth,
-      pdfHeight,
-      null,
-      "FAST"
-    );
-
-    // Only add a second page if overflow exceeds threshold
-    heightLeft -= pageHeight;
-    if (heightLeft > heightThreshold) {
-      pdf.addPage();
-      pdf.addImage(
-        imgData,
-        "PNG",
-        10,
-        -pageHeight,
-        pdfWidth,
-        pdfHeight,
-        null,
-        "FAST"
-      );
     }
 
     const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
@@ -135,7 +155,7 @@ const generatePDF = async () => {
       size: pdfBlob.size,
       filename: `${appointmentId}.pdf`,
       canvasHeight: pdfHeight,
-      pages: heightLeft > heightThreshold ? 2 : 1,
+      pages: totalPages,
     });
 
     return pdfBlob;
