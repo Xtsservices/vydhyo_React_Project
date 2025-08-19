@@ -1195,18 +1195,24 @@ const handleOk = async (type) => {
             Select Clinic:
           </Text>
           <Select
-            value={selectedClinic}
-            onChange={setSelectedClinic}
-            style={{ width: 250 }}
-            suffixIcon={<DownOutlined />}
-            loading={loading}
-          >
-            {clinics.map((clinic) => (
-              <Option key={clinic.value} value={clinic.value}>
-                {clinic.label}
-              </Option>
-            ))}
-          </Select>
+  value={selectedClinic}
+  onChange={setSelectedClinic}
+  style={{ width: 250 }}
+  suffixIcon={<DownOutlined />}
+  loading={loading}
+  showSearch
+  optionFilterProp="children"
+  filterOption={(input, option) =>
+    option.children.toLowerCase().includes(input.toLowerCase())
+  }
+  placeholder="Search and select clinic"
+>
+  {clinics.map((clinic) => (
+    <Option key={clinic.value} value={clinic.value}>
+      {clinic.label}
+    </Option>
+  ))}
+</Select>
         </Card>
 
         <Spin spinning={loading}>

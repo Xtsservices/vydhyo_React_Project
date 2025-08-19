@@ -11,6 +11,15 @@ const App = () => {
   const hasFetchedUser = useRef(false);
 const getToken = () => localStorage.getItem("accessToken");
 
+const getRouteFromUserType = (role) => {
+    if (role === "superadmin") return "/SuperAdmin/dashboard";
+    if (role === "doctor") return "/Doctor/dashboard";
+    if (role === "reception") return "/Doctor/dashboard";
+    return "/Doctor/dashboard";
+    return "/SuperAdmin/dashboard";
+    return "/Admin/app/dashboard"; // Default route if role is unknown
+  };
+
 
   const getCurrentUserData = async () => {
     try {
@@ -26,7 +35,9 @@ const getToken = () => localStorage.getItem("accessToken");
          const response = await apiGet(`/users/getUser?userId=${doctorId}`);
                 const docData = response.data?.data;
           console.log(docData, "userdetais")
-          
+           const redirectRoute = getRouteFromUserType(
+          userData?.role 
+        );
 
            dispatch({
           type: "doctorData",
@@ -37,6 +48,8 @@ const getToken = () => localStorage.getItem("accessToken");
           type: "currentUserData",
           payload: userData,
         });
+        navigate(redirectRoute)
+    
       }
     } catch (error) {
       console.error("Error fetching user data:", error);

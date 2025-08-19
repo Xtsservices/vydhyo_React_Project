@@ -23,92 +23,128 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     });
   };
 
-  const generatePDF = async () => {
-    try {
-      const input = document.getElementById("prescription-container");
-      if (!input) {
-        throw new Error("Could not find the prescription container element");
-      }
-
-      const originalStyles = {
-        boxShadow: input.style.boxShadow,
-        padding: input.style.padding,
-        margin: input.style.margin,
-        overflow: input.style.overflow,
-      };
-
-      const printButtonContainer = input.querySelector(".print-button-container");
-      const originalButtonDisplay = printButtonContainer?.style.display;
-      if (printButtonContainer) {
-        printButtonContainer.style.display = "none";
-      }
-
-      input.style.boxShadow = "none";
-      input.style.padding = "0";
-      input.style.margin = "0";
-      input.style.overflow = "visible";
-
-      const canvas = await html2canvas(input, {
-        scale: 2,
-        useCORS: true,
-        logging: true,
-        backgroundColor: "#ffffff",
-        scrollY: -window.scrollY,
-        windowWidth: document.documentElement.scrollWidth,
-        windowHeight: document.documentElement.scrollHeight,
-      });
-
-      Object.assign(input.style, originalStyles);
-      if (printButtonContainer) {
-        printButtonContainer.style.display = originalButtonDisplay;
-      }
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-      const pageHeight = 297;
-      let heightLeft = pdfHeight;
-      let position = 0;
-
-      while (heightLeft > 0) {
-        pdf.addImage(
-          imgData,
-          "PNG",
-          10,
-          position,
-          pdfWidth,
-          pdfHeight,
-          null,
-          "FAST"
-        );
-        heightLeft -= pageHeight;
-        position -= pageHeight;
-        if (heightLeft > 0) pdf.addPage();
-      }
-
-      const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
-      const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
-
-      console.log("Generated PDF Blob:", {
-        type: pdfBlob.type,
-        size: pdfBlob.size,
-        filename: `${appointmentId}.pdf`,
-      });
-
-      return pdfBlob;
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate prescription PDF");
-      throw error;
+const generatePDF = async () => {
+  try {
+    const input = document.getElementById("prescription-container");
+    if (!input) {
+      throw new Error("Could not find the prescription container element");
     }
-  };
+
+    const originalStyles = {
+      boxShadow: input.style.boxShadow,
+      padding: input.style.padding,
+      margin: input.style.margin,
+      overflow: input.style.overflow,
+      maxHeight: input.style.maxHeight,
+      height: input.style.height,
+    };
+
+    const printButtonContainer = input.querySelector(".print-button-container");
+    const originalButtonDisplay = printButtonContainer?.style.display;
+    if (printButtonContainer) {
+      printButtonContainer.style.display = "none";
+    }
+
+    // Apply styles to minimize content height and ensure accurate rendering
+    input.style.boxShadow = "none";
+    input.style.padding = "0";
+    input.style.margin = "0";
+    input.style.overflow = "visible";
+    input.style.maxHeight = "none";
+    input.style.height = "auto";
+
+    // Wait for all images to load
+    const images = input.querySelectorAll('img');
+    const loadPromises = Array.from(images).map((img) => {
+      if (img.complete) {
+        return Promise.resolve();
+      }
+      return new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve; // Proceed even if error
+      });
+    });
+    await Promise.all(loadPromises);
+
+    // Ensure the container is fully rendered
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Brief delay for rendering
+
+    const canvas = await html2canvas(input, {
+      scale: 2,
+      useCORS: true,
+      logging: true,
+      backgroundColor: "#ffffff",
+      scrollY: -window.scrollY,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: input.scrollHeight, // Use element's scroll height
+    });
+
+    // Restore original styles
+    Object.assign(input.style, originalStyles);
+    if (printButtonContainer) {
+      printButtonContainer.style.display = originalButtonDisplay;
+    }
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    const pageHeight = 297; // A4 page height in mm
+    const heightThreshold = 10; // Minimum overflow height (mm) to justify a new page
+    let heightLeft = pdfHeight;
+
+    // Add the first page
+    pdf.addImage(
+      imgData,
+      "PNG",
+      10,
+      0,
+      pdfWidth,
+      pdfHeight,
+      null,
+      "FAST"
+    );
+
+    // Only add a second page if overflow exceeds threshold
+    heightLeft -= pageHeight;
+    if (heightLeft > heightThreshold) {
+      pdf.addPage();
+      pdf.addImage(
+        imgData,
+        "PNG",
+        10,
+        -pageHeight,
+        pdfWidth,
+        pdfHeight,
+        null,
+        "FAST"
+      );
+    }
+
+    const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
+    const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
+
+    console.log("Generated PDF Blob:", {
+      type: pdfBlob.type,
+      size: pdfBlob.size,
+      filename: `${appointmentId}.pdf`,
+      canvasHeight: pdfHeight,
+      pages: heightLeft > heightThreshold ? 2 : 1,
+    });
+
+    return pdfBlob;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    toast.error("Failed to generate prescription PDF");
+    throw error;
+  }
+};
 
   const handleWhatsAppClick = async () => {
     try {
@@ -123,40 +159,103 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     }
   };
 
-  const handlePrintClick = async () => {
-    try {
-      const originalElement = document.getElementById("prescription-container");
-      const clone = originalElement.cloneNode(true);
+const handlePrintClick = async () => {
+  try {
+    const originalElement = document.getElementById("prescription-container");
+    if (!originalElement) {
+      throw new Error("Could not find the prescription container element");
+    }
 
-      const printButtonContainer = clone.querySelector(".print-button-container");
-      if (printButtonContainer) {
-        printButtonContainer.remove();
-      }
+    // Clone the element
+    const clone = originalElement.cloneNode(true);
 
-      originalElement.style.visibility = "hidden";
+    // Remove print button container from clone
+    const printButtonContainer = clone.querySelector(".print-button-container");
+    if (printButtonContainer) {
+      printButtonContainer.remove();
+    }
 
-      clone.style.position = "absolute";
-      clone.style.left = "0";
-      clone.style.top = "0";
-      clone.style.width = "100%";
-      clone.style.maxWidth = "100%";
-      clone.style.boxShadow = "none";
-      clone.style.padding = "0";
-      clone.style.margin = "0";
-      clone.id = "print-clone";
-      document.body.appendChild(clone);
+    // Hide original element
+    originalElement.style.visibility = "hidden";
+
+    // Styling for the clone
+    clone.style.position = "absolute";
+    clone.style.left = "0";
+    clone.style.top = "0";
+    clone.style.width = "100%";
+    clone.style.maxWidth = "100%";
+    clone.style.boxShadow = "none";
+    clone.style.padding = "0";
+    clone.style.margin = "0";
+    clone.style.overflow = "visible";
+    clone.style.height = "auto";
+    clone.id = "print-clone";
+
+    // Append to DOM
+    document.body.appendChild(clone);
+
+    // Wait for images to load
+    const images = clone.querySelectorAll("img");
+    const loadPromises = Array.from(images).map((img) =>
+      img.complete
+        ? Promise.resolve()
+        : new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          })
+    );
+    await Promise.all(loadPromises);
+
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for layout
+
+    const pageHeight = 1123; // A4 height in px @ 96dpi
+    const totalHeight = clone.scrollHeight;
+
+    console.log("Total height:", totalHeight);
+
+    if (totalHeight <= pageHeight + 5) {
+      // If content fits in one page (with small tolerance)
+      clone.style.height = `${pageHeight}px`;
+      clone.style.overflow = "hidden";
 
       window.print();
-
       setTimeout(() => {
         document.body.removeChild(clone);
         originalElement.style.visibility = "visible";
       }, 500);
-    } catch (error) {
-      console.error("Error printing prescription:", error);
-      toast.error("Failed to print prescription");
+      return;
     }
-  };
+
+    // Otherwise, print only second page
+    const secondPageClone = clone.cloneNode(true);
+    secondPageClone.id = "second-page-only";
+
+    // Style to show only content after first page
+    secondPageClone.style.position = "absolute";
+    secondPageClone.style.top = "0";
+    secondPageClone.style.left = "0";
+    secondPageClone.style.width = "100%";
+    secondPageClone.style.overflow = "hidden";
+    secondPageClone.style.height = `${totalHeight - pageHeight}px`;
+    secondPageClone.style.clipPath = `inset(${pageHeight}px 0 0 0)`;
+
+    // Remove old clone and use second page clone
+    document.body.removeChild(clone);
+    document.body.appendChild(secondPageClone);
+
+    window.print();
+
+    setTimeout(() => {
+      document.body.removeChild(secondPageClone);
+      originalElement.style.visibility = "visible";
+    }, 500);
+  } catch (error) {
+    console.error("Error printing prescription:", error);
+    toast.error("Failed to print prescription");
+  }
+};
+
+
 
   const handleWhatsAppClick2 = async () => {
     try {
@@ -567,11 +666,11 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   Digitally Signed
                 </div>
               </div>
-            </div>
 
-            <div className="prescription-footer">
-              This prescription is computer generated and does not require physical
-              signature
+              <div className="prescription-footer">
+                This prescription is computer generated and does not require physical
+                signature
+              </div>
             </div>
 
             <div className="print-button-container">
