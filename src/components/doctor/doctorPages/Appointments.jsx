@@ -249,6 +249,8 @@ const Appointment = () => {
         reason: "Patient requested reschedule",
       });
 
+      console.log(response, "reschedule response")
+
       if (response.status == 200) {
         message.success(
           response.data.message || "Appointment rescheduled successfully"
@@ -269,12 +271,14 @@ const Appointment = () => {
         );
       }
     } catch (error) {
-      console.error("Reschedule error:", error);
-      const errorMsg =
-        error.response?.data?.message ||
-        "Failed to reschedule appointment. Please try again.";
-      message.error(errorMsg);
-      toast.error(errorMsg);
+              toast.error(error?.response?.data?.message?.message ||error?.response?.data?.message || "Failed to cancel appointment");
+        setIsRescheduleModalVisible(false);
+
+      // const errorMsg =
+      //   error.response?.data?.message ||
+      //   "Failed to reschedule appointment. Please try again.";
+      // message.error(errorMsg);
+      // toast.error(errorMsg);
     } finally {
       setRescheduleLoading(false);
     }
@@ -839,6 +843,7 @@ useEffect(() => {
                   );
                 }}
               />
+              <label>Select Time</label>
 
               <Select
                 value={newTime}

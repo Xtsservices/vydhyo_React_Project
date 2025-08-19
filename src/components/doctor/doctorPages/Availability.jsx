@@ -289,74 +289,88 @@ const hasfetchClinicsForDoctor = useRef(false)
     }
   };
 
-  const handleAddAvailableSlots = async () => {
-    try {
-      setLoading(true);
 
-      const getDateRangeArray = (fromDate, endDate) => {
-        const dates = [];
-        let currentDate = moment(fromDate, "YYYY-MM-DD");
-        const end = moment(endDate, "YYYY-MM-DD");
+  const [slotPopup, setSlotPopup] = useState({
+  open: false,
+  title: "",
+  content: "",
+});
 
-        while (currentDate.isSameOrBefore(end)) {
-          dates.push(currentDate.format("YYYY-MM-DD"));
-          currentDate.add(1, "days");
-        }
+const openSlotPopup = (title, content) =>
+  setSlotPopup({ open: true, title, content });
 
-        return dates;
-      };
+const closeSlotPopup = () =>
+  setSlotPopup((p) => ({ ...p, open: false }));
 
-      const fromDate = selectedDate?.format("YYYY-MM-DD");
-      const endDate = selectedEndDate?.format("YYYY-MM-DD");
 
-      let selectedDates = [];
-      if (fromDate && endDate) {
-        selectedDates = getDateRangeArray(fromDate, endDate);
-      } else {
-        selectedDates = [fromDate];
+const handleAddAvailableSlots = async () => {
+  try {
+    setLoading(true);
+
+    const getDateRangeArray = (fromDate, endDate) => {
+      const dates = [];
+      let currentDate = moment(fromDate, "YYYY-MM-DD");
+      const end = moment(endDate, "YYYY-MM-DD");
+      while (currentDate.isSameOrBefore(end)) {
+        dates.push(currentDate.format("YYYY-MM-DD"));
+        currentDate.add(1, "days");
       }
+      return dates;
+    };
 
-      const response = await apiPost("/appointment/createSlotsForDoctor", {
-        doctorId: doctorId,
-        dates: selectedDates,
-        startTime: moment(
-          `${availableStartTime}:00 ${availableStartPeriod}`,
-          "hh:mm A"
-        ).format("HH:mm"),
-        endTime: moment(
-          `${availableEndTime}:00 ${availableEndPeriod}`,
-          "hh:mm A"
-        ).format("HH:mm"),
-        interval: availableDuration,
-        isAvailable: true,
-        addressId: selectedClinic,
-      });
-console.log("response", response)
-      if (response.data && response.data.status === "success") {
-        const message = response?.data?.results[0]?.reason || "Available slots created successfully";
-          toast.success(message || response?.data?.message || "updated");
+    const fromDate = selectedDate?.format("YYYY-MM-DD");
+    const endDate = selectedEndDate?.format("YYYY-MM-DD");
+    const selectedDates =
+      fromDate && endDate ? getDateRangeArray(fromDate, endDate) : [fromDate];
 
-        // message.success(response?.data?.message|| "Available slots created successfully");
-       
-        fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
-       
+    const response = await apiPost("/appointment/createSlotsForDoctor", {
+      doctorId,
+      dates: selectedDates,
+      startTime: moment(`${availableStartTime}:00 ${availableStartPeriod}`, "hh:mm A").format("HH:mm"),
+      endTime: moment(`${availableEndTime}:00 ${availableEndPeriod}`, "hh:mm A").format("HH:mm"),
+      interval: availableDuration,
+      isAvailable: true,
+      addressId: selectedClinic,
+    });
 
-      } else {
-          // toast.error(response?.data?.message || "Failed to create available slots");
+    console.log("response", response);
 
-        message.error(
-          response.data?.message || "Failed to create available slots"
-        );
+    if (response?.data?.status === "success") {
+      const reasons = Array.isArray(response?.data?.results)
+        ? response.data.results.map((r) => r?.reason).filter(Boolean)
+        : [];
+
+      // Prefer reasons (joined lines). Fallback to server message. Fallback to a friendly default.
+      const popupMsg =
+        (reasons.length ? reasons.join("\n") : response?.data?.message) ||
+        "Available slots created successfully.";
+
+      // Show popup (always on success)
+      openSlotPopup("Slot creation result", popupMsg);
+
+      // Keep your toasts if you like
+      if (reasons.length) {
+        toast.warning(popupMsg);
       }
-    } catch (error) {
-          // toast.error( "Failed to create available slots");
+      toast.success(response?.data?.message || "Available slots created successfully");
 
-      console.error("Error creating available slots:", error);
-      message.error("Failed to create available slots");
-    } finally {
-      setLoading(false);
+      fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
+    } else {
+      const errMsg = response?.data?.message || "Failed to create available slots";
+      openSlotPopup("Unable to create slots", errMsg);
+      message.error(errMsg);
     }
-  };
+  } catch (error) {
+    console.error("Error creating available slots:", error);
+    const errMsg = error?.response?.data?.message || "Failed to create available slots";
+    openSlotPopup("Error", errMsg);
+    message.error(errMsg);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const handleDeleteAllAvailable = async () => {
     try {
