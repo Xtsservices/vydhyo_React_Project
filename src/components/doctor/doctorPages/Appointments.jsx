@@ -65,7 +65,6 @@ const Appointment = () => {
   const [isRescheduleModalVisible, setIsRescheduleModalVisible] = useState(false);
   const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [newDate, setNewDate] = useState(null);
   const [newTime, setNewTime] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [filters, setFilters] = useState({
@@ -82,11 +81,10 @@ const Appointment = () => {
     pageSize: 5,
     total: 0,
   });
-  // const [startDate, setStartDate] = useState(new Date());
-  // const [endDate, setEndDate] = useState(new Date());
   const [startDate, setStartDate] = useState(moment().startOf('month').toDate());
-const [endDate, setEndDate] = useState(moment().endOf('month').toDate());
+  const [endDate, setEndDate] = useState(moment().endOf('month').toDate());
   const datePickerRef = useRef(null);
+  const [hasPrescriptions, setHasPrescriptions] = useState({});
 
   const getStatusTag = (status) => {
     const statusConfig = {
@@ -159,8 +157,8 @@ const [endDate, setEndDate] = useState(moment().endOf('month').toDate());
   const handleReschedule = (appointment) => {
     setSelectedAppointment(appointment);
     setIsRescheduleModalVisible(true);
-    setNewDate(moment(appointment.appointmentDate));
-    setNewTime(moment(appointment.appointmentTime, "HH:mm"));
+    setSelectedDate(moment(appointment.appointmentDate));
+    setNewTime(moment(appointment.appointmentTime, "HH:mm").format("HH:mm"));
   };
 
   const handleCancelAppointment = (appointment) => {
@@ -236,7 +234,7 @@ const [endDate, setEndDate] = useState(moment().endOf('month').toDate());
       return;
     }
 
-    if (!newDate || !newTime) {
+    if (!selectedDate || !newTime) {
       message.error("Please select both date and time");
       toast.error("Please select both date and time");
       return;
@@ -259,7 +257,6 @@ const [endDate, setEndDate] = useState(moment().endOf('month').toDate());
           response.data.message || "Appointment rescheduled successfully"
         );
         setIsRescheduleModalVisible(false);
-        setNewDate(null);
         setNewTime(null);
         await getAppointments();
         setSelectedAppointment(null);
@@ -322,7 +319,6 @@ const [endDate, setEndDate] = useState(moment().endOf('month').toDate());
     }
   };
 
-// Replace your existing getAppointmentsCount function with this updated version:
 const getAppointmentsCount = async () => {
   setLoading(true);
   try {
@@ -359,16 +355,15 @@ console.log("date===", startDateForCount, endDateForCount)
   }
 };
 
-// Add this new useEffect after your existing useEffects
 useEffect(() => {
   if (user && doctorId) {
     getAppointmentsCount();
   }
-}, [filters.dateRange, user, doctorId]); // This will trigger whenever dateRange changes
+}, [filters.dateRange, user, doctorId]);
 
   useEffect(() => {
-    getAppointments();
-  }, [filters]);
+    getAppointments(1, pagination.pageSize);
+  }, [filters, searchText]);
 
   const timeslots = async (date) => {
     const selectedDate = date;
@@ -414,6 +409,44 @@ useEffect(() => {
       timeslots(selectedDate.format("YYYY-MM-DD"));
     }
   }, [selectedDate]);
+
+  useEffect(() => {
+    if (appointments.length > 0) {
+      appointments.forEach(async (appointment) => {
+        const patientId = appointment.userId;
+        if (patientId) {
+          try {
+            const response = await apiGet(
+              `/pharmacy/getEPrescriptionByPatientId/${patientId}`
+            );
+            if (response.status === 200 && response.data.success) {
+              const has = response.data.data.length > 0;
+              setHasPrescriptions((prev) => ({
+                ...prev,
+                [appointment.appointmentId]: has,
+              }));
+            } else {
+              setHasPrescriptions((prev) => ({
+                ...prev,
+                [appointment.appointmentId]: false,
+              }));
+            }
+          } catch (error) {
+            console.error("Error fetching prescriptions count:", error);
+            setHasPrescriptions((prev) => ({
+              ...prev,
+              [appointment.appointmentId]: false,
+            }));
+          }
+        } else {
+          setHasPrescriptions((prev) => ({
+            ...prev,
+            [appointment.appointmentId]: false,
+          }));
+        }
+      });
+    }
+  }, [appointments]);
 
   const handleFilterChange = (filterName, value) => {
     setFilters((prev) => ({
@@ -466,6 +499,7 @@ useEffect(() => {
         key="view-previous-prescriptions"
         onClick={() => handleViewPreviousPrescriptions(record)}
         icon={<FileTextOutlined />}
+        disabled={!(hasPrescriptions[record.appointmentId] ?? false)}
       >
         View Previous Prescriptions
       </Menu.Item>
@@ -689,8 +723,8 @@ useEffect(() => {
                 <Input
                   placeholder="Search by Patient Name or Appointment ID or email or mobile"
                   prefix={<SearchOutlined />}
-                  value={searchText.toUpperCase()}
-                  onChange={(e) => setSearchText(e.target.value.toLowerCase())}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
                   className="filters-input"
                 />
               </Col>
@@ -766,7 +800,6 @@ useEffect(() => {
         onOk={handleRescheduleSubmit}
         onCancel={() => {
           setIsRescheduleModalVisible(false);
-          setNewDate(null);
           setNewTime(null);
         }}
         okText="Reschedule"
