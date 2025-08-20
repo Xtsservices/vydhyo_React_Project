@@ -262,15 +262,17 @@ const BillingSystem = () => {
     }
   };
 
-  useEffect(() => {
-    if (user && doctorId) {
-      hasfetchPatients.current = true;
-      fetchPatients(pagination.current, pagination.pageSize);
-    } else {
-      setLoading(false);
-      setError("Waiting for user data to load...");
-    }
-  }, [user, doctorId, pagination.current, pagination.pageSize]);
+useEffect(() => {
+  if (user && doctorId && !hasfetchPatients.current) {
+    hasfetchPatients.current = true;
+    fetchPatients(pagination.current, pagination.pageSize);
+  } else if (!user || !doctorId) {
+    setLoading(false);
+    setError("Waiting for user data to load...");
+  }
+}, [user, doctorId]);
+
+
 
   const handleSectionExpand = (patientId, section) => {
     const key = `${patientId}-${section}`;
@@ -414,16 +416,19 @@ const BillingSystem = () => {
     }
   };
 
-  const handlePayClick = (patientId, type = "all") => {
-    const key = `${patientId}-${type}`;
-    if (!debouncedMarkAsPaidMap.current[key]) {
-      debouncedMarkAsPaidMap.current[key] = debounce(
-        () => handleMarkAsPaid(patientId, type),
-        1000
-      );
-    }
-    debouncedMarkAsPaidMap.current[key]();
-  };
+const handlePayClick = (patientId, type = "all") => {
+  const key = `${patientId}-${type}`;
+  if (!debouncedMarkAsPaidMap.current[key]) {
+    debouncedMarkAsPaidMap.current[key] = debounce(
+      (event) => {
+        if (event?.preventDefault) event.preventDefault(); // Prevent any default behavior
+        handleMarkAsPaid(patientId, type);
+      },
+      1000
+    );
+  }
+  debouncedMarkAsPaidMap.current[key]();
+};
 
 // --- REPLACE YOUR handlePrintInvoice WITH THIS VERSION --- //
 const handlePrintInvoice = (type, patientId) => {
@@ -876,11 +881,12 @@ const handlePrintInvoice = (type, patientId) => {
 
 
   const handlePageChange = (page) => {
-    setPagination((prev) => ({
-      ...prev,
-      current: page,
-    }));
-  };
+  setPagination((prev) => ({
+    ...prev,
+    current: page,
+  }));
+  fetchPatients(page, pagination.pageSize); // Fetch data with new page
+};
 
   const handleViewClick = (patientId) => {
     setViewModePatientId(viewModePatientId === patientId ? null : patientId);
@@ -1598,7 +1604,7 @@ const handlePrintInvoice = (type, patientId) => {
                                         color: "#1f2937",
                                       }}
                                     >
-                                      Balance To Be Collected
+                                      Balance Amount
                                     </div>
                                     <div
                                       style={{
@@ -1929,7 +1935,7 @@ const handlePrintInvoice = (type, patientId) => {
                                         color: "#1f2937",
                                       }}
                                     >
-                                      Balance To Be Collected
+                                      Balance Amount
                                     </div>
                                     <div
                                       style={{
@@ -2307,7 +2313,7 @@ const handlePrintInvoice = (type, patientId) => {
                                   color: "#1f2937",
                                 }}
                               >
-                                      Balance To Be Collected
+                                      Balance Amount
                               </div>
                               <div
                                 style={{
