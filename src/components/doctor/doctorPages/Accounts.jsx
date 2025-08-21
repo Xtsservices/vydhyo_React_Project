@@ -619,7 +619,7 @@ const AccountsPage = () => {
             <Row gutter={16} align="middle">
               <Col flex="1" className="search-col">
                 <Input
-                  placeholder="Search by Patient Name or Transaction ID"
+                  placeholder="Search by Patient Name "
                   prefix={<SearchOutlined className="search-icon" />}
                   onChange={(e) => setSearchText(e.target.value)}
                   className="search-input"

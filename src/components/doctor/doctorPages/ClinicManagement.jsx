@@ -783,7 +783,7 @@ const getMultipartHeaders = (fd) => {
           setWarningEntity(entity);
 
           const bypassData = new FormData();
-          bypassData.append("userId", doctorId);
+          bypassData.append("addressId", formData.addressId);
           bypassData.append("type", formData.type);
           bypassData.append("clinicName", formData.clinicName);
           bypassData.append("address", formData.address);
@@ -792,8 +792,8 @@ const getMultipartHeaders = (fd) => {
           bypassData.append("country", formData.country);
           bypassData.append("mobile", formData.mobile);
           bypassData.append("pincode", formData.pincode);
-          bypassData.append("startTime", formData.startTime || "09:00");
-          bypassData.append("endTime", formData.endTime || "17:00");
+          // bypassData.append("startTime", formData.startTime || "09:00");
+          // bypassData.append("endTime", formData.endTime || "17:00");
           bypassData.append("latitude", formData.latitude);
           bypassData.append("longitude", formData.longitude);
           if (headerFile) bypassData.append("file", headerFile);
@@ -816,7 +816,7 @@ const getMultipartHeaders = (fd) => {
           // if (pharmacyHeaderFile) bypassData.append("pharmacyHeader", pharmacyHeaderFile);
 
           setBypassFormData(bypassData);
-          setBypassEndpoint("/users/addAddressFromWeb?bypassCheck=true");
+          setBypassEndpoint("/users/updateAddress?bypassCheck=true");
           setShowWarningModal(true);
           return;
         } else if (response.status === 200 || response.status === 201) {
@@ -2210,9 +2210,17 @@ console.log(formData, "clinic123")
                   className="clinic-confirm-button"
                   onClick={async () => {
                     try {
-                      const bypassResponse = await apiPost(bypassEndpoint, bypassFormData, {
-                        headers: { "Content-Type": "multipart/form-data" },
-                      });
+                      let bypassResponse;
+                      if (bypassEndpoint === '/users/updateAddress?bypassCheck=true') {
+                        console.log("1234");
+                        bypassResponse = await apiPut(bypassEndpoint, bypassFormData, {
+                          headers: { "Content-Type": "multipart/form-data" },
+                        });
+                      } else {
+                        bypassResponse = await apiPost(bypassEndpoint, bypassFormData, {
+                          headers: { "Content-Type": "multipart/form-data" },
+                        });
+                      }
                       if (bypassResponse.status === 200 || bypassResponse.status === 201) {
                         toast.success(bypassResponse.data?.message || `Clinic and ${warningEntity} linked successfully`);
                         setShowModal(false);
