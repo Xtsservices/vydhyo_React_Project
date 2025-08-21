@@ -1686,7 +1686,7 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         color: "#1f2937",
                                       }}
                                     >
-                                      Balance Amount
+                                     {totals.medicineTotal !== 0.00? "Balance Amount" :''} 
                                     </div>
                                     <div
                                       style={{
@@ -1695,7 +1695,8 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         color: "#10b981",
                                       }}
                                     >
-                                      ₹{totals.medicineTotal.toFixed(2)}
+                                      {totals.medicineTotal !== 0.00? `₹${totals.medicineTotal.toFixed(2)}` :''} 
+                                       
                                     </div>
                                   </div>
 
@@ -2017,7 +2018,8 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         color: "#1f2937",
                                       }}
                                     >
-                                      Balance Amount
+                                      {totals.testTotal !== 0.00? "Balance Amount" :''} 
+                                      {/* Balance Amount */}
                                     </div>
                                     <div
                                       style={{
@@ -2026,7 +2028,8 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         color: "#10b981",
                                       }}
                                     >
-                                      ₹{totals.testTotal.toFixed(2)}
+                                      {totals.testTotal !== 0.00? `₹${totals.testTotal.toFixed(2)}` :''}
+                                      {/* ₹{totals.testTotal.toFixed(2)} */}
                                     </div>
                                   </div>
 
@@ -2169,7 +2172,7 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                               <div
                                 style={{ fontWeight: "500", color: "#1f2937" }}
                               >
-                                Appointment Type
+                                Consultation Bill
                               </div>
                               <div
                                 style={{ fontSize: "12px", color: "#6b7280" }}
@@ -2395,7 +2398,8 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                   color: "#1f2937",
                                 }}
                               >
-                                Balance Amount
+                                 {totals.appointmentTotal !== 0.00? "Balance Amount" :''} 
+                                {/* Balance Amount */}
                               </div>
                               <div
                                 style={{
@@ -2404,7 +2408,9 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                   color: "#10b981",
                                 }}
                               >
-                                ₹{totals.appointmentTotal.toFixed(2)}
+                                      {totals.appointmentTotal !== 0.00? `₹${totals.appointmentTotal.toFixed(2)}` :''}
+
+                                {/* ₹{totals.appointmentTotal.toFixed(2)} */}
                               </div>
                             </div>
 
