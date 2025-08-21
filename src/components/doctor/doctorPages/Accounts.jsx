@@ -141,7 +141,7 @@ const AccountsPage = () => {
     date: txn.paidAt ? dayjs(txn.paidAt).format("DD-MMM-YYYY") : "-",
     service: txn.services || getServiceName(txn.paymentFrom),
     amount: txn.groupedCount > 1 ? txn.groupedAmount : (txn.finalAmount !== undefined ? txn.finalAmount : txn.actualAmount || 0),
-    status: txn.statuses || txn.paymentStatus || "-",
+    status:  txn.paymentStatus !== "refund_pending" ? txn.statuses || txn.paymentStatus || "-" : 'Refunded',
     paymentMethod: txn.paymentMethods || (txn.paymentMethod
       ? txn.paymentMethod.charAt(0).toUpperCase() + txn.paymentMethod.slice(1)
       : "-"),
@@ -211,6 +211,7 @@ const AccountsPage = () => {
 
     try {
       const response = await apiPost("/finance/getTransactionHistory", payload);
+      console.log(response)
       const data = response.data;
 
       setTransactions(data.data || []);
@@ -241,6 +242,8 @@ const AccountsPage = () => {
           apiGet(`/finance/getPatientHistory?paymentId=${paymentId}&doctorId=${doctorId}`)
         )
       );
+
+      console.log(response)
       
       const details = response.map((res) => res.data.data);
       setTransactionDetails(details);
@@ -406,6 +409,7 @@ const AccountsPage = () => {
 
   // Render transaction details based on service type
   const renderTransactionDetails = () => {
+    console.log("1234")
     if (!selectedTransaction || !transactionDetails.length) {
       return <Text>No details available</Text>;
     }
@@ -431,7 +435,10 @@ const AccountsPage = () => {
             {selectedTransaction.count || 1}
           </Descriptions.Item>
           <Descriptions.Item label="Statuses">
-            {selectedTransaction.statuses || selectedTransaction.paymentStatus}
+           {(selectedTransaction?.paymentStatus === 'refund_pending' ? 'Refunded' :selectedTransaction.statuses || selectedTransaction.paymentStatus) }
+
+            
+            
           </Descriptions.Item>
           <Descriptions.Item label="Payment Methods">
             {selectedTransaction.paymentMethods || selectedTransaction.paymentMethod}
@@ -480,7 +487,7 @@ const AccountsPage = () => {
                   : "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Status">
-                {txn.paymentStatus}
+                {txn.paymentStatus === 'refund_pending' ? 'Refunded' :txn.paymentStatus}
               </Descriptions.Item>
               <Descriptions.Item label="Payment Method">
                 {txn.paymentMethod

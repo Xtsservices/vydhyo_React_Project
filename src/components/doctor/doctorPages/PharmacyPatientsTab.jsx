@@ -389,7 +389,7 @@ const handlePrint = (patient) => {
             <th>Name</th>
             <th>Price (₹)</th>
             <th>Quantity</th>
-            <th>GST (%)</th>
+            <th>SGST (%)</th>
             <th>CGST (%)</th>
             <th>Subtotal (₹)</th>
           </tr>
@@ -651,7 +651,7 @@ const handlePrint = (patient) => {
       render: (quantity) => `${quantity} units`,
     },
     {
-      title: "GST (%)",
+      title: "SGST (%)",
       dataIndex: "gst",
       key: "gst",
       render: (gst) => `${gst}%`,
