@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { apiGet, apiPost } from "../../api";
 import { useSelector } from "react-redux";
@@ -5,6 +6,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { debounce } from "../../../utils";
 import "../../stylings/invoice-styles.css";
+
 // Utility function to calculate age from DOB
 const calculateAge = (dob) => {
   if (!dob) return "N/A";
@@ -66,8 +68,10 @@ const transformPatientData = (result, user) => {
           })
         : "N/A",
       appointmentTime: appointment.appointmentTime || "N/A",
-      status: "Completed",
-      // Precompute header image from global user.addresses by addressId
+      status: appointment.appointmentStatus
+        ? appointment.appointmentStatus.charAt(0).toUpperCase() +
+          appointment.appointmentStatus.slice(1)
+        : "Completed",
       clinicHeaderUrl: appointment.addressId
         ? user?.addresses?.find(
             (addr) => addr.addressId === appointment.addressId
@@ -188,6 +192,7 @@ const BillingSystem = () => {
     current: 1,
     pageSize: 5,
     total: 0,
+    totalItems: 0,
   });
   const [viewModePatientId, setViewModePatientId] = useState(null);
 
@@ -207,16 +212,6 @@ const BillingSystem = () => {
     }, 500)
   );
 
-  // Filter patients based on search term
-  // const filteredPatients = useMemo(() => {
-  //   if (!searchTerm) return transformedPatients;
-  //   return transformedPatients.filter(
-  //     (patient) =>
-  //       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //       patient.patientId.toLowerCase().includes(searchTerm.toLowerCase())
-  //   );
-  // }, [transformedPatients, searchTerm]);
-
   const fetchPatients = async (page = 1, pageSize = 5, search = "") => {
     if (!user || !doctorId) {
       console.log("User or doctorId not available:", { user, doctorId });
@@ -235,7 +230,6 @@ const BillingSystem = () => {
         limit: pageSize.toString(),
       });
 
-      // Add search term to query params if provided
       if (search) {
         queryParams.append("search", search);
       }
@@ -252,6 +246,7 @@ const BillingSystem = () => {
           current: page,
           pageSize: pageSize,
           total: response?.data?.pagination?.totalPages || 0,
+          totalItems: response?.data?.pagination?.totalItems || 0,
         });
         setLoading(false);
       } else {
@@ -299,18 +294,21 @@ const BillingSystem = () => {
     const medicineTotal = patient.medicines.reduce(
       (sum, med) =>
         sum +
-        (med.status === "Pending" && med.price ? med.quantity * med.price : 0),
+        (med.status.toLowerCase() === "pending" && med.price
+          ? med.quantity * med.price
+          : 0),
       0
     );
     const testTotal = patient.tests.reduce(
       (sum, test) =>
-        sum + (test.status === "Pending" && test.price ? test.price : 0),
+        sum +
+        (test.status.toLowerCase() === "pending" && test.price ? test.price : 0),
       0
     );
     const appointmentTotal = patient.appointmentDetails.reduce(
       (sum, appt) =>
         sum +
-        (appt.status === "Pending" && appt.appointmentFees
+        (appt.status.toLowerCase() === "pending" && appt.appointmentFees
           ? appt.appointmentFees
           : 0),
       0
@@ -318,160 +316,164 @@ const BillingSystem = () => {
     return { medicineTotal, testTotal, appointmentTotal };
   };
 
-const handleMarkAsPaid = async (patientId, type) => {
-  if (isPaymentInProgress[`${patientId}-${type}`]) return;
+  const handleMarkAsPaid = async (patientId, type) => {
+    if (isPaymentInProgress[`${patientId}-${type}`]) return;
 
-  const isPending = (s) => String(s || "").toLowerCase() === "pending";
+    const isPending = (s) => String(s || "").toLowerCase() === "pending";
 
-  setIsPaymentInProgress((prev) => ({
-    ...prev,
-    [`${patientId}-${type}`]: true,
-  }));
-
-  const patient = transformedPatients.find((p) => p.id === patientId);
-  if (!patient) {
     setIsPaymentInProgress((prev) => ({
       ...prev,
-      [`${patientId}-${type}`]: false,
+      [`${patientId}-${type}`]: true,
     }));
-    return;
-  }
 
-  let pendingTests = [];
-  let pendingMedicines = [];
+    const patient = transformedPatients.find((p) => p.id === patientId);
+    if (!patient) {
+      setIsPaymentInProgress((prev) => ({
+        ...prev,
+        [`${patientId}-${type}`]: false,
+      }));
+      return;
+    }
 
-  if (type === "pharmacy") {
-    pendingMedicines = (patient.medicines || []).filter((m) =>
-      isPending(m.status)
-    );
-  } else if (type === "labs") {
-    pendingTests = (patient.tests || []).filter((t) => isPending(t.status));
-  } else if (type === "all") {
-    pendingTests = (patient.tests || []).filter((t) => isPending(t.status));
-    pendingMedicines = (patient.medicines || []).filter((m) =>
-      isPending(m.status)
-    );
-  }
+    let pendingTests = [];
+    let pendingMedicines = [];
 
-  if (pendingTests.length === 0 && pendingMedicines.length === 0) {
-    toast.error(`No pending ${type === "all" ? "items" : type} to pay for.`);
-    setIsPaymentInProgress((prev) => ({
-      ...prev,
-      [`${patientId}-${type}`]: false,
-    }));
-    return;
-  }
+    if (type === "pharmacy") {
+      pendingMedicines = (patient.medicines || []).filter((m) =>
+        isPending(m.status)
+      );
+    } else if (type === "labs") {
+      pendingTests = (patient.tests || []).filter((t) => isPending(t.status));
+    } else if (type === "all") {
+      pendingTests = (patient.tests || []).filter((t) => isPending(t.status));
+      pendingMedicines = (patient.medicines || []).filter((m) =>
+        isPending(m.status)
+      );
+    }
 
-  const payload = {
-    patientId: patient.patientId,
-    doctorId: doctorId,
-    tests: pendingTests
-      .filter((test) => Number(test.price) > 0)
-      .map((test) => ({
-        testId: test.testId,
-        labTestID: test.labTestID,
-        status: "pending",
-        price: test.price,
-      })),
-    medicines: pendingMedicines
-      .filter((med) => Number(med.price) > 0)
-      .map((med) => ({
-        medicineId: med.medicineId,
-        pharmacyMedID: med.pharmacyMedID,
-        quantity: med.quantity,
-        status: "pending",
-        price: med.price,
-      })),
+    if (pendingTests.length === 0 && pendingMedicines.length === 0) {
+      toast.error(`No pending ${type === "all" ? "items" : type} to pay for.`);
+      setIsPaymentInProgress((prev) => ({
+        ...prev,
+        [`${patientId}-${type}`]: false,
+      }));
+      return;
+    }
+
+    const payload = {
+      patientId: patient.patientId,
+      doctorId: doctorId,
+      tests: pendingTests
+        .filter((test) => Number(test.price) > 0)
+        .map((test) => ({
+          testId: test.testId,
+          labTestID: test.labTestID,
+          status: "pending",
+          price: test.price,
+        })),
+      medicines: pendingMedicines
+        .filter((med) => Number(med.price) > 0)
+        .map((med) => ({
+          medicineId: med.medicineId,
+          pharmacyMedID: med.pharmacyMedID,
+          quantity: med.quantity,
+          status: "pending",
+          price: med.price,
+        })),
+    };
+
+    if (payload.tests.length === 0 && payload.medicines.length === 0) {
+      toast.error("At least one test or medicine must be provided.");
+      setIsPaymentInProgress((prev) => ({
+        ...prev,
+        [`${patientId}-${type}`]: false,
+      }));
+      return;
+    }
+
+    try {
+      const response = await apiPost(
+        "/receptionist/totalBillPayFromReception",
+        payload
+      );
+
+      if (response.status === 200) {
+        await fetchPatientsWithoutLoading(
+          pagination.current,
+          pagination.pageSize,
+          searchTerm
+        );
+        toast.success(
+          `Payment processed successfully for ${
+            type === "all"
+              ? "all items"
+              : type === "pharmacy"
+              ? "pharmacy"
+              : "labs"
+          }!`
+        );
+      } else {
+        throw new Error("Failed to process payment");
+      }
+    } catch (err) {
+      console.error("Error processing payment:", err);
+      toast.error("Failed to process payment. Please try again.");
+    } finally {
+      setIsPaymentInProgress((prev) => ({
+        ...prev,
+        [`${patientId}-${type}`]: false,
+      }));
+    }
   };
 
-  if (payload.tests.length === 0 && payload.medicines.length === 0) {
-    toast.error("At least one test or medicine must be provided.");
-    setIsPaymentInProgress((prev) => ({
-      ...prev,
-      [`${patientId}-${type}`]: false,
-    }));
-    return;
-  }
+  const fetchPatientsWithoutLoading = async (
+    page = 1,
+    pageSize = 5,
+    search = ""
+  ) => {
+    if (!user || !doctorId) return;
 
-  try {
-    const response = await apiPost(
-      "/receptionist/totalBillPayFromReception",
-      payload
-    );
-
-    if (response.status === 200) {
-      // Call fetchPatients but prevent the loading indicator
-      // by using a special parameter or a separate function
-      await fetchPatientsWithoutLoading(pagination.current, pagination.pageSize, searchTerm);
-      
-      toast.success(
-        `Payment processed successfully for ${
-          type === "all"
-            ? "all items"
-            : type === "pharmacy"
-            ? "pharmacy"
-            : "labs"
-        }!`
-      );
-    } else {
-      throw new Error("Failed to process payment");
-    }
-  } catch (err) {
-    console.error("Error processing payment:", err);
-    toast.error("Failed to process payment. Please try again.");
-  } finally {
-    setIsPaymentInProgress((prev) => ({
-      ...prev,
-      [`${patientId}-${type}`]: false,
-    }));
-  }
-};
-
-const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") => {
-  if (!user || !doctorId) return;
-
-  try {
-    const queryParams = new URLSearchParams({
-      doctorId,
-      page: page.toString(),
-      limit: pageSize.toString(),
-    });
-
-    if (search) {
-      queryParams.append("search", search);
-    }
-
-    const response = await apiGet(
-      `/receptionist/fetchMyDoctorPatients/${doctorId}?${queryParams.toString()}`,
-      { timeout: 10000 }
-    );
-
-    if (response?.status === 200 && response?.data?.data) {
-      setPatients(response.data.data);
-      setPagination({
-        current: page,
-        pageSize: pageSize,
-        total: response?.data?.pagination?.totalPages || 0,
+    try {
+      const queryParams = new URLSearchParams({
+        doctorId,
+        page: page.toString(),
+        limit: pageSize.toString(),
       });
+
+      if (search) {
+        queryParams.append("search", search);
+      }
+
+      const response = await apiGet(
+        `/receptionist/fetchMyDoctorPatients/${doctorId}?${queryParams.toString()}`,
+        { timeout: 10000 }
+      );
+
+      if (response?.status === 200 && response?.data?.data) {
+        setPatients(response.data.data);
+        setPagination({
+          current: page,
+          pageSize: pageSize,
+          total: response?.data?.pagination?.totalPages || 0,
+          totalItems: response?.data?.pagination?.totalItems || 0,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching patients:", err);
     }
-  } catch (err) {
-    console.error("Error fetching patients:", err);
-    // Don't show error toast here to avoid interrupting the payment flow
-  }
-};
+  };
 
   const handlePayClick = (patientId, type = "all") => {
     const key = `${patientId}-${type}`;
     if (!debouncedMarkAsPaidMap.current[key]) {
       debouncedMarkAsPaidMap.current[key] = debounce((event) => {
-        if (event?.preventDefault) event.preventDefault(); // Prevent any default behavior
+        if (event?.preventDefault) event.preventDefault();
         handleMarkAsPaid(patientId, type);
       }, 1000);
     }
     debouncedMarkAsPaidMap.current[key]();
   };
 
-  // --- REPLACE YOUR handlePrintInvoice WITH THIS VERSION --- //
   const handlePrintInvoice = (type, patientId) => {
     const patient = transformedPatients.find((p) => p.id === patientId);
     if (!patient) return;
@@ -794,7 +796,6 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
     `
       : "";
 
-    // Build the printable HTML (no Back link, no history hacks)
     const printHTML = `
     <!DOCTYPE html>
     <html>
@@ -902,7 +903,6 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
     </html>
   `;
 
-    // === Print via an offscreen iframe (same tab, no UI replacement) ===
     const existing = document.getElementById("vydhyo-print-iframe");
     if (existing) existing.remove();
 
@@ -926,7 +926,6 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
     };
 
     const onAfterPrint = () => {
-      // Most browsers fire this on the main window even when printing an iframe
       window.removeEventListener("afterprint", onAfterPrint);
       cleanup();
     };
@@ -945,7 +944,6 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
         doc.write(printHTML);
         doc.close();
 
-        // Fallback cleanup in case afterprint doesn't fire (older browsers)
         setTimeout(() => cleanup(), 8000);
       } catch (e) {
         cleanup();
@@ -954,7 +952,6 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
       }
     };
 
-    // Ensure iframe is ready
     if (iframe.contentWindow?.document?.readyState === "complete") {
       writeAndPrint();
     } else {
@@ -967,11 +964,54 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
       ...prev,
       current: page,
     }));
-    fetchPatients(page, pagination.pageSize, searchTerm); // Pass searchTerm
+    fetchPatients(page, pagination.pageSize, searchTerm);
   };
 
-  const handleViewClick = (patientId) => {
-    setViewModePatientId(viewModePatientId === patientId ? null : patientId);
+  const handleViewClick = async (patientId) => {
+    const isCurrentlyExpanded = viewModePatientId === patientId;
+    setViewModePatientId(isCurrentlyExpanded ? null : patientId);
+
+    if (isCurrentlyExpanded) return; // If collapsing, no need to fetch
+
+    const patient = transformedPatients.find((p) => p.id === patientId);
+    if (!patient) {
+      toast.error("Patient not found.");
+      return;
+    }
+
+    try {
+      // Assuming prescriptionId is fixed as per the API example; adjust if dynamic
+      const prescriptionId = "VYDEPRES391";
+      const response = await apiGet(
+        `/receptionist/fetchDoctorPatientDetails/${doctorId}/${patient.patientId}/${prescriptionId}`,
+        { timeout: 10000 }
+      );
+
+      if (response?.status === 200 && response?.data?.data?.length > 0) {
+        const detailedPatientData = response.data.data[0];
+        console.log("Fetched detailed patient data:", detailedPatientData);
+
+        // Update the patients state by replacing the specific patient's data
+        setPatients((prevPatients) =>
+          prevPatients.map((p) =>
+            p.patientId === patient.patientId ? detailedPatientData : p
+          )
+        );
+
+        // Expand the sections for the patient
+        setExpandedSections((prev) => ({
+          ...prev,
+          [`${patientId}-pharmacy`]: true,
+          [`${patientId}-labs`]: true,
+          [`${patientId}-appointments`]: true,
+        }));
+      } else {
+        throw new Error("No detailed patient data found.");
+      }
+    } catch (err) {
+      console.error("Error fetching detailed patient data:", err);
+      toast.error("Failed to fetch detailed patient data. Please try again.");
+    }
   };
 
   if (loading) {
@@ -1196,16 +1236,16 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
         padding: "24px",
         backgroundColor: "#f8f9fa",
         minHeight: "100vh",
-        display: "flex", // Add this
-        justifyContent: "center", // Add this
+        display: "flex",
+        justifyContent: "center",
       }}
     >
       <div
         style={{
-          maxWidth: "1400px", // Increased width
+          maxWidth: "1400px",
           margin: "0 auto",
-          width: "100%", // Add this
-          padding: "0 20px", // Add some side padding
+          width: "100%",
+          padding: "0 20px",
         }}
       >
         <h1
@@ -1265,7 +1305,6 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
               totals.medicineTotal + totals.testTotal + totals.appointmentTotal;
             const isViewMode = viewModePatientId === patient.id;
 
-            // For appointments UI: enable Print only if any appointment is completed/paid
             const appointmentCompletedAliases = [
               "complete",
               "completed",
@@ -1374,7 +1413,7 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                           fontSize: "12px",
                         }}
                       >
-                        View
+                        {viewModePatientId === patient.id ? "Collapse" : "View"}
                       </button>
                     </div>
                   </div>
@@ -1443,7 +1482,11 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                           </div>
                           <div
                             style={{ color: "#6b7280", fontSize: "18px" }}
-                          ></div>
+                          >
+                            {expandedSections[`${patient.id}-pharmacy`]
+                              ? "−"
+                              : ">"}
+                          </div>
                         </div>
 
                         {expandedSections[`${patient.id}-pharmacy`] && (
@@ -1686,7 +1729,9 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         color: "#1f2937",
                                       }}
                                     >
-                                     {totals.medicineTotal !== 0.00? "Balance Amount" :''} 
+                                      {totals.medicineTotal !== 0.0
+                                        ? "Balance Amount"
+                                        : ""}
                                     </div>
                                     <div
                                       style={{
@@ -1695,8 +1740,9 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         color: "#10b981",
                                       }}
                                     >
-                                      {totals.medicineTotal !== 0.00? `₹${totals.medicineTotal.toFixed(2)}` :''} 
-                                       
+                                      {totals.medicineTotal !== 0.0
+                                        ? `₹${totals.medicineTotal.toFixed(2)}`
+                                        : ""}
                                     </div>
                                   </div>
 
@@ -1720,17 +1766,14 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         backgroundColor: printDisabled
                                           ? "#9ca3af"
                                           : "#3b82f6",
-
                                         color: "white",
                                         border: "none",
                                         borderRadius: "6px",
                                         padding: "8px 16px",
                                         fontSize: "14px",
-
                                         cursor: printDisabled
                                           ? "not-allowed"
                                           : "pointer",
-
                                         display: "flex",
                                         alignItems: "center",
                                         gap: "6px",
@@ -2018,8 +2061,9 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         color: "#1f2937",
                                       }}
                                     >
-                                      {totals.testTotal !== 0.00? "Balance Amount" :''} 
-                                      {/* Balance Amount */}
+                                      {totals.testTotal !== 0.0
+                                        ? "Balance Amount"
+                                        : ""}
                                     </div>
                                     <div
                                       style={{
@@ -2028,8 +2072,9 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         color: "#10b981",
                                       }}
                                     >
-                                      {totals.testTotal !== 0.00? `₹${totals.testTotal.toFixed(2)}` :''}
-                                      {/* ₹{totals.testTotal.toFixed(2)} */}
+                                      {totals.testTotal !== 0.0
+                                        ? `₹${totals.testTotal.toFixed(2)}`
+                                        : ""}
                                     </div>
                                   </div>
 
@@ -2050,17 +2095,14 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                         backgroundColor: printDisabled
                                           ? "#9ca3af"
                                           : "#3b82f6",
-
                                         color: "white",
                                         border: "none",
                                         borderRadius: "6px",
                                         padding: "8px 16px",
                                         fontSize: "14px",
-
                                         cursor: printDisabled
                                           ? "not-allowed"
                                           : "pointer",
-
                                         display: "flex",
                                         alignItems: "center",
                                         gap: "6px",
@@ -2265,7 +2307,7 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                     Price (₹)
                                   </th>
                                   <th
-                                    style={{
+                                                                        style={{
                                       padding: "8px",
                                       textAlign: "center",
                                       fontSize: "12px",
@@ -2346,34 +2388,15 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                           fontWeight: "600",
                                           backgroundColor:
                                             appointment.status === "Completed"
-                                              ? "#fef3c7"
-                                              : "#dcfce7",
+                                              ? "#dcfce7"
+                                              : "#fef3c7",
                                           color:
                                             appointment.status === "Completed"
-                                              ? "#92400e"
-                                              : "#166534",
+                                              ? "#166534"
+                                              : "#92400e",
                                         }}
                                       >
-                                        <span
-                                          style={{
-                                            padding: "2px 8px",
-                                            borderRadius: "12px",
-                                            fontSize: "11px",
-                                            fontWeight: "600",
-                                            backgroundColor:
-                                              appointment.appointmentStatus ===
-                                              "Pending"
-                                                ? "#fef3c7"
-                                                : "#dcfce7",
-                                            color:
-                                              appointment.appointmentStatus ===
-                                              "Pending"
-                                                ? "#92400e"
-                                                : "#166534",
-                                          }}
-                                        >
-                                          Completed
-                                        </span>
+                                        {appointment.status}
                                       </td>
                                     </tr>
                                   )
@@ -2398,8 +2421,9 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                   color: "#1f2937",
                                 }}
                               >
-                                 {totals.appointmentTotal !== 0.00? "Balance Amount" :''} 
-                                {/* Balance Amount */}
+                                {totals.appointmentTotal !== 0.0
+                                  ? "Balance Amount"
+                                  : ""}
                               </div>
                               <div
                                 style={{
@@ -2408,9 +2432,9 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                   color: "#10b981",
                                 }}
                               >
-                                      {totals.appointmentTotal !== 0.00? `₹${totals.appointmentTotal.toFixed(2)}` :''}
-
-                                {/* ₹{totals.appointmentTotal.toFixed(2)} */}
+                                {totals.appointmentTotal !== 0.0
+                                  ? `₹${totals.appointmentTotal.toFixed(2)}`
+                                  : ""}
                               </div>
                             </div>
 
@@ -2426,9 +2450,9 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                 onClick={() =>
                                   handlePrintInvoice("appointments", patient.id)
                                 }
-                                disabled={false}
+                                disabled={appointmentPrintDisabled}
                                 style={{
-                                  backgroundColor: false
+                                  backgroundColor: appointmentPrintDisabled
                                     ? "#9ca3af"
                                     : "#3b82f6",
                                   color: "white",
@@ -2436,7 +2460,9 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                                   borderRadius: "6px",
                                   padding: "8px 16px",
                                   fontSize: "14px",
-                                  cursor: false ? "not-allowed" : "pointer",
+                                  cursor: appointmentPrintDisabled
+                                    ? "not-allowed"
+                                    : "pointer",
                                   display: "flex",
                                   alignItems: "center",
                                   gap: "6px",
@@ -2473,9 +2499,11 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
             color: "#6b7280",
           }}
         >
-         <div>
-    Showing 1-{transformedPatients.length} of {pagination.totalItems || pagination.total * pagination.pageSize} patients
-  </div>
+          <div>
+            Showing 1-{transformedPatients.length} of{" "}
+            {pagination.totalItems || pagination.total * pagination.pageSize}{" "}
+            patients
+          </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button
               onClick={() =>
@@ -2503,7 +2531,7 @@ const fetchPatientsWithoutLoading = async (page = 1, pageSize = 5, search = "") 
                   onClick={() => handlePageChange(pageNum)}
                   style={{
                     padding: "6px 12px",
-                    border: "1px solid #e5e7eb",
+                    border: "1px solid ",
                     borderRadius: "6px",
                     backgroundColor:
                       pagination.current === pageNum ? "#3b82f6" : "white",

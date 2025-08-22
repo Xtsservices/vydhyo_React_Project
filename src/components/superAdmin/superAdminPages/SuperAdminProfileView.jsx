@@ -85,26 +85,37 @@ const DoctorProfileView = () => {
       if (doctorDataResponse.status === "success" && doctorDataResponse.data) {
         if (Array.isArray(doctorDataResponse.data)) {
           doctor = doctorDataResponse.data.find((doc) => doc._id === doctorId);
-          if (!doctor) {
-            throw new Error("No doctor found with the provided ID.");
-          }
         } else {
-          if (doctorDataResponse.data._id !== doctorId) {
-            throw new Error("Doctor ID mismatch in response.");
-          }
           doctor = doctorDataResponse.data;
+          if (doctor._id !== doctorId) {
+            doctor = null;
+          }
         }
-      } else {
-        throw new Error("Invalid data format");
+      }
+
+      if (!doctor) {
+        console.error("No doctor found with the provided ID.");
+        message.warning("Doctor not found. Displaying available data if any.");
+        doctor = {};
       }
 
       // Fetch KYC details
       const kycResponse = await apiGet(`users/getKycByUserId?userId=${userId}`);
       const kycData = kycResponse.data;
 
-      if (kycData.status !== "success") {
-        throw new Error("Failed to fetch KYC details.");
-      }
+      const kycDetails = kycData.status === "success" && kycData.data
+        ? {
+            panNumber: kycData.data.pan?.number || "N/A",
+            panImage: kycData.data.pan?.attachmentUrl?.data || null,
+            panStatus: kycData.data.pan?.status || "pending",
+            kycVerified: kycData.data.kycVerified || false,
+          }
+        : {
+            panNumber: "N/A",
+            panImage: null,
+            panStatus: "pending",
+            kycVerified: false,
+          };
 
       // Fetch clinic addresses
       const clinicResponse = await apiGet(
@@ -128,25 +139,11 @@ const DoctorProfileView = () => {
             endTime: address.endTime,
           }));
       } else {
-        toast.error("No clinics found for the doctor.");
+        toast.warning("No clinics found for the doctor.");
       }
       setClinics(activeClinics);
 
       // Normalize doctor data with KYC details
-      const kycDetails = kycData.data
-        ? {
-            panNumber: kycData.data.pan?.number || "N/A",
-            panImage: kycData.data.pan?.attachmentUrl?.data || null,
-            panStatus: kycData.data.pan?.status || "pending",
-            kycVerified: kycData.data.kycVerified || false,
-          }
-        : {
-            panNumber: "N/A",
-            panImage: null,
-            panStatus: "pending",
-            kycVerified: false,
-          };
-
       setDoctorData({
         ...doctor,
         key: doctor._id,
@@ -184,6 +181,36 @@ const DoctorProfileView = () => {
       message.error(
         "Failed to fetch doctor, KYC, or clinic details. Please try again."
       );
+      // Set default doctorData to prevent blank page
+      setDoctorData({
+        key: "",
+        firstname: "N/A",
+        lastname: "",
+        specialization: [{}],
+        email: "N/A",
+        mobile: "N/A",
+        status: "pending",
+        medicalRegistrationNumber: "N/A",
+        userId: "N/A",
+        createdAt: null,
+        consultationModeFee: [],
+        spokenLanguage: [],
+        gender: "N/A",
+        DOB: "N/A",
+        bloodgroup: "N/A",
+        maritalStatus: "N/A",
+        bankDetails: {},
+        kycDetails: {
+          panNumber: "N/A",
+          panImage: null,
+          panStatus: "pending",
+          kycVerified: false,
+        },
+        certifications: [],
+        profilepic: null,
+        isVerified: false,
+      });
+      setClinics([]);
     } finally {
       setLoading(false);
     }
@@ -266,8 +293,8 @@ const DoctorProfileView = () => {
     }
   };
 
-  if (!doctorData) {
-    return <Spin spinning={loading} tip="Loading doctor details..." />;
+  if (loading) {
+    return <Spin spinning={loading} />;
   }
 
   return (
@@ -318,15 +345,15 @@ const DoctorProfileView = () => {
               <div style={{ textAlign: "center", marginBottom: "24px" }}>
                 <Avatar
                   size={64}
-                  src={getImageSrc(doctorData.profilepic)}
+                  src={getImageSrc(doctorData?.profilepic)}
                   style={{
                     backgroundColor: "#6366f1",
                     fontSize: "24px",
                     fontWeight: "500",
                   }}
                 >
-                  {`${doctorData.firstname?.[0] ?? ""}${
-                    doctorData.lastname?.[0] ?? ""
+                  {`${doctorData?.firstname?.[0] ?? ""}${
+                    doctorData?.lastname?.[0] ?? ""
                   }`}
                 </Avatar>
                 <Title
@@ -337,7 +364,7 @@ const DoctorProfileView = () => {
                     color: "#1f2937",
                   }}
                 >
-                  Dr. {doctorData.firstname} {doctorData.lastname}
+                  Dr. {doctorData?.firstname} {doctorData?.lastname}
                 </Title>
                 <Text
                   style={{
@@ -346,7 +373,7 @@ const DoctorProfileView = () => {
                     display: "block",
                   }}
                 >
-                  Medical Registration: {doctorData.medicalRegistrationNumber}
+                  Medical Registration: {doctorData?.medicalRegistrationNumber}
                 </Text>
                 <Text
                   style={{
@@ -355,7 +382,7 @@ const DoctorProfileView = () => {
                     display: "block",
                   }}
                 >
-                  Mobile Number: {doctorData.mobile}
+                  Mobile Number: {doctorData?.mobile}
                 </Text>
               </div>
 
@@ -371,7 +398,7 @@ const DoctorProfileView = () => {
                     style={{ marginRight: 8, color: "#6b7280" }}
                   />
                   <Text style={{ fontSize: "14px", color: "#374151" }}>
-                    <strong>Date of Birth:</strong> {doctorData.DOB}
+                    <strong>Date of Birth:</strong> {doctorData?.DOB}
                   </Text>
                 </div>
                 <div
@@ -383,7 +410,7 @@ const DoctorProfileView = () => {
                 >
                   <ManOutlined style={{ marginRight: 8, color: "#6b7280" }} />
                   <Text style={{ fontSize: "14px", color: "#374151" }}>
-                    <strong>Gender:</strong> {doctorData.gender}
+                    <strong>Gender:</strong> {doctorData?.gender}
                   </Text>
                 </div>
                 <div
@@ -400,7 +427,7 @@ const DoctorProfileView = () => {
                       marginLeft: "24px",
                     }}
                   >
-                    <strong>Blood Group:</strong> {doctorData.bloodgroup}
+                    <strong>Blood Group:</strong> {doctorData?.bloodgroup}
                   </Text>
                 </div>
                 <div
@@ -417,7 +444,7 @@ const DoctorProfileView = () => {
                       marginLeft: "24px",
                     }}
                   >
-                    <strong>Marital Status:</strong> {doctorData.maritalStatus}
+                    <strong>Marital Status:</strong> {doctorData?.maritalStatus}
                   </Text>
                 </div>
               </div>
@@ -432,7 +459,7 @@ const DoctorProfileView = () => {
                 >
                   <MailOutlined style={{ marginRight: 8, color: "#6b7280" }} />
                   <Text style={{ fontSize: "14px", color: "#374151" }}>
-                    <strong>Email:</strong> {doctorData.email}
+                    <strong>Email:</strong> {doctorData?.email}
                   </Text>
                 </div>
               </div>
@@ -442,7 +469,7 @@ const DoctorProfileView = () => {
                   Languages:
                 </Text>
                 <div style={{ marginTop: "8px" }}>
-                  {doctorData.spokenLanguage.map((lang, index) => (
+                  {doctorData?.spokenLanguage.map((lang, index) => (
                     <Tag
                       key={index}
                       style={{
@@ -508,7 +535,7 @@ const DoctorProfileView = () => {
                   Specializations
                 </Text>
                 <div>
-                  {doctorData.specialization.map((spec, index) => (
+                  {doctorData?.specialization.map((spec, index) => (
                     <Tag
                       key={index}
                       style={{
@@ -557,7 +584,7 @@ const DoctorProfileView = () => {
                       fontWeight: "700",
                     }}
                   >
-                    {doctorData.specialization[0]?.experience || 0} Years
+                    {doctorData?.specialization[0]?.experience || 0} Years
                   </Title>
                 </div>
               </div>
@@ -574,7 +601,7 @@ const DoctorProfileView = () => {
                 >
                   Certifications
                 </Text>
-                {doctorData.certifications.map((cert, index) => (
+                {doctorData?.certifications.map((cert, index) => (
                   <div
                     key={index}
                     style={{
@@ -762,7 +789,7 @@ const DoctorProfileView = () => {
                         marginLeft: "8px",
                       }}
                     >
-                      {doctorData.kycDetails.panNumber || "N/A"}
+                      {doctorData?.kycDetails.panNumber || "N/A"}
                     </Text>
                     <Text
                       style={{
@@ -772,11 +799,11 @@ const DoctorProfileView = () => {
                         display: "block",
                       }}
                     >
-                      Status: {doctorData.kycDetails.panStatus}
+                      Status: {doctorData?.kycDetails.panStatus}
                     </Text>
                   </div>
                 </div>
-                {doctorData.kycDetails.panImage && (
+                {doctorData?.kycDetails.panImage && (
                   <Button
                     type="link"
                     size="small"
@@ -799,13 +826,13 @@ const DoctorProfileView = () => {
                 <Text
                   style={{
                     fontSize: "14px",
-                    color: doctorData.kycDetails.kycVerified
+                    color: doctorData?.kycDetails.kycVerified
                       ? "#16a34a"
                       : "#dc2626",
                     marginLeft: "8px",
                   }}
                 >
-                  {doctorData.kycDetails.kycVerified ? "Verified" : "Not Verified"}
+                  {doctorData?.kycDetails.kycVerified ? "Verified" : "Not Verified"}
                 </Text>
               </div>
             </Card>
@@ -845,7 +872,7 @@ const DoctorProfileView = () => {
               }}
               bodyStyle={{ padding: "20px" }}
             >
-              {doctorData.consultationModeFee.map((mode, index) => (
+              {doctorData?.consultationModeFee.map((mode, index) => (
                 <div
                   key={index}
                   style={{
@@ -974,7 +1001,7 @@ const DoctorProfileView = () => {
                           marginLeft: "8px",
                         }}
                       >
-                        {doctorData.bankDetails.bankName || "N/A"}
+                        {doctorData?.bankDetails.bankName || "N/A"}
                       </Text>
                     </div>
                   </div>
@@ -996,7 +1023,7 @@ const DoctorProfileView = () => {
                           marginLeft: "8px",
                         }}
                       >
-                        {doctorData.bankDetails.accountHolderName || "N/A"}
+                        {doctorData?.bankDetails.accountHolderName || "N/A"}
                       </Text>
                     </div>
                   </div>
@@ -1024,10 +1051,10 @@ const DoctorProfileView = () => {
                             marginLeft: "8px",
                           }}
                         >
-                          {doctorData.bankDetails.accountNumber || "N/A"}
+                          {doctorData?.bankDetails.accountNumber || "N/A"}
                         </Text>
                       </div>
-                      {doctorData.bankDetails.accountProof && (
+                      {doctorData?.bankDetails.accountProof && (
                         <Button
                           type="link"
                           size="small"
@@ -1054,7 +1081,7 @@ const DoctorProfileView = () => {
                         marginLeft: "8px",
                       }}
                     >
-                      {doctorData.bankDetails.ifscCode || "N/A"}
+                      {doctorData?.bankDetails.ifscCode || "N/A"}
                     </Text>
                   </div>
                 </Col>

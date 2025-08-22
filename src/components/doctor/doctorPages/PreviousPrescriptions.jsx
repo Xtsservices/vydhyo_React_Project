@@ -127,7 +127,7 @@ const PreviousPrescriptions = () => {
                 </div>
               </Descriptions.Item>
 
-              <Descriptions.Item label="Chief Complaint">
+              <Descriptions.Item label="Chief Comaplaint">
                 {prescription.patientInfo.chiefComplaint || "N/A"}
               </Descriptions.Item>
 
