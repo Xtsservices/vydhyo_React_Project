@@ -968,6 +968,7 @@ const BillingSystem = () => {
     fetchPatients(page, pagination.pageSize, searchTerm);
   };
 
+
 const handleViewClick = async (patientId) => {
   const isCurrentlyExpanded = viewModePatientId === patientId;
   setViewModePatientId(isCurrentlyExpanded ? null : patientId);
@@ -989,7 +990,6 @@ const handleViewClick = async (patientId) => {
 
     const response = await apiGet(
       `/receptionist/fetchDoctorPatientDetails/${doctorId}/${patient.patientId}/${prescriptionId}`,
-      { timeout: 10000 }
     );
 
     if (response?.status === 200 && response?.data?.data?.length > 0) {
@@ -1018,6 +1018,7 @@ const handleViewClick = async (patientId) => {
     toast.error("Failed to fetch detailed patient data. Please try again.");
   }
 };
+
 
   if (loading) {
     return (
@@ -1418,7 +1419,9 @@ const handleViewClick = async (patientId) => {
                           fontSize: "12px",
                         }}
                       >
-                        {viewModePatientId === patient.id ? "view " : "View"}
+
+                        {viewModePatientId === patient.id ? "Collapse" : "View"}
+
                       </button>
                     </div>
                   </div>
