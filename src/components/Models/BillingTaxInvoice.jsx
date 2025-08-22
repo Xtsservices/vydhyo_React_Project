@@ -1,507 +1,500 @@
 import React from "react";
-import { useSelector } from "react-redux";
 
-const BillingTaxInvoice = ({ patient, type, onClose }) => {
-  const user = useSelector((state) => state.currentUserData);
-  const logo = "../assets/logo.png";
-
-  const getTitle = () => {
-    switch (type) {
-      case "pharmacy":
-        return "Pharmacy Tax Invoice";
-      case "labs":
-        return "Labs Tax Invoice";
-      case "appointments":
-        return "Appointments Tax Invoice";
-      default:
-        return "Tax Invoice";
+const BillingTaxInvoice = {
+  handlePrintInvoice: (type, patientId, transformedPatients, user, toast) => {
+    const patient = transformedPatients.find((p) => p.id === patientId);
+    if (!patient) {
+      toast?.error?.("Patient not found.");
+      return;
     }
-  };
 
-  const handlePrint = () => {
-    let provider = {};
+    const isCompleted = (s) => {
+      const v = String(s || "").toLowerCase();
+      return v === "completed" || v === "complete" || v === "paid";
+    };
+
+    let itemDate = "N/A";
+
+    if (type === "pharmacy") {
+      const completedMedicines = (patient.medicines || []).filter((m) =>
+        isCompleted(m.status)
+      );
+      if (completedMedicines.length > 0) {
+        const firstMed = completedMedicines[0];
+        itemDate = firstMed.updatedDate
+          ? new Date(firstMed.updatedDate).toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "N/A";
+      }
+    } else if (type === "labs") {
+      const completedTests = (patient.tests || []).filter((t) =>
+        isCompleted(t.status)
+      );
+      if (completedTests.length > 0) {
+        const firstTest = completedTests[0];
+        itemDate = firstTest.updatedAt
+          ? new Date(firstTest.updatedAt).toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "N/A";
+      }
+    } else if (type === "appointments") {
+      const completedAppointments = (patient.appointmentDetails || []).filter(
+        (a) => isCompleted(a?.status)
+      );
+      if (completedAppointments.length > 0) {
+        const firstAppt = completedAppointments[0];
+        itemDate = firstAppt.updatedAt
+          ? new Date(firstAppt.updatedAt).toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "N/A";
+      }
+    }
+
+    const appts = patient.appointmentDetails || patient.appointments || [];
+    const completedAppointments = appts.filter((a) => isCompleted(a?.status));
+    const firstAppt = completedAppointments[0] || appts[0] || {};
+
     let headerUrl = "";
     let providerName = "N/A";
     let contactInfoHTML = "";
     let sectionHTML = "";
     let total = 0;
 
-    const patientNumber = patient.patientId.replace(/\D/g, "");
+    const patientNumber = String(patient.patientId || "").replace(/\D/g, "");
     const invoiceNumber = `INV-${patientNumber.padStart(3, "0")}`;
-    const billingDate = new Date().toLocaleDateString();
-    const billingTime = new Date().toLocaleTimeString();
 
     if (type === "pharmacy") {
-      const completedMedicines = patient.medicines.filter(
-        (med) => med.status === "Completed"
+      const completedMedicines = (patient.medicines || []).filter((m) =>
+        isCompleted(m.status)
       );
-      const pharmacy = patient.medicines[0]?.pharmacyDetails || {};
-      headerUrl = pharmacy.pharmacyHeaderUrl || "";
-      providerName = pharmacy.pharmacyName || "N/A";
+      const pharmacyDetails =
+        completedMedicines[0]?.pharmacyDetails ||
+        patient.medicines?.[0]?.pharmacyDetails ||
+        {};
+
+      const isPharmacyDetailsEmptyOrNull =
+        !pharmacyDetails ||
+        Object.keys(pharmacyDetails).length === 0 ||
+        Object.values(pharmacyDetails).every(
+          (value) => value === null || value === undefined
+        );
+
+      if (isPharmacyDetailsEmptyOrNull) {
+        toast?.error?.("Please fill the pharmacy details to generate a bill.");
+        return;
+      }
+
+      headerUrl = pharmacyDetails.pharmacyHeaderUrl || "";
+      providerName = pharmacyDetails.pharmacyName || "N/A";
       contactInfoHTML = `
-        <p>${pharmacy.pharmacyAddress || "N/A"}</p>
-        <p>GST: ${pharmacy.pharmacyGst || "N/A"}</p>
-        <p>PAN: ${pharmacy.pharmacyPan || "N/A"}</p>
-        <p>Registration No: ${pharmacy.pharmacyRegistrationNo || "N/A"}</p>
+        <div class="provider-name">${providerName}</div>
+        <p>${pharmacyDetails.pharmacyAddress || "N/A"}</p>
+        <p>GST: ${pharmacyDetails.pharmacyGst || "N/A"}</p>
+        <p>PAN: ${pharmacyDetails.pharmacyPan || "N/A"}</p>
+        <p>Registration No: ${pharmacyDetails.pharmacyRegistrationNo || "N/A"}</p>
       `;
+
       total = completedMedicines.reduce(
-        (sum, med) => sum + med.price * med.quantity,
+        (sum, med) =>
+          sum + (Number(med.price) || 0) * (Number(med.quantity) || 0),
         0
       );
-      if (completedMedicines.length > 0) {
-        sectionHTML = `
-          <div class="section compact-spacing">
-            <h3 class="section-title">Medicines</h3>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Quantity</th>
-                  <th>Price (₹)</th>
-                  <th>Subtotal (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${completedMedicines
-                  .map(
-                    (med) => `
-                  <tr>
-                    <td>${med.id}</td>
-                    <td>${med.name}</td>
-                    <td>${med.quantity}</td>
-                    <td>${med.price.toFixed(2)}</td>
-                    <td>${(med.price * med.quantity).toFixed(2)}</td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-            <div class="section-total">
-              <p class="total-text">Medicine Total: ₹${total.toFixed(2)}</p>
-            </div>
-          </div>
-        `;
+
+      if (!completedMedicines.length) {
+        toast?.error?.("No completed medicines to print.");
+        return;
       }
+
+      sectionHTML = `
+        <div class="section compact-spacing">
+          <h3 class="section-title">Medicines</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SL No.</th>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Unit Price (₹)</th>
+                <th>Subtotal (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${completedMedicines
+                .map(
+                  (med, idx) => `
+                <tr>
+                  <td>${idx + 1}.</td>
+                  <td>${med.name || med.medName || ""}</td>
+                  <td>${med.quantity}</td>
+                  <td>${Number(med.price || 0).toFixed(2)}</td>
+                  <td>${(
+                    (Number(med.price) || 0) * (Number(med.quantity) || 0)
+                  ).toFixed(2)}</td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+          <div class="section-total" style="display: flex; justify-content: space-between; align-items: center;">
+            <p class="gst-text" style="margin: 0; font-size: 13px; color: #000000ff;">GST included</p>
+            <p class="total-text" style="margin: 0;">Medicine Total: ₹${total.toFixed(
+              2
+            )}</p>
+          </div>
+        </div>
+      `;
     } else if (type === "labs") {
-      const completedTests = patient.tests.filter(
-        (test) => test.status === "Completed"
+      const completedTests = (patient.tests || []).filter((t) =>
+        isCompleted(t.status)
       );
-      const lab = patient.tests[0]?.labDetails || {};
-      headerUrl = lab.labHeaderUrl || "";
-      providerName = lab.labName || "N/A";
-      contactInfoHTML = `
-        <p>${lab.labAddress || "N/A"}</p>
-        <p>GST: ${lab.labGst || "N/A"}</p>
-        <p>PAN: ${lab.labPan || "N/A"}</p>
-        <p>Registration No: ${lab.labRegistrationNo || "N/A"}</p>
-      `;
-      total = completedTests.reduce((sum, test) => sum + test.price, 0);
-      if (completedTests.length > 0) {
-        sectionHTML = `
-          <div class="section compact-spacing">
-            <h3 class="section-title">Tests</h3>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Price (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${completedTests
-                  .map(
-                    (test) => `
-                  <tr>
-                    <td>${test.id}</td>
-                    <td>${test.name}</td>
-                    <td class="price-column">${test.price.toFixed(2)}</td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-            <div class="section-total">
-              <p class="total-text">Test Total: ₹${total.toFixed(2)}</p>
-            </div>
-          </div>
-        `;
+      const labDetails =
+        completedTests[0]?.labDetails || patient.tests?.[0]?.labDetails || {};
+
+      const isLabDetailsEmptyOrNull =
+        !labDetails ||
+        Object.keys(labDetails).length === 0 ||
+        Object.values(labDetails).every(
+          (value) => value === null || value === undefined
+        );
+
+      if (isLabDetailsEmptyOrNull) {
+        toast?.error?.("Please fill the lab details to generate a bill.");
+        return;
       }
-    } else if (type === "appointments") {
-      const completedAppointments = patient.appointmentDetails.filter(
-        (appt) => appt.status === "Completed"
-      );
-      const appointment = patient.appointmentDetails[0] || {};
-      const clinic =
-        user?.addresses?.find(
-          (addr) => addr.addressId === appointment.addressId
-        ) || {};
-      headerUrl = "";
-      providerName = clinic.clinicName || "N/A";
+
+      headerUrl = labDetails.labHeaderUrl || "";
+      providerName = labDetails.labName || "N/A";
       contactInfoHTML = `
-        <p>${clinic.address || "N/A"}</p>
-        <p>${clinic.city || "N/A"}, ${clinic.state || "N/A"} ${
-        clinic.pincode || "N/A"
-      }</p>
-        <p>Phone: ${clinic.mobile || "N/A"}</p>
+        <div class="provider-name">${providerName}</div>
+        <p>${labDetails.labAddress || "N/A"}</p>
+        <p>GST: ${labDetails.labGst || "N/A"}</p>
+        <p>PAN: ${labDetails.labPan || "N/A"}</p>
+        <p>Registration No: ${labDetails.labRegistrationNo || "N/A"}</p>
       `;
-      total = completedAppointments.reduce(
-        (sum, appt) => sum + appt.appointmentFees,
+
+      total = completedTests.reduce(
+        (sum, test) => sum + (Number(test.price) || 0),
         0
       );
-      if (completedAppointments.length > 0) {
-        sectionHTML = `
-          <div class="section compact-spacing">
-            <h3 class="section-title">Appointments</h3>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Type</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Clinic</th>
-                  <th>Price (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${completedAppointments
-                  .map(
-                    (appt) => `
-                  <tr>
-                    <td>${appt.appointmentId}</td>
-                    <td>${appt.appointmentType}</td>
-                    <td>${appt.appointmentDate}</td>
-                    <td>${appt.appointmentTime}</td>
-                    <td>${appt.clinicName}</td>
-                    <td class="price-column">${appt.appointmentFees.toFixed(
-                      2
-                    )}</td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-            <div class="section-total">
-              <p class="total-text">Appointment Total: ₹${total.toFixed(2)}</p>
-            </div>
-          </div>
-        `;
+
+      if (!completedTests.length) {
+        toast?.error?.("No completed tests to print.");
+        return;
       }
+
+      sectionHTML = `
+        <div class="section compact-spacing">
+          <h3 class="section-title">Tests</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SL No.</th>
+                <th>Name</th>
+                <th>Price (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${completedTests
+                .map(
+                  (test, idx) => `
+                <tr>
+                  <td>${idx + 1}.</td>
+                  <td>${test.name || test.testName || ""}</td>
+                  <td class="price-column">${Number(test.price || 0).toFixed(
+                    2
+                  )}</td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+          <div class="section-total">
+            <p class="total-text">Test Total: ₹${total.toFixed(2)}</p>
+          </div>
+        </div>
+      `;
+    } else if (type === "appointments") {
+      const appts = patient.appointmentDetails || patient.appointments || [];
+      const completedAppointments = appts.filter((a) => isCompleted(a?.status));
+      const firstAppt = completedAppointments[0] || appts[0] || {};
+      const addr =
+        (user?.addresses || []).find(
+          (a) => a.addressId === firstAppt.addressId
+        ) || {};
+
+      const isAddressEmptyOrNull =
+        !addr ||
+        Object.keys(addr).length === 0 ||
+        Object.values(addr).every(
+          (value) => value === null || value === undefined
+        );
+
+      if (isAddressEmptyOrNull) {
+        toast?.error?.(
+          "Please fill the appointment address details to generate a bill."
+        );
+        return;
+      }
+
+      headerUrl = addr.headerImage || "";
+      providerName = firstAppt.clinicName || addr.clinicName || "N/A";
+      contactInfoHTML = `
+        <div class="provider-name">Name: ${providerName}</div>
+        <p>${addr.address || "N/A"}</p>
+        <p>${addr.city || "N/A"}, ${addr.state || "N/A"} ${
+        addr.pincode || "N/A"
+      }</p>
+        <p>Phone: ${addr.mobile || "N/A"}</p>
+      `;
+
+      total = completedAppointments.reduce(
+        (sum, a) => sum + (Number(a.appointmentFees) || 0),
+        0
+      );
+
+      if (!completedAppointments.length) {
+        toast?.error?.("No completed appointments to print.");
+        return;
+      }
+
+      sectionHTML = `
+        <div class="section compact-spacing">
+          <h3 class="section-title">Appointments</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SL No.</th>
+                <th>Service</th>
+                <th>Total Amount</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${completedAppointments
+                .map(
+                  (appt, idx) => `
+                <tr>
+                  <td>${idx + 1}.</td>
+                  <td>Consultation Bill</td>
+                  <td class="price-column">${Number(
+                    appt.appointmentFees || 0
+                  ).toFixed(2)}</td>
+                  <td>${appt.appointmentType || ""}</td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+          <div class="section-total">
+            <p class="total-text">Appointment Total: ₹${total.toFixed(2)}</p>
+          </div>
+        </div>
+      `;
+    } else {
+      toast?.error?.("Unknown invoice type.");
+      return;
     }
 
-    const headerHTML = headerUrl
-      ? `<div class="provider-logo"><img class="header-logo" src="${headerUrl}" alt="Header Logo" /></div>`
+    const headerSectionHTML = headerUrl
+      ? `
+        <div class="invoice-header-image-only">
+          <img src="${headerUrl}" alt="Header" />
+        </div>
+      `
       : "";
 
-    const printContent = `
+    const printHTML = `
       <!DOCTYPE html>
       <html>
         <head>
           <title>Invoice</title>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width,initial-scale=1" />
           <style>
             html, body {
-
-
               margin: 0;
               padding: 0;
               font-family: Arial, sans-serif;
-              background: white;
+              background: #fff;
               font-size: 14px;
             }
-
             @page {
               margin: 0;
               size: A4;
             }
-
             @media print {
               @page {
                 margin: 0;
                 size: A4;
               }
-              
               body {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
               }
-              
-              /* Hide browser default headers and footers */
-              @page {
-                margin-top: 0;
-                margin-bottom: 0;
-                margin-header: 0;
-                margin-footer: 0;
-              }
             }
-
             .invoice-container {
               padding: 15px;
               max-width: 210mm;
               margin: 0 auto;
+              min-height: calc(100vh - 30px);
+              display: flex;
+              flex-direction: column;
             }
-
             .invoice-content {
               flex: 1;
             }
-
-            .invoice-title-section {
-              text-align: center;
-              margin-top: 30px;
-              margin-bottom: 20px;
+            .invoice-header-image-only {
+              width: 100%;
+              margin-bottom: 12px;
+              page-break-inside: avoid;
             }
-
-            .main-invoice-title {
-              font-size: 28px;
-              font-weight: bold;
-              color: #333;
-              margin: 0;
+            .invoice-header-image-only img {
+              display: block;
+              width: 100%;
+              height: auto;
+              max-height: 220px;
+              object-fit: contain;
             }
-
-            .invoice-header-section {
+            .invoice-header {
               display: flex;
               justify-content: space-between;
               margin-bottom: 20px;
-              padding-bottom: 15px;
-              border-bottom: 2px solid #eee;
+              page-break-inside: avoid;
             }
-
             .provider-info {
+              flex: 1;
               text-align: left;
             }
-
             .provider-name {
-              font-size: 20px;
+              font-size: 18px;
               font-weight: bold;
-              color: #333;
               margin-bottom: 8px;
+              color: #000000ff;
             }
-
-            .contact-info p {
-              margin: 3px 0;
-              color: #666;
+            .invoice-details {
+              text-align: right;
+              font-size: 13px;
             }
-
-            .invoice-details-top {
-              display: flex;
-              justify-content: space-between;
+            .invoice-details p {
+              margin: 4px 0;
+            }
+            .patient-info {
               margin-bottom: 20px;
-              padding: 12px;
-              background-color: #f8f9fa;
-              border-radius: 5px;
+              border: 1px solid #e0e0e0;
+              padding: 10px;
+              border-radius: 4px;
+              background: #f9f9f9;
+              font-size: 13px;
+              page-break-inside: avoid;
             }
-
-            .invoice-detail-item {
-              font-size: 14px;
+            .patient-info p {
+              margin: 4px 0;
             }
-
             .section {
               margin-bottom: 20px;
+              page-break-inside: avoid;
             }
-
             .section-title {
               font-size: 16px;
               font-weight: bold;
-              color: #333;
               margin-bottom: 10px;
-              padding-bottom: 5px;
-              border-bottom: 1px solid #ddd;
+              color: #000000ff;
             }
-
-            .patient-info {
-              display: flex;
-              justify-content: space-between;
-              background-color: #f8f9fa;
-              padding: 12px;
-              border-radius: 5px;
-            }
-
-            .patient-info p {
-              margin: 3px 0;
-            }
-
             .data-table {
               width: 100%;
               border-collapse: collapse;
               margin-bottom: 10px;
+              font-size: 13px;
             }
-
-            .data-table th, .data-table td {
-              border: 1px solid #ddd;
+            .data-table th,
+            .data-table td {
+              border: 1px solid #e0e0e0;
               padding: 8px;
               text-align: left;
             }
-
             .data-table th {
-              background-color: #f8f9fa;
+              background: #f0f0f0;
               font-weight: bold;
+              color: #000000ff;
             }
-
-            .price-column {
+            .data-table .price-column {
               text-align: right;
             }
-
             .section-total {
               text-align: right;
-              margin-top: 8px;
-            }
-
-            .total-text {
-              font-weight: bold;
               font-size: 14px;
-              color: #333;
-            }
-
-            .grand-total-section {
-              margin-top: 20px;
-              padding: 15px;
-              background-color: #f8f9fa;
-              border-radius: 5px;
-            }
-
-            .total-row {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 8px;
-              font-size: 14px;
-            }
-
-            .grand-total-row {
-              display: flex;
-              justify-content: space-between;
-              font-size: 16px;
               font-weight: bold;
-              color: #333;
-              border-top: 2px solid #333;
-              padding-top: 8px;
               margin-top: 10px;
             }
-
+            .total-text {
+              font-size: 14px;
+              font-weight: bold;
+              color: #000000ff;
+            }
+            .gst-text {
+              font-size: 13px;
+              color: #000000ff;
+            }
             .footer {
+              margin-top: auto;
               text-align: center;
-              padding: 15px 0;
-              border-top: 1px solid #ddd;
-              color: #666;
-              background: white;
-            }
-
-            .powered-by {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-top: 8px;
-              gap: 6px;
-              color: #666;
               font-size: 12px;
+              color: #666;
+              border-top: 1px solid #e0e0e0;
+              padding-top: 10px;
+              page-break-inside: avoid;
             }
-
-            .footer-logo {
-              width: 18px;
-              height: 18px;
-              object-fit: contain;
-            }
-
-            /* Compact spacing for better space utilization */
-            .compact-spacing {
-              margin-bottom: 15px;
-            }
-
-            .compact-spacing:last-child {
-              margin-bottom: 0;
-            }
-
-            .provider-logo {
-              text-align: center;
-              margin-bottom: 10px;
-              width: 100%;
-            }
-
-            .header-logo {
-              width: 100%;
-              height: 150px;
-              object-fit: cover;
-              display: block;
-              margin: 0;
-              padding: 0;
-            }
-
-            /* Print specific styles */
-            @media print {
-              .invoice-container {
-                min-height: 100vh;
-              }
-              
-              .footer {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                margin-top: 0;
-              }
+            p {
+              margin: 4px 0;
+              color: #000000ff;
             }
           </style>
         </head>
         <body>
           <div class="invoice-container">
             <div class="invoice-content">
-              ${headerHTML}
-
-              <div class="invoice-header-section compact-spacing">
+              ${headerSectionHTML}
+              <div class="invoice-header">
                 <div class="provider-info">
-                  <div class="provider-name">${providerName}</div>
-                  <div class="contact-info">
-                    <p>Doctor: ${user?.firstname || "N/A"} ${
-      user?.lastname || "N/A"
-    }</p>
-                  </div>
+                  ${contactInfoHTML}
                 </div>
                 <div class="invoice-details">
-                  <div class="invoice-detail-item"><strong>Invoice No:</strong> #${invoiceNumber}</div>
-                  <div class="invoice-detail-item"><strong>Date:</strong> ${billingDate}</div>
-                  <div class="invoice-detail-item"><strong>Time:</strong> ${billingTime}</div>
+                  <p><strong>Invoice Number:</strong> ${invoiceNumber}</p>
+                  <p><strong>Date:</strong> ${itemDate}</p>
                 </div>
               </div>
-
-              <div class="provider-details">
-                ${contactInfoHTML}
+              <div class="patient-info">
+                <p><strong>Patient Name:</strong> ${patient.name}</p>
+                <p><strong>Patient ID:</strong> ${patient.patientId}</p>
+                <p><strong>Age:</strong> ${patient.age}</p>
+                <p><strong>Gender:</strong> ${patient.gender}</p>
               </div>
-
-              <div class="section compact-spacing">
-                <h3 class="section-title">Patient Information</h3>
-                <div class="patient-info">
-                  <div>
-                    <p><strong>Patient ID:</strong> ${patient.patientId}</p>
-                    <p><strong>First Name:</strong> ${patient.firstname}</p>
-                    <p><strong>Last Name:</strong> ${patient.lastname}</p>
-                    <p><strong>Mobile:</strong> ${patient.mobile}</p>
-                  </div>
-                  <div>
-                    <p><strong>Age:</strong> ${patient.age}</p>
-                    <p><strong>Gender:</strong> ${patient.gender}</p>
-                  </div>
-                </div>
-              </div>
-
               ${sectionHTML}
-
-              <div class="grand-total-section">
-                <div class="grand-total-row">
-                  <span>Grand Total:</span>
-                  <span>₹${total.toFixed(2)}</span>
-                </div>
-              </div>
             </div>
-
             <div class="footer">
-              <p>Thank you for choosing Vydhyo</p>
-              <div class="powered-by">
-                <img src="${logo}" alt="Vydhyo Logo" class="footer-logo">
-                <span>Powered by Vydhyo</span>
-              </div>
+              <p>Thank you for your visit!</p>
+              <p>Generated by Billing System</p>
             </div>
           </div>
         </body>
@@ -509,75 +502,14 @@ const BillingTaxInvoice = ({ patient, type, onClose }) => {
     `;
 
     const printWindow = window.open("", "_blank");
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-
-    // Wait for content to load before printing
-    setTimeout(() => {
+    if (printWindow) {
+      printWindow.document.write(printHTML);
+      printWindow.document.close();
       printWindow.print();
-      printWindow.close();
-    }, 500);
-  };
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000,
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "white",
-          padding: "20px",
-          borderRadius: "8px",
-          maxWidth: "800px",
-          width: "90%",
-          maxHeight: "80vh",
-          overflowY: "auto",
-          position: "relative",
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            background: "none",
-            border: "none",
-            fontSize: "20px",
-            cursor: "pointer",
-          }}
-        >
-          ×
-        </button>
-        <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <button
-            onClick={handlePrint}
-            style={{
-              backgroundColor: "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              padding: "10px 20px",
-              cursor: "pointer",
-            }}
-          >
-            Print Invoice
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    } else {
+      toast?.error?.("Unable to open print window. Please allow pop-ups.");
+    }
+  },
 };
 
 export default BillingTaxInvoice;

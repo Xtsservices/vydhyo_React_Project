@@ -28,7 +28,8 @@ export default function ClinicManagement() {
   const [showImagePreviewModal, setShowImagePreviewModal] = useState(false);
   const [showLabModal, setShowLabModal] = useState(false);
   const [showPharmacyModal, setShowPharmacyModal] = useState(false);
-  const [showPharmacyDetailsModal, setShowPharmacyDetailsModal] = useState(false);
+  const [showPharmacyDetailsModal, setShowPharmacyDetailsModal] =
+    useState(false);
   const [showLabDetailsModal, setShowLabDetailsModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
@@ -38,7 +39,8 @@ export default function ClinicManagement() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewTitle, setPreviewTitle] = useState("");
   const [selectedHeaderImage, setSelectedHeaderImage] = useState(null);
-  const [selectedDigitalSignature, setSelectedDigitalSignature] = useState(null);
+  const [selectedDigitalSignature, setSelectedDigitalSignature] =
+    useState(null);
   const [selectedPharmacyHeader, setSelectedPharmacyHeader] = useState(null);
   const [selectedLabHeader, setSelectedLabHeader] = useState(null);
   const [clinics, setClinics] = useState([]);
@@ -85,7 +87,8 @@ export default function ClinicManagement() {
   const [labHeaderPreview, setLabHeaderPreview] = useState(null);
   const [selectedClinicForHeader, setSelectedClinicForHeader] = useState(null);
   const [selectedClinicForLab, setSelectedClinicForLab] = useState(null);
-  const [selectedClinicForPharmacy, setSelectedClinicForPharmacy] = useState(null);
+  const [selectedClinicForPharmacy, setSelectedClinicForPharmacy] =
+    useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 });
   const [markerPosition, setMarkerPosition] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -134,14 +137,19 @@ export default function ClinicManagement() {
 
       try {
         setLoading(true);
-        const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
+        const response = await apiGet(
+          `/users/getClinicAddress?doctorId=${doctorId}`,
+          {}
+        );
         if (response.status === 200 && response.data?.status === "success") {
           const allClinics = response.data.data || [];
-          const activeClinics = allClinics.filter((clinic) => clinic.status === "Active");
+          const activeClinics = allClinics.filter(
+            (clinic) => clinic.status === "Active"
+          );
           const sortedClinics = [...activeClinics].sort((a, b) => {
             return new Date(b.createdAt) - new Date(a.createdAt);
           });
-          console.log(sortedClinics, "5678")
+          console.log(sortedClinics, "5678");
           setClinics(sortedClinics);
         } else {
           setError("Failed to fetch clinics");
@@ -162,14 +170,19 @@ export default function ClinicManagement() {
 
   const refreshClinics = async () => {
     try {
-      const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
+      const response = await apiGet(
+        `/users/getClinicAddress?doctorId=${doctorId}`,
+        {}
+      );
       if (response.status === 200 && response.data?.status === "success") {
         const allClinics = response.data.data || [];
-        const activeClinics = allClinics.filter((clinic) => clinic.status === "Active");
+        const activeClinics = allClinics.filter(
+          (clinic) => clinic.status === "Active"
+        );
         const sortedClinics = [...activeClinics].sort((a, b) => {
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
-        console.log(sortedClinics, "123456")
+        console.log(sortedClinics, "123456");
         setClinics(sortedClinics);
       }
     } catch (err) {
@@ -180,13 +193,33 @@ export default function ClinicManagement() {
   const getStatusStyle = (status) => {
     switch (status) {
       case "Active":
-        return { backgroundColor: "#dcfce7", color: "#15803d", border: "1px solid #bbf7d0", fontWeight: 600 };
+        return {
+          backgroundColor: "#dcfce7",
+          color: "#15803d",
+          border: "1px solid #bbf7d0",
+          fontWeight: 600,
+        };
       case "Pending":
-        return { backgroundColor: "#fed7aa", color: "#c2410c", border: "1px solid #fdba74", fontWeight: 600 };
+        return {
+          backgroundColor: "#fed7aa",
+          color: "#c2410c",
+          border: "1px solid #fdba74",
+          fontWeight: 600,
+        };
       case "Inactive":
-        return { backgroundColor: "#fecaca", color: "#dc2626", border: "1px solid #fca5a5", fontWeight: 600 };
+        return {
+          backgroundColor: "#fecaca",
+          color: "#dc2626",
+          border: "1px solid #fca5a5",
+          fontWeight: 600,
+        };
       default:
-        return { backgroundColor: "#f3f4f6", color: "#374151", border: "1px solid #d1d5db", fontWeight: 600 };
+        return {
+          backgroundColor: "#f3f4f6",
+          color: "#374151",
+          border: "1px solid #d1d5db",
+          fontWeight: 600,
+        };
     }
   };
 
@@ -224,7 +257,8 @@ export default function ClinicManagement() {
           }
         }
 
-        const formattedAddress = `${componentMap.street_number} ${componentMap.route}`.trim();
+        const formattedAddress =
+          `${componentMap.street_number} ${componentMap.route}`.trim();
         setFormData((prev) => ({
           ...prev,
           address: formattedAddress || results[0].formatted_address,
@@ -238,7 +272,11 @@ export default function ClinicManagement() {
         // Clear any related errors if geocoder filled them
         setErrors((prev) => ({
           ...prev,
-          address: undefined, city: undefined, state: undefined, latitude: undefined, longitude: undefined,
+          address: undefined,
+          city: undefined,
+          state: undefined,
+          latitude: undefined,
+          longitude: undefined,
         }));
       } else {
         console.error("Geocoder failed due to: " + status);
@@ -251,7 +289,10 @@ export default function ClinicManagement() {
     const place = autocompleteRef.current.getPlace();
     if (!place.geometry) {
       setFormData((prev) => ({ ...prev, address: "" }));
-      setErrors((prev) => ({ ...prev, address: "Please select a valid address from suggestions" }));
+      setErrors((prev) => ({
+        ...prev,
+        address: "Please select a valid address from suggestions",
+      }));
       return;
     }
 
@@ -272,7 +313,8 @@ export default function ClinicManagement() {
       }
     }
 
-    const formattedAddress = `${componentMap.street_number} ${componentMap.route}`.trim();
+    const formattedAddress =
+      `${componentMap.street_number} ${componentMap.route}`.trim();
     const latitude = place.geometry.location.lat();
     const longitude = place.geometry.location.lng();
 
@@ -292,7 +334,11 @@ export default function ClinicManagement() {
 
     setErrors((prev) => ({
       ...prev,
-      address: undefined, city: undefined, state: undefined, latitude: undefined, longitude: undefined,
+      address: undefined,
+      city: undefined,
+      state: undefined,
+      latitude: undefined,
+      longitude: undefined,
     }));
   }, []);
 
@@ -367,87 +413,84 @@ export default function ClinicManagement() {
     }
   };
 
-const normalizeClinicForForm = (c = {}) => {
-  const toStr = (v) => (v == null ? "" : String(v));
-  return {
-    // clinic core
-    type: c.type ?? "Clinic",
-    clinicName: c.clinicName ?? "",
-    address: c.address ?? "",
-    city: c.city ?? "",
-    state: c.state ?? "",
-    country: c.country ?? "India",
-    mobile: c.mobile ?? "",
-    pincode: c.pincode ?? "",
-    latitude: toStr(c.latitude ?? ""),
-    longitude: toStr(c.longitude ?? ""),
-    addressId: c.addressId ?? "",
+  const normalizeClinicForForm = (c = {}) => {
+    const toStr = (v) => (v == null ? "" : String(v));
+    return {
+      // clinic core
+      type: c.type ?? "Clinic",
+      clinicName: c.clinicName ?? "",
+      address: c.address ?? "",
+      city: c.city ?? "",
+      state: c.state ?? "",
+      country: c.country ?? "India",
+      mobile: c.mobile ?? "",
+      pincode: c.pincode ?? "",
+      latitude: toStr(c.latitude ?? ""),
+      longitude: toStr(c.longitude ?? ""),
+      addressId: c.addressId ?? "",
 
-    // pharmacy (map all known variants)
-    pharmacyName: c.pharmacyName ?? "",
-    pharmacyRegNum: c.pharmacyRegNum ?? c.pharmacyRegistrationNo ?? "",
-    pharmacyGST: c.pharmacyGST ?? c.pharmacyGst ?? "",
-    pharmacyPAN: c.pharmacyPAN ?? c.pharmacyPan ?? "",
-    pharmacyAddress: c.pharmacyAddress ?? "",
+      // pharmacy (map all known variants)
+      pharmacyName: c.pharmacyName ?? "",
+      pharmacyRegNum: c.pharmacyRegNum ?? c.pharmacyRegistrationNo ?? "",
+      pharmacyGST: c.pharmacyGST ?? c.pharmacyGst ?? "",
+      pharmacyPAN: c.pharmacyPAN ?? c.pharmacyPan ?? "",
+      pharmacyAddress: c.pharmacyAddress ?? "",
 
-    // lab (map all known variants)
-    labName: c.labName ?? "",
-    labRegNum: c.labRegNum ?? c.labRegistrationNo ?? "",
-    labGST: c.labGST ?? c.labGst ?? "",
-    labPAN: c.labPAN ?? c.labPan ?? "",
-    labAddress: c.labAddress ?? "",
+      // lab (map all known variants)
+      labName: c.labName ?? "",
+      labRegNum: c.labRegNum ?? c.labRegistrationNo ?? "",
+      labGST: c.labGST ?? c.labGst ?? "",
+      labPAN: c.labPAN ?? c.labPan ?? "",
+      labAddress: c.labAddress ?? "",
+    };
   };
-};
 
+  const handleEditClinic = (clinic) => {
+    console.groupCollapsed("%c[EDIT] clicked clinic", "color:#0aa");
+    console.log("incoming clinic row:", clinic);
+    console.table({
+      pharmacyRegNum: clinic.pharmacyRegNum,
+      pharmacyRegistrationNo: clinic.pharmacyRegistrationNo,
+      pharmacyGST: clinic.pharmacyGST,
+      pharmacyGst: clinic.pharmacyGst,
+      pharmacyPAN: clinic.pharmacyPAN,
+      pharmacyPan: clinic.pharmacyPan,
+      labRegNum: clinic.labRegNum,
+      labRegistrationNo: clinic.labRegistrationNo,
+      labGST: clinic.labGST,
+      labGst: clinic.labGst,
+      labPAN: clinic.labPAN,
+      labPan: clinic.labPan,
+    });
+    console.groupEnd();
 
+    setShowModal(true);
+    setIsEditing(true);
+    setErrors({});
 
-const handleEditClinic = (clinic) => {
-  console.groupCollapsed("%c[EDIT] clicked clinic", "color:#0aa");
-  console.log("incoming clinic row:", clinic);
-  console.table({
-    pharmacyRegNum: clinic.pharmacyRegNum,
-    pharmacyRegistrationNo: clinic.pharmacyRegistrationNo,
-    pharmacyGST: clinic.pharmacyGST,
-    pharmacyGst: clinic.pharmacyGst,
-    pharmacyPAN: clinic.pharmacyPAN,
-    pharmacyPan: clinic.pharmacyPan,
-    labRegNum: clinic.labRegNum,
-    labRegistrationNo: clinic.labRegistrationNo,
-    labGST: clinic.labGST,
-    labGst: clinic.labGst,
-    labPAN: clinic.labPAN,
-    labPan: clinic.labPan,
-  });
-  console.groupEnd();
+    const nextForm = normalizeClinicForForm(clinic);
+    console.log("[EDIT] normalized formData:", nextForm);
+    setFormData(nextForm);
 
-  setShowModal(true);
-  setIsEditing(true);
-  setErrors({});
+    setHeaderFile(null);
+    setHeaderPreview(clinic.headerImage || null);
+    setSignatureFile(null);
+    setSignaturePreview(clinic.digitalSignature || null);
+    setPharmacyHeaderFile(null);
+    setPharmacyHeaderPreview(clinic.pharmacyHeaderImage || null);
+    setLabHeaderFile(null);
+    setLabHeaderPreview(clinic.labHeaderImage || null);
 
-  const nextForm = normalizeClinicForForm(clinic);
-  console.log("[EDIT] normalized formData:", nextForm);
-  setFormData(nextForm);
-
-  setHeaderFile(null);
-  setHeaderPreview(clinic.headerImage || null);
-  setSignatureFile(null);
-  setSignaturePreview(clinic.digitalSignature || null);
-  setPharmacyHeaderFile(null);
-  setPharmacyHeaderPreview(clinic.pharmacyHeaderImage || null);
-  setLabHeaderFile(null);
-  setLabHeaderPreview(clinic.labHeaderImage || null);
-
-  const lat = parseFloat(nextForm.latitude);
-  const lng = parseFloat(nextForm.longitude);
-  if (!isNaN(lat) && !isNaN(lng)) {
-    setMapCenter({ lat, lng });
-    setMarkerPosition({ lat, lng });
-  } else {
-    setMapCenter({ lat: 20.5937, lng: 78.9629 });
-    setMarkerPosition(null);
-  }
-};
-
+    const lat = parseFloat(nextForm.latitude);
+    const lng = parseFloat(nextForm.longitude);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      setMapCenter({ lat, lng });
+      setMarkerPosition({ lat, lng });
+    } else {
+      setMapCenter({ lat: 20.5937, lng: 78.9629 });
+      setMarkerPosition(null);
+    }
+  };
 
   // ─────────────────────────────
   // Validation (inline + toast)
@@ -457,7 +500,8 @@ const handleEditClinic = (clinic) => {
     const isEmpty = (v) => !v || String(v).trim() === "";
     const isNum = (v) => v !== "" && !isNaN(Number(v));
 
-    if (isEmpty(formData.clinicName)) errs.clinicName = "Clinic name is required";
+    if (isEmpty(formData.clinicName))
+      errs.clinicName = "Clinic name is required";
     if (isEmpty(formData.address)) errs.address = "Address is required";
     if (isEmpty(formData.city)) errs.city = "City is required";
     if (isEmpty(formData.state)) errs.state = "State is required";
@@ -465,14 +509,17 @@ const handleEditClinic = (clinic) => {
     if (isEmpty(formData.mobile)) {
       errs.mobile = "Mobile number is required";
     } else if (!/^[6-9][0-9]{9}$/.test(formData.mobile)) {
-      errs.mobile = "Enter a valid 10-digit mobile number starting with 6, 7, 8, or 9";
+      errs.mobile =
+        "Enter a valid 10-digit mobile number starting with 6, 7, 8, or 9";
     }
 
     if (isEmpty(formData.latitude)) errs.latitude = "Latitude is required";
-    else if (!isNum(formData.latitude)) errs.latitude = "Latitude must be a valid number";
+    else if (!isNum(formData.latitude))
+      errs.latitude = "Latitude must be a valid number";
 
     if (isEmpty(formData.longitude)) errs.longitude = "Longitude is required";
-    else if (!isNum(formData.longitude)) errs.longitude = "Longitude must be a valid number";
+    else if (!isNum(formData.longitude))
+      errs.longitude = "Longitude must be a valid number";
 
     return errs;
   };
@@ -522,11 +569,12 @@ const handleEditClinic = (clinic) => {
   };
 
   const handleViewPharmacyDetails = async (clinic) => {
-
-    console.log(clinic, "pharmacy data")
+    console.log(clinic, "pharmacy data");
     try {
-      const response = await apiGet(`/users/getPharmacyByClinicId/${clinic.addressId}`);
-      console.log(response, "getapiresponse")
+      const response = await apiGet(
+        `/users/getPharmacyByClinicId/${clinic.addressId}`
+      );
+      console.log(response, "getapiresponse");
       if (response.status === 200) {
         setPharmacyDetails(response.data.data);
         setShowPharmacyDetailsModal(true);
@@ -541,7 +589,9 @@ const handleEditClinic = (clinic) => {
 
   const handleViewLabDetails = async (clinic) => {
     try {
-      const response = await apiGet(`/users/getLabByClinicId/${clinic.addressId}`);
+      const response = await apiGet(
+        `/users/getLabByClinicId/${clinic.addressId}`
+      );
       if (response.status === 200) {
         setLabDetails(response.data.data);
         setShowLabDetailsModal(true);
@@ -554,44 +604,43 @@ const handleEditClinic = (clinic) => {
     }
   };
   // replace your handleFileChange with this
-const handleFileChange = (e, type) => {
-  const input = e.target;
-  const file = input.files?.[0];
+  const handleFileChange = (e, type) => {
+    const input = e.target;
+    const file = input.files?.[0];
 
-  // allow picking the same file twice
-  // (reset the value so onChange triggers again)
-  input.value = "";
+    // allow picking the same file twice
+    // (reset the value so onChange triggers again)
+    input.value = "";
 
-  if (!file) {
-    console.warn(`[${type}] no file selected`);
-    return;
-  }
-
-  console.log(`[${type}] picked`, {
-    name: file.name,
-    type: file.type,
-    size: file.size
-  });
-
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    if (type === "header") {
-      setHeaderFile(file);
-      setHeaderPreview(reader.result);
-    } else if (type === "signature") {
-      setSignatureFile(file);
-      setSignaturePreview(reader.result);
-    } else if (type === "pharmacyHeader") {
-      setPharmacyHeaderFile(file);
-      setPharmacyHeaderPreview(reader.result); // string (data URL)
-    } else if (type === "labHeader") {
-      setLabHeaderFile(file);
-      setLabHeaderPreview(reader.result);
+    if (!file) {
+      console.warn(`[${type}] no file selected`);
+      return;
     }
-  };
-  reader.readAsDataURL(file);
-};
 
+    console.log(`[${type}] picked`, {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (type === "header") {
+        setHeaderFile(file);
+        setHeaderPreview(reader.result);
+      } else if (type === "signature") {
+        setSignatureFile(file);
+        setSignaturePreview(reader.result);
+      } else if (type === "pharmacyHeader") {
+        setPharmacyHeaderFile(file);
+        setPharmacyHeaderPreview(reader.result); // string (data URL)
+      } else if (type === "labHeader") {
+        setLabHeaderFile(file);
+        setLabHeaderPreview(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // const handleFileChange = (e, type) => {
   //   const file = e.target.files[0];
@@ -677,8 +726,7 @@ const handleFileChange = (e, type) => {
     setLabHeaderFile(null);
     setLabHeaderPreview(null);
   };
-    console.log(formData, "12345")
-
+  console.log(formData, "12345");
 
   // ─────────────────────────────
   // Submit clinic (ADD / EDIT) with inline errors
@@ -696,11 +744,10 @@ const handleFileChange = (e, type) => {
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       const firstErrMsg = Object.values(newErrors)[0];
-      console.log(firstErrMsg, "error message")
+      console.log(firstErrMsg, "error message");
       toast.error(firstErrMsg);
       return;
     }
-
 
     try {
       let response;
@@ -720,61 +767,73 @@ const handleFileChange = (e, type) => {
       if (headerFile) formDataToSend.append("file", headerFile);
       if (signatureFile) formDataToSend.append("signature", signatureFile);
       if (formData.labName) formDataToSend.append("labName", formData.labName);
-      if (formData.labRegNum) formDataToSend.append("labRegistrationNo", formData.labRegNum);
+      if (formData.labRegNum)
+        formDataToSend.append("labRegistrationNo", formData.labRegNum);
       if (formData.labGST) formDataToSend.append("labGst", formData.labGST);
       if (formData.labPAN) formDataToSend.append("labPan", formData.labPAN);
-      if (formData.labAddress) formDataToSend.append("labAddress", formData.labAddress);
+      if (formData.labAddress)
+        formDataToSend.append("labAddress", formData.labAddress);
       if (labHeaderFile) formDataToSend.append("labHeader", labHeaderFile);
-      if (formData.pharmacyName) formDataToSend.append("pharmacyName", formData.pharmacyName);
-      if (formData.pharmacyRegNum) formDataToSend.append("pharmacyRegistrationNo", formData.pharmacyRegNum);
-      if (formData.pharmacyGST) formDataToSend.append("pharmacyGst", formData.pharmacyGST);
-      if (formData.pharmacyPAN) formDataToSend.append("pharmacyPan", formData.pharmacyPAN);
-      if (formData.pharmacyAddress) formDataToSend.append("pharmacyAddress", formData.pharmacyAddress);
+      if (formData.pharmacyName)
+        formDataToSend.append("pharmacyName", formData.pharmacyName);
+      if (formData.pharmacyRegNum)
+        formDataToSend.append(
+          "pharmacyRegistrationNo",
+          formData.pharmacyRegNum
+        );
+      if (formData.pharmacyGST)
+        formDataToSend.append("pharmacyGst", formData.pharmacyGST);
+      if (formData.pharmacyPAN)
+        formDataToSend.append("pharmacyPan", formData.pharmacyPAN);
+      if (formData.pharmacyAddress)
+        formDataToSend.append("pharmacyAddress", formData.pharmacyAddress);
       if (pharmacyHeaderPreview) {
-  formDataToSend.append("pharmacyHeader", pharmacyHeaderPreview); // send string
-}
+        formDataToSend.append("pharmacyHeader", pharmacyHeaderPreview); // send string
+      }
 
       // if (pharmacyHeaderFile) formDataToSend.append("pharmacyHeader", pharmacyHeaderFile);
 
       if (isEditing) {
+        formDataToSend.append("addressId", formData.addressId);
 
-          formDataToSend.append("addressId", formData.addressId);
+        // ✅ Send location as bracketed keys (text only)
+        formDataToSend.append("location[type]", "Point");
+        formDataToSend.append(
+          "location[coordinates][0]",
+          String(Number(formData.longitude))
+        );
+        formDataToSend.append(
+          "location[coordinates][1]",
+          String(Number(formData.latitude))
+        );
 
-  // ✅ Send location as bracketed keys (text only)
-  formDataToSend.append("location[type]", "Point");
-  formDataToSend.append("location[coordinates][0]", String(Number(formData.longitude)));
-  formDataToSend.append("location[coordinates][1]", String(Number(formData.latitude)));
-
-  // ❌ Do NOT send binary fields to updateAddress
-  // In case they were appended earlier by shared code, force-remove them:
-  formDataToSend.delete("file");
-  formDataToSend.delete("signature");
-  formDataToSend.delete("labHeader");
-  formDataToSend.delete("pharmacyHeader"); 
+        // ❌ Do NOT send binary fields to updateAddress
+        // In case they were appended earlier by shared code, force-remove them:
+        formDataToSend.delete("file");
+        formDataToSend.delete("signature");
+        formDataToSend.delete("labHeader");
+        formDataToSend.delete("pharmacyHeader");
         // formDataToSend.append("addressId", formData.addressId);
         // formDataToSend.append("location", JSON.stringify({
         //   type: "Point",
         //   coordinates: [Number(formData.longitude), Number(formData.latitude)],
         // }));
 
- 
-formDataToSend.delete("endTime"); 
-formDataToSend.delete("startTime"); 
-
+        formDataToSend.delete("endTime");
+        formDataToSend.delete("startTime");
 
         // (formDataToSend.append("location[type]", "Point"), formDataToSend.append("location[coordinates][]", Number(formData.longitude)), formDataToSend.append("location[coordinates][]", Number(formData.latitude)))
-const getMultipartHeaders = (fd) => {
-  // In Node (server/SSR) FormData from 'form-data' has getHeaders() -> includes boundary
-  if (typeof fd?.getHeaders === "function") return fd.getHeaders();
-  // In the browser, let Axios/fetch set Content-Type with boundary automatically
-  return {};
-};
+        const getMultipartHeaders = (fd) => {
+          // In Node (server/SSR) FormData from 'form-data' has getHeaders() -> includes boundary
+          if (typeof fd?.getHeaders === "function") return fd.getHeaders();
+          // In the browser, let Axios/fetch set Content-Type with boundary automatically
+          return {};
+        };
 
-
-         const headers = getMultipartHeaders(formDataToSend);
+        const headers = getMultipartHeaders(formDataToSend);
         response = await apiPut("/users/updateAddress", formDataToSend);
 
-          if (response.status === 200 && response.data?.status === "warning") {
+        if (response.status === 200 && response.data?.status === "warning") {
           const { message, data } = response.data;
           const isPharmacyConflict = data?.pharmacyId;
           const isLabConflict = data?.labId;
@@ -799,19 +858,29 @@ const getMultipartHeaders = (fd) => {
           if (headerFile) bypassData.append("file", headerFile);
           if (signatureFile) bypassData.append("signature", signatureFile);
           if (formData.labName) bypassData.append("labName", formData.labName);
-          if (formData.labRegNum) bypassData.append("labRegistrationNo", formData.labRegNum);
+          if (formData.labRegNum)
+            bypassData.append("labRegistrationNo", formData.labRegNum);
           if (formData.labGST) bypassData.append("labGst", formData.labGST);
           if (formData.labPAN) bypassData.append("labPan", formData.labPAN);
-          if (formData.labAddress) bypassData.append("labAddress", formData.labAddress);
+          if (formData.labAddress)
+            bypassData.append("labAddress", formData.labAddress);
           if (labHeaderFile) bypassData.append("labHeader", labHeaderFile);
-          if (formData.pharmacyName) bypassData.append("pharmacyName", formData.pharmacyName);
-          if (formData.pharmacyRegNum) bypassData.append("pharmacyRegistrationNo", formData.pharmacyRegNum);
-          if (formData.pharmacyGST) bypassData.append("pharmacyGst", formData.pharmacyGST);
-          if (formData.pharmacyPAN) bypassData.append("pharmacyPan", formData.pharmacyPAN);
-          if (formData.pharmacyAddress) bypassData.append("pharmacyAddress", formData.pharmacyAddress);
+          if (formData.pharmacyName)
+            bypassData.append("pharmacyName", formData.pharmacyName);
+          if (formData.pharmacyRegNum)
+            bypassData.append(
+              "pharmacyRegistrationNo",
+              formData.pharmacyRegNum
+            );
+          if (formData.pharmacyGST)
+            bypassData.append("pharmacyGst", formData.pharmacyGST);
+          if (formData.pharmacyPAN)
+            bypassData.append("pharmacyPan", formData.pharmacyPAN);
+          if (formData.pharmacyAddress)
+            bypassData.append("pharmacyAddress", formData.pharmacyAddress);
           if (pharmacyHeaderPreview) {
-  bypassData.append("pharmacyHeader", pharmacyHeaderPreview); // send string
-}
+            bypassData.append("pharmacyHeader", pharmacyHeaderPreview); // send string
+          }
 
           // if (pharmacyHeaderFile) bypassData.append("pharmacyHeader", pharmacyHeaderFile);
 
@@ -826,7 +895,6 @@ const getMultipartHeaders = (fd) => {
           toast.warning(response.data?.message || "Failed to add clinic");
           throw new Error(response.data?.message || "Failed to add clinic");
         }
-      
 
         // if (response.status === 200 && response.data?.status === "success") {
         //   toast.success(response.data?.message || "Clinic updated successfully");
@@ -866,19 +934,29 @@ const getMultipartHeaders = (fd) => {
           if (headerFile) bypassData.append("file", headerFile);
           if (signatureFile) bypassData.append("signature", signatureFile);
           if (formData.labName) bypassData.append("labName", formData.labName);
-          if (formData.labRegNum) bypassData.append("labRegistrationNo", formData.labRegNum);
+          if (formData.labRegNum)
+            bypassData.append("labRegistrationNo", formData.labRegNum);
           if (formData.labGST) bypassData.append("labGst", formData.labGST);
           if (formData.labPAN) bypassData.append("labPan", formData.labPAN);
-          if (formData.labAddress) bypassData.append("labAddress", formData.labAddress);
+          if (formData.labAddress)
+            bypassData.append("labAddress", formData.labAddress);
           if (labHeaderFile) bypassData.append("labHeader", labHeaderFile);
-          if (formData.pharmacyName) bypassData.append("pharmacyName", formData.pharmacyName);
-          if (formData.pharmacyRegNum) bypassData.append("pharmacyRegistrationNo", formData.pharmacyRegNum);
-          if (formData.pharmacyGST) bypassData.append("pharmacyGst", formData.pharmacyGST);
-          if (formData.pharmacyPAN) bypassData.append("pharmacyPan", formData.pharmacyPAN);
-          if (formData.pharmacyAddress) bypassData.append("pharmacyAddress", formData.pharmacyAddress);
+          if (formData.pharmacyName)
+            bypassData.append("pharmacyName", formData.pharmacyName);
+          if (formData.pharmacyRegNum)
+            bypassData.append(
+              "pharmacyRegistrationNo",
+              formData.pharmacyRegNum
+            );
+          if (formData.pharmacyGST)
+            bypassData.append("pharmacyGst", formData.pharmacyGST);
+          if (formData.pharmacyPAN)
+            bypassData.append("pharmacyPan", formData.pharmacyPAN);
+          if (formData.pharmacyAddress)
+            bypassData.append("pharmacyAddress", formData.pharmacyAddress);
           if (pharmacyHeaderPreview) {
-  formDataToSend.append("pharmacyHeader", pharmacyHeaderPreview); // send string
-}
+            formDataToSend.append("pharmacyHeader", pharmacyHeaderPreview); // send string
+          }
 
           // if (pharmacyHeaderFile) bypassData.append("pharmacyHeader", pharmacyHeaderFile);
 
@@ -899,14 +977,17 @@ const getMultipartHeaders = (fd) => {
       setShowModal(false);
       resetForm();
     } catch (err) {
-      console.log(err, "add clinic")
+      console.log(err, "add clinic");
       const errorMessage =
         err?.response?.data?.message?.message ||
         err?.response?.data?.message ||
         err?.message ||
         "Something went wrong";
       toast.error(errorMessage);
-      console.error("Submit error:", err?.response?.data?.message?.message || err);
+      console.error(
+        "Submit error:",
+        err?.response?.data?.message?.message || err
+      );
     }
   };
 
@@ -954,7 +1035,10 @@ const getMultipartHeaders = (fd) => {
         toast.error(response.data?.message || "Failed to add lab details");
       }
     } catch (err) {
-      if (err.response?.data?.status === "warning" && err.response?.data?.data?.labId) {
+      if (
+        err.response?.data?.status === "warning" &&
+        err.response?.data?.data?.labId
+      ) {
         setWarningMessage(err.response.data.message);
         setWarningEntity("lab");
         const bypassData = new FormData();
@@ -991,14 +1075,18 @@ const getMultipartHeaders = (fd) => {
       formDataToSend.append("pharmacyPan", formData.pharmacyPAN);
       formDataToSend.append("pharmacyAddress", formData.pharmacyAddress);
       if (pharmacyHeaderPreview) {
-  formDataToSend.append("pharmacyHeader", pharmacyHeaderPreview); // send string
-}
+        formDataToSend.append("pharmacyHeader", pharmacyHeaderPreview); // send string
+      }
 
       // if (pharmacyHeaderFile) formDataToSend.append("pharmacyHeader", pharmacyHeaderFile);
 
-      const response = await apiPost("/users/addPharmacyToClinic", formDataToSend, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await apiPost(
+        "/users/addPharmacyToClinic",
+        formDataToSend,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
       if (response.status === 200 && response.data?.status === "warning") {
         setWarningMessage(response.data.message);
@@ -1012,8 +1100,8 @@ const getMultipartHeaders = (fd) => {
         bypassData.append("pharmacyPan", formData.pharmacyPAN);
         bypassData.append("pharmacyAddress", formData.pharmacyAddress);
         if (pharmacyHeaderPreview) {
-  bypassData.append("pharmacyHeader", pharmacyHeaderPreview); // send string
-}
+          bypassData.append("pharmacyHeader", pharmacyHeaderPreview); // send string
+        }
 
         // if (pharmacyHeaderFile) bypassData.append("pharmacyHeader", pharmacyHeaderFile);
         bypassData.append("bypassCheck", "true");
@@ -1028,7 +1116,10 @@ const getMultipartHeaders = (fd) => {
         toast.error(response.data?.message || "Failed to add pharmacy details");
       }
     } catch (err) {
-      if (err.response?.data?.status === "warning" && err.response?.data?.data?.pharmacyId) {
+      if (
+        err.response?.data?.status === "warning" &&
+        err.response?.data?.data?.pharmacyId
+      ) {
         setWarningMessage(err.response.data.message);
         setWarningEntity("pharmacy");
         const bypassData = new FormData();
@@ -1039,7 +1130,8 @@ const getMultipartHeaders = (fd) => {
         bypassData.append("pharmacyGst", formData.pharmacyGST);
         bypassData.append("pharmacyPan", formData.pharmacyPAN);
         bypassData.append("pharmacyAddress", formData.pharmacyAddress);
-        if (pharmacyHeaderFile) bypassData.append("pharmacyHeader", pharmacyHeaderFile);
+        if (pharmacyHeaderFile)
+          bypassData.append("pharmacyHeader", pharmacyHeaderFile);
         bypassData.append("bypassCheck", "true");
         setBypassFormData(bypassData);
         setBypassEndpoint("/users/addPharmacyToClinic?bypassCheck=true");
@@ -1054,10 +1146,14 @@ const getMultipartHeaders = (fd) => {
   const handleDeleteClinic = async (addressId) => {
     if (!window.confirm("Are you sure you want to delete this clinic?")) return;
     try {
-      const response = await apiPost("/users/deleteClinicAddress", { addressId });
+      const response = await apiPost("/users/deleteClinicAddress", {
+        addressId,
+      });
       if (response.status === 200 || response.data?.status === "success") {
         toast.success(response.data?.message || "Clinic deleted successfully");
-        setClinics((prevClinics) => prevClinics.filter((clinic) => clinic.addressId !== addressId));
+        setClinics((prevClinics) =>
+          prevClinics.filter((clinic) => clinic.addressId !== addressId)
+        );
       } else {
         toast.error(response.data?.message || "Failed to delete clinic");
       }
@@ -1088,7 +1184,14 @@ const getMultipartHeaders = (fd) => {
     setLabHeaderFile(null);
     setLabHeaderPreview(null);
     setSelectedClinicForLab(null);
-    setFormData((prev) => ({ ...prev, labName: "", labRegNum: "", labGST: "", labPAN: "", labAddress: "" }));
+    setFormData((prev) => ({
+      ...prev,
+      labName: "",
+      labRegNum: "",
+      labGST: "",
+      labPAN: "",
+      labAddress: "",
+    }));
   };
 
   const handlePharmacyCancel = () => {
@@ -1096,7 +1199,14 @@ const getMultipartHeaders = (fd) => {
     setPharmacyHeaderFile(null);
     setPharmacyHeaderPreview(null);
     setSelectedClinicForPharmacy(null);
-    setFormData((prev) => ({ ...prev, pharmacyName: "", pharmacyRegNum: "", pharmacyGST: "", pharmacyPAN: "", pharmacyAddress: "" }));
+    setFormData((prev) => ({
+      ...prev,
+      pharmacyName: "",
+      pharmacyRegNum: "",
+      pharmacyGST: "",
+      pharmacyPAN: "",
+      pharmacyAddress: "",
+    }));
   };
 
   const handleClosePharmacyDetails = () => {
@@ -1109,7 +1219,12 @@ const getMultipartHeaders = (fd) => {
     setLabDetails(null);
   };
 
-  const handleViewImage = (headerImage, digitalSignature, pharmacyHeaderImage, labHeaderImage) => {
+  const handleViewImage = (
+    headerImage,
+    digitalSignature,
+    pharmacyHeaderImage,
+    labHeaderImage
+  ) => {
     setSelectedHeaderImage(headerImage);
     setSelectedDigitalSignature(digitalSignature);
     setSelectedPharmacyHeader(pharmacyHeaderImage);
@@ -1133,7 +1248,7 @@ const getMultipartHeaders = (fd) => {
 
   if (loadError) return <div>Error loading Google Maps</div>;
   if (!isLoaded) return <div>Loading...</div>;
-console.log(formData, "clinic123")
+  console.log(formData, "clinic123");
   return (
     <div className="clinic-management-container">
       <div className="clinic-management-main">
@@ -1144,7 +1259,10 @@ console.log(formData, "clinic123")
               Manage your clinic information, address, and operating status.
             </p>
           </div>
-          <button className="clinic-management-add-button" onClick={handleAddClinic}>
+          <button
+            className="clinic-management-add-button"
+            onClick={handleAddClinic}
+          >
             <Plus size={16} />
             Add Clinic
           </button>
@@ -1183,10 +1301,13 @@ console.log(formData, "clinic123")
               {filteredClinics.length > 0 ? (
                 filteredClinics.map((clinic) => (
                   <tr key={clinic._id} className="clinic-table-tr">
-                    <td className="clinic-table-td clinic-name">{clinic.clinicName}</td>
+                    <td className="clinic-table-td clinic-name">
+                      {clinic.clinicName}
+                    </td>
                     <td className="clinic-table-td">{clinic.type}</td>
                     <td className="clinic-table-td">
-                      {clinic.address}, {clinic.city}, {clinic.state}, {clinic.country} {clinic.pincode}
+                      {clinic.address}, {clinic.city}, {clinic.state},{" "}
+                      {clinic.country} {clinic.pincode}
                     </td>
                     <td className="clinic-table-td">{clinic.mobile}</td>
                     <td className="clinic-table-td">
@@ -1194,7 +1315,14 @@ console.log(formData, "clinic123")
                         <button
                           className="clinic-view-image-button"
                           title="View Header Image"
-                          onClick={() => handleViewImage(clinic.headerImage, clinic.digitalSignature, clinic.pharmacyHeaderImage, clinic.labHeaderImage)}
+                          onClick={() =>
+                            handleViewImage(
+                              clinic.headerImage,
+                              clinic.digitalSignature,
+                              clinic.pharmacyHeaderImage, // This is what you're currently passing
+                              clinic.labHeaderImage
+                            )
+                          }
                         >
                           <Eye size={16} />
                         </button>
@@ -1247,7 +1375,10 @@ console.log(formData, "clinic123")
                       )}
                     </td>
                     <td className="clinic-table-td">
-                      <span className="clinic-status-badge" style={getStatusStyle(clinic.status)}>
+                      <span
+                        className="clinic-status-badge"
+                        style={getStatusStyle(clinic.status)}
+                      >
                         {clinic.status}
                       </span>
                     </td>
@@ -1276,7 +1407,9 @@ console.log(formData, "clinic123")
               ) : (
                 <tr>
                   <td colSpan="9" className="clinic-table-td no-clinics">
-                    {clinics.length === 0 ? "No active clinics found" : "No matching active clinics found"}
+                    {clinics.length === 0
+                      ? "No active clinics found"
+                      : "No matching active clinics found"}
                   </td>
                 </tr>
               )}
@@ -1313,12 +1446,18 @@ console.log(formData, "clinic123")
                     type="text"
                     name="clinicName"
                     placeholder="Enter clinic name"
-                    className={`clinic-form-input ${errors.clinicName ? "error" : ""}`}
+                    className={`clinic-form-input ${
+                      errors.clinicName ? "error" : ""
+                    }`}
                     value={formData.clinicName}
                     onChange={handleInputChange}
                     aria-invalid={!!errors.clinicName}
                   />
-                  {errors.clinicName && <div className="clinic-field-error">{errors.clinicName}</div>}
+                  {errors.clinicName && (
+                    <div className="clinic-field-error">
+                      {errors.clinicName}
+                    </div>
+                  )}
                 </div>
 
                 <div className="clinic-form-group">
@@ -1326,7 +1465,9 @@ console.log(formData, "clinic123")
                     Address (or click on map to select)
                   </label>
                   <Autocomplete
-                    onLoad={(autocomplete) => (autocompleteRef.current = autocomplete)}
+                    onLoad={(autocomplete) =>
+                      (autocompleteRef.current = autocomplete)
+                    }
                     onPlaceChanged={handlePlaceChanged}
                     restrictions={{ country: "in" }}
                   >
@@ -1334,13 +1475,17 @@ console.log(formData, "clinic123")
                       type="text"
                       name="address"
                       placeholder="Enter address or select on map"
-                      className={`clinic-form-input ${errors.address ? "error" : ""}`}
+                      className={`clinic-form-input ${
+                        errors.address ? "error" : ""
+                      }`}
                       value={formData.address}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.address}
                     />
                   </Autocomplete>
-                  {errors.address && <div className="clinic-field-error">{errors.address}</div>}
+                  {errors.address && (
+                    <div className="clinic-field-error">{errors.address}</div>
+                  )}
                 </div>
 
                 <div className="clinic-form-row">
@@ -1350,12 +1495,16 @@ console.log(formData, "clinic123")
                       type="text"
                       name="city"
                       placeholder="Enter city"
-                      className={`clinic-form-input ${errors.city ? "error" : ""}`}
+                      className={`clinic-form-input ${
+                        errors.city ? "error" : ""
+                      }`}
                       value={formData.city}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.city}
                     />
-                    {errors.city && <div className="clinic-field-error">{errors.city}</div>}
+                    {errors.city && (
+                      <div className="clinic-field-error">{errors.city}</div>
+                    )}
                   </div>
                   <div className="clinic-form-col">
                     <label className="clinic-form-label">State</label>
@@ -1363,12 +1512,16 @@ console.log(formData, "clinic123")
                       type="text"
                       name="state"
                       placeholder="Enter state"
-                      className={`clinic-form-input ${errors.state ? "error" : ""}`}
+                      className={`clinic-form-input ${
+                        errors.state ? "error" : ""
+                      }`}
                       value={formData.state}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.state}
                     />
-                    {errors.state && <div className="clinic-field-error">{errors.state}</div>}
+                    {errors.state && (
+                      <div className="clinic-field-error">{errors.state}</div>
+                    )}
                   </div>
                 </div>
 
@@ -1379,20 +1532,27 @@ console.log(formData, "clinic123")
                       type="text"
                       name="mobile"
                       placeholder="Enter mobile number"
-                      className={`clinic-form-input ${errors.mobile ? "error" : ""}`}
+                      className={`clinic-form-input ${
+                        errors.mobile ? "error" : ""
+                      }`}
                       value={formData.mobile}
                       maxLength={10}
                       onChange={(e) => {
                         const onlyDigits = e.target.value.replace(/\D/g, "");
                         if (onlyDigits === "" || /^[6-9]/.test(onlyDigits)) {
                           handleInputChange({
-                            target: { name: "mobile", value: onlyDigits.slice(0, 10) },
+                            target: {
+                              name: "mobile",
+                              value: onlyDigits.slice(0, 10),
+                            },
                           });
                         }
                       }}
                       aria-invalid={!!errors.mobile}
                     />
-                    {errors.mobile && <div className="clinic-field-error">{errors.mobile}</div>}
+                    {errors.mobile && (
+                      <div className="clinic-field-error">{errors.mobile}</div>
+                    )}
                   </div>
                   <div className="clinic-form-col">
                     <label className="clinic-form-label">Pincode</label>
@@ -1415,12 +1575,18 @@ console.log(formData, "clinic123")
                       type="number"
                       name="latitude"
                       placeholder="Enter latitude"
-                      className={`clinic-form-input ${errors.latitude ? "error" : ""}`}
+                      className={`clinic-form-input ${
+                        errors.latitude ? "error" : ""
+                      }`}
                       value={formData.latitude}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.latitude}
                     />
-                    {errors.latitude && <div className="clinic-field-error">{errors.latitude}</div>}
+                    {errors.latitude && (
+                      <div className="clinic-field-error">
+                        {errors.latitude}
+                      </div>
+                    )}
                   </div>
                   <div className="clinic-form-col">
                     <label className="clinic-form-label">Longitude</label>
@@ -1428,27 +1594,45 @@ console.log(formData, "clinic123")
                       type="number"
                       name="longitude"
                       placeholder="Enter longitude"
-                      className={`clinic-form-input ${errors.longitude ? "error" : ""}`}
+                      className={`clinic-form-input ${
+                        errors.longitude ? "error" : ""
+                      }`}
                       value={formData.longitude}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.longitude}
                     />
-                    {errors.longitude && <div className="clinic-field-error">{errors.longitude}</div>}
+                    {errors.longitude && (
+                      <div className="clinic-field-error">
+                        {errors.longitude}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="clinic-form-group">
-                  <label className="clinic-form-label">Clinic Header Image</label>
+                  <label className="clinic-form-label">
+                    Clinic Header Image
+                  </label>
                   <div className="header-upload-container">
                     {headerPreview ? (
                       <div className="header-preview-container">
-                        <img src={headerPreview} alt="Header preview" className="header-preview-image" />
-                        <button className="header-change-button" onClick={() => fileInputRef.current.click()}>
+                        <img
+                          src={headerPreview}
+                          alt="Header preview"
+                          className="header-preview-image"
+                        />
+                        <button
+                          className="header-change-button"
+                          onClick={() => fileInputRef.current.click()}
+                        >
                           Change Image
                         </button>
                       </div>
                     ) : (
-                      <div className="header-upload-placeholder" onClick={() => fileInputRef.current.click()}>
+                      <div
+                        className="header-upload-placeholder"
+                        onClick={() => fileInputRef.current.click()}
+                      >
                         <Upload size={24} />
                         <p>Click to upload header image</p>
                       </div>
@@ -1462,22 +1646,35 @@ console.log(formData, "clinic123")
                     />
                   </div>
                   <p className="header-upload-note">
-                    Note: This image will be used as the header for prescriptions from this clinic.
+                    Note: This image will be used as the header for
+                    prescriptions from this clinic.
                   </p>
                 </div>
 
                 <div className="clinic-form-group">
-                  <label className="clinic-form-label">Digital Signature (Optional)</label>
+                  <label className="clinic-form-label">
+                    Digital Signature (Optional)
+                  </label>
                   <div className="header-upload-container">
                     {signaturePreview ? (
                       <div className="header-preview-container">
-                        <img src={signaturePreview} alt="Signature preview" className="header-preview-image" />
-                        <button className="header-change-button" onClick={() => signatureFileInputRef.current.click()}>
+                        <img
+                          src={signaturePreview}
+                          alt="Signature preview"
+                          className="header-preview-image"
+                        />
+                        <button
+                          className="header-change-button"
+                          onClick={() => signatureFileInputRef.current.click()}
+                        >
                           Change Signature
                         </button>
                       </div>
                     ) : (
-                      <div className="header-upload-placeholder" onClick={() => signatureFileInputRef.current.click()}>
+                      <div
+                        className="header-upload-placeholder"
+                        onClick={() => signatureFileInputRef.current.click()}
+                      >
                         <Upload size={24} />
                         <p>Click to upload digital signature</p>
                       </div>
@@ -1491,11 +1688,14 @@ console.log(formData, "clinic123")
                     />
                   </div>
                   <p className="header-upload-note">
-                    Note: This signature will be used on prescriptions (optional).
+                    Note: This signature will be used on prescriptions
+                    (optional).
                   </p>
                 </div>
 
-                <h3 className="clinic-modal-subheader">Lab Details (Optional)</h3>
+                <h3 className="clinic-modal-subheader">
+                  Lab Details (Optional)
+                </h3>
                 <div className="clinic-form-group">
                   <label className="clinic-form-label">Lab Name</label>
                   <input
@@ -1510,7 +1710,9 @@ console.log(formData, "clinic123")
 
                 <div className="clinic-form-row">
                   <div className="clinic-form-col">
-                    <label className="clinic-form-label">Lab Registration Number</label>
+                    <label className="clinic-form-label">
+                      Lab Registration Number
+                    </label>
                     <input
                       type="text"
                       name="labRegNum"
@@ -1559,17 +1761,29 @@ console.log(formData, "clinic123")
                 </div>
 
                 <div className="clinic-form-group">
-                  <label className="clinic-form-label">Lab Header Image (Optional)</label>
+                  <label className="clinic-form-label">
+                    Lab Header Image (Optional)
+                  </label>
                   <div className="header-upload-container">
                     {labHeaderPreview ? (
                       <div className="header-preview-container">
-                        <img src={labHeaderPreview} alt="Lab header preview" className="header-preview-image" />
-                        <button className="header-change-button" onClick={() => labFileInputRef.current.click()}>
+                        <img
+                          src={labHeaderPreview}
+                          alt="Lab header preview"
+                          className="header-preview-image"
+                        />
+                        <button
+                          className="header-change-button"
+                          onClick={() => labFileInputRef.current.click()}
+                        >
                           Change Image
                         </button>
                       </div>
                     ) : (
-                      <div className="header-upload-placeholder" onClick={() => labFileInputRef.current.click()}>
+                      <div
+                        className="header-upload-placeholder"
+                        onClick={() => labFileInputRef.current.click()}
+                      >
                         <Upload size={24} />
                         <p>Click to upload lab header image</p>
                       </div>
@@ -1583,11 +1797,14 @@ console.log(formData, "clinic123")
                     />
                   </div>
                   <p className="header-upload-note">
-                    Note: This image will be used as the header for lab-related documents.
+                    Note: This image will be used as the header for lab-related
+                    documents.
                   </p>
                 </div>
 
-                <h3 className="clinic-modal-subheader">Pharmacy Details (Optional)</h3>
+                <h3 className="clinic-modal-subheader">
+                  Pharmacy Details (Optional)
+                </h3>
                 <div className="clinic-form-group">
                   <label className="clinic-form-label">Pharmacy Name</label>
                   <input
@@ -1602,7 +1819,9 @@ console.log(formData, "clinic123")
 
                 <div className="clinic-form-row">
                   <div className="clinic-form-col">
-                    <label className="clinic-form-label">Pharmacy Registration Number</label>
+                    <label className="clinic-form-label">
+                      Pharmacy Registration Number
+                    </label>
                     <input
                       type="text"
                       name="pharmacyRegNum"
@@ -1613,7 +1832,9 @@ console.log(formData, "clinic123")
                     />
                   </div>
                   <div className="clinic-form-col">
-                    <label className="clinic-form-label">Pharmacy GST Number</label>
+                    <label className="clinic-form-label">
+                      Pharmacy GST Number
+                    </label>
                     <input
                       type="text"
                       name="pharmacyGST"
@@ -1638,7 +1859,9 @@ console.log(formData, "clinic123")
                     />
                   </div>
                   <div className="clinic-form-col">
-                    <label className="clinic-form-label">Pharmacy Address</label>
+                    <label className="clinic-form-label">
+                      Pharmacy Address
+                    </label>
                     <input
                       type="text"
                       name="pharmacyAddress"
@@ -1651,17 +1874,29 @@ console.log(formData, "clinic123")
                 </div>
 
                 <div className="clinic-form-group">
-                  <label className="clinic-form-label">Pharmacy Header Image (Optional)</label>
+                  <label className="clinic-form-label">
+                    Pharmacy Header Image (Optional)
+                  </label>
                   <div className="header-upload-container">
                     {pharmacyHeaderPreview ? (
                       <div className="header-preview-container">
-                        <img src={pharmacyHeaderPreview} alt="Pharmacy header preview" className="header-preview-image" />
-                        <button className="header-change-button" onClick={() => pharmacyFileInputRef.current.click()}>
+                        <img
+                          src={pharmacyHeaderPreview}
+                          alt="Pharmacy header preview"
+                          className="header-preview-image"
+                        />
+                        <button
+                          className="header-change-button"
+                          onClick={() => pharmacyFileInputRef.current.click()}
+                        >
                           Change Image
                         </button>
                       </div>
                     ) : (
-                      <div className="header-upload-placeholder" onClick={() => pharmacyFileInputRef.current.click()}>
+                      <div
+                        className="header-upload-placeholder"
+                        onClick={() => pharmacyFileInputRef.current.click()}
+                      >
                         <Upload size={24} />
                         <p>Click to upload pharmacy header image</p>
                       </div>
@@ -1675,16 +1910,25 @@ console.log(formData, "clinic123")
                     />
                   </div>
                   <p className="header-upload-note">
-                    Note: This image will be used as the header for pharmacy-related documents.
+                    Note: This image will be used as the header for
+                    pharmacy-related documents.
                   </p>
                 </div>
 
                 <div className="clinic-button-group">
-                  <button type="button" className="clinic-cancel-button" onClick={handleCancel}>
+                  <button
+                    type="button"
+                    className="clinic-cancel-button"
+                    onClick={handleCancel}
+                  >
                     <X size={16} />
                     Cancel
                   </button>
-                  <button type="button" className="clinic-confirm-button" onClick={handleSubmit}>
+                  <button
+                    type="button"
+                    className="clinic-confirm-button"
+                    onClick={handleSubmit}
+                  >
                     {isEditing ? "Update" : "Confirm"}
                   </button>
                 </div>
@@ -1700,7 +1944,8 @@ console.log(formData, "clinic123")
           <div className="clinic-modal-overlay" onClick={handleHeaderCancel}>
             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
               <h2 className="clinic-modal-header">
-                Upload Header and Signature for {selectedClinicForHeader?.clinicName}
+                Upload Header and Signature for{" "}
+                {selectedClinicForHeader?.clinicName}
               </h2>
 
               <div className="clinic-form-group">
@@ -1708,13 +1953,23 @@ console.log(formData, "clinic123")
                 <div className="header-upload-container">
                   {headerPreview ? (
                     <div className="header-preview-container">
-                      <img src={headerPreview} alt="Header preview" className="header-preview-image" />
-                      <button className="header-change-button" onClick={() => fileInputRef.current.click()}>
+                      <img
+                        src={headerPreview}
+                        alt="Header preview"
+                        className="header-preview-image"
+                      />
+                      <button
+                        className="header-change-button"
+                        onClick={() => fileInputRef.current.click()}
+                      >
                         Change Image
                       </button>
                     </div>
                   ) : (
-                    <div className="header-upload-placeholder" onClick={() => fileInputRef.current.click()}>
+                    <div
+                      className="header-upload-placeholder"
+                      onClick={() => fileInputRef.current.click()}
+                    >
                       <Upload size={24} />
                       <p>Click to upload header image</p>
                     </div>
@@ -1728,22 +1983,35 @@ console.log(formData, "clinic123")
                   />
                 </div>
                 <p className="header-upload-note">
-                  Note: This image will be used as the header for prescriptions from this clinic.
+                  Note: This image will be used as the header for prescriptions
+                  from this clinic.
                 </p>
               </div>
 
               <div className="clinic-form-group">
-                <label className="clinic-form-label">Digital Signature (Optional)</label>
+                <label className="clinic-form-label">
+                  Digital Signature (Optional)
+                </label>
                 <div className="header-upload-container">
                   {signaturePreview ? (
                     <div className="header-preview-container">
-                      <img src={signaturePreview} alt="Signature preview" className="header-preview-image" />
-                      <button className="header-change-button" onClick={() => signatureFileInputRef.current.click()}>
+                      <img
+                        src={signaturePreview}
+                        alt="Signature preview"
+                        className="header-preview-image"
+                      />
+                      <button
+                        className="header-change-button"
+                        onClick={() => signatureFileInputRef.current.click()}
+                      >
                         Change Signature
                       </button>
                     </div>
                   ) : (
-                    <div className="header-upload-placeholder" onClick={() => signatureFileInputRef.current.click()}>
+                    <div
+                      className="header-upload-placeholder"
+                      onClick={() => signatureFileInputRef.current.click()}
+                    >
                       <Upload size={24} />
                       <p>Click to upload digital signature</p>
                     </div>
@@ -1762,11 +2030,20 @@ console.log(formData, "clinic123")
               </div>
 
               <div className="clinic-button-group">
-                <button type="button" className="clinic-cancel-button" onClick={handleHeaderCancel}>
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handleHeaderCancel}
+                >
                   <X size={16} />
                   Cancel
                 </button>
-                <button type="button" className="clinic-confirm-button" onClick={handleHeaderSubmit} disabled={!headerFile}>
+                <button
+                  type="button"
+                  className="clinic-confirm-button"
+                  onClick={handleHeaderSubmit}
+                  disabled={!headerFile}
+                >
                   Upload
                 </button>
               </div>
@@ -1778,9 +2055,12 @@ console.log(formData, "clinic123")
           <div className="clinic-modal-overlay" onClick={handleLabCancel}>
             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
               <h2 className="clinic-modal-header">
-                {selectedClinicForLab?.labName ? "Edit Lab Details for" : "Add Lab Details for"} {selectedClinicForLab?.clinicName}
+                {selectedClinicForLab?.labName
+                  ? "Edit Lab Details for"
+                  : "Add Lab Details for"}{" "}
+                {selectedClinicForLab?.clinicName}
               </h2>
-               <div className="clinic-form-group">
+              <div className="clinic-form-group">
                 <label className="clinic-form-label">Lab Name</label>
                 <input
                   type="text"
@@ -1794,7 +2074,9 @@ console.log(formData, "clinic123")
 
               <div className="clinic-form-row">
                 <div className="clinic-form-col">
-                  <label className="clinic-form-label">Lab Registration Number</label>
+                  <label className="clinic-form-label">
+                    Lab Registration Number
+                  </label>
                   <input
                     type="text"
                     name="labRegNum"
@@ -1843,7 +2125,9 @@ console.log(formData, "clinic123")
               </div>
 
               <div className="clinic-form-group">
-                <label className="clinic-form-label">Lab Header Image (Optional)</label>
+                <label className="clinic-form-label">
+                  Lab Header Image (Optional)
+                </label>
                 <div className="header-upload-container">
                   {labHeaderPreview ? (
                     <div className="header-preview-container">
@@ -1877,15 +2161,24 @@ console.log(formData, "clinic123")
                   />
                 </div>
                 <p className="header-upload-note">
-                  Note: This image will be used as the header for lab-related documents.
+                  Note: This image will be used as the header for lab-related
+                  documents.
                 </p>
               </div>
               <div className="clinic-button-group">
-                <button type="button" className="clinic-cancel-button" onClick={handleLabCancel}>
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handleLabCancel}
+                >
                   <X size={16} />
                   Cancel
                 </button>
-                <button type="button" className="clinic-confirm-button" onClick={handleLabSubmit}>
+                <button
+                  type="button"
+                  className="clinic-confirm-button"
+                  onClick={handleLabSubmit}
+                >
                   Save Lab Details
                 </button>
               </div>
@@ -1897,7 +2190,10 @@ console.log(formData, "clinic123")
           <div className="clinic-modal-overlay" onClick={handlePharmacyCancel}>
             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
               <h2 className="clinic-modal-header">
-                {selectedClinicForPharmacy?.pharmacyName ? "Edit Pharmacy Details for" : "Add Pharmacy Details for"} {selectedClinicForPharmacy?.clinicName}
+                {selectedClinicForPharmacy?.pharmacyName
+                  ? "Edit Pharmacy Details for"
+                  : "Add Pharmacy Details for"}{" "}
+                {selectedClinicForPharmacy?.clinicName}
               </h2>
               <div className="clinic-form-group">
                 <label className="clinic-form-label">Pharmacy Name</label>
@@ -1913,7 +2209,9 @@ console.log(formData, "clinic123")
 
               <div className="clinic-form-row">
                 <div className="clinic-form-col">
-                  <label className="clinic-form-label">Pharmacy Registration Number</label>
+                  <label className="clinic-form-label">
+                    Pharmacy Registration Number
+                  </label>
                   <input
                     type="text"
                     name="pharmacyRegNum"
@@ -1924,7 +2222,9 @@ console.log(formData, "clinic123")
                   />
                 </div>
                 <div className="clinic-form-col">
-                  <label className="clinic-form-label">Pharmacy GST Number</label>
+                  <label className="clinic-form-label">
+                    Pharmacy GST Number
+                  </label>
                   <input
                     type="text"
                     name="pharmacyGST"
@@ -1962,7 +2262,9 @@ console.log(formData, "clinic123")
               </div>
 
               <div className="clinic-form-group">
-                <label className="clinic-form-label">Pharmacy Header Image (Optional)</label>
+                <label className="clinic-form-label">
+                  Pharmacy Header Image (Optional)
+                </label>
                 <div className="header-upload-container">
                   {pharmacyHeaderPreview ? (
                     <div className="header-preview-container">
@@ -1996,15 +2298,24 @@ console.log(formData, "clinic123")
                   />
                 </div>
                 <p className="header-upload-note">
-                  Note: This image will be used as the header for pharmacy-related documents.
+                  Note: This image will be used as the header for
+                  pharmacy-related documents.
                 </p>
               </div>
               <div className="clinic-button-group">
-                <button type="button" className="clinic-cancel-button" onClick={handlePharmacyCancel}>
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handlePharmacyCancel}
+                >
                   <X size={16} />
                   Cancel
                 </button>
-                <button type="button" className="clinic-confirm-button" onClick={handlePharmacySubmit}>
+                <button
+                  type="button"
+                  className="clinic-confirm-button"
+                  onClick={handlePharmacySubmit}
+                >
                   Save Pharmacy Details
                 </button>
               </div>
@@ -2013,9 +2324,17 @@ console.log(formData, "clinic123")
         )}
 
         {showImagePreviewModal && (
-          <div className="clinic-modal-overlay" onClick={handleCloseImagePreview}>
-            <div className="clinic-modal image-preview-modal" onClick={(e) => e.stopPropagation()}>
-              <h2 className="clinic-modal-header">Header and Signature Preview</h2>
+          <div
+            className="clinic-modal-overlay"
+            onClick={handleCloseImagePreview}
+          >
+            <div
+              className="clinic-modal image-preview-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="clinic-modal-header">
+                Header and Signature Preview
+              </h2>
               <div className="image-preview-container">
                 {selectedHeaderImage && (
                   <div className="image-preview-section">
@@ -2059,7 +2378,11 @@ console.log(formData, "clinic123")
                 )}
               </div>
               <div className="clinic-button-group">
-                <button type="button" className="clinic-cancel-button" onClick={handleCloseImagePreview}>
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handleCloseImagePreview}
+                >
                   <X size={16} />
                   Close
                 </button>
@@ -2069,46 +2392,67 @@ console.log(formData, "clinic123")
         )}
 
         {showPharmacyDetailsModal && pharmacyDetails && (
-          <div className="clinic-modal-overlay" onClick={handleClosePharmacyDetails}>
+          <div
+            className="clinic-modal-overlay"
+            onClick={handleClosePharmacyDetails}
+          >
             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
               <h2 className="clinic-modal-header">Pharmacy Details</h2>
 
               <div className="pharmacy-details-container">
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Pharmacy ID:</span>
-                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyId}</span>
+                  <span className="pharmacy-details-value">
+                    {pharmacyDetails.pharmacyId}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Pharmacy Name:</span>
-                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyName}</span>
+                  <span className="pharmacy-details-value">
+                    {pharmacyDetails.pharmacyName}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
-                  <span className="pharmacy-details-label">Registration Number:</span>
-                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyRegistrationNo}</span>
+                  <span className="pharmacy-details-label">
+                    Registration Number:
+                  </span>
+                  <span className="pharmacy-details-value">
+                    {pharmacyDetails.pharmacyRegistrationNo}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">GST Number:</span>
-                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyGst}</span>
+                  <span className="pharmacy-details-value">
+                    {pharmacyDetails.pharmacyGst}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">PAN Number:</span>
-                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyPan}</span>
+                  <span className="pharmacy-details-value">
+                    {pharmacyDetails.pharmacyPan}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Address:</span>
-                  <span className="pharmacy-details-value">{pharmacyDetails.pharmacyAddress}</span>
+                  <span className="pharmacy-details-value">
+                    {pharmacyDetails.pharmacyAddress}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Updated At:</span>
-                  <span className="pharmacy-details-value">{new Date(pharmacyDetails.updatedAt).toLocaleString()}</span>
+                  <span className="pharmacy-details-value">
+                    {new Date(pharmacyDetails.updatedAt).toLocaleString()}
+                  </span>
                 </div>
-                {pharmacyDetails.pharmacyHeader && (
+                {pharmacyDetails.pharmacyHeaderImage && ( // ← Change this line
                   <div className="pharmacy-details-row">
-                    <span className="pharmacy-details-label">Header Image:</span>
+                    <span className="pharmacy-details-label">
+                      Header Image:
+                    </span>
                     <div className="pharmacy-header-preview">
-                      <img 
-                        src={pharmacyDetails.pharmacyHeader} 
-                        alt="Pharmacy Header" 
+                      <img
+                        src={pharmacyDetails.pharmacyHeaderImage} // ← Change this line
+                        alt="Pharmacy Header"
                         className="pharmacy-header-image"
                       />
                     </div>
@@ -2138,35 +2482,51 @@ console.log(formData, "clinic123")
               <div className="pharmacy-details-container">
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Lab Name:</span>
-                  <span className="pharmacy-details-value">{labDetails.labName}</span>
+                  <span className="pharmacy-details-value">
+                    {labDetails.labName}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
-                  <span className="pharmacy-details-label">Registration Number:</span>
-                  <span className="pharmacy-details-value">{labDetails.labRegistrationNo}</span>
+                  <span className="pharmacy-details-label">
+                    Registration Number:
+                  </span>
+                  <span className="pharmacy-details-value">
+                    {labDetails.labRegistrationNo}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">GST Number:</span>
-                  <span className="pharmacy-details-value">{labDetails.labGst}</span>
+                  <span className="pharmacy-details-value">
+                    {labDetails.labGst}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">PAN Number:</span>
-                  <span className="pharmacy-details-value">{labDetails.labPan}</span>
+                  <span className="pharmacy-details-value">
+                    {labDetails.labPan}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Address:</span>
-                  <span className="pharmacy-details-value">{labDetails.labAddress}</span>
+                  <span className="pharmacy-details-value">
+                    {labDetails.labAddress}
+                  </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Updated At:</span>
-                  <span className="pharmacy-details-value">{new Date(labDetails.updatedAt).toLocaleString()}</span>
+                  <span className="pharmacy-details-value">
+                    {new Date(labDetails.updatedAt).toLocaleString()}
+                  </span>
                 </div>
                 {labDetails.labHeader && (
                   <div className="pharmacy-details-row">
-                    <span className="pharmacy-details-label">Header Image:</span>
+                    <span className="pharmacy-details-label">
+                      Header Image:
+                    </span>
                     <div className="pharmacy-header-preview">
-                      <img 
-                        src={labDetails.labHeader} 
-                        alt="Lab Header" 
+                      <img
+                        src={labDetails.labHeader}
+                        alt="Lab Header"
                         className="pharmacy-header-image"
                       />
                     </div>
@@ -2189,7 +2549,10 @@ console.log(formData, "clinic123")
         )}
 
         {showWarningModal && (
-          <div className="clinic-modal-overlay" onClick={() => setShowWarningModal(false)}>
+          <div
+            className="clinic-modal-overlay"
+            onClick={() => setShowWarningModal(false)}
+          >
             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
               <h2 className="clinic-modal-header">Confirmation</h2>
               <p className="clinic-warning-message">{warningMessage}</p>
@@ -2211,18 +2574,35 @@ console.log(formData, "clinic123")
                   onClick={async () => {
                     try {
                       let bypassResponse;
-                      if (bypassEndpoint === '/users/updateAddress?bypassCheck=true') {
+                      if (
+                        bypassEndpoint ===
+                        "/users/updateAddress?bypassCheck=true"
+                      ) {
                         console.log("1234");
-                        bypassResponse = await apiPut(bypassEndpoint, bypassFormData, {
-                          headers: { "Content-Type": "multipart/form-data" },
-                        });
+                        bypassResponse = await apiPut(
+                          bypassEndpoint,
+                          bypassFormData,
+                          {
+                            headers: { "Content-Type": "multipart/form-data" },
+                          }
+                        );
                       } else {
-                        bypassResponse = await apiPost(bypassEndpoint, bypassFormData, {
-                          headers: { "Content-Type": "multipart/form-data" },
-                        });
+                        bypassResponse = await apiPost(
+                          bypassEndpoint,
+                          bypassFormData,
+                          {
+                            headers: { "Content-Type": "multipart/form-data" },
+                          }
+                        );
                       }
-                      if (bypassResponse.status === 200 || bypassResponse.status === 201) {
-                        toast.success(bypassResponse.data?.message || `Clinic and ${warningEntity} linked successfully`);
+                      if (
+                        bypassResponse.status === 200 ||
+                        bypassResponse.status === 201
+                      ) {
+                        toast.success(
+                          bypassResponse.data?.message ||
+                            `Clinic and ${warningEntity} linked successfully`
+                        );
                         setShowModal(false);
                         setShowLabModal(false);
                         setShowPharmacyModal(false);
@@ -2230,10 +2610,16 @@ console.log(formData, "clinic123")
                         await refreshClinics();
                         resetForm();
                       } else {
-                        toast.warning(bypassResponse.data?.message || `Failed to link ${warningEntity}`);
+                        toast.warning(
+                          bypassResponse.data?.message ||
+                            `Failed to link ${warningEntity}`
+                        );
                       }
                     } catch (err) {
-                      toast.error(err?.response?.data?.message || `Failed to link ${warningEntity}`);
+                      toast.error(
+                        err?.response?.data?.message ||
+                          `Failed to link ${warningEntity}`
+                      );
                     }
                   }}
                 >
@@ -2247,14 +2633,6 @@ console.log(formData, "clinic123")
     </div>
   );
 }
-
-
-
-
-
-
-
-
 
 // import React, { useState, useCallback, useRef, useEffect } from "react";
 // import { Edit, Plus, Search, X, Trash2, Upload, Eye } from "lucide-react";
@@ -2807,7 +3185,7 @@ console.log(formData, "clinic123")
 //         const shouldLink = window.confirm(
 //           err.response.data.message
 //         );
-        
+
 //         if (shouldLink) {
 //           // Retry with bypassCheck=true
 //           const formDataToSend = new FormData();
@@ -2881,7 +3259,7 @@ console.log(formData, "clinic123")
 //         const shouldLink = window.confirm(
 //           err.response.data.message
 //         );
-        
+
 //         if (shouldLink) {
 //           // Retry with bypassCheck=true
 //           const formDataToSend = new FormData();
@@ -4273,7 +4651,7 @@ console.log(formData, "clinic123")
 //           <div className="clinic-modal-overlay" onClick={handleClosePharmacyDetails}>
 //             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
 //               <h2 className="clinic-modal-header">Pharmacy Details</h2>
-              
+
 //               <div className="pharmacy-details-container">
 //                 <div className="pharmacy-details-row">
 //                   <span className="pharmacy-details-label">Pharmacy ID:</span>
@@ -4307,9 +4685,9 @@ console.log(formData, "clinic123")
 //                   <div className="pharmacy-details-row">
 //                     <span className="pharmacy-details-label">Header Image:</span>
 //                     <div className="pharmacy-header-preview">
-//                       <img 
-//                         src={pharmacyDetails.pharmacyHeader} 
-//                         alt="Pharmacy Header" 
+//                       <img
+//                         src={pharmacyDetails.pharmacyHeader}
+//                         alt="Pharmacy Header"
 //                         className="pharmacy-header-image"
 //                       />
 //                     </div>
@@ -4335,7 +4713,7 @@ console.log(formData, "clinic123")
 //           <div className="clinic-modal-overlay" onClick={handleCloseLabDetails}>
 //             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
 //               <h2 className="clinic-modal-header">Lab Details</h2>
-              
+
 //               <div className="pharmacy-details-container">
 //                 <div className="pharmacy-details-row">
 //                   <span className="pharmacy-details-label">Lab Name:</span>
@@ -4365,9 +4743,9 @@ console.log(formData, "clinic123")
 //                   <div className="pharmacy-details-row">
 //                     <span className="pharmacy-details-label">Header Image:</span>
 //                     <div className="pharmacy-header-preview">
-//                       <img 
-//                         src={labDetails.labHeader} 
-//                         alt="Lab Header" 
+//                       <img
+//                         src={labDetails.labHeader}
+//                         alt="Lab Header"
 //                         className="pharmacy-header-image"
 //                       />
 //                     </div>
