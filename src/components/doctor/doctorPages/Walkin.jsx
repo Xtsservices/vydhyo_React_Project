@@ -541,7 +541,6 @@ if (field === "age") {
         discount,
         discountType,
         paymentStatus,
-        appSource:"walkIn"
       };
 
       const { success, message: msg } = await createAppointment(
