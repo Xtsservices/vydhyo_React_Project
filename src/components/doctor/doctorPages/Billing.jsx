@@ -102,6 +102,7 @@ const transformPatientData = (result, user) => {
       gender: patient.gender,
       mobile: patient.mobile || "Not Provided",
       bloodgroup: patient.bloodgroup || "Not Specified",
+      prescriptionId: patient.prescriptionId || "N/A", // Add prescriptionId here
       prescriptionCreatedAt: patient.prescriptionCreatedAt
         ? new Date(patient.prescriptionCreatedAt).toLocaleString("en-US", {
             year: "numeric",
@@ -967,52 +968,56 @@ const BillingSystem = () => {
     fetchPatients(page, pagination.pageSize, searchTerm);
   };
 
-  const handleViewClick = async (patientId) => {
-    const isCurrentlyExpanded = viewModePatientId === patientId;
-    setViewModePatientId(isCurrentlyExpanded ? null : patientId);
+const handleViewClick = async (patientId) => {
+  const isCurrentlyExpanded = viewModePatientId === patientId;
+  setViewModePatientId(isCurrentlyExpanded ? null : patientId);
 
-    if (isCurrentlyExpanded) return; // If collapsing, no need to fetch
+  if (isCurrentlyExpanded) return; // If collapsing, no need to fetch
 
-    const patient = transformedPatients.find((p) => p.id === patientId);
-    if (!patient) {
-      toast.error("Patient not found.");
-      return;
+  const patient = transformedPatients.find((p) => p.id === patientId);
+  if (!patient) {
+    toast.error("Patient not found.");
+    return;
+  }
+
+  try {
+    // Use the prescriptionId from the patient's data
+    const prescriptionId = patient.prescriptionId; // Ensure this field is available in transformedPatients
+    if (!prescriptionId) {
+      throw new Error("Prescription ID not found for this patient.");
     }
 
-    try {
-      // Assuming prescriptionId is fixed as per the API example; adjust if dynamic
-      const prescriptionId = "VYDEPRES391";
-      const response = await apiGet(
-        `/receptionist/fetchDoctorPatientDetails/${doctorId}/${patient.patientId}/${prescriptionId}`,
-        { timeout: 10000 }
+    const response = await apiGet(
+      `/receptionist/fetchDoctorPatientDetails/${doctorId}/${patient.patientId}/${prescriptionId}`,
+      { timeout: 10000 }
+    );
+
+    if (response?.status === 200 && response?.data?.data?.length > 0) {
+      const detailedPatientData = response.data.data[0];
+      console.log("Fetched detailed patient data:", detailedPatientData);
+
+      // Update the patients state by replacing the specific patient's data
+      setPatients((prevPatients) =>
+        prevPatients.map((p) =>
+          p.patientId === patient.patientId ? detailedPatientData : p
+        )
       );
 
-      if (response?.status === 200 && response?.data?.data?.length > 0) {
-        const detailedPatientData = response.data.data[0];
-        console.log("Fetched detailed patient data:", detailedPatientData);
-
-        // Update the patients state by replacing the specific patient's data
-        setPatients((prevPatients) =>
-          prevPatients.map((p) =>
-            p.patientId === patient.patientId ? detailedPatientData : p
-          )
-        );
-
-        // Expand the sections for the patient
-        setExpandedSections((prev) => ({
-          ...prev,
-          [`${patientId}-pharmacy`]: true,
-          [`${patientId}-labs`]: true,
-          [`${patientId}-appointments`]: true,
-        }));
-      } else {
-        throw new Error("No detailed patient data found.");
-      }
-    } catch (err) {
-      console.error("Error fetching detailed patient data:", err);
-      toast.error("Failed to fetch detailed patient data. Please try again.");
+      // Expand the sections for the patient
+      setExpandedSections((prev) => ({
+        ...prev,
+        [`${patientId}-pharmacy`]: true,
+        [`${patientId}-labs`]: true,
+        [`${patientId}-appointments`]: true,
+      }));
+    } else {
+      throw new Error("No detailed patient data found.");
     }
-  };
+  } catch (err) {
+    console.error("Error fetching detailed patient data:", err);
+    toast.error("Failed to fetch detailed patient data. Please try again.");
+  }
+};
 
   if (loading) {
     return (
@@ -1413,7 +1418,7 @@ const BillingSystem = () => {
                           fontSize: "12px",
                         }}
                       >
-                        {viewModePatientId === patient.id ? "Collapse" : "View"}
+                        {viewModePatientId === patient.id ? "view " : "View"}
                       </button>
                     </div>
                   </div>
