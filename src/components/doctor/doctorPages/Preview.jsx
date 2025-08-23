@@ -428,8 +428,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                 <Clock size={16} color="#6c757d" />
                 <span style={{ fontSize: "14px", fontWeight: "500" }}>
                   Time: {formData.doctorInfo?.appointmentStartTime || "Not specified"}
-                  {formData.doctorInfo?.appointmentEndTime && 
-                    ` - ${formData.doctorInfo.appointmentEndTime}`}
+                  
                 </span>
               </div>
             </div>
