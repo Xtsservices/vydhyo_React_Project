@@ -773,15 +773,13 @@ if (isPharmacyDetailsEmptyOrNull) {
             </tr>
           </thead>
           <tbody>
-            ${completedAppointments
+            ${patient?.appointments
               .map(
                 (appt, idx) => `
               <tr>
                 <td>${idx + 1}.</td>
                 <td>Consultation Bill</td>
-                <td class="price-column">${Number(
-                  appt.appointmentFees || 0
-                ).toFixed(2)}</td>
+                <td class="price-column">${total.toFixed(2)}</td>
                 <td>${appt.appointmentType || ""}</td>
               </tr>
             `
