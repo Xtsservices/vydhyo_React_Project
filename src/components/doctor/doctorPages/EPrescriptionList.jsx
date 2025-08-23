@@ -74,6 +74,12 @@ const EPrescriptionList = () => {
       }
     }
 
+    const calculateEndTime = (startTime) => {
+        if (!startTime) return "";
+        const time = moment(startTime, "HH:mm");
+        return time.add(30, 'minutes').format("HH:mm");
+      };
+
     const patientData = {
       appointmentId: appointment.appointmentId,
       patientId: appointment.userId || appointment.appointmentId,
@@ -86,6 +92,8 @@ const EPrescriptionList = () => {
       appointmentReason: appointment.appointmentReason || "N/A",
       addressId: appointment.addressId,
       appointmentTime: appointment.appointmentTime,
+    appointmentDate: appointment.appointmentDate,
+    appointmentEndTime: appointment.appointmentEndTime || calculateEndTime(appointment.appointmentTime),
     };
 
     navigate("/doctor/doctorPages/EPrescription", { state: { patientData } });

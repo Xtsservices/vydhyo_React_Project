@@ -97,32 +97,41 @@ const Appointment = () => {
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
-  const handleEPrescription = (appointment) => {
-    let age = "N/A";
-    const dob = appointment.patientDetails?.dob;
-    if (dob) {
-      const birthDate = moment(dob, ["YYYY-MM-DD", "DD-MM-YYYY", "MM/DD/YYYY"]);
-      if (birthDate.isValid()) {
-        age = moment().diff(birthDate, "years");
-      }
+const handleEPrescription = (appointment) => {
+  let age = "N/A";
+  const dob = appointment.patientDetails?.dob;
+  if (dob) {
+    const birthDate = moment(dob, ["YYYY-MM-DD", "DD-MM-YYYY", "MM/DD/YYYY"]);
+    if (birthDate.isValid()) {
+      age = moment().diff(birthDate, "years");
     }
+  }
 
-    const patientData = {
-      appointmentId: appointment.appointmentId,
-      patientId: appointment.userId || appointment.appointmentId,
-      patientName: appointment.patientName,
-      gender: appointment.patientDetails?.gender || "N/A",
-      age: appointment.patientDetails?.age || age,
-      mobileNumber: appointment.patientDetails?.mobile || "N/A",
-      appointmentDepartment: appointment.appointmentDepartment,
-      appointmentStatus: appointment.appointmentStatus,
-      appointmentReason: appointment.appointmentReason || "N/A",
-      addressId: appointment.addressId,
-      appointmentTime: appointment.appointmentTime,
-    };
-
-    navigate("/doctor/doctorPages/EPrescription", { state: { patientData } });
+  // Move calculateEndTime function outside of handleEPrescription
+  const calculateEndTime = (startTime) => {
+    if (!startTime) return "";
+    const time = moment(startTime, "HH:mm");
+    return time.add(30, 'minutes').format("HH:mm");
   };
+
+  const patientData = {
+    appointmentId: appointment.appointmentId,
+    patientId: appointment.userId || appointment.appointmentId,
+    patientName: appointment.patientName,
+    gender: appointment.patientDetails?.gender || "N/A",
+    age: appointment.patientDetails?.age || age,
+    mobileNumber: appointment.patientDetails?.mobile || "N/A",
+    appointmentDepartment: appointment.appointmentDepartment,
+    appointmentStatus: appointment.appointmentStatus,
+    appointmentReason: appointment.appointmentReason || "N/A",
+    addressId: appointment.addressId,
+    appointmentTime: appointment.appointmentTime,
+    appointmentDate: appointment.appointmentDate,
+    appointmentEndTime: appointment.appointmentEndTime || calculateEndTime(appointment.appointmentTime),
+  };
+
+  navigate("/doctor/doctorPages/EPrescription", { state: { patientData } });
+};
 
   const handleViewPreviousPrescriptions = async (appointment) => {
     try {
@@ -486,17 +495,25 @@ useEffect(() => {
   const renderActionMenu = (record) => (
     <Menu>
       {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
-        <Menu.Item
-          key="e-prescription"
-          onClick={() => handleEPrescription(record)}
-          disabled={
-            record.appointmentStatus === "completed" ||
-            record.appointmentStatus === "cancelled"
-          }
-          icon={<EyeOutlined />}
-        >
-          Digital-Prescription
-        </Menu.Item>
+     <Menu.Item
+  key="e-prescription"
+  onClick={() => handleEPrescription(record)}
+  disabled={
+    record.appointmentStatus === "completed" ||
+    record.appointmentStatus === "cancelled" ||
+    // disable if current time is not within 1 hour before appointment
+    moment().isBefore(
+      moment(
+        `${record.appointmentDate} ${record.appointmentTime}`,
+        "YYYY-MM-DD HH:mm"
+      ).subtract(1, "hours")
+    )
+  }
+  icon={<EyeOutlined />}
+>
+  Digital-Prescription
+</Menu.Item>
+
       )}
 
       <Menu.Item
