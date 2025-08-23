@@ -24,14 +24,14 @@ const calculateAge = (dob) => {
     }
     return age >= 0 ? age : "N/A";
   } catch (err) {
-    console.error("Error calculating age:", err);
+    //console.error("Error calculating age:", err);
     return "N/A";
   }
 };
 
 // Utility function to transform patient data
 const transformPatientData = (result, user) => {
-  console.log(user, result, "complete user details");
+  //console.log(user, result, "complete user details");
   if (!user || !result) return [];
   return result.map((patient, index) => {
     const appointments = Array.isArray(patient.appointments)
@@ -198,10 +198,10 @@ const [loadingPatients, setLoadingPatients] = useState({});
   const [isPaymentInProgress, setIsPaymentInProgress] = useState({});
 
   const transformedPatients = useMemo(() => {
-    console.log("Computing transformedPatients", { patients, user });
+    //console.log("Computing transformedPatients", { patients, user });
     return transformPatientData(patients, user);
   }, [patients, user]);
-  console.log("Transformed patients:", transformedPatients);
+  //console.log("Transformed patients:", transformedPatients);
 
   const debouncedFetchPatients = useRef(
     debounce((page, pageSize, search) => {
@@ -211,7 +211,7 @@ const [loadingPatients, setLoadingPatients] = useState({});
 
   const fetchPatients = async (page = 1, pageSize = 5, search = "") => {
     if (!user || !doctorId) {
-      console.log("User or doctorId not available:", { user, doctorId });
+      //console.log("User or doctorId not available:", { user, doctorId });
       setError("User or doctor ID not available");
       setLoading(false);
       return;
@@ -237,7 +237,7 @@ const [loadingPatients, setLoadingPatients] = useState({});
       );
 
       if (response?.status === 200 && response?.data?.data) {
-        console.log("Fetched patients:", response.data.data);
+        //console.log("Fetched patients:", response.data.data);
         setPatients(response.data.data);
         setPagination({
           current: page,
@@ -250,7 +250,7 @@ const [loadingPatients, setLoadingPatients] = useState({});
         throw new Error("API response unsuccessful");
       }
     } catch (err) {
-      console.error("Error fetching patients:", err);
+      //console.error("Error fetching patients:", err);
       if (retryCount < maxRetries) {
         setRetryCount(retryCount + 1);
         setTimeout(() => fetchPatients(page, pageSize, search), 2000);
@@ -413,7 +413,7 @@ const [loadingPatients, setLoadingPatients] = useState({});
         throw new Error("Failed to process payment");
       }
     } catch (err) {
-      console.error("Error processing payment:", err);
+      //console.error("Error processing payment:", err);
       toast.error("Failed to process payment. Please try again.");
     } finally {
       setIsPaymentInProgress((prev) => ({
@@ -455,7 +455,7 @@ const [loadingPatients, setLoadingPatients] = useState({});
         });
       }
     } catch (err) {
-      console.error("Error fetching patients:", err);
+      //console.error("Error fetching patients:", err);
     }
   };
 
@@ -471,9 +471,9 @@ const [loadingPatients, setLoadingPatients] = useState({});
   };
 
   const handlePrintInvoice = (type, patientId) => {
-    console.log("Printing invoice for:", patients, patientId);
+    //console.log("Printing invoice for:", patients, patientId);
     const patient = patients.find((p) => p.patientId === patientId);
-    console.log("Found patient:", patient);
+    //console.log("Found patient:", patient);
     if (!patient) return;
 
     const isCompleted = (s) => {
@@ -484,7 +484,7 @@ const [loadingPatients, setLoadingPatients] = useState({});
     let itemDate = "N/A";
 
     if (type === "pharmacy") {
-      console.log("123")
+      //console.log("123")
       // In the pharmacy section of handlePrintInvoice:
 const completedMedicines = (patient.medicines || []).filter((m) =>
   isCompleted(m.status)
@@ -504,7 +504,7 @@ if (completedMedicines.length > 0) {
     : "N/A";
 }
     } else if (type === "labs") {
-      console.log("1234")
+      //console.log("1234")
       const completedTests = (patient.tests || []).filter((t) =>
         isCompleted(t.status)
       );
@@ -527,7 +527,7 @@ if (completedMedicines.length > 0) {
 
       if (completedAppointments.length > 0) {
         const firstAppt = patient?.appointments[0];
-        console.log("First Appointment:", firstAppt);
+        //console.log("First Appointment:", firstAppt);
         itemDate = firstAppt.feeDetails.paidAt
           ? new Date(firstAppt.feeDetails.paidAt).toLocaleString("en-US", {
               month: "short",
@@ -541,11 +541,11 @@ if (completedMedicines.length > 0) {
       }
     }
 
-    console.log("mmmmmmmm", itemDate);
+    //console.log("mmmmmmmm", itemDate);
 
     const appts = patient.appointmentDetails || patient.appointments || [];
     const completedAppointments = appts.filter((a) => isCompleted(a?.status));
-    console.log("Completed appointments:", completedAppointments);
+    //console.log("Completed appointments:", completedAppointments);
     const firstAppt = completedAppointments[0] || appts[0] || {};
 
     let headerUrl = "";
@@ -558,17 +558,17 @@ if (completedMedicines.length > 0) {
     const invoiceNumber = `INV-${patientNumber.padStart(3, "0")}`;
 
     if (type === "pharmacy") {
-      console.log("123456")
+      //console.log("123456")
       const completedMedicines = (patient.medicines || []).filter((m) =>
         isCompleted(m.status)
       );
-      console.log("completed medicines:", patient);
+      //console.log("completed medicines:", patient);
       const pharmacyDetails =
         patient?.pharmacyDetails ||
         patient.medicines?.[0]?.pharmacyDetails ||
         {};
 
-        console.log("pharmacy details:", pharmacyDetails);
+        //console.log("pharmacy details:", pharmacyDetails);
 
       const isPharmacyDetailsEmptyOrNull =
   !pharmacyDetails ||
@@ -714,7 +714,7 @@ if (isPharmacyDetailsEmptyOrNull) {
       const appts = patient.appointmentDetails || patient.appointments || [];
       const completedAppointments = appts.filter((a) => isCompleted(a?.status));
       const firstAppt = completedAppointments[0] || appts[0] || {};
-      console.log("Found appointment:", firstAppt);
+      //console.log("Found appointment:", firstAppt);
       const addr =
         (user?.addresses || []).find(
           (a) => a.addressId === firstAppt.addressId
@@ -736,7 +736,7 @@ if (isPharmacyDetailsEmptyOrNull) {
 
       headerUrl = addr.headerImage || "";
       providerName = firstAppt.clinicName || addr.clinicName || "N/A";
-      console.log("Found provider:", providerName);
+      //console.log("Found provider:", providerName);
       contactInfoHTML = `
       <div class="provider-name">Name: ${providerName}</div>
       <p>${addr.address || "N/A"}</p>
@@ -745,7 +745,7 @@ if (isPharmacyDetailsEmptyOrNull) {
       }</p>
       <p>Phone: ${addr.mobile || "N/A"}</p>
     `;
-    console.log(firstAppt?.feeDetails?.finalAmount, "fee details");
+    //console.log(firstAppt?.feeDetails?.finalAmount, "fee details");
     total = firstAppt?.feeDetails?.finalAmount || 0;
 
       // total = firstAppt.reduce(
@@ -758,7 +758,7 @@ if (isPharmacyDetailsEmptyOrNull) {
       //   return;
       // }
 
-      console.log("Total amount:", total);
+      //console.log("Total amount:", total);
 
       sectionHTML = `
       <div class="section compact-spacing">
@@ -805,7 +805,7 @@ if (isPharmacyDetailsEmptyOrNull) {
     `
       : "";
 
-      console.log("pharmacy")
+      //console.log("pharmacy")
 
     const printHTML = `
     <!DOCTYPE html>
@@ -958,7 +958,7 @@ if (isPharmacyDetailsEmptyOrNull) {
         setTimeout(() => cleanup(), 8000);
       } catch (e) {
         cleanup();
-        console.error("Print error:", e);
+        //console.error("Print error:", e);
         toast?.error?.("Failed to open print preview.");
       }
     };
@@ -1004,7 +1004,7 @@ const handleViewClick = async (patientId) => {
 
     if (response?.status === 200 && response?.data?.data?.length > 0) {
       const detailedPatientData = response.data.data[0];
-      console.log("Fetched detailed patient data:", detailedPatientData);
+      //console.log("Fetched detailed patient data:", detailedPatientData);
 
       // Update the patients state by replacing the specific patient's data
       setPatients((prevPatients) =>
@@ -1024,8 +1024,8 @@ const handleViewClick = async (patientId) => {
       throw new Error("No detailed patient data found.");
     }
   } catch (err) {
-    console.error("Error fetching detailed patient data:", err);
-    toast.error("Failed to fetch detailed patient data. Please try again.");
+    //console.error("Error fetching detailed patient data:", err);
+    // toast.error("Failed to fetch detailed patient data. Please try again.");
   }
 };
 
