@@ -51,60 +51,65 @@ const StaffModal = ({
   const [form] = Form.useForm();
   const [selectedRole, setSelectedRole] = useState(initialData?.role || initialData?.type || null); // Track selected role
 
-  useEffect(() => {
-    if (modalMode === "edit" && initialData) {
-      form.setFieldsValue({
-        firstName: initialData.name?.split(" ")[0] || "",
-        lastName: initialData.name?.split(" ")[1] || "",
-        DOB: initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY") : null,
-        gender: initialData.gender,
-        mobile: initialData.phone,
-        email: initialData.email,
-        role: initialData.type,
-        access: initialData.access || [],
-      });
-      setSelectedRole(initialData.type); // Set role for edit mode
-    } else if (modalMode === "add" && initialData) {
-      form.setFieldsValue({
-        firstName: initialData.firstname || "",
-        lastName: initialData.lastname || "",
-        DOB: initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY") : null,
-        gender: initialData.gender,
-        mobile: initialData.mobile,
-        email: initialData.email,
-        role: initialData.role,
-        access: initialData.access || [],
-      });
-     setSelectedRole(initialData.role);
-    } else {
-      form.resetFields();
-      setSelectedRole(null);
-    }
-  }, [modalMode, initialData, form]);
+useEffect(() => {
+  if (modalMode === "edit" && initialData) {
+    // Format DOB for input type="date" (YYYY-MM-DD)
+    const dob = initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY").format("YYYY-MM-DD") : "";
+    
+    form.setFieldsValue({
+      firstName: initialData.name?.split(" ")[0] || "",
+      lastName: initialData.name?.split(" ")[1] || "",
+      DOB: dob,
+      gender: initialData.gender,
+      mobile: initialData.phone,
+      email: initialData.email,
+      role: initialData.type,
+      access: initialData.access || [],
+    });
+    setSelectedRole(initialData.type);
+  } else if (modalMode === "add" && initialData) {
+    // Format DOB for input type="date" (YYYY-MM-DD)
+    const dob = initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY").format("YYYY-MM-DD") : "";
+    
+    form.setFieldsValue({
+      firstName: initialData.firstname || "",
+      lastName: initialData.lastname || "",
+      DOB: dob,
+      gender: initialData.gender,
+      mobile: initialData.mobile,
+      email: initialData.email,
+      role: initialData.role,
+      access: initialData.access || [],
+    });
+    setSelectedRole(initialData.role);
+  } else {
+    form.resetFields();
+    setSelectedRole(null);
+  }
+}, [modalMode, initialData, form]);
 
-  const handleOk = async () => {
-    try {
-      const values = await form.validateFields();
-      const staffData = {
-        firstname: values.firstName,
-        lastname: values.lastName,
-        DOB: dayjs(values.DOB).format("DD-MM-YYYY") || "",
-        gender: values.gender,
-        mobile: values.mobile,
-        email: values.email,
-        role: values.role,
-        access: values.access,
-      };
-      await onSubmit(staffData, modalMode, form);
-    } catch (error) {
-      console.error("Validation failed:", error);
-      notification.error({
-        message: "Validation Error",
-        description: "Please check all required fields.",
-        duration: 3,
-      });
-    }
-  };
+const handleOk = async () => {
+  try {
+    const values = await form.validateFields();
+    const staffData = {
+      firstname: values.firstName,
+      lastname: values.lastName,
+      DOB: dayjs(values.DOB).format("DD-MM-YYYY") || "", // Format as DD-MM-YYYY for backend
+      gender: values.gender,
+      mobile: values.mobile,
+      email: values.email,
+      role: values.role,
+      access: values.access,
+    };
+    await onSubmit(staffData, modalMode, form);
+  } catch (error) {
+    notification.error({
+      message: "Validation Error",
+      description: "Please check all required fields.",
+      duration: 3,
+    });
+  }
+};
 
   const accessOptions = [
     { value: "my-patients", label: "My Patients" },
@@ -211,37 +216,26 @@ const StaffModal = ({
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                label="Date of Birth"
-                name="DOB"
-                // rules={[{ required: true, message: "Please select DOB" }]}
-              >
-                <input
-                  type="date"
-                  style={{
-                    alignSelf: "flex-end",
-                    borderRadius: "12px",
-                    background: "#F6F6F6",
-                    padding: "0.4rem",
-                    color: "#1977f3",
-                    width: "100%",
-                    border: "1px solid #d9d9d9",
-                  }}
-                  max={new Date().toISOString().split("T")[0]} // Prevent future dates
-                  value={
-                    form.getFieldValue("DOB")
-                      ? dayjs(form.getFieldValue("DOB")).format("YYYY-MM-DD")
-                      : ""
-                  }
-                  onChange={(e) =>
-                    form.setFieldsValue({
-                      DOB: e.target.value 
-                        ? dayjs(e.target.value, "YYYY-MM-DD").format("DD-MM-YYYY")
-                        : null
-                    })
-                  }
-                />
-              </Form.Item>
+<Form.Item
+  label="Date of Birth"
+  name="DOB"
+  rules={[{ required: true, message: 'Please select DOB' }]}
+>
+  <input
+    type="date"
+    style={{
+      alignSelf: 'flex-end',
+      borderRadius: '12px',
+      background: '#F6F6F6',
+      padding: '0.4rem',
+      color: '#1977f3',
+      width: '100%',
+      border: '1px solid #d9d9d9',
+    }}
+    max={new Date().toISOString().split('T')[0]} // disables future dates
+  />
+</Form.Item>
+
             </Col>
             <Col span={12}>
               <Form.Item
