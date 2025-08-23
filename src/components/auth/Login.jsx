@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { useNavigate } from "react-router-dom";
-import { message } from "antd";
+import { message ,Spin } from "antd";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Illustration from "./Illustration";
@@ -13,6 +13,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 const Login = () => {
   const user = useSelector((state) => state.currentUserData);
+const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
 
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
@@ -23,6 +25,7 @@ const Login = () => {
   const [otp, setOtp] = useState("");
   const [userId, setUserId] = useState("");
   const [currentUserType, setCurrentUserType] = useState("");
+  
   const dispatch = useDispatch();
   useEffect(() => {
     message.config({
@@ -246,17 +249,36 @@ const getToken = () => localStorage.getItem("accessToken");
     }
   };
 
-
-
   useEffect(() => {
-    if(!getToken()) {
-navigate("/login");
+  const checkAuth = async () => {
+    if (!getToken()) {
+      setIsCheckingAuth(false); // no token → show login form
+      navigate("/login");
+    } else {
+      try {
+        await getCurrentUserData(); // fetch user details
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        localStorage.clear();
+        setIsCheckingAuth(false); // fallback → show login form
+      }
     }
+  };
+
+  checkAuth();
+}, [user]);
+
+
+
+//   useEffect(() => {
+//     if(!getToken()) {
+// navigate("/login");
+//     }
     
-    else if (getToken()) {
-      getCurrentUserData();
-    }
-  }, [user]);
+//     else if (getToken()) {
+//       getCurrentUserData();
+//     }
+//   }, [user]);
 
   const getDoctorDa = async () => {
     try {
@@ -282,6 +304,23 @@ if(user){
   getDoctorDa()
 }
   },[user])
+
+  if (isCheckingAuth) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontSize: "1.2rem",
+      }}
+    >
+      <Spin size="large" />
+    </div>
+  );
+}
+
   return (
     <div
       className="login-container"
