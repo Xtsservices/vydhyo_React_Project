@@ -24,14 +24,14 @@ const calculateAge = (dob) => {
     }
     return age >= 0 ? age : "N/A";
   } catch (err) {
-    console.error("Error calculating age:", err);
+    //console.error("Error calculating age:", err);
     return "N/A";
   }
 };
 
 // Utility function to transform patient data
 const transformPatientData = (result, user) => {
-  console.log(user, result, "complete user details");
+  //console.log(user, result, "complete user details");
   if (!user || !result) return [];
   return result.map((patient, index) => {
     const appointments = Array.isArray(patient.appointments)
@@ -40,44 +40,41 @@ const transformPatientData = (result, user) => {
     const tests = Array.isArray(patient.tests) ? patient.tests : [];
     const medicines = Array.isArray(patient.medicines) ? patient.medicines : [];
 
-    const appointmentDetails = appointments.map((appointment, idx) => ({
-      id: `A${index}${idx}`,
-      appointmentId: appointment.appointmentId,
-      appointmentType: appointment.appointmentType,
-      appointmentFees: appointment?.feeDetails?.finalAmount || 0,
-      addressId: appointment.addressId,
-      updatedAt: appointment.createdAt
-        ? new Date(appointment.createdAt).toLocaleString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : "N/A",
-      clinicName: appointment.addressId
-        ? user?.addresses?.find(
-            (addr) => addr.addressId === appointment.addressId
-          )?.clinicName || "N/A"
-        : "N/A",
-      appointmentDate: appointment.appointmentDate
-        ? new Date(appointment.appointmentDate).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })
-        : "N/A",
-      appointmentTime: appointment.appointmentTime || "N/A",
-      status: appointment.appointmentStatus
-        ? appointment.appointmentStatus.charAt(0).toUpperCase() +
-          appointment.appointmentStatus.slice(1)
-        : "Completed",
-      clinicHeaderUrl: appointment.addressId
-        ? user?.addresses?.find(
-            (addr) => addr.addressId === appointment.addressId
-          )?.headerImage || "N/A"
-        : "N/A",
-    }));
+const appointmentDetails = appointments.map((appointment, idx) => ({
+  id: `A${index}${idx}`,
+  appointmentId: appointment.appointmentId,
+  appointmentType: appointment.appointmentType,
+  appointmentFees: appointment?.feeDetails?.finalAmount || 0,
+  addressId: appointment.addressId,
+  updatedAt: appointment.createdAt
+    ? new Date(appointment.createdAt).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "N/A",
+  clinicName: appointment.addressId
+    ? user?.addresses?.find(
+        (addr) => addr.addressId === appointment.addressId
+      )?.clinicName || "N/A"
+    : "N/A",
+  appointmentDate: appointment.appointmentDate
+    ? new Date(appointment.appointmentDate).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "N/A",
+  appointmentTime: appointment.appointmentTime || "N/A",
+  status: "Completed", // Set status to "Completed" by default
+  clinicHeaderUrl: appointment.addressId
+    ? user?.addresses?.find(
+        (addr) => addr.addressId === appointment.addressId
+      )?.headerImage || "N/A"
+    : "N/A",
+}));
 
     const totalTestAmount = tests.reduce(
       (sum, test) => sum + (test?.price || 0),
@@ -113,37 +110,35 @@ const transformPatientData = (result, user) => {
           })
         : "N/A",
       appointmentDetails,
-      tests: tests.map((test, idx) => ({
-        id: `T${index}${idx}`,
-        testId: test.testId,
-        labTestID: test.labTestID,
-        name: test.testName,
-        price: test?.price || 0,
-        status:
-          test.status?.charAt(0).toUpperCase() + test.status?.slice(1) ||
-          "Unknown",
-        createdAt: test.createdAt,
-        updatedAt: test.updatedAt,
-        createdDate: test.createdAt
-          ? new Date(test.createdAt).toLocaleString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "N/A",
-        updatedDate: test.updatedAt
-          ? new Date(test.updatedAt).toLocaleString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "N/A",
-        labDetails: test.labDetails || {},
-      })),
+tests: tests.map((test, idx) => ({
+  id: `T${index}${idx}`,
+  testId: test.testId,
+  labTestID: test.labTestID,
+  name: test.testName,
+  price: test?.price || 0,
+  status: test.status?.charAt(0).toUpperCase() + test.status?.slice(1) || "Unknown",
+  createdAt: test.createdAt,
+  updatedAt: test.updatedAt,
+  createdDate: test.createdAt
+    ? new Date(test.createdAt).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "N/A",
+  updatedDate: test.updatedAt
+    ? new Date(test.updatedAt).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "N/A",
+  labDetails: patient.labDetails || {}, // Use patient.labDetails instead of test.labDetails
+})),
       medicines: medicines.map((med, idx) => ({
         id: `M${index}${idx}`,
         medicineId: med.medicineId,
@@ -153,7 +148,7 @@ const transformPatientData = (result, user) => {
         price: med.price || 0,
         gst: med.gst || 0,
         cgst: med.cgst || 0,
-        updatedDate: med.updatedAt || "N/A",
+updatedAt: med.updatedAt || "N/A",
         status:
           med.status?.charAt(0).toUpperCase() + med.status?.slice(1) ||
           "Unknown",
@@ -196,16 +191,17 @@ const BillingSystem = () => {
     totalItems: 0,
   });
   const [viewModePatientId, setViewModePatientId] = useState(null);
+const [loadingPatients, setLoadingPatients] = useState({});
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [isPaymentInProgress, setIsPaymentInProgress] = useState({});
 
   const transformedPatients = useMemo(() => {
-    console.log("Computing transformedPatients", { patients, user });
+    //console.log("Computing transformedPatients", { patients, user });
     return transformPatientData(patients, user);
   }, [patients, user]);
-  console.log("Transformed patients:", transformedPatients);
+  //console.log("Transformed patients:", transformedPatients);
 
   const debouncedFetchPatients = useRef(
     debounce((page, pageSize, search) => {
@@ -215,7 +211,7 @@ const BillingSystem = () => {
 
   const fetchPatients = async (page = 1, pageSize = 5, search = "") => {
     if (!user || !doctorId) {
-      console.log("User or doctorId not available:", { user, doctorId });
+      //console.log("User or doctorId not available:", { user, doctorId });
       setError("User or doctor ID not available");
       setLoading(false);
       return;
@@ -237,11 +233,11 @@ const BillingSystem = () => {
 
       const response = await apiGet(
         `/receptionist/fetchMyDoctorPatients/${doctorId}?${queryParams.toString()}`,
-        { timeout: 10000 }
+      
       );
 
       if (response?.status === 200 && response?.data?.data) {
-        console.log("Fetched patients:", response.data.data);
+        //console.log("Fetched patients:", response.data.data);
         setPatients(response.data.data);
         setPagination({
           current: page,
@@ -254,7 +250,7 @@ const BillingSystem = () => {
         throw new Error("API response unsuccessful");
       }
     } catch (err) {
-      console.error("Error fetching patients:", err);
+      //console.error("Error fetching patients:", err);
       if (retryCount < maxRetries) {
         setRetryCount(retryCount + 1);
         setTimeout(() => fetchPatients(page, pageSize, search), 2000);
@@ -417,7 +413,7 @@ const BillingSystem = () => {
         throw new Error("Failed to process payment");
       }
     } catch (err) {
-      console.error("Error processing payment:", err);
+      //console.error("Error processing payment:", err);
       toast.error("Failed to process payment. Please try again.");
     } finally {
       setIsPaymentInProgress((prev) => ({
@@ -447,7 +443,6 @@ const BillingSystem = () => {
 
       const response = await apiGet(
         `/receptionist/fetchMyDoctorPatients/${doctorId}?${queryParams.toString()}`,
-        { timeout: 10000 }
       );
 
       if (response?.status === 200 && response?.data?.data) {
@@ -460,7 +455,7 @@ const BillingSystem = () => {
         });
       }
     } catch (err) {
-      console.error("Error fetching patients:", err);
+      //console.error("Error fetching patients:", err);
     }
   };
 
@@ -476,58 +471,65 @@ const BillingSystem = () => {
   };
 
   const handlePrintInvoice = (type, patientId) => {
-    const patient = transformedPatients.find((p) => p.id === patientId);
+    //console.log("Printing invoice for:", patients, patientId);
+    const patient = patients.find((p) => p.patientId === patientId);
+    //console.log("Found patient:", patient);
     if (!patient) return;
 
     const isCompleted = (s) => {
-      const v = String(s || "").toLowerCase();
-      return v === "completed" || v === "complete" || v === "paid";
-    };
+  const v = String(s || "").toLowerCase();
+  return v === "completed" || v === "complete" || v === "paid";
+};
 
     let itemDate = "N/A";
 
     if (type === "pharmacy") {
-      const completedMedicines = (patient.medicines || []).filter((m) =>
-        isCompleted(m.status)
-      );
-      if (completedMedicines.length > 0) {
-        const firstMed = completedMedicines[0];
-        itemDate = firstMed.updatedDate
-          ? new Date(firstMed.updatedDate).toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            })
-          : "N/A";
-      }
+      //console.log("123")
+      // In the pharmacy section of handlePrintInvoice:
+const completedMedicines = (patient.medicines || []).filter((m) =>
+  isCompleted(m.status)
+);
+if (completedMedicines.length > 0) {
+  const firstMed = completedMedicines[0];
+  // Use updatedAt instead of updatedDate
+  itemDate = firstMed.updatedAt
+    ? new Date(firstMed.updatedAt).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+    : "N/A";
+}
     } else if (type === "labs") {
+      //console.log("1234")
       const completedTests = (patient.tests || []).filter((t) =>
         isCompleted(t.status)
       );
       if (completedTests.length > 0) {
         const firstTest = completedTests[0];
         itemDate = firstTest.updatedAt
-          ? new Date(firstTest.updatedAt).toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            })
-          : "N/A";
+  ? new Date(firstTest.updatedAt).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+  : "N/A";
       }
     } else if (type === "appointments") {
-      const completedAppointments = (patient.appointmentDetails || []).filter(
-        (a) => isCompleted(a?.status)
-      );
+      const completedAppointments = (patient.appointments || [])
+      
+
       if (completedAppointments.length > 0) {
-        const firstAppt = completedAppointments[0];
-        itemDate = firstAppt.updatedAt
-          ? new Date(firstAppt.updatedAt).toLocaleString("en-US", {
+        const firstAppt = patient?.appointments[0];
+        //console.log("First Appointment:", firstAppt);
+        itemDate = firstAppt.feeDetails.paidAt
+          ? new Date(firstAppt.feeDetails.paidAt).toLocaleString("en-US", {
               month: "short",
               day: "numeric",
               year: "numeric",
@@ -539,10 +541,11 @@ const BillingSystem = () => {
       }
     }
 
-    console.log("mmmmmmmm", itemDate);
+    //console.log("mmmmmmmm", itemDate);
 
     const appts = patient.appointmentDetails || patient.appointments || [];
     const completedAppointments = appts.filter((a) => isCompleted(a?.status));
+    //console.log("Completed appointments:", completedAppointments);
     const firstAppt = completedAppointments[0] || appts[0] || {};
 
     let headerUrl = "";
@@ -555,25 +558,27 @@ const BillingSystem = () => {
     const invoiceNumber = `INV-${patientNumber.padStart(3, "0")}`;
 
     if (type === "pharmacy") {
+      //console.log("123456")
       const completedMedicines = (patient.medicines || []).filter((m) =>
         isCompleted(m.status)
       );
+      //console.log("completed medicines:", patient);
       const pharmacyDetails =
-        completedMedicines[0]?.pharmacyDetails ||
+        patient?.pharmacyDetails ||
         patient.medicines?.[0]?.pharmacyDetails ||
         {};
 
-      const isPharmacyDetailsEmptyOrNull =
-        !pharmacyDetails ||
-        Object.keys(pharmacyDetails).length === 0 ||
-        Object.values(pharmacyDetails).every(
-          (value) => value === null || value === undefined
-        );
+        //console.log("pharmacy details:", pharmacyDetails);
 
-      if (isPharmacyDetailsEmptyOrNull) {
-        toast?.error?.("Please fill the pharmacy details to generate a bill.");
-        return;
-      }
+      const isPharmacyDetailsEmptyOrNull =
+  !pharmacyDetails ||
+  Object.keys(pharmacyDetails).length === 0 ||
+  (!pharmacyDetails.pharmacyName && !pharmacyDetails.pharmacyAddress); // Relaxed condition
+
+if (isPharmacyDetailsEmptyOrNull) {
+  toast?.error?.("Please fill the pharmacy details (name or address) to generate a bill.");
+  return;
+}
 
       headerUrl = pharmacyDetails.pharmacyHeaderUrl || "";
       providerName = pharmacyDetails.pharmacyName || "N/A";
@@ -635,34 +640,33 @@ const BillingSystem = () => {
         </div>
       </div>
     `;
-    } else if (type === "labs") {
-      const completedTests = (patient.tests || []).filter((t) =>
-        isCompleted(t.status)
-      );
-      const labDetails =
-        completedTests[0]?.labDetails || patient.tests?.[0]?.labDetails || {};
+   } else if (type === "labs") {
+  const completedTests = (patient.tests || []).filter((t) =>
+    isCompleted(t.status)
+  );
+  const labDetails = patient.labDetails || {}; // Use patient.labDetails directly
 
-      const isLabDetailsEmptyOrNull =
-        !labDetails ||
-        Object.keys(labDetails).length === 0 ||
-        Object.values(labDetails).every(
-          (value) => value === null || value === undefined
-        );
+  const isLabDetailsEmptyOrNull =
+    !labDetails ||
+    Object.keys(labDetails).length === 0 ||
+    Object.values(labDetails).every(
+      (value) => value === null || value === undefined
+    );
 
-      if (isLabDetailsEmptyOrNull) {
-        toast?.error?.("Please fill the lab details to generate a bill.");
-        return;
-      }
+  if (isLabDetailsEmptyOrNull) {
+    toast?.error?.("Please fill the lab details to generate a bill.");
+    return;
+  }
 
-      headerUrl = labDetails.labHeaderUrl || "";
-      providerName = labDetails.labName || "N/A";
-      contactInfoHTML = `
-      <div class="provider-name">${providerName}</div>
-      <p>${labDetails.labAddress || "N/A"}</p>
-      <p>GST: ${labDetails.labGst || "N/A"}</p>
-      <p>PAN: ${labDetails.labPan || "N/A"}</p>
-      <p>Registration No: ${labDetails.labRegistrationNo || "N/A"}</p>
-    `;
+  headerUrl = labDetails.labHeaderUrl || "";
+  providerName = labDetails.labName || "N/A";
+  contactInfoHTML = `
+    <div class="provider-name">${providerName}</div>
+    <p>${labDetails.labAddress || "N/A"}</p>
+    <p>GST: ${labDetails.labGst || "N/A"}</p>
+    <p>PAN: ${labDetails.labPan || "N/A"}</p>
+    <p>Registration No: ${labDetails.labRegistrationNo || "N/A"}</p>
+  `;
 
       total = completedTests.reduce(
         (sum, test) => sum + (Number(test.price) || 0),
@@ -710,6 +714,7 @@ const BillingSystem = () => {
       const appts = patient.appointmentDetails || patient.appointments || [];
       const completedAppointments = appts.filter((a) => isCompleted(a?.status));
       const firstAppt = completedAppointments[0] || appts[0] || {};
+      //console.log("Found appointment:", firstAppt);
       const addr =
         (user?.addresses || []).find(
           (a) => a.addressId === firstAppt.addressId
@@ -731,6 +736,7 @@ const BillingSystem = () => {
 
       headerUrl = addr.headerImage || "";
       providerName = firstAppt.clinicName || addr.clinicName || "N/A";
+      //console.log("Found provider:", providerName);
       contactInfoHTML = `
       <div class="provider-name">Name: ${providerName}</div>
       <p>${addr.address || "N/A"}</p>
@@ -739,16 +745,20 @@ const BillingSystem = () => {
       }</p>
       <p>Phone: ${addr.mobile || "N/A"}</p>
     `;
+    //console.log(firstAppt?.feeDetails?.finalAmount, "fee details");
+    total = firstAppt?.feeDetails?.finalAmount || 0;
 
-      total = completedAppointments.reduce(
-        (sum, a) => sum + (Number(a.appointmentFees) || 0),
-        0
-      );
+      // total = firstAppt.reduce(
+      //   (sum, a) => sum + (Number(a.appointmentFees) || 0),
+      //   0
+      // );
 
-      if (!completedAppointments.length) {
-        toast?.error?.("No completed appointments to print.");
-        return;
-      }
+      // if (!completedAppointments.length) {
+      //   toast?.error?.("No completed appointments to print.");
+      //   return;
+      // }
+
+      //console.log("Total amount:", total);
 
       sectionHTML = `
       <div class="section compact-spacing">
@@ -763,15 +773,13 @@ const BillingSystem = () => {
             </tr>
           </thead>
           <tbody>
-            ${completedAppointments
+            ${patient?.appointments
               .map(
                 (appt, idx) => `
               <tr>
                 <td>${idx + 1}.</td>
                 <td>Consultation Bill</td>
-                <td class="price-column">${Number(
-                  appt.appointmentFees || 0
-                ).toFixed(2)}</td>
+                <td class="price-column">${total.toFixed(2)}</td>
                 <td>${appt.appointmentType || ""}</td>
               </tr>
             `
@@ -796,6 +804,8 @@ const BillingSystem = () => {
       </div>
     `
       : "";
+
+      //console.log("pharmacy")
 
     const printHTML = `
     <!DOCTYPE html>
@@ -948,7 +958,7 @@ const BillingSystem = () => {
         setTimeout(() => cleanup(), 8000);
       } catch (e) {
         cleanup();
-        console.error("Print error:", e);
+        //console.error("Print error:", e);
         toast?.error?.("Failed to open print preview.");
       }
     };
@@ -994,7 +1004,7 @@ const handleViewClick = async (patientId) => {
 
     if (response?.status === 200 && response?.data?.data?.length > 0) {
       const detailedPatientData = response.data.data[0];
-      console.log("Fetched detailed patient data:", detailedPatientData);
+      //console.log("Fetched detailed patient data:", detailedPatientData);
 
       // Update the patients state by replacing the specific patient's data
       setPatients((prevPatients) =>
@@ -1014,8 +1024,8 @@ const handleViewClick = async (patientId) => {
       throw new Error("No detailed patient data found.");
     }
   } catch (err) {
-    console.error("Error fetching detailed patient data:", err);
-    toast.error("Failed to fetch detailed patient data. Please try again.");
+    //console.error("Error fetching detailed patient data:", err);
+    // toast.error("Failed to fetch detailed patient data. Please try again.");
   }
 };
 
@@ -1310,21 +1320,7 @@ const handleViewClick = async (patientId) => {
             const grandTotal =
               totals.medicineTotal + totals.testTotal + totals.appointmentTotal;
             const isViewMode = viewModePatientId === patient.id;
-
-            const appointmentCompletedAliases = [
-              "complete",
-              "completed",
-              "paid",
-            ];
-            const hasCompletedAppointment = (
-              patient.appointmentDetails || []
-            ).some((a) =>
-              appointmentCompletedAliases.includes(
-                String(a.status || "").toLowerCase()
-              )
-            );
-            const appointmentPrintDisabled = !hasCompletedAppointment;
-
+const appointmentPrintDisabled = patient.appointmentDetails.length === 0;
             return (
               <div
                 key={patient.id}
@@ -1420,7 +1416,7 @@ const handleViewClick = async (patientId) => {
                         }}
                       >
 
-                        {viewModePatientId === patient.id ? "Collapse" : "View"}
+                        {viewModePatientId === patient.id ? "view " : "View "}
 
                       </button>
                     </div>
@@ -1500,19 +1496,13 @@ const handleViewClick = async (patientId) => {
                         {expandedSections[`${patient.id}-pharmacy`] && (
                           <div style={{ padding: "16px" }}>
                             {(() => {
-                              const hasCompletedPharmacyItem =
-                                Array.isArray(patient.medicines) &&
-                                patient.medicines.some((m) => {
-                                  const s = String(
-                                    m.status || ""
-                                  ).toLowerCase();
-                                  return (
-                                    s === "complete" ||
-                                    s === "completed" ||
-                                    s === "paid"
-                                  );
-                                });
-                              const printDisabled = !hasCompletedPharmacyItem;
+                            const hasCompletedPharmacyItem =
+  Array.isArray(patient.medicines) &&
+  patient.medicines.some((m) => {
+    const s = String(m.status || "").toLowerCase();
+    return s === "complete" || s === "completed" || s === "paid";
+  });
+const printDisabled = !hasCompletedPharmacyItem;
 
                               return (
                                 <>
@@ -1766,7 +1756,7 @@ const handleViewClick = async (patientId) => {
                                       onClick={() =>
                                         handlePrintInvoice(
                                           "pharmacy",
-                                          patient.id
+                                          patient.patientId
                                         )
                                       }
                                       disabled={printDisabled}
@@ -1912,21 +1902,14 @@ const handleViewClick = async (patientId) => {
                         {expandedSections[`${patient.id}-labs`] && (
                           <div style={{ padding: "16px" }}>
                             {(() => {
-                              const completedAliases = [
-                                "complete",
-                                "completed",
-                                "paid",
-                              ];
-
-                              const hasCompletedLabItem =
-                                Array.isArray(patient.tests) &&
-                                patient.tests.some((t) =>
-                                  completedAliases.includes(
-                                    String(t.status || "").toLowerCase()
-                                  )
-                                );
-                              const printDisabled = !hasCompletedLabItem;
-
+                             const completedAliases = ["complete", "completed", "paid"];
+const hasCompletedLabItem =
+  Array.isArray(patient.tests) &&
+  patient.tests.some((t) => {
+    const s = String(t.status || "").toLowerCase();
+    return s === "complete" || s === "completed" || s === "paid";
+  });
+const printDisabled = !hasCompletedLabItem;
                               return (
                                 <>
                                   <table
@@ -2096,7 +2079,7 @@ const handleViewClick = async (patientId) => {
                                   >
                                     <button
                                       onClick={() =>
-                                        handlePrintInvoice("labs", patient.id)
+                                        handlePrintInvoice("labs", patient.patientId)
                                       }
                                       disabled={printDisabled}
                                       style={{
@@ -2292,17 +2275,7 @@ const handleViewClick = async (patientId) => {
                                   >
                                     Time
                                   </th>
-                                  <th
-                                    style={{
-                                      padding: "8px",
-                                      textAlign: "left",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    Clinic
-                                  </th>
+                                  
                                   <th
                                     style={{
                                       padding: "8px",
@@ -2367,14 +2340,7 @@ const handleViewClick = async (patientId) => {
                                       >
                                         {appointment.appointmentTime}
                                       </td>
-                                      <td
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #f3f4f6",
-                                        }}
-                                      >
-                                        {appointment.clinicName}
-                                      </td>
+                                      
                                       <td
                                         style={{
                                           padding: "8px",
@@ -2388,24 +2354,24 @@ const handleViewClick = async (patientId) => {
                                             )
                                           : "0.00"}
                                       </td>
-                                      <td
-                                        style={{
-                                          padding: "2px 8px",
-                                          borderRadius: "12px",
-                                          fontSize: "11px",
-                                          fontWeight: "600",
-                                          backgroundColor:
-                                            appointment.status === "Completed"
-                                              ? "#dcfce7"
-                                              : "#fef3c7",
-                                          color:
-                                            appointment.status === "Completed"
-                                              ? "#166534"
-                                              : "#92400e",
-                                        }}
-                                      >
-                                        {appointment.status}
-                                      </td>
+                                     <td
+  style={{
+    padding: "2px 8px",
+    borderRadius: "12px",
+    fontSize: "11px",
+    fontWeight: "600",
+    backgroundColor:
+      ["Completed", "Paid"].includes(appointment.status)
+        ? "#dcfce7"
+        : "#fef3c7",
+    color:
+      ["Completed", "Paid"].includes(appointment.status)
+        ? "#166534"
+        : "#92400e",
+  }}
+>
+  {appointment.status}
+</td>
                                     </tr>
                                   )
                                 )}
@@ -2456,7 +2422,7 @@ const handleViewClick = async (patientId) => {
                             >
                               <button
                                 onClick={() =>
-                                  handlePrintInvoice("appointments", patient.id)
+                                  handlePrintInvoice("appointments", patient.patientId)
                                 }
                                 disabled={appointmentPrintDisabled}
                                 style={{
