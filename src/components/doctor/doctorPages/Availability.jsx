@@ -350,9 +350,11 @@ const AvailabilityScreen = () => {
 
         // Keep your toasts if you like
         if (reasons.length) {
-          toast.warning(popupMsg);
-        }
+          alert(popupMsg);
+          // toast.warning(popupMsg);
+        }else{
         toast.success(response?.data?.message || "Available slots created successfully");
+        }
 
         fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
       } else {
@@ -1242,6 +1244,11 @@ const AvailabilityScreen = () => {
                       border: "1px solid #d9d9d9",
                       marginBottom: 16,
                     }}
+                      max={
+      selectedEndDate
+        ? selectedEndDate.format("YYYY-MM-DD")
+        : ''
+    }
                     min={moment().format("YYYY-MM-DD")}
                     value={selectedDate ? selectedDate.format("YYYY-MM-DD") : ""}
                     onChange={(e) => {
@@ -1263,7 +1270,11 @@ const AvailabilityScreen = () => {
                       border: "1px solid #d9d9d9",
                       marginBottom: 16,
                     }}
-                    min={moment().format("YYYY-MM-DD")}
+                     min={
+      selectedDate
+        ? selectedDate.format("YYYY-MM-DD")
+        : moment().format("YYYY-MM-DD")
+    }
                     value={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ""}
                     onChange={(e) => {
                       const dateValue = e.target.value;

@@ -1562,8 +1562,20 @@ export default function ClinicManagement() {
                       placeholder="Pincode (auto-filled)"
                       className="clinic-form-input"
                       value={formData.pincode}
-                      onChange={handleInputChange}
-                      readOnly
+                      maxLength={6}
+                       onChange={(e) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) {
+      setFormData({ ...formData, pincode: value });
+    }
+  }}
+  onBlur={() => {
+    if (formData.pincode.length !== 6) {
+      alert('Pincode must be exactly 6 digits');
+    }
+  }}
+                      // onChange={handleInputChange}
+                      // readOnly
                     />
                   </div>
                 </div>

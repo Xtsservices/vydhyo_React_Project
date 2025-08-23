@@ -254,7 +254,8 @@ const Header = ({ user, navigate }) => {
         >
           {greeting}{" "}
           <span style={{ color: "#ff6b6b" }}>
-            Dr. {user?.firstname || ""} {user?.lastname || ""}
+            {user?.role === "doctor" ? "Dr. " : ""}
+            {user?.firstname || ""} {user?.lastname || ""}
           </span>
         </Title>
         <Text
