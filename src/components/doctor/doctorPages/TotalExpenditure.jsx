@@ -162,10 +162,9 @@ const TotalExpenditureScreen = () => {
     try {
       const values = await form.validateFields();
       setLoading(true);
-
       const payload = {
         userId: userId,
-        date: values.date.format('YYYY-MM-DD'),
+        date: values?.date,
         description: values.description,
         amount: values.amount,
         paymentMethod: values.paymentMethod || 'cash',
@@ -353,18 +352,14 @@ const TotalExpenditureScreen = () => {
             notes: ''
           }}
         >
-          <Form.Item
-            label="Date"
-            name="date"
-            rules={[{ required: true, message: 'Please select a date' }]}
-          >
-            <input
-              type="date"
-              style={datePickerStyle}
-              onChange={(e) => form.setFieldsValue({ date: moment(e.target.value) })}
-              value={form.getFieldValue('date')?.format('YYYY-MM-DD')}
-            />
-          </Form.Item>
+           <Form.Item
+    label="Date"
+    name="date"
+    rules={[{ required: true, message: 'Please select a date' }]}
+    getValueFromEvent={(e) => e.target.value} // <-- store string
+  >
+    <input type="date" style={datePickerStyle} max={moment().format('YYYY-MM-DD')} />
+  </Form.Item>
 
           <Form.Item
             label="Description"
