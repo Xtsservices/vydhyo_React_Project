@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Printer, CheckCircle, Loader2 } from "lucide-react";
+import { Printer, CheckCircle, Loader2, Calendar, Clock } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -9,6 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../../stylings/Preview.css";
 
 const Preview = ({ formData, handlePrescriptionAction }) => {
+  console.log("formDatannnnn", formData.doctorInfo);
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,148 +24,139 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     });
   };
 
-const generatePDF = async () => {
-  try {
-    const input = document.getElementById("prescription-container");
-    if (!input) {
-      throw new Error("Could not find the prescription container element");
-    }
-
-    // Store original styles
-    const originalStyles = {
-      boxShadow: input.style.boxShadow,
-      padding: input.style.padding,
-      margin: input.style.margin,
-      overflow: input.style.overflow,
-      maxHeight: input.style.maxHeight,
-      height: input.style.height,
-    };
-
-    const printButtonContainer = input.querySelector(".print-button-container");
-    const originalButtonDisplay = printButtonContainer?.style.display;
-    if (printButtonContainer) {
-      printButtonContainer.style.display = "none";
-    }
-
-    // Apply minimal styles for rendering (remove only problematic styles)
-    input.style.boxShadow = "none";
-    input.style.overflow = "visible";
-    input.style.maxHeight = "none";
-    input.style.height = "auto";
-
-    // Wait for images to load
-    const images = input.querySelectorAll("img");
-    const loadPromises = Array.from(images).map((img) => {
-      if (img.complete) return Promise.resolve();
-      return new Promise((resolve) => {
-        img.onload = resolve;
-        img.onerror = resolve;
-      });
-    });
-    await Promise.all(loadPromises);
-
-    // Ensure rendering is complete
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Initialize jsPDF
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-
-    const pdfWidth = pdf.internal.pageSize.getWidth(); // Use full width, rely on existing CSS margins
-    const pageHeight = pdf.internal.pageSize.getHeight(); // Full A4 height
-
-    // Capture the entire container
-    const canvas = await html2canvas(input, {
-      scale: 2,
-      useCORS: true,
-      logging: true,
-      backgroundColor: "#ffffff",
-      scrollY: -window.scrollY,
-      windowWidth: document.documentElement.scrollWidth,
-      windowHeight: input.scrollHeight,
-    });
-
-    const imgData = canvas.toDataURL("image/png");
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-    // Calculate the number of pages
-    const pageContentHeight = pageHeight;
-    const totalPages = Math.ceil(pdfHeight / pageContentHeight);
-
-    // Render each page with clipping
-    for (let page = 0; page < totalPages; page++) {
-      // Calculate source rectangle for this page in canvas pixels
-      const srcY = page * pageContentHeight * (imgProps.height / pdfHeight);
-      const srcHeight = Math.min(
-        pageContentHeight * (imgProps.height / pdfHeight),
-        imgProps.height - srcY
-      );
-
-      // Create a temporary canvas to clip the image
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = imgProps.width;
-      tempCanvas.height = srcHeight;
-      const ctx = tempCanvas.getContext("2d");
-      ctx.drawImage(
-        canvas,
-        0,
-        srcY,
-        imgProps.width,
-        srcHeight,
-        0,
-        0,
-        imgProps.width,
-        srcHeight
-      );
-
-      const pageImgData = tempCanvas.toDataURL("image/png");
-
-      // Add clipped image to PDF
-      pdf.addImage(
-        pageImgData,
-        "PNG",
-        0, // No extra left margin
-        0, // No extra top margin
-        pdfWidth,
-        (srcHeight * pdfWidth) / imgProps.width, // Scaled height
-        null,
-        "FAST"
-      );
-
-      // Add new page if more content remains
-      if (page < totalPages - 1) {
-        pdf.addPage();
+  const generatePDF = async () => {
+    try {
+      const input = document.getElementById("prescription-container");
+      if (!input) {
+        throw new Error("Could not find the prescription container element");
       }
+
+      // Store original styles
+      const originalStyles = {
+        boxShadow: input.style.boxShadow,
+        padding: input.style.padding,
+        margin: input.style.margin,
+        overflow: input.style.overflow,
+        maxHeight: input.style.maxHeight,
+        height: input.style.height,
+      };
+
+      const printButtonContainer = input.querySelector(".print-button-container");
+      const originalButtonDisplay = printButtonContainer?.style.display;
+      if (printButtonContainer) {
+        printButtonContainer.style.display = "none";
+      }
+
+      // Apply minimal styles for rendering
+      input.style.boxShadow = "none";
+      input.style.overflow = "visible";
+      input.style.maxHeight = "none";
+      input.style.height = "auto";
+
+      // Wait for images to load
+      const images = input.querySelectorAll("img");
+      const loadPromises = Array.from(images).map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+      await Promise.all(loadPromises);
+
+      // Ensure rendering is complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Initialize jsPDF
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Capture the entire container
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        logging: true,
+        backgroundColor: "#ffffff",
+        scrollY: -window.scrollY,
+        windowWidth: document.documentElement.scrollWidth,
+        windowHeight: input.scrollHeight,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      // Calculate the number of pages
+      const pageContentHeight = pageHeight;
+      const totalPages = Math.ceil(pdfHeight / pageContentHeight);
+
+      // Render each page with clipping
+      for (let page = 0; page < totalPages; page++) {
+        const srcY = page * pageContentHeight * (imgProps.height / pdfHeight);
+        const srcHeight = Math.min(
+          pageContentHeight * (imgProps.height / pdfHeight),
+          imgProps.height - srcY
+        );
+
+        // Create a temporary canvas to clip the image
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = imgProps.width;
+        tempCanvas.height = srcHeight;
+        const ctx = tempCanvas.getContext("2d");
+        ctx.drawImage(
+          canvas,
+          0,
+          srcY,
+          imgProps.width,
+          srcHeight,
+          0,
+          0,
+          imgProps.width,
+          srcHeight
+        );
+
+        const pageImgData = tempCanvas.toDataURL("image/png");
+
+        // Add clipped image to PDF
+        pdf.addImage(
+          pageImgData,
+          "PNG",
+          0,
+          0,
+          pdfWidth,
+          (srcHeight * pdfWidth) / imgProps.width,
+          null,
+          "FAST"
+        );
+
+        // Add new page if more content remains
+        if (page < totalPages - 1) {
+          pdf.addPage();
+        }
+      }
+
+      // Restore original styles
+      Object.assign(input.style, originalStyles);
+      if (printButtonContainer) {
+        printButtonContainer.style.display = originalButtonDisplay;
+      }
+
+      const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
+      const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
+
+      return pdfBlob;
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate prescription PDF");
+      throw error;
     }
-
-    // Restore original styles
-    Object.assign(input.style, originalStyles);
-    if (printButtonContainer) {
-      printButtonContainer.style.display = originalButtonDisplay;
-    }
-
-    const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
-    const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
-
-    console.log("Generated PDF Blob:", {
-      type: pdfBlob.type,
-      size: pdfBlob.size,
-      filename: `${appointmentId}.pdf`,
-      canvasHeight: pdfHeight,
-      pages: totalPages,
-    });
-
-    return pdfBlob;
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    toast.error("Failed to generate prescription PDF");
-    throw error;
-  }
-};
+  };
 
   const handleWhatsAppClick = async () => {
     try {
@@ -179,121 +171,96 @@ const generatePDF = async () => {
     }
   };
 
-const handlePrintClick = async () => {
-  try {
-    const originalElement = document.getElementById("prescription-container");
-    if (!originalElement) {
-      throw new Error("Could not find the prescription container element");
-    }
+  const handlePrintClick = async () => {
+    try {
+      const originalElement = document.getElementById("prescription-container");
+      if (!originalElement) {
+        throw new Error("Could not find the prescription container element");
+      }
 
-    // Clone the element
-    const clone = originalElement.cloneNode(true);
+      // Clone the element
+      const clone = originalElement.cloneNode(true);
 
-    // Remove print button container from clone
-    const printButtonContainer = clone.querySelector(".print-button-container");
-    if (printButtonContainer) {
-      printButtonContainer.remove();
-    }
+      // Remove print button container from clone
+      const printButtonContainer = clone.querySelector(".print-button-container");
+      if (printButtonContainer) {
+        printButtonContainer.remove();
+      }
 
-    // Hide original element
-    originalElement.style.visibility = "hidden";
+      // Hide original element
+      originalElement.style.visibility = "hidden";
 
-    // Styling for the clone
-    clone.style.position = "absolute";
-    clone.style.left = "0";
-    clone.style.top = "0";
-    clone.style.width = "100%";
-    clone.style.maxWidth = "100%";
-    clone.style.boxShadow = "none";
-    clone.style.padding = "0";
-    clone.style.margin = "0";
-    clone.style.overflow = "visible";
-    clone.style.height = "auto";
-    clone.id = "print-clone";
+      // Styling for the clone
+      clone.style.position = "absolute";
+      clone.style.left = "0";
+      clone.style.top = "0";
+      clone.style.width = "100%";
+      clone.style.maxWidth = "100%";
+      clone.style.boxShadow = "none";
+      clone.style.padding = "0";
+      clone.style.margin = "0";
+      clone.style.overflow = "visible";
+      clone.style.height = "auto";
+      clone.id = "print-clone";
 
-    // Append to DOM
-    document.body.appendChild(clone);
+      // Append to DOM
+      document.body.appendChild(clone);
 
-    // Wait for images to load
-    const images = clone.querySelectorAll("img");
-    const loadPromises = Array.from(images).map((img) =>
-      img.complete
-        ? Promise.resolve()
-        : new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve;
-          })
-    );
-    await Promise.all(loadPromises);
+      // Wait for images to load
+      const images = clone.querySelectorAll("img");
+      const loadPromises = Array.from(images).map((img) =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise((resolve) => {
+              img.onload = resolve;
+              img.onerror = resolve;
+            })
+      );
+      await Promise.all(loadPromises);
 
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for layout
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const pageHeight = 1123; // A4 height in px @ 96dpi
-    const totalHeight = clone.scrollHeight;
+      const pageHeight = 1123;
+      const totalHeight = clone.scrollHeight;
 
-    console.log("Total height:", totalHeight);
+      if (totalHeight <= pageHeight + 5) {
+        clone.style.height = `${pageHeight}px`;
+        clone.style.overflow = "hidden";
 
-    if (totalHeight <= pageHeight + 5) {
-      // If content fits in one page (with small tolerance)
-      clone.style.height = `${pageHeight}px`;
-      clone.style.overflow = "hidden";
+        window.print();
+        setTimeout(() => {
+          document.body.removeChild(clone);
+          originalElement.style.visibility = "visible";
+        }, 500);
+        return;
+      }
+
+      // Otherwise, print only second page
+      const secondPageClone = clone.cloneNode(true);
+      secondPageClone.id = "second-page-only";
+
+      // Style to show only content after first page
+      secondPageClone.style.position = "absolute";
+      secondPageClone.style.top = "0";
+      secondPageClone.style.left = "0";
+      secondPageClone.style.width = "100%";
+      secondPageClone.style.overflow = "hidden";
+      secondPageClone.style.height = `${totalHeight - pageHeight}px`;
+      secondPageClone.style.clipPath = `inset(${pageHeight}px 0 0 0)`;
+
+      // Remove old clone and use second page clone
+      document.body.removeChild(clone);
+      document.body.appendChild(secondPageClone);
 
       window.print();
+
       setTimeout(() => {
-        document.body.removeChild(clone);
+        document.body.removeChild(secondPageClone);
         originalElement.style.visibility = "visible";
       }, 500);
-      return;
-    }
-
-    // Otherwise, print only second page
-    const secondPageClone = clone.cloneNode(true);
-    secondPageClone.id = "second-page-only";
-
-    // Style to show only content after first page
-    secondPageClone.style.position = "absolute";
-    secondPageClone.style.top = "0";
-    secondPageClone.style.left = "0";
-    secondPageClone.style.width = "100%";
-    secondPageClone.style.overflow = "hidden";
-    secondPageClone.style.height = `${totalHeight - pageHeight}px`;
-    secondPageClone.style.clipPath = `inset(${pageHeight}px 0 0 0)`;
-
-    // Remove old clone and use second page clone
-    document.body.removeChild(clone);
-    document.body.appendChild(secondPageClone);
-
-    window.print();
-
-    setTimeout(() => {
-      document.body.removeChild(secondPageClone);
-      originalElement.style.visibility = "visible";
-    }, 500);
-  } catch (error) {
-    console.error("Error printing prescription:", error);
-    toast.error("Failed to print prescription");
-  }
-};
-
-
-
-  const handleWhatsAppClick2 = async () => {
-    try {
-      const message =
-        `Here's my medical prescription from ${
-          selectedClinic?.clinicName || "Clinic"
-        }\n` +
-        `Patient: ${formData.patientInfo?.patientName || "Unknown Patient"}\n` +
-        `Doctor: ${formData.doctorInfo?.doctorName || "Unknown Doctor"}\n` +
-        `Date: ${formatDate(formData.doctorInfo?.appointmentDate)}`;
-
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(message)}`,
-        "_blank"
-      );
     } catch (error) {
-      console.error("Failed to open WhatsApp:", error);
-      toast.error("Failed to open WhatsApp");
+      console.error("Error printing prescription:", error);
+      toast.error("Failed to print prescription");
     }
   };
 
@@ -437,6 +404,33 @@ const handlePrintClick = async () => {
                 <div style={{ fontSize: "12px", color: "#6c757d" }}>
                   {formData.patientInfo?.mobileNumber || "Contact not provided"}
                 </div>
+              </div>
+            </div>
+
+            {/* Appointment Date and Time Section */}
+            <div style={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              alignItems: "center",
+              marginBottom: "16px",
+              padding: "8px",
+              backgroundColor: "#f8f9fa",
+              borderRadius: "4px"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Calendar size={16} color="#6c757d" />
+                <span style={{ fontSize: "14px", fontWeight: "500" }}>
+                  Date: {formatDate(formData.doctorInfo?.appointmentDate)}
+                </span>
+              </div>
+              
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Clock size={16} color="#6c757d" />
+                <span style={{ fontSize: "14px", fontWeight: "500" }}>
+                  Time: {formData.doctorInfo?.appointmentStartTime || "Not specified"}
+                  {formData.doctorInfo?.appointmentEndTime && 
+                    ` - ${formData.doctorInfo.appointmentEndTime}`}
+                </span>
               </div>
             </div>
 

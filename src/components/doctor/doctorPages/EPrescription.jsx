@@ -54,8 +54,8 @@ const EPrescription = () => {
       clinicAddress: "",
       contactNumber: "",
       appointmentDate: patientData?.appointmentDate || "",
-      appointmentStartTime: patientData?.appointmentTime || "",
-      appointmentEndTime: "",
+    appointmentStartTime: patientData?.appointmentTime || "",
+    appointmentEndTime: patientData?.appointmentEndTime || "",
     },
     patientInfo: {
       patientId: patientData?.patientId || "",

@@ -115,8 +115,8 @@ const styles = {
   tableHeader: {
     display: "grid",
     gridTemplateColumns:
-      "minmax(100px, 120px) minmax(200px, 2fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",
-    gap: "16px",
+      "minmax(100px, 120px) minmax(150px, 1.5fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",
+    gap: "12px",
     padding: "16px",
     backgroundColor: "#f8fafc",
     borderBottom: "1px solid #e2e8f0",
@@ -132,8 +132,8 @@ const styles = {
   tableRow: {
     display: "grid",
     gridTemplateColumns:
-      "minmax(100px, 120px) minmax(200px, 2fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",
-    gap: "16px",
+      "minmax(100px, 120px) minmax(150px, 1.5fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",
+    gap: "12px", 
     padding: "16px",
     alignItems: "center",
     borderBottom: "1px solid #f1f5f9",
@@ -284,8 +284,8 @@ const styles = {
   },
   infoGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-    gap: "16px",
+gridTemplateColumns:
+  "minmax(100px, 120px) minmax(200px, 2fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",    gap: "16px",
     marginBottom: "16px",
   },
   infoItem: {
