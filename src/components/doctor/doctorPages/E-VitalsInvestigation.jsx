@@ -220,9 +220,8 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
                   handleVitalChange("bpSystolic", e.target.value)
                 }
                 onBlur={() => handleBlur("bpSystolic")}
-                className={`vitals-input bp-input ${
-                  errors.bpSystolic ? "error" : ""
-                }`}
+                className={`vitals-input bp-input ${errors.bpSystolic ? "error" : ""
+                  }`}
               />
               <span className="bp-slash">/</span>
               <input
@@ -233,9 +232,8 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
                   handleVitalChange("bpDiastolic", e.target.value)
                 }
                 onBlur={() => handleBlur("bpDiastolic")}
-                className={`vitals-input bp-input ${
-                  errors.bpDiastolic ? "error" : ""
-                }`}
+                className={`vitals-input bp-input ${errors.bpDiastolic ? "error" : ""
+                  }`}
               />
             </div>
             {(errors.bpSystolic || errors.bpDiastolic) && (
@@ -246,29 +244,44 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
           </div>
 
           {[
-            "pulseRate",
-            "respiratoryRate",
-            "temperature",
-            "spo2",
-            "height",
-            "weight",
+            "PulseRate",
+            "RespiratoryRate",
+            "Temperature",
+            "SpO₂",
+            "Height",
+            "Weight",
           ].map((field) => (
             <div className="vitals-input-group" key={field}>
               <label className="vitals-label">
                 {field.replace(/([A-Z])/g, " $1").trim()}
-                {field === "temperature"
+                {field === "Temperature"
                   ? " °F"
-                  : field === "spo2"
-                  ? "%"
-                  : field === "height"
-                  ? " cm"
-                  : field === "weight"
-                  ? " kg"
-                  : " bpm"}
+                  : field === "SpO₂"
+                    ? "%"
+                    : field === "Height"
+                      ? " CM"
+                      : field === "Weight"
+                        ? " KG"
+                        : " BPM"}
               </label>
               <input
                 type="number"
                 value={localData[field]}
+                placeholder={
+                  field === "PulseRate"
+                    ? "Enter pulse rate"
+                    : field === "RespiratoryRate"
+                      ? "Enter respiratory rate"
+                      : field === "Temperature"
+                        ? "Enter temperature"
+                        : field === "SpO₂"
+                          ? "Enter SpO₂"
+                          : field === "Height"
+                            ? "Enter height"
+                            : field === "Weight"
+                              ? "Enter weight"
+                              : ""
+                }
                 onChange={(e) => handleVitalChange(field, e.target.value)}
                 onBlur={() => handleBlur(field)}
                 className={`vitals-input ${errors[field] ? "error" : ""}`}
@@ -278,6 +291,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
               )}
             </div>
           ))}
+
 
           <div className="vitals-input-group">
             <label className="vitals-label">BMI (kg/m²)</label>
@@ -346,9 +360,9 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
       </div>
 
       <div className="vitals-actions">
-        <button className="cancel-button" onClick={handleCancel}>
+        <button className="common-button common-cancel-button" onClick={handleCancel}>
           Clear All
-        </button>
+        </button> 
       </div>
     </div>
   );
