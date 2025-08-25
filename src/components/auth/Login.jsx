@@ -305,8 +305,7 @@ if(user){
 }
   },[user])
 
-  if (isCheckingAuth) {
-  return (
+  return isCheckingAuth ? (
     <div
       style={{
         minHeight: "100vh",
@@ -318,10 +317,7 @@ if(user){
     >
       <Spin size="large" />
     </div>
-  );
-}
-
-  return (
+  ) : (
     <div
       className="login-container"
       style={{
@@ -379,5 +375,6 @@ if(user){
     </div>
   );
 };
+
 
 export default Login;

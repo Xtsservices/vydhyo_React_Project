@@ -95,7 +95,7 @@ export default function Pharmacy() {
     if (!form.medName.trim()) {
       newErrors.medName = "Medicine name is required";
     }
-    if (!form.dosage.trim()) {
+     if (!form.dosage.trim()) {
       newErrors.dosage = "Dosage is required";
     }
     if (!form.price || form.price < 0) {
@@ -123,7 +123,7 @@ export default function Pharmacy() {
       const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
       await apiPost("pharmacy/addMedInventory", {
         medName: form.medName,
-        dosage: form.dosage,
+         dosage: form.dosage,
         price: form.price,
         quantity: form.quantity,
         cgst: form.cgst,
@@ -497,7 +497,8 @@ const downloadTemplate = () => {
                   </div>
                 )}
               </div>
-              <div style={{ marginBottom: "16px" }}>
+
+               <div style={{ marginBottom: "16px" }}>
                 <label style={{ display: "block", marginBottom: "8px" }}>
                   Dosage
                 </label>
@@ -505,7 +506,7 @@ const downloadTemplate = () => {
                   name="dosage"
                   value={form.dosage}
                   onChange={handleInputChange}
-                  placeholder="Enter dosage"
+                  placeholder="Enter dosage (e.g., 100mg)"
                 />
                 {errors.dosage && (
                   <div

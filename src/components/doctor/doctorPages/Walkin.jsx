@@ -836,7 +836,7 @@ console.log("first2")
           <Text strong>Phone Number *</Text>
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Enter 10-digit mobile number"
+            placeholder="Enter 10-digit phone number"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value.replace(/\D/g, ""))}
             onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -1032,11 +1032,12 @@ console.log("first2")
         <Col xs={24} sm={12}>
           <Text strong>Appointment Type *</Text>
           <Select
-            value={patientData.appointmentType}
+            value={patientData.appointmentType || undefined}
             onChange={(value) => handleInputChange("appointmentType", value)}
             placeholder="Select appointment type"
             disabled={!patientCreated && !userFound}
             style={{ width: "100%", marginTop: 8 }}
+            allowClear
           >
             <Option value="new-walkin">New Walkin</Option>
             <Option value="new-homecare">New HomeCare</Option>
@@ -1050,35 +1051,52 @@ console.log("first2")
         </Col>
         <Col xs={24} sm={12}>
           <Text strong>Appointment Date *</Text>
-          <input
-            type="date"
-            style={{
-              alignSelf: "flex-end",
-              borderRadius: "12px",
-              background: "#F6F6F6",
-              padding: "0.4rem",
-              color: "#1977f3",
-              width: "130px",
-              border: "1px solid #d9d9d9",
-              marginTop: 8,
-            }}
-            min={new Date().toISOString().split("T")[0]}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            // disabled={!patientCreated && !userFound}
-          />
+          <div style={{ position: "relative" }}>
+            <input
+              type="date"
+              style={{
+                alignSelf: "flex-end",
+                borderRadius: "12px",
+                background: "#F6F6F6",
+                padding: "0.4rem",
+                color: "#1977f3",
+                width: "130px",
+                border: "1px solid #d9d9d9",
+                marginTop: 8,
+              }}
+              min={new Date().toISOString().split("T")[0]}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+            {!date && (
+              <span
+                style={{
+                  position: "absolute",
+                  left: 12,
+                  top: 16,
+                  color: "#bfbfbf",
+                  pointerEvents: "none",
+                  fontSize: 14,
+                }}
+              >
+                Select appointment date
+              </span>
+            )}
+          </div>
           {fieldErrors.date && <Text type="danger">{fieldErrors.date}</Text>}
         </Col>
         <Col xs={24} sm={12}>
           <Text strong>Department *</Text>
           <Select
-            // value={user.specialization?.name}
-            value={patientData.department}
-            // onChange={(value) => handleInputChange("department", value)}
+            value={patientData.department || undefined}
             placeholder="Select department"
             disabled={true}
             style={{ width: "100%", marginTop: 8 }}
+            allowClear
           >
+            <Option value=""  disabled>
+              Select department
+            </Option>
             <Option value="cardiology">Cardiology</Option>
             <Option value="neurology">Neurology</Option>
             <Option value="orthopedics">Orthopedics</Option>
@@ -1088,13 +1106,13 @@ console.log("first2")
             <Text type="danger">{fieldErrors.department}</Text>
           )}
         </Col>
-          <Col xs={24} sm={12}>
+        <Col xs={24} sm={12}>
           <Text strong>Clinic *</Text>
           <Select
-            value={patientData.clinic}
+            value={patientData.clinic || undefined}
             onChange={(value) => handleInputChange("clinic", value)}
             placeholder="Select clinic"
-            // disabled={!patientCreated && !userFound}
+            allowClear
             style={{ width: "100%", marginTop: 8 }}
           >
             {clinics.map((clinic) => (
@@ -1110,10 +1128,10 @@ console.log("first2")
         <Col xs={24} sm={12}>
           <Text strong>Time Slot *</Text>
           <Select
-            value={patientData.selectedTimeSlot}
+            value={patientData.selectedTimeSlot || undefined}
             onChange={(value) => handleInputChange("selectedTimeSlot", value)}
             placeholder="Select time slot"
-            // disabled={!patientCreated && !userFound}
+            allowClear
             style={{ width: "100%", marginTop: 8 }}
           >
             {timeSlots.map((slot) => (

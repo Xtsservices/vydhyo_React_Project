@@ -625,13 +625,13 @@ const StaffManagement = () => {
         lastLogout:
           staff.lastLogout && staff.lastLogout !== "N/A"
             ? dayjs(staff.lastLogout).isValid()
-              ? dayjs(staff.lastLogout).format("YYYY-MM-DD HH:mm:ss")
+              ? dayjs(staff.lastLogout).format("DD-MMM-YYYY hh:mm.ss A")
               : staff.lastLogout
             : "-",
         lastLogin:
           staff.lastLogin && staff.lastLogin !== "N/A"
             ? dayjs(staff.lastLogin).isValid()
-              ? dayjs(staff.lastLogin).format("YYYY-MM-DD HH:mm:ss")
+              ? dayjs(staff.lastLogin).format("DD-MMM-YYYY hh:mm.ss A")
               : staff.lastLogin
             : "-",
         isLoggedIn: staff.isLoggedIn ? "Online" : "Offline",
@@ -642,6 +642,7 @@ const StaffManagement = () => {
 
       setStaffData(formattedData);
       setOriginalStaffData(formattedData);
+      console.log("Fetched staff data:", formattedData);
     } catch (error) {
       console.error("Error fetching staff:", error);
       let errorMessage = "Failed to fetch staff data";
