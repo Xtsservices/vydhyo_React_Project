@@ -16,6 +16,7 @@ import {
   Input,
   Upload,
   Select,
+  Descriptions,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { apiGet, apiPut, apiUploadFile, apiPost } from "../../api";
@@ -58,7 +59,93 @@ const DoctorProfileView = () => {
   const [form] = Form.useForm();
   const location = useLocation();
   const navigate = useNavigate();
-
+const specializationOptions = [
+  'General Medicine',
+  'Internal Medicine',
+  'Pediatrics',
+  'Obstetrics and Gynaecology',
+  'General Surgery',
+  'Family Medicine',
+  'Emergency Medicine',
+  'Geriatrics / Geriatric Medicine',
+  'Critical Care / Critical Care Medicine',
+  'Preventive Cardiology',
+  'Clinical Cardiology',
+  'Cardiology',
+  'Diabetology',
+  'Respiratory Medicine / Pulmonary & Critical Care Medicine',
+  'Psychiatry / Psychological Medicine',
+  'Dermatology, Venereology & Leprosy',
+  'Neurology',
+  'Nephrology',
+  'Endocrinology',
+  'Rheumatology',
+  'Infectious Diseases',
+  'Hepatology',
+  'Cardiothoracic and Vascular Surgery',
+  'Vascular Surgery',
+  'Surgical Gastroenterology',
+  'Surgical Oncology',
+  'Endocrine Surgery',
+  'Plastic & Reconstructive Surgery / Plastic Surgery',
+  'Pediatric Surgery',
+  'Neurosurgery',
+  'Urology',
+  'Hand Surgery',
+  'Trauma Surgery and Critical Care',
+  'Minimal Access Surgery and Robotic Surgery',
+  'Hepato-Pancreato-Biliary Surgery',
+  'Breast and Endocrine Surgery',
+  'Gynaecologic Oncology',
+  'Reproductive Medicine',
+  'Maternal & Fetal Medicine',
+  'Radiodiagnosis / Medical Radiodiagnosis / Radio Diagnosis',
+  'Nuclear Medicine',
+  'Interventional Radiology',
+  'Pathology / Clinical Pathology / Oral Pathology and Microbiology',
+  'Biochemistry',
+  'Microbiology',
+  'Pharmacology / Clinical Pharmacology',
+  'Clinical Immunology / Immunology and Immunopathology',
+  'Anatomy',
+  'Physiology',
+  'Forensic Medicine',
+  'Hematology',
+  'Medical Genetics',
+  'Community Medicine',
+  'Public Health / Public Health Dentistry',
+  'Industrial Health',
+  'Health Administration / Hospital Administration',
+  'Occupational Health',
+  'Lifestyle Medicine (IBLM)',
+  'Tropical Medicine / Tropical Medicine and Health',
+  'Medical Oncology',
+  'Medical Gastroenterology',
+  'Ophthalmology / Ophthalmic Medicine and Surgery',
+  'ENT / Otorhinolaryngology (ENT)',
+  'Tuberculosis and Chest Diseases',
+  'Sports Medicine',
+  'Immunohematology & Blood Transfusion',
+  'Pain Medicine',
+  'Palliative Medicine / Onco-Anesthesia and Palliative Medicine',
+  'Clinical Nutrition',
+  'Pediatric Cardiology',
+  'Pediatric Neurology',
+  'Pediatric Nephrology',
+  'Pediatric Gastroenterology',
+  'Neonatology',
+  'Child Health',
+  'Ayurveda',
+  'Homeopathy',
+  'Yoga and Naturopathy',
+  'Unani',
+  'Oral and Maxillofacial Surgery',
+  'Orthodontics and Dentofacial Orthopedics',
+  'Prosthodontics and Crown & Bridge',
+  'Conservative Dentistry and Endodontics',
+  'Pedodontics and Preventive Dentistry',
+  'Oral Medicine and Radiology'
+];
 // const algorithm = 'aes-256-cbc';
 // const secretKey = process.env.ENCRYPTION_KEY; // 32-byte hex key
 // const iv = Buffer.from(process.env.ENCRYPTION_IV, 'hex'); // 16-byte IV
@@ -75,6 +162,7 @@ const DoctorProfileView = () => {
     setLoading(true);
     try {
       const response = await apiGet("/users/getUser");
+      console.log(response, "doctor data");
       const userData = response.data?.data;
 
       if (userData) {
@@ -96,8 +184,8 @@ const DoctorProfileView = () => {
         const bankDetails = userData.bankDetails;
 
 const decryptedBankDetails = {
-  accountNumber: (bankDetails.accountNumber),
-  accountHolderName: (bankDetails.accountHolderName),
+  accountNumber: bankDetails.accountNumber,
+  accountHolderName: bankDetails.accountHolderName,
   ifscCode: bankDetails.ifscCode, // assuming this is not encrypted
   bankName: bankDetails.bankName,
 };
@@ -150,29 +238,44 @@ const decryptedBankDetails = {
       setLoading(false);
     }
   };
-  const [degrees, setDegrees] = useState([])
+const [degrees, setDegrees] = useState([]);
+const [specializations, setSpecializations] = useState([]);
+const [loadingDegrees, setLoadingDegrees] = useState(false);
+const [loadingSpecs, setLoadingSpecs] = useState(false);
 
-  const fetchDegrees = async () => {
-    try {
-      const response = await apiGet('/catalogue/degree/getAllDegrees');
-      console.log(response, "get all degrees")
-      const data = response?.data?.data || [];
-      setDegrees(data);
-    } catch (error) {
-      console.error('Error fetching degrees:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to fetch degrees.',
-        position: 'top',
-        visibilityTime: 4000,
-      });
-    }
-  };
+// fetch degrees (you already have this—kept same, just added a loading flag)
+const fetchDegrees = async () => {
+  try {
+    setLoadingDegrees(true);
+    const response = await apiGet('/catalogue/degree/getAllDegrees');
+    const data = response?.data?.data || [];
+    setDegrees(data);
+  } catch (error) {
+    console.error('Error fetching degrees:', error);
+    Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to fetch degrees.', position: 'top', visibilityTime: 4000 });
+  } finally {
+    setLoadingDegrees(false);
+  }
+};
+
+const fetchSpecializations = async () => {
+  try {
+    setLoadingSpecs(true);
+    const response = await apiGet('/catalogue/specialization/getAllSpecializations');
+    const data = response?.data?.data || [];
+    setSpecializations(data);
+  } catch (error) {
+    console.error('Error fetching specializations:', error);
+    Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to fetch specializations.', position: 'top', visibilityTime: 4000 });
+  } finally {
+    setLoadingSpecs(false);
+  }
+};
 
   useEffect(() => {
     fetchDoctorData();
     fetchDegrees();
+    fetchSpecializations();
   }, []);
 
   const showModal = (doc) => {
@@ -220,13 +323,17 @@ const decryptedBankDetails = {
           medicalRegistrationNumber: doctorData?.medicalRegistrationNumber,
           spokenLanguage: doctorData?.spokenLanguage || [],
         };
-      case 'professional':
+      case 'professional': {
+        const initialDegreeId = degrees.find(d => d.name === doctorData?.specialization?.[0]?.degree)?._id;
+        const initialSpecs = doctorData?.specialization?.map(s => s.name) || [];
         return {
-          specialization: doctorData?.specialization?.map(s => s.name)?.join(','),
-          experience: doctorData.specialization[0]?.experience,
-
+          degreeId: initialDegreeId,
+          degree: doctorData?.specialization?.[0]?.degree,
+          specialization: initialSpecs,
+          experience: doctorData?.specialization?.[0]?.experience,
           certifications: doctorData?.certifications,
         };
+      }
       case 'locations':
         return {
           workingLocations: doctorData?.workingLocations,
@@ -234,7 +341,7 @@ const decryptedBankDetails = {
       case 'kyc':
         return {
           panNumber: doctorData?.kycDetails?.panNumber,
-          voterId: doctorData?.kycDetails?.voterId,
+         
         };
       case 'consultation':
         return {
@@ -251,6 +358,7 @@ const decryptedBankDetails = {
 
   const handleSaveProfile = async (values) => {
     console.log(values, "for personal 1234");
+    let response;
     try {
       switch (editModalType) {
         case 'personal':
@@ -261,35 +369,74 @@ const decryptedBankDetails = {
           break;
        
 
-       case 'professional':
-const formDataObj = new FormData();
-formDataObj.append('id', doctorData?.userId);
-formDataObj.append('name', values.specialization);
-formDataObj.append('experience', values.experience);
-formDataObj.append('degree', doctorData.specialization[0]?.degree || '');
-formDataObj.append('bio', '');
+    case 'professional': {
+  const formDataObj = new FormData();
+  formDataObj.append('id', doctorData?.userId || '');
 
-for (let pair of formDataObj.entries()) {
-  console.log(pair[0] + ': ' + pair[1]);
-}
+  formDataObj.append('name', Array.isArray(values.specialization) ? values.specialization.join(',') : values.specialization || '');
+  formDataObj.append('experience', values.experience || '');
+  formDataObj.append('degree', Array.isArray(values.degreeId) ? values.degreeId.join(',') : values.degreeId || '');
+  formDataObj.append('bio', values.about || '');
+  formDataObj.append('services', values.services || ''); // Optional field
+  if (values.drgreeCertificate) {
+    formDataObj.append('drgreeCertificate', values.drgreeCertificate);
+  }
+  if (values.specializationCertificate) {
+    formDataObj.append('specializationCertificate', values.specializationCertificate);
+  }
 
-await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT pass fieldName or extraData
+  // Log FormData entries for debugging
+  for (let pair of formDataObj.entries()) {
+    console.log(pair[0] + ': ' + pair[1]);
+  }
 
-
+  await apiPost(
+    `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
+   
+    formDataObj, // FormData with fields
+    // { headers: { id: doctorData?.userId || '' } } // Send userId in headers as fallback
+  );
   break;
+}
         case 'locations':
           await apiPut("/users/updateLocations", { addresses: values.workingLocations });
           break;
-        case 'kyc':
-          await apiPut("/users/updateKyc", values);
-          break;
+ case 'kyc': {
+  const file =
+    values?.panImage?.originFileObj instanceof File
+      ? values.panImage.originFileObj
+      : (values?.panImage instanceof File ? values.panImage : null);
+
+      console.log(file, "file");
+
+response =  await apiUploadFile(
+    "/users/addKYCDetails",
+    file,                    // <-- raw File (or null)
+    "panFile",               // <-- field name your backend expects
+    {
+      userId: String(doctorData?.userId),
+      panNumber: (values?.panNumber || "").toUpperCase(),
+    }
+  );
+  break;
+}
+
+
         case 'consultation':
-          await apiPut("/users/updateConsultationFees", { consultationModeFee: values.consultationModeFee });
+           const cleanedFees = values.consultationModeFee.map(item => ({
+    type: item.type,
+    fee: Number(item.fee),       // Convert fee to number
+    currency: item.currency,
+  }));
+          console.log(cleanedFees, "consultation values")
+          await apiPost("/users/updateConsultationModes", { consultationModeFee: cleanedFees });
+
           break;
         case 'bank':
           await apiPost("/users/updateBankDetails", values);
           break;
       }
+      console.log(response, "response after update");
       message.success("Profile updated successfully");
       handleEditModalClose();
       fetchDoctorData();
@@ -355,12 +502,10 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                 <Title level={4} className="doctor-name">
                   Dr. {doctorData.firstname} {doctorData.lastname}
                 </Title>
-                <Text className="doctor-meta">
-                  Medical Registration: {doctorData.medicalRegistrationNumber}
-                </Text>
-                <Text className="doctor-meta">
+                
+                {/* <Text className="doctor-meta">
                   Mobile Number: {doctorData.mobile}
-                </Text>
+                </Text> */}
               </div>
               <div className="info-section">
                 {/* <div className="info-item">
@@ -369,22 +514,19 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                     <strong>Date of Birth:</strong> {doctorData.DOB}
                   </Text>
                 </div> */}
+                 <div className="info-item">
+                  <Text className="info-text" style={{ marginLeft: "24px" }}>
+                    <strong>Mobile Number:</strong> {doctorData.mobile}
+                  </Text>
+                </div>
                 <div className="info-item">
                   <ManOutlined className="info-icon" />
                   <Text className="info-text">
                     <strong>Gender:</strong> {doctorData.gender}
                   </Text>
                 </div>
-                {/* <div className="info-item">
-                  <Text className="info-text" style={{ marginLeft: "24px" }}>
-                    <strong>Blood Group:</strong> {doctorData.bloodgroup}
-                  </Text>
-                </div> */}
-                <div className="info-item">
-                  <Text className="info-text" style={{ marginLeft: "24px" }}>
-                    <strong>Marital Status:</strong> {doctorData.maritalStatus}
-                  </Text>
-                </div>
+               
+                
               </div>
               <div className="info-section">
                 <div className="info-item">
@@ -431,6 +573,32 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
               }
               className="profile-card"
             >
+              <div className="info-item">
+                  <Text className="info-text">
+                    <strong>Medical Registration:</strong> {doctorData.medicalRegistrationNumber}
+                  </Text>
+                </div>
+                 <div className="info-item">
+                  <Text className="info-text">
+                    <strong>State Medical Council: </strong> TSMC
+                  </Text>
+                </div>
+                 <div className="info-item">
+                  <Text className="info-text">
+                    <strong>Degrees: </strong>  {doctorData.specialization.length > 0 ? (
+                    doctorData.specialization.map((spec, index) => (
+                      <Tag key={index} className="specialization-tag">
+                        {spec.degree || "Not specified"}
+                      </Tag>
+                    ))
+                  ) : (
+                    <Text style={{ color: "#6b7280" }}>
+                      No specializations added
+                    </Text>
+                  )}
+                  </Text>
+                </div>
+              
               <div style={{ marginBottom: "20px" }}>
                 <Text strong style={{ fontSize: "14px", color: "#166534", display: "block", marginBottom: "8px", fontWeight: "600" }}>
                   Specializations
@@ -449,7 +617,18 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                   )}
                 </div>
               </div>
-              <div style={{ marginBottom: "20px" }}>
+               <div className="info-item">
+                  <Text className="info-text">
+                    <strong>Work Experience:</strong>{doctorData.specialization[0]?.experience || 0} Years
+                  </Text>
+                </div>
+
+                 <div className="info-item">
+                  <Text className="info-text">
+                    <strong>About:</strong>
+                  </Text>
+                </div>
+              {/* <div style={{ marginBottom: "20px" }}>
                 <Text strong className="info-text" style={{ display: "block", marginBottom: "8px" }}>
                   Work Experience
                 </Text>
@@ -458,8 +637,8 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                     {doctorData.specialization[0]?.experience || 0} Years
                   </Title>
                 </div>
-              </div>
-              <div>
+              </div> */}
+              {/* <div>
                 <Text strong className="info-text" style={{ display: "block", marginBottom: "12px" }}>
                   Certifications
                 </Text>
@@ -510,69 +689,9 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                     No certifications added
                   </Text>
                 )}
-              </div>
+              </div> */}
             </Card>
-          </Col>
-
-          {/* Working Locations */}
-          <Col xs={24} lg={12}>
-            <Card
-              title={
-                <div className="profile-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <EnvironmentOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
-                    Working Locations
-                  </div>
-                  {/* <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('locations')}>
-                    Edit
-                  </Button> */}
-                </div>
-              }
-              className="profile-card"
-            >
-              {doctorData.workingLocations.length > 1 ? (
-                <div style={{ marginBottom: "16px" }}>
-                  <select
-                    className="location-dropdown"
-                    onChange={(e) => {
-                      const selectedIndex = e.target.value;
-                      setDoctorData(prev => ({
-                        ...prev,
-                        selectedLocation: selectedIndex !== "" ? doctorData.workingLocations[selectedIndex] : null
-                      }));
-                    }}
-                  >
-                    <option value="">Select a location</option>
-                    {doctorData.workingLocations.map((location, index) => (
-                      <option key={index} value={index}>
-                        {location.name || "N/A"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
-              {(doctorData.selectedLocation || doctorData.workingLocations[0]) && (
-                <div className="location-card">
-                  <div style={{ display: "flex", alignItems: "flex-start" }}>
-                    <EnvironmentOutlined className="location-icon" />
-                    <div style={{ flex: 1 }}>
-                      <Text strong className="info-text" style={{ display: "block", marginBottom: "4px" }}>
-                        {(doctorData.selectedLocation || doctorData.workingLocations[0]).name || "N/A"}
-                      </Text>
-                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                        {(doctorData.selectedLocation || doctorData.workingLocations[0]).address || "N/A"}
-                      </Text>
-                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                        <strong>Timings:</strong>{" "}
-                        {(doctorData.selectedLocation || doctorData.workingLocations[0]).startTime || "N/A"} -{" "}
-                        {(doctorData.selectedLocation || doctorData.workingLocations[0]).endTime || "N/A"}
-                      </Text>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Card>
-          </Col>
+          </Col>         
 
           {/* KYC Details */}
           <Col xs={24} lg={12}>
@@ -583,9 +702,9 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                     <IdcardOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
                     KYC Details
                   </div>
-                  {/* <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('kyc')}>
-                    Edit
-                  </Button> */}
+                  <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('kyc')}>
+                    
+                  </Button>
                 </div>
               }
               className="profile-card"
@@ -609,25 +728,7 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                   />
                 )}
               </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <IdcardOutlined className="info-icon" />
-                  <div>
-                    <Text strong className="info-text">Voter ID:</Text>
-                    <Text className="info-text" style={{ marginLeft: "8px" }}>
-                      {doctorData.kycDetails.voterId || "N/A"}
-                    </Text>
-                  </div>
-                </div>
-                {doctorData.kycDetails.voterIdImage && (
-                  <Button
-                    type="link"
-                    size="small"
-                    onClick={() => showModal({ type: "voterId", data: doctorData.kycDetails.voterIdImage })}
-                    style={{ padding: "4px 8px" }}
-                  />
-                )}
-              </div>
+
             </Card>
           </Col>
 
@@ -640,9 +741,9 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                     <DollarOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
                     Consultation Charges
                   </div>
-                  {/* <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('consultation')}>
-                    Edit
-                  </Button> */}
+                  <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('consultation')}>
+                    
+                  </Button>
                 </div>
               }
               className="profile-card"
@@ -658,7 +759,7 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                     {mode.type === "Home Visit" && <CarOutlined className="consultation-icon" style={{ color: "#9333ea" }} />}
                     <div>
                       <Text strong className="info-text" style={{ display: "block" }}>{mode.type}</Text>
-                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>{mode.description || "N/A"}</Text>
+                      {/* <Text style={{ fontSize: "12px", color: "#6b7280" }}>{mode.description || "N/A"}</Text> */}
                     </div>
                   </div>
                   <div className="consultation-price">
@@ -685,57 +786,31 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
               }
               className="profile-card"
             >
-              <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}>
-                  <div style={{ marginBottom: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <BankOutlined className="info-icon" />
-                      <Text strong className="info-text">Bank:</Text>
-                      <Text className="info-text" style={{ marginLeft: "8px" }}>
-                        {doctorData.bankDetails.bankName || "N/A"}
-                      </Text>
-                    </div>
-                  </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <UserOutlined className="info-icon" />
-                      <Text strong className="info-text">Account Holder:</Text>
-                      <Text className="info-text" style={{ marginLeft: "8px" }}>
-                        {doctorData.bankDetails.accountHolderName || "N/A"}
-                      </Text>
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={24} md={12}>
-                  <div style={{ marginBottom: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <div>
-                        <Text strong className="info-text">Account Number:</Text>
-                        <Text className="info-text" style={{ marginLeft: "8px" }}>
-                          {doctorData.bankDetails.accountNumber || "N/A"}
-                        </Text>
-                      </div>
-                      {doctorData.bankDetails.accountProof && (
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
-                          onClick={() => showModal({ type: "accountProof", data: doctorData.bankDetails.accountProof })}
-                          style={{ padding: "4px 8px" }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <Text strong className="info-text">Bank IFSC:</Text>
-                    <Text className="info-text" style={{ marginLeft: "8px" }}>
-                      {doctorData.bankDetails.ifscCode || "N/A"}
-                    </Text>
-                  </div>
-                </Col>
-              </Row>
-           
-              </Card>
+              <Descriptions column={1} colon={true} labelStyle={{ fontWeight: 'bold' }}>
+                <Descriptions.Item label="Bank">
+                  {doctorData.bankDetails.bankName || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Account Holder">
+                  {doctorData.bankDetails.accountHolderName || "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Account Number">
+                  <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                    {doctorData.bankDetails.accountNumber || "N/A"}
+                    {doctorData.bankDetails.accountProof && (
+                      <Button
+                        type="link"
+                        size="small"
+                        icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
+                        onClick={() => showModal({ type: "accountProof", data: doctorData.bankDetails.accountProof })}
+                      />
+                    )}
+                  </Space>
+                </Descriptions.Item>
+                <Descriptions.Item label="Bank IFSC">
+                  {doctorData.bankDetails.ifscCode || "N/A"}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
           </Col>
         </Row>
 
@@ -803,10 +878,10 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                             <Select
                               style={{ width: 200 }}
                               placeholder="Select a language"
-                              // Prevent selecting already chosen languages
-                              disabledOptions={form.getFieldValue('spokenLanguage') || []}
-                            >
-                              {languageOptions.map(option => (
+                                // Prevent selecting already chosen languages
+                                disabledOptions={form.getFieldValue('spokenLanguage') || []}
+                              >
+                                {languageOptions.map(option => (
                                 <Option
                                   key={option.value}
                                   value={option.value}
@@ -837,113 +912,79 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
             )}
             {editModalType === 'professional' && (
               <>
-                <Form.Item label="Specializations (comma-separated)" name="specialization" disabled>
-                  <Input />
-                </Form.Item>
-                <Form.Item label="Experience" name="experience">
-                  <Input />
-                </Form.Item>
-                {/* <Form.List name="certifications">
-                  {(fields, { add, remove }) => (
-                    <>
-                      {fields.map(({ key, name, ...restField }) => (
-                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'name']}
-                            label="Certification Name"
-                          >
-                            <Input />
-                          </Form.Item>
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'registrationNo']}
-                            label="Registration Number"
-                          >
-                            <Input />
-                          </Form.Item>
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'image']}
-                            label="Certificate Image"
-                          >
-                            <UploadImage onUpload={(file) => form.setFieldsValue({ certifications: { [name]: { image: file } } })} />
-                          </Form.Item>
-                          <Button onClick={() => remove(name)}>Remove</Button>
-                        </Space>
-                      ))}
-                      <Form.Item>
-                        <Button type="dashed" onClick={() => add()} block>
-                          Add Certification
-                        </Button>
-                      </Form.Item>
-                    </>
-                  )}
-                </Form.List> */}
+<Form.Item
+  label="Degree"
+  name="degreeId"
+  rules={[{ required: true, message: 'Please select a degree' }]}
+>
+  <Select
+    mode="multiple"
+    placeholder="Select degree"
+    loading={loadingDegrees}
+    showSearch
+    optionFilterProp="label"
+    options={degrees.map(d => ({
+      label: d.name || d.degreeName || d.title, // adapt to your API fields
+      value: d.degreeName || d.name || d.title, // adapt to your API fields
+    }))}
+  />
+</Form.Item>
+<Form.Item
+  label="Specializations"
+  name="specialization"
+  rules={[{ required: true, message: 'Please select at least one specialization' }]}
+>
+  <Select
+    mode="multiple"
+    placeholder="Select specializations"
+    loading={loadingSpecs}
+    showSearch
+    optionFilterProp="label"
+    options={specializationOptions.map(s => ({
+      label: s,
+      value: s,
+    }))}
+  />
+</Form.Item>
+<Form.Item
+  label="Experience"
+  name="experience"
+  rules={[{ required: true, message: 'Please enter your experience' }]}
+>
+  <Input type="number" />
+</Form.Item>
+
+<Form.Item
+  label="About"
+  name="about"
+>
+  <Input.TextArea />
+</Form.Item>
+
               </>
             )}
-            {/* {editModalType === 'locations' && (
-              <Form.List name="workingLocations">
-                {(fields, { add, remove }) => (
-                  <>
-                    {fields.map(({ key, name, ...restField }) => (
-                      <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'name']}
-                          label="Clinic Name"
-                        >
-                          <Input />
-                        </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'address']}
-                          label="Address"
-                        >
-                          <Input />
-                        </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'startTime']}
-                          label="Start Time"
-                        >
-                          <Input />
-                        </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'endTime']}
-                          label="End Time"
-                        >
-                          <Input />
-                        </Form.Item>
-                        <Button onClick={() => remove(name)}>Remove</Button>
-                      </Space>
-                    ))}
-                    <Form.Item>
-                      <Button type="dashed" onClick={() => add()} block>
-                        Add Location
-                      </Button>
-                    </Form.Item>
-                  </>
-                )}
-              </Form.List>
-            )} */}
-            {/* {editModalType === 'kyc' && (
-              <>
-                <Form.Item label="PAN Number" name="panNumber">
-                  <Input />
-                </Form.Item>
-                <Form.Item label="PAN Image" name="panImage">
-                  <UploadImage onUpload={(file) => form.setFieldsValue({ panImage: file })} />
-                </Form.Item>
-                <Form.Item label="Voter ID" name="voterId">
-                  <Input />
-                </Form.Item>
-                <Form.Item label="Voter ID Image" name="voterIdImage">
-                  <UploadImage onUpload={(file) => form.setFieldsValue({ voterIdImage: file })} />
-                </Form.Item>
-              </>
-            )}
+          {editModalType === 'kyc' && (
+  <>
+    <Form.Item
+      label="PAN Number"
+      name="panNumber"
+      rules={[
+        { required: true, message: 'Please enter your PAN number' },
+      ]}
+    >
+      <Input style={{ textTransform: 'uppercase' }} maxLength={10} />
+    </Form.Item>
+
+    <Form.Item
+      label="PAN Image"
+      name="panImage"
+      rules={[{ required: true, message: 'Please upload a PAN image' }]}
+    >
+      <UploadImage onUpload={(file) => form.setFieldsValue({ panImage: file })} />
+    </Form.Item>
+  </>
+)}
+
             {editModalType === 'consultation' && (
               <Form.List name="consultationModeFee">
                 {(fields, { add, remove }) => (
@@ -971,13 +1012,6 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                         >
                           <Input />
                         </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'description']}
-                          label="Description"
-                        >
-                          <Input />
-                        </Form.Item>
                         <Button onClick={() => remove(name)}>Remove</Button>
                       </Space>
                     ))}
@@ -989,7 +1023,7 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                   </>
                 )}
               </Form.List>
-            )} */}
+            )}
             {editModalType === 'bank' && (
               <>
                 <Form.Item label="Bank Name" name={["bankDetails", "bankName"]}>
@@ -1009,9 +1043,7 @@ await apiUploadFile("/users/updateSpecialization", formDataObj); // ✅ DO NOT p
                 <Form.Item label="IFSC Code" name={["bankDetails", "ifscCode"]}>
                   <Input />
                 </Form.Item>
-                {/* <Form.Item label="Account Proof" name={["bankDetails", "accountProof"]}>
-                  <UploadImage onUpload={(file) => form.setFieldsValue({ bankDetails: { accountProof: file } })} />
-                </Form.Item> */}
+               
               </>
             )}
           </Form>

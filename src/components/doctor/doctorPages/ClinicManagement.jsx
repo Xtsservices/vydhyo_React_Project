@@ -1559,7 +1559,7 @@ export default function ClinicManagement() {
                     <input
                       type="text"
                       name="pincode"
-                      placeholder="Pincode (auto-filled)"
+                      placeholder="Pincode"
                       className="clinic-form-input"
                       value={formData.pincode}
                       maxLength={6}

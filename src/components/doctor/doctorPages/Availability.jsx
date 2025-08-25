@@ -31,6 +31,10 @@ import { useSelector } from "react-redux";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import dayjs from 'dayjs';
 import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+import "../../stylings/AvailabilityScreen.css";
+
+
 
 
 const { Title, Text } = Typography;
@@ -76,10 +80,22 @@ const AvailabilityScreen = () => {
   const [clinicSlots, setClinicSlots] = useState({});
 
   // Available slots time controls
-  const [availableStartTime, setAvailableStartTime] = useState(9);
-  const [availableStartPeriod, setAvailableStartPeriod] = useState("AM");
+  // const [availableStartTime, setAvailableStartTime] = useState(9);
+  const [availableStartTime, setAvailableStartTime] = useState(() => {
+  const now = moment();
+  const isToday = selectedDate && moment(selectedDate).isSame(now, "day");
+  return isToday ? (now.hour() % 12 || 12) : 9;  // convert 24h to 12h clock
+});
+
+const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
+  const now = moment();
+  const isToday = selectedDate && moment(selectedDate).isSame(now, "day");
+  return isToday ? (now.hour() >= 12 ? "PM" : "AM") : "AM";
+});
+
+  // const [availableStartPeriod, setAvailableStartPeriod] = useState("AM");
   const [availableEndTime, setAvailableEndTime] = useState(11);
-  const [availableEndPeriod, setAvailableEndPeriod] = useState("AM");
+  const [availableEndPeriod, setAvailableEndPeriod] = useState("PM");
   const [availableDuration, setAvailableDuration] = useState(30);
 
   // Unavailable slots time controls
@@ -105,6 +121,22 @@ const AvailabilityScreen = () => {
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
+
+  useEffect(() => {
+  if (!selectedDate) return;
+
+  const now = moment();
+  const isToday = moment(selectedDate).isSame(now, "day");
+
+  if (isToday) {
+    setAvailableStartTime(now.hour() % 12 || 12);
+    setAvailableStartPeriod(now.hour() >= 12 ? "PM" : "AM");
+  } else {
+    setAvailableStartTime(9);
+    setAvailableStartPeriod("AM");
+  }
+}, [selectedDate]);
 
   // Helper function to get current clinic's slots
   const getCurrentClinicSlots = () => {
@@ -303,74 +335,63 @@ const AvailabilityScreen = () => {
     setSlotPopup((p) => ({ ...p, open: false }));
 
 
-  const handleAddAvailableSlots = async () => {
-    try {
-      setLoading(true);
+ const handleAddAvailableSlots = async () => {
+  if (loading) return; // ✅ Prevents multiple triggers
+  setLoading(true);
 
-      const getDateRangeArray = (fromDate, endDate) => {
-        const dates = [];
-        let currentDate = moment(fromDate, "YYYY-MM-DD");
-        const end = moment(endDate, "YYYY-MM-DD");
-        while (currentDate.isSameOrBefore(end)) {
-          dates.push(currentDate.format("YYYY-MM-DD"));
-          currentDate.add(1, "days");
-        }
-        return dates;
-      };
-
-      const fromDate = selectedDate?.format("YYYY-MM-DD");
-      const endDate = selectedEndDate?.format("YYYY-MM-DD");
-      const selectedDates =
-        fromDate && endDate ? getDateRangeArray(fromDate, endDate) : [fromDate];
-
-      const response = await apiPost("/appointment/createSlotsForDoctor", {
-        doctorId,
-        dates: selectedDates,
-        startTime: moment(`${availableStartTime}:00 ${availableStartPeriod}`, "hh:mm A").format("HH:mm"),
-        endTime: moment(`${availableEndTime}:00 ${availableEndPeriod}`, "hh:mm A").format("HH:mm"),
-        interval: availableDuration,
-        isAvailable: true,
-        addressId: selectedClinic,
-      });
-
-      console.log("response", response);
-
-      if (response?.data?.status === "success") {
-        const reasons = Array.isArray(response?.data?.results)
-          ? response.data.results.map((r) => r?.reason).filter(Boolean)
-          : [];
-
-        // Prefer reasons (joined lines). Fallback to server message. Fallback to a friendly default.
-        const popupMsg =
-          (reasons.length ? reasons.join("\n") : response?.data?.message) ||
-          "Available slots created successfully.";
-
-        // Show popup (always on success)
-        openSlotPopup("Slot creation result", popupMsg);
-
-        // Keep your toasts if you like
-        if (reasons.length) {
-          alert(popupMsg);
-          // toast.warning(popupMsg);
-        }else{
-        toast.success(response?.data?.message || "Available slots created successfully");
-        }
-
-        fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
-      } else {
-        const errMsg = response?.data?.message || "Failed to create available slots";
-        openSlotPopup("Unable to create slots", errMsg);
-        message.error(errMsg);
+  try {
+    const getDateRangeArray = (fromDate, endDate) => {
+      const dates = [];
+      let currentDate = moment(fromDate, "YYYY-MM-DD");
+      const end = moment(endDate, "YYYY-MM-DD");
+      while (currentDate.isSameOrBefore(end)) {
+        dates.push(currentDate.format("YYYY-MM-DD"));
+        currentDate.add(1, "days");
       }
-    } catch (error) {
-      console.error("Error creating available slots:", error);
-      const errMsg = error?.response?.data?.message || "Failed to create available slots";
-      openSlotPopup("Error", errMsg);
-      message.error(errMsg);
-    } finally {
-      setLoading(false);
+      return dates;
+    };
+
+    const fromDate = selectedDate?.format("YYYY-MM-DD");
+    const endDate = selectedEndDate?.format("YYYY-MM-DD");
+    const selectedDates =
+      fromDate && endDate ? getDateRangeArray(fromDate, endDate) : [fromDate];
+
+    const response = await apiPost("/appointment/createSlotsForDoctor", {
+      doctorId,
+      dates: selectedDates,
+      startTime: moment(`${availableStartTime}:00 ${availableStartPeriod}`, "hh:mm A").format("HH:mm"),
+      endTime: moment(`${availableEndTime}:00 ${availableEndPeriod}`, "hh:mm A").format("HH:mm"),
+      interval: availableDuration,
+      isAvailable: true,
+      addressId: selectedClinic,
+    });
+
+    const reasons = Array.isArray(response?.data?.results)
+      ? response.data.results.map((r) => r?.reason).filter(Boolean)
+      : [];
+
+    const popupMsg =
+      (reasons.length ? reasons.join("\n") : response?.data?.message) ||
+      "Available slots created successfully.";
+
+    openSlotPopup("Slot creation result", popupMsg);
+
+    if (reasons.length) {
+      alert(popupMsg)
+    } else {
+      toast.success(response?.data?.message || "Available slots created successfully")
     }
-  };
+
+    fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
+  } catch (error) {
+    const errMsg = error?.response?.data?.message || "Failed to create available slots";
+    openSlotPopup("Error", errMsg);
+    message.error(errMsg);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
 
 
@@ -742,6 +763,22 @@ const AvailabilityScreen = () => {
                   icon={<DownOutlined />}
                   onClick={() => adjustTime("start", "down", "available")}
                   style={{ display: "block", width: 30, height: 20 }}
+                   disabled={(() => {
+          const isToday = selectedDate && moment(selectedDate).isSame(moment(), "day");
+          if (!isToday) return false;
+
+          const now = moment();
+          const nowHour12 = (now.hour() % 12) || 12;
+          const nowPeriod = now.hour() >= 12 ? "PM" : "AM";
+
+          // If it's PM now, any AM is in the past
+          if (nowPeriod === "PM" && availableStartPeriod === "AM") return true;
+
+          // Same period: can't go below current hour
+          if (availableStartPeriod === nowPeriod && availableStartTime <= nowHour12) return true;
+
+          return false;
+        })()}
                 />
               </div>
               <Button
@@ -857,17 +894,19 @@ const AvailabilityScreen = () => {
 
           {/* Action Buttons */}
           <Col xs={12} sm={6}>
-            <Space>
-              <Button
-                type="primary"
-                onClick={handleAddAvailableSlots}
-                icon={<PlusOutlined />}
-                style={{ fontWeight: "bold" }}
-              >
-                Add Available Slots
-              </Button>
+           <Space>
+  <Button
+    type="primary"
+    onClick={handleAddAvailableSlots}
+    icon={<PlusOutlined />}
+    style={{ fontWeight: "bold" }}
+    disabled={loading}   // ✅ Prevent multiple clicks
+    loading={loading}    // ✅ Shows spinner while processing
+  >
+    Add Available Slots
+  </Button>
+</Space>
 
-            </Space>
           </Col>
 
           <Col xs={12} sm={6}>
@@ -1232,55 +1271,29 @@ const AvailabilityScreen = () => {
                 <Space>
                   <Text strong>Manage Availability for:</Text>
                   <Text strong>Start Date:</Text>
-                  <input
-                    type="date"
-                    style={{
-                      alignSelf: "flex-end",
-                      borderRadius: "12px",
-                      background: "#F6F6F6",
-                      padding: "0.4rem",
-                      color: "#1977f3",
-                      width: "120px",
-                      border: "1px solid #d9d9d9",
-                      marginBottom: 16,
-                    }}
-                      max={
-      selectedEndDate
-        ? selectedEndDate.format("YYYY-MM-DD")
-        : ''
-    }
-                    min={moment().format("YYYY-MM-DD")}
-                    value={selectedDate ? selectedDate.format("YYYY-MM-DD") : ""}
-                    onChange={(e) => {
-                      const dateValue = e.target.value;
-                      setSelectedDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
-                    }}
-                  />
+                 <input
+  type="date"
+  className="date-input"
+  max={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ''}
+  min={moment().format("YYYY-MM-DD")}
+  value={selectedDate ? selectedDate.format("YYYY-MM-DD") : ""}
+  onChange={(e) => {
+    const dateValue = e.target.value;
+    setSelectedDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
+  }}
+/>
 
                   <Text strong>End Date:</Text>
-                  <input
-                    type="date"
-                    style={{
-                      alignSelf: "flex-end",
-                      borderRadius: "12px",
-                      background: "#F6F6F6",
-                      padding: "0.4rem",
-                      color: "#1977f3",
-                      width: "120px",
-                      border: "1px solid #d9d9d9",
-                      marginBottom: 16,
-                    }}
-                     min={
-      selectedDate
-        ? selectedDate.format("YYYY-MM-DD")
-        : moment().format("YYYY-MM-DD")
-    }
-                    value={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ""}
-                    onChange={(e) => {
-                      const dateValue = e.target.value;
-                      setSelectedEndDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
-                    }}
-                  />
+                 <input
+  type="date"
+  className="date-input"
+  min={selectedDate ? selectedDate.format("YYYY-MM-DD") : moment().format("YYYY-MM-DD")}
+  value={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ""}
+  onChange={(e) => {
+    const dateValue = e.target.value;
+    setSelectedEndDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
+  }}
+/>
                 </Space>
               </div>
             }
