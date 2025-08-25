@@ -21,7 +21,7 @@ const { Option } = Select;
 const MyPatients = () => {
   const navigate = useNavigate();
   const hasfetchPatients = useRef(false);
-  
+
   const user = useSelector((state) => state.currentUserData);
 
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
@@ -48,18 +48,18 @@ const MyPatients = () => {
   });
   const [prescriptionLoading, setPrescriptionLoading] = useState(false);
   const [ePrescriptionData, setEPrescriptionData] = useState(null);
-    const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 5,
     total: 0,
   });
   const [filters, setFilters] = useState({
-  type: "all",
-  // other filters if needed
-});
+    type: "all",
+    // other filters if needed
+  });
 
 
-   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
+  const totalPages = Math.ceil(pagination.total / pagination.pageSize);
 
   const pageSize = 10;
 
@@ -71,7 +71,7 @@ const MyPatients = () => {
     setLoading(true);
     try {
 
-        const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         message.error("No authentication token found. Please login again.");
         navigate('/Login')
@@ -79,18 +79,18 @@ const MyPatients = () => {
       }
 
       const queryParams = new URLSearchParams({
-            doctorId,
-            ...(searchText && { searchText }),
-            ...(filters.type !== "all" && { appointmentType: filters.type }),
-             page: pagination.current,
-            limit: pagination.pageSize,
-          });
-      
-          console.log('Fetching appointments with params:', queryParams.toString()); // Debug log
-          const response = await apiGet(
-            `/appointment/getAppointmentsByDoctorID/patients?${queryParams.toString()}`
-          );
-    
+        doctorId,
+        ...(searchText && { searchText }),
+        ...(filters.type !== "all" && { appointmentType: filters.type }),
+        page: pagination.current,
+        limit: pagination.pageSize,
+      });
+
+      console.log('Fetching appointments with params:', queryParams.toString()); // Debug log
+      const response = await apiGet(
+        `/appointment/getAppointmentsByDoctorID/patients?${queryParams.toString()}`
+      );
+
       const data = response.data;
 
       console.log(response, "response.data from patients.jsx");
@@ -98,16 +98,32 @@ const MyPatients = () => {
       let patientsData = [];
 
       if (response.status === 200 && data.data) {
-         const { appointments, pagination } = response.data.data;
+        const { appointments, pagination } = response.data.data;
+        function formatDate(dateStr) {
+          const d = new Date(dateStr);
+          return d.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }).replace(/ /g, "-");
+        }
+        const formattedAppointments = appointments.map((item) => {
+          const formattedDate = item.appointmentDate
+            ? formatDate(item.appointmentDate)
+            : "N/A";
+
+          return { ...item, appointmentDate: formattedDate };
+        });
+        console.log(formattedAppointments, "Formatted Appointments");
         const appointmentsData = Array.isArray(data.data)
           ? data.data
           : [data.data];
 
-          console.log(appointments)
+        console.log(appointments)
 
-        const patientsDataUnsorted = appointments.map((appointment) => ({
+        const patientsDataUnsorted = formattedAppointments.map((appointment) => ({
           id:
-            appointment.userId ,
+            appointment.userId,
           appointmentId: appointment.appointmentId || "N/A",
           name: appointment.patientName || "N/A",
           gender: appointment.patientDetails?.gender || "N/A",
@@ -115,13 +131,11 @@ const MyPatients = () => {
             ? calculateAge(appointment.patientDetails.dob)
             : appointment?.patientDetails?.age,
           phone: appointment.patientDetails?.mobile || "N/A",
-          lastVisit: appointment.appointmentDate
-            ? moment(appointment.appointmentDate).format("DD MMMM YYYY")
-            : "N/A",
+          lastVisit: appointment.appointmentDate || "N/A",
           appointmentType: appointment.appointmentType || "N/A",
           status:
             appointment.appointmentType === "New-Walkin" ||
-            appointment.appointmentType === "new-walkin"
+              appointment.appointmentType === "new-walkin"
               ? "New Patient"
               : "Follow-up",
           department: appointment.appointmentDepartment || "N/A",
@@ -134,11 +148,11 @@ const MyPatients = () => {
         }));
         setPatients(patientsDataUnsorted);
 
-         setPagination({
-        current: pagination.currentPage,
-        pageSize: pagination.pageSize,
-        total: pagination.totalItems
-      });
+        setPagination({
+          current: pagination.currentPage,
+          pageSize: pagination.pageSize,
+          total: pagination.totalItems
+        });
       }
     } catch (error) {
       console.error("Error fetching patients:", error);
@@ -148,11 +162,11 @@ const MyPatients = () => {
     }
   }
 
- useEffect(() => {
-  if (user && doctorId) {
-    fetchPatients();
-  }
-}, [user, doctorId, searchText, pagination.current, pagination.pageSize, filters]);
+  useEffect(() => {
+    if (user && doctorId) {
+      fetchPatients();
+    }
+  }, [user, doctorId, searchText, pagination.current, pagination.pageSize, filters]);
 
 
 
@@ -221,12 +235,12 @@ const MyPatients = () => {
     [patients, searchField]
   );
 
- const handleSort = (value) => {
-  setFilters((prev) => ({
-    ...prev,
-    type: value,
-  }));
-};
+  const handleSort = (value) => {
+    setFilters((prev) => ({
+      ...prev,
+      type: value,
+    }));
+  };
 
 
   const handleExport = useCallback(() => {
@@ -406,9 +420,8 @@ const MyPatients = () => {
               <Search style={styles.searchIcon} />
               <input
                 type="text"
-                placeholder={`Search by ${
-                  searchField === "all" ? "Patient ID, Name " : searchField
-                }`}
+                placeholder={`Search by ${searchField === "all" ? "Patient ID, Name " : searchField
+                  }`}
                 value={searchText.toUpperCase()}
                 onChange={(e) => setSearchText(e.target.value.toLowerCase())}
                 style={styles.searchInput}
@@ -500,11 +513,11 @@ const MyPatients = () => {
                       {shouldDisplayValue(
                         ePrescriptionData.patientInfo?.chiefComplaint
                       ) && (
-                        <div style={styles.infoItem}>
-                          <strong>Chief Complaint:</strong>{" "}
-                          {ePrescriptionData.patientInfo.chiefComplaint}
-                        </div>
-                      )}
+                          <div style={styles.infoItem}>
+                            <strong>Chief Complaint:</strong>{" "}
+                            {ePrescriptionData.patientInfo.chiefComplaint}
+                          </div>
+                        )}
                     </div>
                   </div>
 
@@ -520,27 +533,27 @@ const MyPatients = () => {
                       {shouldDisplayValue(
                         ePrescriptionData.vitals?.pulseRate
                       ) && (
-                        <div style={styles.infoItem}>
-                          <strong>Pulse Rate:</strong>{" "}
-                          {ePrescriptionData.vitals.pulseRate}
-                        </div>
-                      )}
+                          <div style={styles.infoItem}>
+                            <strong>Pulse Rate:</strong>{" "}
+                            {ePrescriptionData.vitals.pulseRate}
+                          </div>
+                        )}
                       {shouldDisplayValue(
                         ePrescriptionData.vitals?.respiratoryRate
                       ) && (
-                        <div style={styles.infoItem}>
-                          <strong>Respiratory Rate:</strong>{" "}
-                          {ePrescriptionData.vitals.respiratoryRate}
-                        </div>
-                      )}
+                          <div style={styles.infoItem}>
+                            <strong>Respiratory Rate:</strong>{" "}
+                            {ePrescriptionData.vitals.respiratoryRate}
+                          </div>
+                        )}
                       {shouldDisplayValue(
                         ePrescriptionData.vitals?.temperature
                       ) && (
-                        <div style={styles.infoItem}>
-                          <strong>Temperature:</strong>{" "}
-                          {ePrescriptionData.vitals.temperature}
-                        </div>
-                      )}
+                          <div style={styles.infoItem}>
+                            <strong>Temperature:</strong>{" "}
+                            {ePrescriptionData.vitals.temperature}
+                          </div>
+                        )}
                       {shouldDisplayValue(ePrescriptionData.vitals?.spo2) && (
                         <div style={styles.infoItem}>
                           <strong>SPO2:</strong> {ePrescriptionData.vitals.spo2}
@@ -570,14 +583,14 @@ const MyPatients = () => {
                   {shouldDisplayValue(
                     ePrescriptionData.diagnosis?.diagnosisNote
                   ) && (
-                    <div style={styles.subSection}>
-                      <h4 style={styles.subSectionTitle}>Diagnosis</h4>
-                      <div style={styles.infoItem}>
-                        <strong>Diagnosis Note:</strong>{" "}
-                        {ePrescriptionData.diagnosis.diagnosisNote}
+                      <div style={styles.subSection}>
+                        <h4 style={styles.subSectionTitle}>Diagnosis</h4>
+                        <div style={styles.infoItem}>
+                          <strong>Diagnosis Note:</strong>{" "}
+                          {ePrescriptionData.diagnosis.diagnosisNote}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Advice Section */}
                   <div style={styles.subSection}>
@@ -586,13 +599,13 @@ const MyPatients = () => {
                       {shouldDisplayValue(
                         ePrescriptionData.advice?.followUpDate
                       ) && (
-                        <div style={styles.infoItem}>
-                          <strong>Follow-up Date:</strong>{" "}
-                          {moment(ePrescriptionData.advice.followUpDate).format(
-                            "DD MMMM YYYY"
-                          )}
-                        </div>
-                      )}
+                          <div style={styles.infoItem}>
+                            <strong>Follow-up Date:</strong>{" "}
+                            {moment(ePrescriptionData.advice.followUpDate).format(
+                              "DD MMMM YYYY"
+                            )}
+                          </div>
+                        )}
                       {shouldDisplayValue(ePrescriptionData.advice?.advice) && (
                         <div style={styles.infoItem}>
                           <strong>Advice:</strong>{" "}
@@ -772,47 +785,47 @@ const MyPatients = () => {
 
         <div style={styles.paginationControls}>
           <button
-  disabled={pagination.current === 1}
-  onClick={() =>
-    setPagination((prev) => ({
-      ...prev,
-      current: prev.current - 1,
-    }))
-  }
->
-  Previous
-</button>
+            disabled={pagination.current === 1}
+            onClick={() =>
+              setPagination((prev) => ({
+                ...prev,
+                current: prev.current - 1,
+              }))
+            }
+          >
+            Previous
+          </button>
 
-{Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-  <button
-    key={page}
-    style={
-      page === pagination.current
-        ? styles.paginationButtonActive
-        : styles.paginationButton
-    }
-    onClick={() =>
-      setPagination((prev) => ({
-        ...prev,
-        current: page,
-      }))
-    }
-  >
-    {page}
-  </button>
-))}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              style={
+                page === pagination.current
+                  ? styles.paginationButtonActive
+                  : styles.paginationButton
+              }
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  current: page,
+                }))
+              }
+            >
+              {page}
+            </button>
+          ))}
 
-<button
-  disabled={pagination.current === totalPages}
-  onClick={() =>
-    setPagination((prev) => ({
-      ...prev,
-      current: prev.current + 1,
-    }))
-  }
->
-  Next
-</button>
+          <button
+            disabled={pagination.current === totalPages}
+            onClick={() =>
+              setPagination((prev) => ({
+                ...prev,
+                current: prev.current + 1,
+              }))
+            }
+          >
+            Next
+          </button>
 
         </div>
       </div>

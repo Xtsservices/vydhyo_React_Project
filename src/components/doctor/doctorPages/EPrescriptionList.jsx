@@ -75,10 +75,10 @@ const EPrescriptionList = () => {
     }
 
     const calculateEndTime = (startTime) => {
-        if (!startTime) return "";
-        const time = moment(startTime, "HH:mm");
-        return time.add(30, 'minutes').format("HH:mm");
-      };
+      if (!startTime) return "";
+      const time = moment(startTime, "HH:mm");
+      return time.add(30, 'minutes').format("HH:mm");
+    };
 
     const patientData = {
       appointmentId: appointment.appointmentId,
@@ -92,8 +92,8 @@ const EPrescriptionList = () => {
       appointmentReason: appointment.appointmentReason || "N/A",
       addressId: appointment.addressId,
       appointmentTime: appointment.appointmentTime,
-    appointmentDate: appointment.appointmentDate,
-    appointmentEndTime: appointment.appointmentEndTime || calculateEndTime(appointment.appointmentTime),
+      appointmentDate: appointment.appointmentDate,
+      appointmentEndTime: appointment.appointmentEndTime || calculateEndTime(appointment.appointmentTime),
     };
 
     navigate("/doctor/doctorPages/EPrescription", { state: { patientData } });
@@ -151,7 +151,39 @@ const EPrescriptionList = () => {
 
       if (response.status === 200) {
         const { appointments, pagination } = response.data.data;
-        setAppointments(appointments);
+        function formatDate(dateStr) {
+          const d = new Date(dateStr);
+          return d.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }).replace(/ /g, "-");
+        }
+
+
+        function formatTimeString(timeStr) {
+          let [hours, minutes] = timeStr.split(":").map(Number);
+          const ampm = hours >= 12 ? "PM" : "AM";
+          hours = hours % 12 || 12;
+          return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+        }
+
+        const formattedAppointments = appointments.map((appt) => ({
+          ...appt,
+          appointmentDate: new Date(appt.appointmentDate)
+            .toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+            .replace(/ /g, "-"),
+          appointmentTime: appt.appointmentTime
+            ? formatTimeString(appt.appointmentTime)
+            : "N/A",
+        }));
+        console.log("Formatted Appointments:", formattedAppointments);
+
+        setAppointments(formattedAppointments);
         setPagination({
           current: pagination.currentPage,
           pageSize: pagination.pageSize,
@@ -276,11 +308,11 @@ const EPrescriptionList = () => {
       key: "dateTime",
       render: (_, record) => (
         <span>
-          {moment(record.appointmentDate).format("YYYY-MM-DD")}{" "}
-          {record.appointmentTime}
+          {record.appointmentDate} {record.appointmentTime}
         </span>
       ),
     },
+
     {
       title: "Action",
       key: "action",
