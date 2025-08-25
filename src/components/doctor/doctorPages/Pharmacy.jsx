@@ -131,7 +131,7 @@ export default function Pharmacy() {
         doctorId: doctorId,
       });
 
-      setForm({ medName: "", quantity: "", price: "", cgst: "", gst: "" });
+      setForm({ medName: "", dosage: "", quantity: "", price: "", cgst: "", gst: "" });
       setErrors({});
       setIsModalVisible(false);
       toast.success("Medicine added successfully", {
@@ -166,7 +166,7 @@ export default function Pharmacy() {
   };
 
   const handleCancel = () => {
-    setForm({ medName: "", quantity: "", price: "", cgst: "", gst: "" });
+    setForm({ medName: "", dosage: "", quantity: "", price: "", cgst: "", gst: "" });
     setErrors({});
     setIsModalVisible(false);
   };
@@ -194,6 +194,7 @@ export default function Pharmacy() {
         const processedData = jsonData.map((row, index) => ({
           key: index,
           medName: row.medName || row.MedName || row["Medicine Name"] || "",
+          dosage: row.dosage || row.Dosage || "",
           price: parseFloat(row.price || row.Price || 0),
           quantity: parseInt(row.quantity || row.Quantity || 0),
           cgst: parseFloat(row.cgst || row.CGST || 0),
@@ -296,18 +297,20 @@ export default function Pharmacy() {
     }
   };
 
-  const downloadTemplate = () => {
-    const sampleData = [
-      { medName: "Paracetamol", price: 10.5, quantity: 100, cgst: 5, gst: 5 },
-      { medName: "Ibuprofen", price: 15.75, quantity: 50, cgst: 5, gst: 5 },
-      { medName: "Amoxicillin", price: 25, quantity: 30, cgst: 5, gst: 5 },
-    ];
+const downloadTemplate = () => {
+  const sampleData = [
+    { medName: "Paracetamol", dosage: "500mg", price: 25, quantity: 100, gst: 6, cgst: 6 },
+    { medName: "Amoxicillin", dosage: "250mg", price: 50, quantity: 200, gst: 6, cgst: 6 },
+    { medName: "Ibuprofen", dosage: "400mg", price: 30, quantity: 150, gst: 6, cgst: 6 },
+    { medName: "Cetirizine", dosage: "10mg", price: 15, quantity: 250, gst: 6, cgst: 6 },
+    { medName: "Metformin", dosage: "500mg", price: 40, quantity: 300, gst: 6, cgst: 6 },
+  ];
 
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Medicines");
-    XLSX.writeFile(workbook, "medicine_template.xlsx");
-  };
+  const worksheet = XLSX.utils.json_to_sheet(sampleData, { header: ["medName", "dosage", "price", "quantity", "gst", "cgst"] });
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Medicines");
+  XLSX.writeFile(workbook, "medicine_template.xlsx");
+};
 
   const tabItems = [
     {
@@ -335,7 +338,13 @@ export default function Pharmacy() {
     {
       key: "3",
       label: "Medicines",
-      children: <MedicinesTab refreshTrigger={refreshTrigger} />,
+      children: (
+        <MedicinesTab 
+          refreshTrigger={refreshTrigger} 
+          showModal={showModal}
+          showBulkModal={showBulkModal}
+        />
+      ),
     },
   ];
 
@@ -365,6 +374,11 @@ export default function Pharmacy() {
       title: "Medicine Name",
       dataIndex: "medName",
       key: "medName",
+    },
+    {
+      title: "Dosage",
+      dataIndex: "dosage",
+      key: "dosage",
     },
     {
       title: "Price (₹)",
@@ -455,20 +469,6 @@ export default function Pharmacy() {
               </Card>
             </Col>
           </Row>
-
-          <div style={{ marginBottom: "24px", textAlign: "right" }}>
-            <Button
-              type="default"
-              icon={<UploadOutlined />}
-              onClick={showBulkModal}
-              style={{ marginRight: "8px" }}
-            >
-              Bulk Import
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>
-              Add Medicine
-            </Button>
-          </div>
 
           <Modal
             title="Add Medicine to Inventory"
@@ -641,7 +641,7 @@ export default function Pharmacy() {
             <div style={{ padding: "16px 0" }}>
               <Alert
                 message="Upload Instructions"
-                description="Please upload an Excel file (.xlsx) with columns: medName, price, quantity, cgst, gst. Download the template for reference."
+                description="Please upload an Excel file (.xlsx) with columns: medName, dosage, price, quantity, cgst, gst. Download the template for reference."
                 type="info"
                 showIcon
                 style={{ marginBottom: "16px" }}

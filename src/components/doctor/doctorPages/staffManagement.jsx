@@ -51,65 +51,65 @@ const StaffModal = ({
   const [form] = Form.useForm();
   const [selectedRole, setSelectedRole] = useState(initialData?.role || initialData?.type || null); // Track selected role
 
-useEffect(() => {
-  if (modalMode === "edit" && initialData) {
-    // Format DOB for input type="date" (YYYY-MM-DD)
-    const dob = initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY").format("YYYY-MM-DD") : "";
-    
-    form.setFieldsValue({
-      firstName: initialData.name?.split(" ")[0] || "",
-      lastName: initialData.name?.split(" ")[1] || "",
-      DOB: dob,
-      gender: initialData.gender,
-      mobile: initialData.phone,
-      email: initialData.email,
-      role: initialData.type,
-      access: initialData.access || [],
-    });
-    setSelectedRole(initialData.type);
-  } else if (modalMode === "add" && initialData) {
-    // Format DOB for input type="date" (YYYY-MM-DD)
-    const dob = initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY").format("YYYY-MM-DD") : "";
-    
-    form.setFieldsValue({
-      firstName: initialData.firstname || "",
-      lastName: initialData.lastname || "",
-      DOB: dob,
-      gender: initialData.gender,
-      mobile: initialData.mobile,
-      email: initialData.email,
-      role: initialData.role,
-      access: initialData.access || [],
-    });
-    setSelectedRole(initialData.role);
-  } else {
-    form.resetFields();
-    setSelectedRole(null);
-  }
-}, [modalMode, initialData, form]);
+  useEffect(() => {
+    if (modalMode === "edit" && initialData) {
+      // Format DOB for input type="date" (YYYY-MM-DD)
+      const dob = initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY").format("YYYY-MM-DD") : "";
+      
+      form.setFieldsValue({
+        firstName: initialData.name?.split(" ")[0] || "",
+        lastName: initialData.name?.split(" ")[1] || "",
+        DOB: dob,
+        gender: initialData.gender,
+        mobile: initialData.phone,
+        email: initialData.email,
+        role: initialData.type,
+        access: initialData.access || [],
+      });
+      setSelectedRole(initialData.type);
+    } else if (modalMode === "add" && initialData) {
+      // Format DOB for input type="date" (YYYY-MM-DD)
+      const dob = initialData.DOB ? dayjs(initialData.DOB, "DD-MM-YYYY").format("YYYY-MM-DD") : "";
+      
+      form.setFieldsValue({
+        firstName: initialData.firstname || "",
+        lastName: initialData.lastname || "",
+        DOB: dob,
+        gender: initialData.gender,
+        mobile: initialData.mobile,
+        email: initialData.email,
+        role: initialData.role,
+        access: initialData.access || [],
+      });
+      setSelectedRole(initialData.role);
+    } else {
+      form.resetFields();
+      setSelectedRole(null);
+    }
+  }, [modalMode, initialData, form]);
 
-const handleOk = async () => {
-  try {
-    const values = await form.validateFields();
-    const staffData = {
-      firstname: values.firstName,
-      lastname: values.lastName,
-      DOB: dayjs(values.DOB).format("DD-MM-YYYY") || "", // Format as DD-MM-YYYY for backend
-      gender: values.gender,
-      mobile: values.mobile,
-      email: values.email,
-      role: values.role,
-      access: values.access,
-    };
-    await onSubmit(staffData, modalMode, form);
-  } catch (error) {
-    notification.error({
-      message: "Validation Error",
-      description: "Please check all required fields.",
-      duration: 3,
-    });
-  }
-};
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      const staffData = {
+        firstname: values.firstName,
+        lastname: values.lastName,
+        DOB: dayjs(values.DOB).format("DD-MM-YYYY") || "", // Format as DD-MM-YYYY for backend
+        gender: values.gender,
+        mobile: values.mobile,
+        email: values.email,
+        role: values.role,
+        access: values.access,
+      };
+      await onSubmit(staffData, modalMode, form);
+    } catch (error) {
+      notification.error({
+        message: "Validation Error",
+        description: "Please check all required fields.",
+        duration: 3,
+      });
+    }
+  };
 
   const accessOptions = [
     { value: "my-patients", label: "My Patients" },
@@ -216,26 +216,25 @@ const handleOk = async () => {
 
           <Row gutter={16}>
             <Col span={12}>
-<Form.Item
-  label="Date of Birth"
-  name="DOB"
-  rules={[{ required: true, message: 'Please select DOB' }]}
->
-  <input
-    type="date"
-    style={{
-      alignSelf: 'flex-end',
-      borderRadius: '12px',
-      background: '#F6F6F6',
-      padding: '0.4rem',
-      color: '#1977f3',
-      width: '100%',
-      border: '1px solid #d9d9d9',
-    }}
-    max={new Date().toISOString().split('T')[0]} // disables future dates
-  />
-</Form.Item>
-
+              <Form.Item
+                label="Date of Birth"
+                name="DOB"
+                rules={[{ required: true, message: "Please select DOB" }]}
+              >
+                <input
+                  type="date"
+                  style={{
+                    alignSelf: "flex-end",
+                    borderRadius: "12px",
+                    background: "#F6F6F6",
+                    padding: "0.4rem",
+                    color: "#1977f3",
+                    width: "100%",
+                    border: "1px solid #d9d9d9",
+                  }}
+                  max={new Date().toISOString().split("T")[0]} // disables future dates
+                />
+              </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
@@ -445,8 +444,7 @@ const StaffManagement = () => {
 
           if (errorMessage.includes("mobile") || errorMessage.includes("phone")) {
             errorMessage = "Mobile number already exists for another staff member";
-          }
-          if (errorMessage.includes("email")) {
+          } else if (errorMessage.includes("email")) {
             errorMessage = "Email already exists for another staff member";
           }
 
@@ -487,7 +485,10 @@ const StaffManagement = () => {
         if (error.response.status === 401) {
           errorMessage = "Authentication failed. Please login again.";
         } else if (error.response.status === 400) {
-          errorMessage = "Invalid data provided. Please check all fields.";
+          errorMessage =
+            error.response.data?.message?.message || // Matches the backend response structure
+            error.response.data?.message || // General message
+            "Invalid data provided. Please check all fields.";
         }
       } else if (error.request) {
         errorMessage = "Network error. Please check your internet connection.";
@@ -750,7 +751,7 @@ const StaffManagement = () => {
 
   useEffect(() => {
     if (user && !hasfetchStaff.current) {
-      hasfetchStaff.current = true
+      hasfetchStaff.current = true;
       fetchStaff();
     }
   }, [user]);

@@ -138,23 +138,32 @@ useEffect(() => {
     return dobDate <= today;
   }, []);
 
-  const calculateAge = useCallback(
-    (dob) => {
-      if (!dob || !validateDOB(dob)) return "";
-      const dobDate = moment(dob, "DD-MM-YYYY").toDate();
-      const today = new Date();
-      const age = today.getFullYear() - dobDate.getFullYear();
-      const monthDiff = today.getMonth() - dobDate.getMonth();
-      if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < dobDate.getDate())
-      ) {
-        return String(age - 1);
-      }
-      return String(age);
-    },
-    [validateDOB]
-  );
+const calculateAge = useCallback((dob) => {
+  if (!dob || !validateDOB(dob)) return "";
+  
+  const dobDate = moment(dob, "DD-MM-YYYY").toDate();
+  const today = new Date();
+  
+  // Calculate years and months
+  const years = today.getFullYear() - dobDate.getFullYear();
+  const months = today.getMonth() - dobDate.getMonth();
+  
+  let ageText = "";
+  
+  if (years === 0 && months === 0) {
+    // Less than 1 month old
+    const days = today.getDate() - dobDate.getDate();
+    ageText = `${days}d`;
+  } else if (years === 0) {
+    // Less than 1 year old
+    ageText = `${months}m`;
+  } else {
+    // 1 year or older
+    ageText = `${years}y`;
+  }
+  
+  return ageText;
+}, [validateDOB]);
 
   const formatTimeForAPI = useCallback((timeSlot) => {
     if (!timeSlot) return "";
@@ -269,19 +278,42 @@ useEffect(() => {
     }
   }, []);
 
-  const createPatient = useCallback(async () => {
-    try {
-      const body = JSON.stringify({
-        firstname: patientData.firstName,
-        lastname: patientData.lastName,
-        gender: patientData.gender,
-        mobile: patientData.phoneNumber,
-        DOB: patientData.dateOfBirth
-          ? moment(patientData.dateOfBirth, "DD-MM-YYYY").format("DD-MM-YYYY")
-          : "",
+  // Add this validation function
+const validateAge = useCallback((age) => {
+  if (!age) return false;
+  // Valid formats: 6m, 2y, 15d, or plain numbers
+  return /^(\d+[myd]?|\d+[myd])$/i.test(age);
+}, []);
 
-          age: patientData?.age || calculateAge(patientData.dateOfBirth) || "0",
-      });
+// Use it in your validation logic
+if (patientData.age && !validateAge(patientData.age)) {
+  errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
+}
+
+const createPatient = useCallback(async () => {
+  try {
+    // Parse age if it's in format like "6m", "2y", "15d"
+    let ageValue = "0";
+    if (patientData.age) {
+      if (patientData.age.includes('m') || patientData.age.includes('y') || patientData.age.includes('d')) {
+        ageValue = patientData.age; // Keep as is for formatted age
+      } else {
+        ageValue = patientData.age; // Plain number
+      }
+    } else if (patientData.dateOfBirth) {
+      ageValue = calculateAge(patientData.dateOfBirth);
+    }
+
+    const body = JSON.stringify({
+      firstname: patientData.firstName,
+      lastname: patientData.lastName,
+      gender: patientData.gender,
+      mobile: patientData.phoneNumber,
+      DOB: patientData.dateOfBirth
+        ? moment(patientData.dateOfBirth, "DD-MM-YYYY").format("DD-MM-YYYY")
+        : "",
+      age: ageValue
+    });
       console.log("Creating patient with body:", body);
 
       const response = await apiPost("/doctor/createPatient", body);
@@ -430,36 +462,88 @@ useEffect(() => {
     [searchResults, patientData, searchQuery]
   );
 
-  const handleInputChange = useCallback((field, value) => {
-    console.log("Input Change:", field, value);
-    setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
-    let validatedValue = value;
- if (field === "firstName" || field === "lastName") {
+const handleInputChange = useCallback((field, value) => {
+  console.log("Input Change:", field, value);
+  setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+  let validatedValue = value;
+  
+  if (field === "firstName" || field === "lastName") {
     const onlyAlphabets = value.replace(/[^A-Za-z ]/g, "");
     setPatientData((prev) => ({ ...prev, [field]: onlyAlphabets }));
-    return
-  }
-    if (field === "phoneNumber") {
-  let digitsOnly = value.replace(/\D/g, "");
-  if (digitsOnly.length === 1 && !/^[6-9]/.test(digitsOnly)) {
     return;
   }
-  if (digitsOnly.length > 10) {
-    digitsOnly = digitsOnly.slice(0, 10);
+  
+  if (field === "phoneNumber") {
+    let digitsOnly = value.replace(/\D/g, "");
+    if (digitsOnly.length === 1 && !/^[6-9]/.test(digitsOnly)) {
+      return;
+    }
+    if (digitsOnly.length > 10) {
+      digitsOnly = digitsOnly.slice(0, 10);
+    }
+    validatedValue = digitsOnly;
   }
-  validatedValue = digitsOnly;
-}
-if (field === "age") {
-  validatedValue = value.replace(/\D/g, "");
-  if (validatedValue.length > 3) {
-    validatedValue = validatedValue.slice(0, 3);
+  
+  if (field === "age") {
+    // Allow numbers followed by 'm', 'y', or 'd' (months, years, days)
+    validatedValue = value.replace(/[^0-9myd]/gi, "");
+    
+    // Limit length to prevent very long inputs
+    if (validatedValue.length > 5) {
+      validatedValue = validatedValue.slice(0, 5);
+    }
   }
-}
-    if (field === "visitReason" && value.length > 500)
-      validatedValue = value.substring(0, 500);
+  
+  if (field === "visitReason" && value.length > 500)
+    validatedValue = value.substring(0, 500);
 
-    setPatientData((prev) => ({ ...prev, [field]: validatedValue }));
-  }, []);
+  // Update the state
+  setPatientData((prev) => {
+    const newData = { ...prev, [field]: validatedValue };
+    
+    // If dateOfBirth is changed, automatically update the age field
+    if (field === "dateOfBirth") {
+      if (validatedValue) {
+        const calculatedAge = calculateAge(validatedValue);
+        if (calculatedAge) {
+          newData.age = calculatedAge;
+        }
+      } else {
+        // Clear age if dateOfBirth is cleared
+        newData.age = "";
+      }
+    }
+    
+    // If age is changed and follows the pattern (e.g., "2m"), calculate date of birth
+    if (field === "age" && validatedValue && /^\d+[myd]$/i.test(validatedValue)) {
+      const today = new Date();
+      const ageValue = parseInt(validatedValue);
+      const ageUnit = validatedValue.slice(-1).toLowerCase();
+      
+      let calculatedDOB = new Date();
+      
+      if (ageUnit === 'y') {
+        // Years
+        calculatedDOB.setFullYear(today.getFullYear() - ageValue);
+      } else if (ageUnit === 'm') {
+        // Months
+        calculatedDOB.setMonth(today.getMonth() - ageValue);
+      } else if (ageUnit === 'd') {
+        // Days
+        calculatedDOB.setDate(today.getDate() - ageValue);
+      }
+      
+      // Format as DD-MM-YYYY
+      const day = String(calculatedDOB.getDate()).padStart(2, '0');
+      const month = String(calculatedDOB.getMonth() + 1).padStart(2, '0');
+      const year = calculatedDOB.getFullYear();
+      
+      newData.dateOfBirth = `${day}-${month}-${year}`;
+    }
+    
+    return newData;
+  });
+}, [calculateAge]); // Add calculateAge as dependency
 
   const handleCreatePatient = useCallback(async () => {
     setIsCreatingPatient(true);
@@ -797,134 +881,143 @@ console.log("first2")
   );
 
   const renderBasicInfoCard = () => (
-    <Card
-      title={
-        <>
-          <UserOutlined /> Basic Information
-        </>
-      }
-      style={{ marginBottom: 16 }}
-    >
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={8}>
-          <Text strong>First Name *</Text>
-          <Input
-            placeholder="Enter first name"
-            value={patientData.firstName}
-            onChange={(e) => handleInputChange("firstName", e.target.value)}
-            disabled={isCreatingPatient || userFound}
-            style={{ marginTop: 8 }}
-          />
-          {fieldErrors.firstName && (
-            <Text type="danger">{fieldErrors.firstName}</Text>
-          )}
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Last Name </Text>
-          <Input
-            placeholder="Enter last name"
-            value={patientData.lastName}
-            onChange={(e) => handleInputChange("lastName", e.target.value)}
-            disabled={isCreatingPatient || userFound}
-            style={{ marginTop: 8 }}
-          />
-          {fieldErrors.lastName && (
-            <Text type="danger">{fieldErrors.lastName}</Text>
-          )}
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Phone Number *</Text>
-          <Input
-            placeholder="Enter 10-digit phone number"
-            value={patientData.phoneNumber}
-            onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-            maxLength={10}
-            disabled={isCreatingPatient || userFound}
-            style={{ marginTop: 8 }}
-          />
-          {fieldErrors.phoneNumber && (
-            <Text type="danger">{fieldErrors.phoneNumber}</Text>
-          )}
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Date of Birth </Text>
-          <input  
-            type="date"
-            style={{
-              alignSelf: "flex-end",
-              borderRadius: "12px",
-              background: "#F6F6F6",
-              padding: "0.4rem",
-              color: "#1977f3",
-              width: "130px",
-              border: "1px solid #d9d9d9",
-              marginTop: 8,
-            }}
-            max={new Date().toISOString().split("T")[0]} // Prevent future dates
-            value={
-              patientData.dateOfBirth
-                ? moment(patientData.dateOfBirth, "DD-MM-YYYY").format("YYYY-MM-DD")
-                : ""
-            }
-            onChange={(e) =>
-              handleInputChange(
-                "dateOfBirth",
-                e.target.value ? moment(e.target.value, "YYYY-MM-DD").format("DD-MM-YYYY") : ""
-              )
-            }
-            disabled={isCreatingPatient || userFound}
-          />
-          {fieldErrors.dateOfBirth && (
-            <Text type="danger">{fieldErrors.dateOfBirth}</Text>
-          )}
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Age (Calculated)</Text>
-          <Input
-            placeholder="Age calculated from DOB"
-            value={
-              patientData.dateOfBirth
-                ? calculateAge(patientData.dateOfBirth) || patientData.age
-                : patientData.age
-            }
-            onChange={(e) => handleInputChange("age", e.target.value)}
-            style={{ marginTop: 8 }}
-            disabled={!!patientData.dateOfBirth} // Disable only if DOB is selected
-          />
-        </Col>
-        <Col xs={24} sm={8}>
-          <Text strong>Gender *</Text>
-          <Select
-            value={patientData.gender || undefined}
-            onChange={(value) => handleInputChange("gender", value)}
-            placeholder="Select gender"
-            disabled={isCreatingPatient || userFound}
-            style={{ width: "100%", marginTop: 8 }}
-            allowClear
-          >
-            <Option value="Male">Male</Option>
-            <Option value="Female">Female</Option>
-            <Option value="Other">Other</Option>
-          </Select>
-          {fieldErrors.gender && (
-            <Text type="danger">{fieldErrors.gender}</Text>
-          )}
-        </Col>
+  <Card
+    title={
+      <>
+        <UserOutlined /> Basic Information
+      </>
+    }
+    style={{ marginBottom: 16 }}
+  >
+    <Row gutter={[16, 16]}>
+      <Col xs={24} sm={8}>
+        <Text strong>First Name *</Text>
+        <Input
+          placeholder="Enter first name"
+          value={patientData.firstName}
+          onChange={(e) => handleInputChange("firstName", e.target.value)}
+          disabled={isCreatingPatient || userFound}
+          style={{ marginTop: 8 }}
+        />
+        {fieldErrors.firstName && (
+          <Text type="danger">{fieldErrors.firstName}</Text>
+        )}
+      </Col>
+      <Col xs={24} sm={8}>
+        <Text strong>Last Name </Text>
+        <Input
+          placeholder="Enter last name"
+          value={patientData.lastName}
+          onChange={(e) => handleInputChange("lastName", e.target.value)}
+          disabled={isCreatingPatient || userFound}
+          style={{ marginTop: 8 }}
+        />
+        {fieldErrors.lastName && (
+          <Text type="danger">{fieldErrors.lastName}</Text>
+        )}
+      </Col>
+      <Col xs={24} sm={8}>
+        <Text strong>Phone Number *</Text>
+        <Input
+          placeholder="Enter 10-digit mobile number"
+          value={patientData.phoneNumber}
+          onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+          maxLength={10}
+          disabled={isCreatingPatient || userFound}
+          style={{ marginTop: 8 }}
+        />
+        {fieldErrors.phoneNumber && (
+          <Text type="danger">{fieldErrors.phoneNumber}</Text>
+        )}
+      </Col>
+<Col xs={24} sm={8}>
+  <Text strong>Date of Birth </Text>
+  <input  
+    type="date"
+    style={{
+      alignSelf: "flex-end",
+      borderRadius: "12px",
+      background: "#F6F6F6",
+      padding: "0.4rem",
+      color: "#1977f3",
+      width: "130px",
+      border: "1px solid #d9d9d9",
+      marginTop: 8,
+    }}
+    max={new Date().toISOString().split("T")[0]} // Prevent future dates
+    value={
+      patientData.dateOfBirth
+        ? moment(patientData.dateOfBirth, "DD-MM-YYYY").isValid()
+          ? moment(patientData.dateOfBirth, "DD-MM-YYYY").format("YYYY-MM-DD")
+          : ""
+        : ""
+    }
+    onChange={(e) =>
+      handleInputChange(
+        "dateOfBirth",
+        e.target.value ? moment(e.target.value, "YYYY-MM-DD").format("DD-MM-YYYY") : ""
+      )
+    }
+    disabled={isCreatingPatient || userFound}
+  />
+  {fieldErrors.dateOfBirth && (
+    <Text type="danger">{fieldErrors.dateOfBirth}</Text>
+  )}
+  {patientData.age && /^\d+[myd]$/i.test(patientData.age) && (
+    <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 4 }}>
+    </Text>
+  )}
+</Col>
+<Col xs={24} sm={8}>
+  <Text strong>Age *</Text>
+  <Input
+    placeholder="Enter age (e.g., 6m, 2y, 15d)"
+    value={patientData.age}
+    onChange={(e) => handleInputChange("age", e.target.value)}
+    disabled={isCreatingPatient || userFound} // Only disable when user is found or creating
+    style={{ marginTop: 8 }}
+  />
+  {fieldErrors.age && (
+    <Text type="danger">{fieldErrors.age}</Text>
+  )}
+  {patientData.dateOfBirth && !/^\d+[myd]$/i.test(patientData.age) && (
+    <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 4 }}>
+      Calculated from DOB: {calculateAge(patientData.dateOfBirth)}
+    </Text>
+  )}
+</Col>
+      <Col xs={24} sm={8}>
+        <Text strong>Gender *</Text>
+        <Select
+          value={patientData.gender}
+          onChange={(value) => handleInputChange("gender", value)}
+          placeholder="Select gender"
+          disabled={isCreatingPatient || userFound}
+          style={{ width: "100%", marginTop: 8 }}
+        >
+          <Option value="Male">Male</Option>
+          <Option value="Female">Female</Option>
+          <Option value="Other">Other</Option>
+        </Select>
+        {fieldErrors.gender && (
+          <Text type="danger">{fieldErrors.gender}</Text>
+        )}
+      </Col>
+    </Row>
+    {!userFound && !patientCreated && (
+      <Row justify="end" style={{ marginTop: 16 }}>
+        <Button
+          type="primary"
+          onClick={handleCreatePatient}
+          loading={isCreatingPatient}
+          disabled={isCreatingPatient || clinics.length === 0}
+        >
+          Create Patient
+        </Button>
       </Row>
-      {!userFound && !patientCreated && (
-        <Row justify="end" style={{ marginTop: 16 }}>
-          <Button
-            type="primary"
-            onClick={handleCreatePatient}
-            loading={isCreatingPatient}
-            disabled={isCreatingPatient || clinics.length === 0}
-          >
-            Create Patient
-          </Button>
-        </Row>
-      )}
-    </Card>
-  );
+    )}
+  </Card>
+);
 
   const renderAppointmentDetailsCard = () => (
     <Card
