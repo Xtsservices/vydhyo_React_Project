@@ -281,7 +281,6 @@ useEffect(() => {
           : "",
 
           age: patientData?.age || calculateAge(patientData.dateOfBirth) || "0",
-appSource: "walk-in",
       });
       console.log("Creating patient with body:", body);
 

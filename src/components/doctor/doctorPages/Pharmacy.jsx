@@ -51,6 +51,7 @@ export default function Pharmacy() {
   const [cardsData, setCardsData] = useState();
   const [form, setForm] = useState({
     medName: "",
+    dosage: "",
     quantity: "",
     price: "",
     cgst: "",
@@ -94,6 +95,9 @@ export default function Pharmacy() {
     if (!form.medName.trim()) {
       newErrors.medName = "Medicine name is required";
     }
+     if (!form.dosage.trim()) {
+      newErrors.dosage = "Dosage is required";
+    }
     if (!form.price || form.price < 0) {
       newErrors.price = "Price must be non-negative";
     }
@@ -119,6 +123,7 @@ export default function Pharmacy() {
       const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
       await apiPost("pharmacy/addMedInventory", {
         medName: form.medName,
+         dosage: form.dosage,
         price: form.price,
         quantity: form.quantity,
         cgst: form.cgst,
@@ -489,6 +494,25 @@ export default function Pharmacy() {
                     style={{ color: "red", fontSize: "12px", marginTop: "4px" }}
                   >
                     {errors.medName}
+                  </div>
+                )}
+              </div>
+
+               <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", marginBottom: "8px" }}>
+                  Dosage
+                </label>
+                <Input
+                  name="dosage"
+                  value={form.dosage}
+                  onChange={handleInputChange}
+                  placeholder="Enter dosage (e.g., 100mg)"
+                />
+                {errors.dosage && (
+                  <div
+                    style={{ color: "red", fontSize: "12px", marginTop: "4px" }}
+                  >
+                    {errors.dosage}
                   </div>
                 )}
               </div>
