@@ -201,3 +201,29 @@
   min-width: 120px;
   border-radius: 8px;
 }
+
+.date-input {
+  align-self: flex-end;
+  border-radius: 12px;
+  background: #f6f6f6;
+  padding: 0.4rem;
+  color: #1977f3;
+  width: 120px;
+  border: 1px solid #d9d9d9;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+/* Force text color in date picker fields */
+.date-input::-webkit-datetime-edit,
+.date-input::-webkit-datetime-edit-text,
+.date-input::-webkit-datetime-edit-year-field,
+.date-input::-webkit-datetime-edit-month-field,
+.date-input::-webkit-datetime-edit-day-field {
+  color: #1977f3;
+}
+
+/* Firefox */
+.date-input {
+  color: #1977f3;
+}
