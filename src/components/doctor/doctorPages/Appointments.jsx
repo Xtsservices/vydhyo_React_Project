@@ -200,11 +200,11 @@ const handleEPrescription = (appointment) => {
       }
     } catch (error) {
       console.error("Cancellation error:", error);
-     
+
       const errorMsg =
         error.response?.data?.message ||
         "Failed to cancel appointment. Please try again.";
-        console.log("Cancellation error:", errorMsg.message);
+      console.log("Cancellation error:", errorMsg.message);
       // message.error(errorMsg);
       toast.error(errorMsg.message || "Failed to cancel appointment");
     } finally {
@@ -280,8 +280,8 @@ const handleEPrescription = (appointment) => {
         );
       }
     } catch (error) {
-              toast.error(error?.response?.data?.message?.message ||error?.response?.data?.message || "Failed to cancel appointment");
-        setIsRescheduleModalVisible(false);
+      toast.error(error?.response?.data?.message?.message || error?.response?.data?.message || "Failed to cancel appointment");
+      setIsRescheduleModalVisible(false);
 
       // const errorMsg =
       //   error.response?.data?.message ||
@@ -315,7 +315,39 @@ const handleEPrescription = (appointment) => {
 
       if (response.status === 200) {
         const { appointments, pagination } = response.data.data;
-        setAppointments(appointments);
+        function formatDate(dateStr) {
+          const d = new Date(dateStr);
+          return d.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }).replace(/ /g, "-");
+        }
+
+
+        function formatTimeString(timeStr) {
+          let [hours, minutes] = timeStr.split(":").map(Number);
+          const ampm = hours >= 12 ? "PM" : "AM";
+          hours = hours % 12 || 12;
+          return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+        }
+
+        const formattedAppointments = appointments.map((appt) => ({
+          ...appt,
+          appointmentDate: new Date(appt.appointmentDate)
+            .toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+            .replace(/ /g, "-"),
+          appointmentTime: appt.appointmentTime
+            ? formatTimeString(appt.appointmentTime)
+            : "N/A",
+        }));
+        console.log("Formatted Appointments:", formattedAppointments);
+
+        setAppointments(formattedAppointments);
         setPagination({
           current: pagination.currentPage,
           pageSize: pagination.pageSize,
@@ -332,47 +364,47 @@ const handleEPrescription = (appointment) => {
     }
   };
 
-const getAppointmentsCount = async () => {
-  setLoading(true);
-  try {
-    let startDateForCount, endDateForCount;
-    
-    if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
-      // Use the selected date range
-      startDateForCount = moment(filters.dateRange[0]).format("YYYY-MM-DD");
-      endDateForCount = moment(filters.dateRange[1]).format("YYYY-MM-DD");
-    } else {
-      // Default to current month if no date range selected
-      startDateForCount = moment().startOf('month').format("YYYY-MM-DD");
-      endDateForCount = moment().endOf('month').format("YYYY-MM-DD");
-    }
-console.log("date===", startDateForCount, endDateForCount)
-    const response = await apiGet(
-      `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}&startDate=${startDateForCount}&endDate=${endDateForCount}`
-    );
+  const getAppointmentsCount = async () => {
+    setLoading(true);
+    try {
+      let startDateForCount, endDateForCount;
 
-    if (response.status === 200) {
-      const count = response?.data?.data;
-      setTotalAppointmentsCount(count.total);
-      setScheduledAppointmentsCount(count.scheduled);
-      setCompletedAppointmentsCount(count.completed);
-      setCancledAppointmentsCount(count.cancelled);
-    } else {
-      message.error("Failed to fetch appointments count");
-    }
-  } catch (error) {
-    console.error("Error fetching appointments:", error);
-    message.error("Error fetching appointments");
-  } finally {
-    setLoading(false);
-  }
-};
+      if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
+        // Use the selected date range
+        startDateForCount = moment(filters.dateRange[0]).format("YYYY-MM-DD");
+        endDateForCount = moment(filters.dateRange[1]).format("YYYY-MM-DD");
+      } else {
+        // Default to current month if no date range selected
+        startDateForCount = moment().startOf('month').format("YYYY-MM-DD");
+        endDateForCount = moment().endOf('month').format("YYYY-MM-DD");
+      }
+      console.log("date===", startDateForCount, endDateForCount)
+      const response = await apiGet(
+        `/appointment/getAppointmentsCountByDoctorID?doctorId=${doctorId}&startDate=${startDateForCount}&endDate=${endDateForCount}`
+      );
 
-useEffect(() => {
-  if (user && doctorId) {
-    getAppointmentsCount();
-  }
-}, [filters.dateRange, user, doctorId]);
+      if (response.status === 200) {
+        const count = response?.data?.data;
+        setTotalAppointmentsCount(count.total);
+        setScheduledAppointmentsCount(count.scheduled);
+        setCompletedAppointmentsCount(count.completed);
+        setCancledAppointmentsCount(count.cancelled);
+      } else {
+        message.error("Failed to fetch appointments count");
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      message.error("Error fetching appointments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && doctorId) {
+      getAppointmentsCount();
+    }
+  }, [filters.dateRange, user, doctorId]);
 
   useEffect(() => {
     getAppointments(1, pagination.pageSize);
@@ -595,7 +627,7 @@ useEffect(() => {
       key: "dateTime",
       render: (_, record) => (
         <span>
-          {moment(record.appointmentDate).format("YYYY-MM-DD")}{" "}
+          {record.appointmentDate}{" "}
           {record.appointmentTime}
         </span>
       ),
