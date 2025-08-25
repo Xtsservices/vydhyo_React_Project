@@ -1477,11 +1477,7 @@ const appointmentPrintDisabled = patient.appointmentDetails.length === 0;
                               >
                                 Pharmacy
                               </div>
-                              <div
-                                style={{ fontSize: "12px", color: "#6b7280" }}
-                              >
-                                View medicines and billing
-                              </div>
+                              
                             </div>
                           </div>
                           <div
@@ -1887,11 +1883,7 @@ const printDisabled = !hasCompletedPharmacyItem;
                               >
                                 Labs
                               </div>
-                              <div
-                                style={{ fontSize: "12px", color: "#6b7280" }}
-                              >
-                                View lab reports and billing
-                              </div>
+                              
                             </div>
                           </div>
                           <div style={{ color: "#6b7280", fontSize: "18px" }}>
@@ -2207,11 +2199,7 @@ const printDisabled = !hasCompletedLabItem;
                               >
                                 Consultation Bill
                               </div>
-                              <div
-                                style={{ fontSize: "12px", color: "#6b7280" }}
-                              >
-                                View appointments and billing
-                              </div>
+                              
                             </div>
                           </div>
                           <div style={{ color: "#6b7280", fontSize: "18px" }}>

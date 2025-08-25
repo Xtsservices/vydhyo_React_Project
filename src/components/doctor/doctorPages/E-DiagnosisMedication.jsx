@@ -18,6 +18,8 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
   const [testOptions, setTestOptions] = useState([]);
   const [testInputValue, setTestInputValue] = useState("");
   const [showTestNotes, setShowTestNotes] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const [localData, setLocalData] = useState({
     diagnosisList: formData?.diagnosisList || "",
@@ -27,7 +29,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
         ? formData.medications
         : [],
     testNotes: formData?.testNotes || "",
-    // medicationNotes: formData?.medicationNotes || "",
   });
 
   const timingOptions = [
@@ -48,6 +49,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     "0-1-0",
     "1-1-0",
     "0-1-1",
+    "SOS",
   ];
 
   useEffect(() => {
@@ -89,7 +91,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
       const response = await apiGet(`/lab/getAllTestsByDoctorId/${doctorId}`);
       const tests = response.data.tests || [];
 
-      // Sort tests alphabetically by testName
       const sortedTests = [...tests].sort((a, b) =>
         a.testName.localeCompare(b.testName)
       );
@@ -169,75 +170,110 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     if (!dosage || !dosage.trim()) {
       return false;
     }
-    const dosageRegex =
-      /^\d+\s*(mg|ml|g|tablet|tab|capsule|cap|spoon|drop)s?$/i;
+    const dosageRegex = /^\d+(\.\d+)?\s*(mg|mcg|g|kg|ml|l|tablet|tab|capsule|cap|tsp|tbsp|tablespoon|teaspoon|spoon|drop|unit|puff|spray|amp|ampoule|vial)s?$/i;
     return dosageRegex.test(dosage);
   };
 
-  const validateMedication = (medication) => {
-    if (!medication.medName.trim()) {
-      toast.error("Please enter a valid medicine name");
-      return false;
-    }
-    if (medication.quantity === null || medication.quantity <= 0) {
-      toast.error("Please enter a valid quantity greater than 0");
-      return false;
-    }
-    if (!medication.medicineType) {
-      toast.error("Please select a medicine type");
-      return false;
-    }
-    if (!medication.dosage || !validateDosage(medication.dosage)) {
-      toast.error("Please enter a valid dosage (e.g., 100mg, 5ml)");
-      return false;
-    }
-    if (medication.duration === null || medication.duration <= 0) {
-      toast.error("Please enter a valid duration greater than 0 days");
-      return false;
-    }
-    if (!medication.frequency) {
-      toast.error("Please select a frequency");
-      return false;
-    }
-    
-    // Validate timings match frequency
-    if (medication.frequency !== "SOS") {
-      const requiredTimings = medication.frequency.split("-").filter(x => x === "1").length;
-      if (medication.timings.length !== requiredTimings) {
-        toast.error(
-          `Please select exactly ${requiredTimings} timing${requiredTimings > 1 ? "s" : ""} to match the frequency ${medication.frequency}`
-        );
-        return false;
+  const validateSingleMedication = (id, field = null) => {
+    const medication = localData.medications.find((med) => med.id === id);
+    if (!medication) return;
+
+    let medErrors = { ...errors[id] } || {};
+
+    if (!field || field === "medName") {
+      if (touched[id]?.medName && !medication.medName.trim()) {
+        medErrors.medName = "Please enter a valid medicine name";
+      } else {
+        delete medErrors.medName;
       }
     }
-    
-    return true;
+
+    if (!field || field === "quantity") {
+      if (touched[id]?.quantity && (medication.quantity === null || medication.quantity <= 0)) {
+        medErrors.quantity = "Please enter a valid quantity greater than 0";
+      } else {
+        delete medErrors.quantity;
+      }
+    }
+
+    if (!field || field === "medicineType") {
+      if (touched[id]?.medicineType && !medication.medicineType) {
+        medErrors.medicineType = "Please select a medicine type";
+      } else {
+        delete medErrors.medicineType;
+      }
+    }
+
+    if (!field || field === "dosage") {
+      if (touched[id]?.dosage && (!medication.dosage || !validateDosage(medication.dosage))) {
+        medErrors.dosage = "Please enter a valid dosage (e.g., 100mg, 5ml, 1 tablet, 0.5 tsp, 1 tbsp)";
+      } else {
+        delete medErrors.dosage;
+      }
+    }
+
+    if (!field || field === "duration") {
+      if (touched[id]?.duration && (medication.duration === null || medication.duration <= 0)) {
+        medErrors.duration = "Please enter a valid duration greater than 0 days";
+      } else {
+        delete medErrors.duration;
+      }
+    }
+
+    if (!field || field === "frequency") {
+      if (touched[id]?.frequency && !medication.frequency) {
+        medErrors.frequency = "Please select a frequency";
+      } else {
+        delete medErrors.frequency;
+      }
+    }
+
+    if (!field || field === "timings") {
+      if (touched[id]?.timings && medication.frequency && medication.frequency !== "SOS") {
+        const requiredTimings = medication.frequency.split("-").filter((x) => x === "1").length;
+        if (medication.timings.length !== requiredTimings) {
+          medErrors.timings = `Please select exactly ${requiredTimings} timing${requiredTimings > 1 ? "s" : ""} to match the frequency ${medication.frequency}`;
+        } else {
+          delete medErrors.timings;
+        }
+      } else {
+        delete medErrors.timings;
+      }
+    }
+
+    setErrors((prev) => ({
+      ...prev,
+      [id]: Object.keys(medErrors).length > 0 ? medErrors : undefined,
+    }));
+  };
+
+  const validateMedication = (medication) => {
+    validateSingleMedication(medication.id);
+    return !errors[medication.id] || Object.keys(errors[medication.id]).length === 0;
   };
 
   const validateAllMedications = () => {
     if (localData.medications.length === 0) {
-      return true; // No medications to validate
+      return true;
     }
 
-    let allValid = true;
-    
     localData.medications.forEach((medication) => {
-      if (!validateMedication(medication)) {
-        allValid = false;
-      }
+      validateSingleMedication(medication.id);
     });
 
-    return allValid;
+    return localData.medications.every(
+      (medication) => !errors[medication.id] || Object.keys(errors[medication.id]).length === 0
+    );
   };
 
   const addMedication = () => {
-    const lastMedication =
-      localData.medications[localData.medications.length - 1];
-    if (
-      localData.medications.length > 0 &&
-      !validateMedication(lastMedication)
-    ) {
-      return;
+    if (localData.medications.length > 0) {
+      const lastMedication = localData.medications[localData.medications.length - 1];
+      validateSingleMedication(lastMedication.id);
+      if (errors[lastMedication.id] && Object.keys(errors[lastMedication.id]).length > 0) {
+        toast.error("Please fix the errors in the last medication before adding a new one");
+        return;
+      }
     }
 
     const newMedication = {
@@ -260,6 +296,10 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
+    setTouched((prev) => ({
+      ...prev,
+      [newMedication.id]: {},
+    }));
   };
 
   const removeMedication = (id) => {
@@ -269,6 +309,16 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[id];
+      return newErrors;
+    });
+    setTouched((prev) => {
+      const newTouched = { ...prev };
+      delete newTouched[id];
+      return newTouched;
+    });
     toast.success("Medicine removed successfully");
   };
 
@@ -292,18 +342,19 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
         }
 
         if (field === "medicineType") {
-          // Reset quantity when medicine type changes
           updatedMed.quantity = null;
+          if (["Tablet", "Capsule", "Injection"].includes(value) && updatedMed.duration && updatedMed.frequency) {
+            const timesPerDay = updatedMed.frequency.split("-").filter(x => x === "1").length;
+            updatedMed.quantity = updatedMed.duration * timesPerDay;
+          }
         }
 
         if (field === "duration" || field === "frequency") {
           const newDuration = field === "duration" ? value : med.duration;
           const newFrequency = field === "frequency" ? value : med.frequency;
 
-          // Auto-calculate quantity for tablets, capsules, and injections
           if (["Tablet", "Capsule", "Injection"].includes(med.medicineType)) {
             if (newFrequency && newDuration) {
-              // Calculate based on frequency (count of '1's in the frequency string)
               const timesPerDay = newFrequency.split("-").filter(x => x === "1").length;
               updatedMed.quantity = newDuration * timesPerDay;
             } else {
@@ -323,6 +374,13 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
+    setTouched((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: true },
+    }));
+    if (field !== "dosage" && field !== "duration") {
+      validateSingleMedication(id, field);
+    }
   };
 
   const updateMedicationFrequency = (id, value) => {
@@ -342,7 +400,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
 
         const filteredTimings = med.timings.slice(0, requiredTimingsCount);
 
-        // Calculate new quantity if medicine type requires it
         let newQuantity = med.quantity;
         if (["Tablet", "Capsule", "Injection"].includes(med.medicineType) && med.duration) {
           const timesPerDay = value.split("-").filter(x => x === "1").length;
@@ -353,7 +410,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           ...med,
           frequency: value,
           timings: filteredTimings,
-          quantity: newQuantity
+          quantity: newQuantity,
         };
       }
       return med;
@@ -365,6 +422,11 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
+    setTouched((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], frequency: true },
+    }));
+    validateSingleMedication(id, "frequency");
   };
 
   const handleQuantityChange = (id, value) => {
@@ -384,6 +446,27 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     };
     setLocalData(updatedData);
     updateFormData(updatedData);
+    setTouched((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], quantity: true },
+    }));
+    validateSingleMedication(id, "quantity");
+  };
+
+  const handleDosageBlur = (id, value) => {
+    setTouched((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], dosage: true },
+    }));
+    validateSingleMedication(id, "dosage");
+  };
+
+  const handleDurationBlur = (id, value) => {
+    setTouched((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], duration: true },
+    }));
+    validateSingleMedication(id, "duration");
   };
 
   const medicineTypeOptions = [
@@ -404,28 +487,22 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     return frequency.split("-").filter((x) => x === "1").length;
   };
 
-  // Function to validate before tab switch
   const validateBeforeTabSwitch = () => {
     let isValid = true;
-    
-    localData.medications.forEach(medication => {
-      if (medication.frequency && medication.frequency !== "SOS") {
-        const requiredTimings = medication.frequency.split("-").filter(x => x === "1").length;
-        if (medication.timings.length !== requiredTimings) {
-          toast.error(
-            `For medicine ${medication.medName || 'unnamed'}, please select exactly ${requiredTimings} timing${requiredTimings > 1 ? 's' : ''} to match the frequency ${medication.frequency}`
-          );
-          isValid = false;
-        }
+
+    localData.medications.forEach((medication) => {
+      validateSingleMedication(medication.id);
+      if (errors[medication.id] && errors[medication.id].timings) {
+        toast.error(errors[medication.id].timings);
+        isValid = false;
       }
     });
-    
+
     return isValid;
   };
 
   return (
     <div className="common-container">
-      {/* Diagnostic Tests Section */}
       <div className="diagnostic-tests-section">
         <div className="diagnostic-tests-header">
           <div style={{ display: "flex", alignItems: "center" }}>
@@ -441,7 +518,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           </div>
         </div>
 
-        {/* Add Test Input */}
         <div style={{ marginBottom: "16px" }}>
           <AutoComplete
             options={testOptions}
@@ -459,7 +535,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           </Button>
         </div>
 
-        {/* Tests List */}
         <div className="tests-list">
           {localData.selectedTests.map((test, index) => (
             <div key={index} className="test-item">
@@ -474,7 +549,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           ))}
         </div>
 
-        {/* Add Note Button for Diagnostic Tests */}
         <div style={{ marginTop: "16px", marginBottom: "16px" }}>
           <Button
             type="primary"
@@ -485,7 +559,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           </Button>
         </div>
 
-        {/* Note Box for Diagnostic Tests (Conditional) */}
         {showTestNotes && (
           <div className="note-box">
             <div className="note-header">Notes:</div>
@@ -506,7 +579,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
         )}
       </div>
 
-      {/* Diagnosis Section */}
       <div className="diagnosis-section">
         <div className="diagnosis-header">
           <div
@@ -544,7 +616,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
         </div>
       </div>
 
-      {/* Prescribed Medications Section */}
       <div className="medications-section">
         <div className="medications-header">
           <div style={{ display: "flex", alignItems: "center" }}>
@@ -574,18 +645,15 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           </div>
         </div>
 
-        {/* Display validation error if exists */}
         {validationError && (
           <div className="medication-validation-error">
             {validationError}
           </div>
         )}
 
-        {/* Medications List */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {localData.medications.map((medication) => (
             <div key={medication.id} className="medication-item">
-              {/* First Row - Medicine Name, Quantity */}
               <div className="medication-row">
                 <div>
                   <label
@@ -614,6 +682,11 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                       option.label.toLowerCase().includes(input.toLowerCase())
                     }
                   />
+                  {errors[medication.id]?.medName && (
+                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                      {errors[medication.id].medName}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -643,6 +716,11 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                       </Option>
                     ))}
                   </Select>
+                  {errors[medication.id]?.medicineType && (
+                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                      {errors[medication.id].medicineType}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -673,6 +751,11 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                       disabled
                     />
                   )}
+                  {errors[medication.id]?.quantity && (
+                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                      {errors[medication.id].quantity}
+                    </div>
+                  )}
                 </div>
 
                 {localData.medications.length > 1 && (
@@ -685,7 +768,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                 )}
               </div>
 
-              {/* Second Row - Dosage, Duration */}
               <div className="medication-dosage-row">
                 <div>
                   <label
@@ -705,9 +787,15 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     onChange={(e) =>
                       updateMedication(medication.id, "dosage", e.target.value)
                     }
-                    placeholder="e.g., 100mg, 5ml"
+                    onBlur={() => handleDosageBlur(medication.id, medication.dosage)}
+                    placeholder="Enter dosage"
                     className="medication-field"
                   />
+                  {errors[medication.id]?.dosage && (
+                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                      {errors[medication.id].dosage}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -727,13 +815,18 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     onChange={(value) =>
                       updateMedication(medication.id, "duration", value)
                     }
+                    onBlur={() => handleDurationBlur(medication.id, medication.duration)}
                     style={{ width: "100%" }}
                     min={1}
                   />
+                  {errors[medication.id]?.duration && (
+                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                      {errors[medication.id].duration}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Third Row - Timings, Frequency */}
               <div className="medication-timing-row">
                 <div>
                   <label
@@ -761,6 +854,11 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                       </Option>
                     ))}
                   </Select>
+                  {errors[medication.id]?.frequency && (
+                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                      {errors[medication.id].frequency}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -809,10 +907,14 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                       </Option>
                     ))}
                   </Select>
+                  {errors[medication.id]?.timings && (
+                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                      {errors[medication.id].timings}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Individual Medication Notes */}
               <div className="note-box" style={{ marginTop: "12px" }}>
                 <div className="note-header">Notes for this medication:</div>
                 <textarea
@@ -841,8 +943,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           ))}
         </div>
 
-
-        {/* Add Medicine Button */}
         <div style={{ marginTop: "16px", textAlign: "right" }}>
           <Button
             type="primary"

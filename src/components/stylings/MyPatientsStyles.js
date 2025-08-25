@@ -284,8 +284,8 @@ const styles = {
   },
   infoGrid: {
     display: "grid",
-gridTemplateColumns:
-  "minmax(100px, 120px) minmax(200px, 2fr) minmax(80px, 1fr) minmax(60px, 80px) minmax(120px, 140px) minmax(100px, 120px) minmax(60px, 80px)",    gap: "16px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: "10px",
     marginBottom: "16px",
   },
   infoItem: {
@@ -312,7 +312,6 @@ gridTemplateColumns:
     fontSize: "14px",
     marginTop: "8px",
   },
-
   modalHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -359,7 +358,6 @@ gridTemplateColumns:
     paddingTop: "16px",
     borderTop: "1px solid #e5e7eb",
   },
- 
   closeButton: {
     padding: "8px 16px",
     backgroundColor: "#3b82f6",

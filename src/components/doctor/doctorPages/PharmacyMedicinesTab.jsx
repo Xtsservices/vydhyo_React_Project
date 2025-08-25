@@ -10,15 +10,17 @@ import {
   Space,
   message,
   Spin,
-  Empty
+  Empty,
+  Row,
+  Col
 } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, UploadOutlined, PlusOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import { apiGet } from "../../api";
 
 const { Text } = Typography;
 
-const MedicinesTab = ({ refreshTrigger }) => {
+const MedicinesTab = ({ refreshTrigger, showModal, showBulkModal }) => {
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -172,17 +174,6 @@ const MedicinesTab = ({ refreshTrigger }) => {
       render: (text) => <strong>{text}</strong>,
     },
     {
-      title: 'Quantity',
-      dataIndex: 'quantity',
-      key: 'quantity',
-      width: 80,
-      render: (quantity) => (
-        <span className={quantity < 20 ? 'low-stock' : 'normal-stock'}>
-          {quantity}
-        </span>
-      ),
-    },
-    {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
@@ -216,6 +207,23 @@ const MedicinesTab = ({ refreshTrigger }) => {
 
   return (
     <div style={{ padding: '20px' }}>
+      {/* Add buttons at the top of the Medicines tab */}
+      <Row justify="end" style={{ marginBottom: '16px' }}>
+        <Col>
+          <Button
+            type="default"
+            icon={<UploadOutlined />}
+            onClick={showBulkModal}
+            style={{ marginRight: "8px" }}
+          >
+            Bulk Import
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>
+            Add Medicine
+          </Button>
+        </Col>
+      </Row>
+
       <Spin spinning={loading}>
         <Table 
           columns={columns} 

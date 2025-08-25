@@ -6,15 +6,12 @@ import {
   Col,
   Button,
   Avatar,
-  Dropdown,
-  Menu,
   Grid,
   Space,
 } from "antd";
 import {
   UserOutlined,
   MenuOutlined,
-  DownOutlined,
   DownloadOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
@@ -32,25 +29,6 @@ const Header = () => {
     navigate(path);
     setMenuOpen(false); // Close the menu after navigation
   };
-
-  const menu = (
-    <Menu>
-      <Menu.Item
-        key="1"
-        onClick={() => handleRedirect("/landingPage")}
-        style={{ padding: "8px 16px" }}
-      >
-        For Doctors
-      </Menu.Item>
-      <Menu.Item
-        key="2"
-        onClick={() => handleRedirect("/patients")}
-        style={{ padding: "8px 16px" }}
-      >
-        For Patients
-      </Menu.Item>
-    </Menu>
-  );
 
   return (
     <>
@@ -74,11 +52,9 @@ const Header = () => {
                 src="/images/pic1.png" // Updated path (ensure the image exists in public/images/)
                 alt="Logo"
                 style={{
-                  // width: screens.xs ? 80 : 180,
-                  // height: screens.xs ? 80 : 90,
                   height: screens.xs ? "180px" : "167px",
                   marginBottom: screens.xs ? "-60px" : "-50px",
-                  marginRight: screens.xs ? "8px" : "16px" ,
+                  marginRight: screens.xs ? "8px" : "16px",
                   marginTop: screens.xs ? "-50px" : "-34px",
                   objectFit: "contain",
                   borderRadius: 12,
@@ -142,34 +118,28 @@ const Header = () => {
               </Col>
 
               <Col>
-                <Dropdown
-                  overlay={menu}
-                  trigger={["click"]}
-                  placement="bottomRight"
+                <Button
+                  onClick={() => handleRedirect("/landingPage")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "6px 12px",
+                    background: "#f8f9fa",
+                    borderRadius: 24,
+                    height: 45,
+                    border: "1px solid #e9ecef",
+                  }}
                 >
-                  <Button
+                  <Avatar
+                    size={32}
+                    icon={<UserOutlined />}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "6px 12px",
-                      background: "#f8f9fa",
-                      borderRadius: 24,
-                      height: 45,
-                      border: "1px solid #e9ecef",
+                      background: "linear-gradient(135deg, #667eea, #764ba2)",
                     }}
-                  >
-                    <Avatar
-                      size={32}
-                      icon={<UserOutlined />}
-                      style={{
-                        background: "linear-gradient(135deg, #667eea, #764ba2)",
-                      }}
-                    />
-                    <span style={{ fontWeight: 600 }}>Login</span>
-                    <DownOutlined style={{ fontSize: 12 }} />
-                  </Button>
-                </Dropdown>
+                  />
+                  <span style={{ fontWeight: 600 }}>Doctor Login</span>
+                </Button>
               </Col>
             </Row>
           </Col>

@@ -8,6 +8,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
     bpDiastolic: "",
     pulseRate: "",
     respiratoryRate: "",
+    vitalityRate: "",
     temperature: "",
     spo2: "",
     height: "",
@@ -60,7 +61,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
     },
   };
 
-  useEffect(() => {
+useEffect(() => {
     if (formData && Object.keys(formData).length > 0) {
       const [bpSystolic, bpDiastolic] =
         formData.bp && formData.bp !== "undefined/undefined"
@@ -71,6 +72,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
         bpDiastolic: formData.bpDiastolic || bpDiastolic || "",
         pulseRate: formData.pulseRate || "",
         respiratoryRate: formData.respiratoryRate || "",
+        vitalityRate: formData.vitalityRate || "",
         temperature: formData.temperature || "",
         spo2: formData.spo2 || "",
         height: formData.height || "",
@@ -183,8 +185,10 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
     const resetData = {
       bpSystolic: "",
       bpDiastolic: "",
+      bp: "",
       pulseRate: "",
       respiratoryRate: "",
+      vitalityRate: "",
       temperature: "",
       spo2: "",
       height: "",
@@ -196,6 +200,8 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
     setLocalData(resetData);
     updateFormData(resetData);
     setErrors({});
+    setNewKey("");
+    setNewValue("");
   };
 
   return (
@@ -205,7 +211,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
           <div className="vitals-icon-container blue-icon">
             <Activity size={16} />
           </div>
-          <h2 className="vitals-section-title">Vitals</h2>
+          <h2 className="vitals-section-title">Vitals (Optional)</h2>
         </div>
 
         <div className="vitals-grid">
@@ -248,6 +254,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
           {[
             "pulseRate",
             "respiratoryRate",
+            "vitalityRate",
             "temperature",
             "spo2",
             "height",
@@ -264,6 +271,8 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
                   ? " cm"
                   : field === "weight"
                   ? " kg"
+                  : field === "vitalityRate"
+                  ? " rate"
                   : " bpm"}
               </label>
               <input

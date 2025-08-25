@@ -15,7 +15,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const formatDate = (dateString) => {
-    if (!dateString) return "Date not provided";
+    if (!dateString) return null; // Return null instead of "Date not provided"
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       day: "numeric",
@@ -330,20 +330,30 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
               ) : (
                 selectedClinic && (
                   <>
-                    <div className="clinic-info">
-                      <div>
-                        <div className="clinic-name">
-                          {selectedClinic.clinicName
-                            ? selectedClinic.clinicName.charAt(0).toUpperCase() +
-                              selectedClinic.clinicName.slice(1)
-                            : "Clinic Name"}
+                    {selectedClinic.clinicName &&
+                      selectedClinic.clinicName !== "Clinic Name" && (
+                        <div className="clinic-info">
+                          <div>
+                            <div className="clinic-name">
+                              {selectedClinic.clinicName.charAt(0).toUpperCase() +
+                                selectedClinic.clinicName.slice(1)}
+                            </div>
+                          </div>
                         </div>
+                      )}
+                    {(selectedClinic.address ||
+                      selectedClinic.mobile) && (
+                      <div className="contact-info">
+                        {selectedClinic.address &&
+                          selectedClinic.address !== "Address not provided" && (
+                            <div>📍 {selectedClinic.address}</div>
+                          )}
+                        {selectedClinic.mobile &&
+                          selectedClinic.mobile !== "Contact not provided" && (
+                            <div>📞 {selectedClinic.mobile}</div>
+                          )}
                       </div>
-                    </div>
-                    <div className="contact-info">
-                      <div>📍 {selectedClinic.address || "Address not provided"}</div>
-                      <div>📞 {selectedClinic.mobile || "Contact not provided"}</div>
-                    </div>
+                    )}
                   </>
                 )
               )}
@@ -358,190 +368,323 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
               }}
             >
               <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: "bold",
-                    marginBottom: "4px",
-                  }}
-                >
-                  DR. {formData.doctorInfo?.doctorName || "Unknown Doctor"}
-                </div>
-                <div
-                  style={{
-                    fontSize: "14px",
-                    color: "#6b7280",
-                    marginBottom: "6px",
-                  }}
-                >
-                  {formData.doctorInfo?.qualifications || "Qualifications not provided"} |{" "}
-                  {formData.doctorInfo?.specialization || "Specialist"}
-                </div>
-                <div style={{ fontSize: "13px", color: "#6c757d" }}>
-                  Medical Registration No:{" "}
-                  {formData.doctorInfo?.medicalRegistrationNumber || "Not provided"}
-                </div>
+                {formData.doctorInfo?.doctorName &&
+                  formData.doctorInfo.doctorName !== "Unknown Doctor" && (
+                    <div
+                      style={{
+                        fontSize: "18px",
+                        fontWeight: "bold",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      DR. {formData.doctorInfo.doctorName}
+                    </div>
+                  )}
+                {(formData.doctorInfo?.qualifications ||
+                  formData.doctorInfo?.specialization) && (
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      color: "#6b7280",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {formData.doctorInfo?.qualifications &&
+                      formData.doctorInfo.qualifications !==
+                        "Qualifications not provided" &&
+                      formData.doctorInfo.qualifications}
+                    {formData.doctorInfo?.qualifications &&
+                      formData.doctorInfo.qualifications !==
+                        "Qualifications not provided" &&
+                      formData.doctorInfo?.specialization &&
+                      " | "}
+                    {formData.doctorInfo?.specialization &&
+                      formData.doctorInfo.specialization !== "Specialist" &&
+                      formData.doctorInfo.specialization}
+                  </div>
+                )}
+                {formData.doctorInfo?.medicalRegistrationNumber &&
+                  formData.doctorInfo.medicalRegistrationNumber !==
+                    "Not provided" && (
+                    <div style={{ fontSize: "13px", color: "#6c757d" }}>
+                      Medical Registration No:{" "}
+                      {formData.doctorInfo.medicalRegistrationNumber}
+                    </div>
+                  )}
               </div>
 
               <div style={{ flex: 1, textAlign: "right" }}>
                 Patient Details:
-                <div style={{ fontSize: "12px", marginBottom: "4px" }}>
-                  {formData.patientInfo?.patientName || "Unknown Patient"}
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#6b7280",
-                    marginBottom: "6px",
-                  }}
-                >
-                  {formData.patientInfo?.age || "Age not provided"} Years |{" "}
-                  {formData.patientInfo?.gender
-                    ? formData.patientInfo.gender.charAt(0).toUpperCase() +
-                      formData.patientInfo.gender.slice(1)
-                    : "Gender not provided"}
-                </div>
-                <div style={{ fontSize: "12px", color: "#6c757d" }}>
-                  {formData.patientInfo?.mobileNumber || "Contact not provided"}
-                </div>
+                {formData.patientInfo?.patientName &&
+                  formData.patientInfo.patientName !== "Unknown Patient" && (
+                    <div style={{ fontSize: "12px", marginBottom: "4px" }}>
+                      {formData.patientInfo.patientName}
+                    </div>
+                  )}
+                {(formData.patientInfo?.age ||
+                  formData.patientInfo?.gender) && (
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {formData.patientInfo?.age &&
+                      formData.patientInfo.age !== "Age not provided" &&
+                      `${formData.patientInfo.age} Years`}
+                    {formData.patientInfo?.age &&
+                      formData.patientInfo.age !== "Age not provided" &&
+                      formData.patientInfo?.gender &&
+                      " | "}
+                    {formData.patientInfo?.gender &&
+                      formData.patientInfo.gender !== "Gender not provided" &&
+                      formData.patientInfo.gender.charAt(0).toUpperCase() +
+                        formData.patientInfo.gender.slice(1)}
+                  </div>
+                )}
+                {formData.patientInfo?.mobileNumber &&
+                  formData.patientInfo.mobileNumber !==
+                    "Contact not provided" && (
+                    <div style={{ fontSize: "12px", color: "#6c757d" }}>
+                      {formData.patientInfo.mobileNumber}
+                    </div>
+                  )}
               </div>
             </div>
 
             {/* Appointment Date and Time Section */}
-            <div style={{ 
-              display: "flex", 
-              justifyContent: "space-between", 
-              alignItems: "center",
-              marginBottom: "16px",
-              padding: "8px",
-              backgroundColor: "#f8f9fa",
-              borderRadius: "4px"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Calendar size={16} color="#6c757d" />
-                <span style={{ fontSize: "14px", fontWeight: "500" }}>
-                  Date: {formatDate(formData.doctorInfo?.appointmentDate)}
-                </span>
+            {(formData.doctorInfo?.appointmentDate ||
+              formData.doctorInfo?.appointmentStartTime) && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "16px",
+                  padding: "8px",
+                  backgroundColor: "#f8f9fa",
+                  borderRadius: "4px",
+                }}
+              >
+                {formData.doctorInfo?.appointmentDate &&
+                  formatDate(formData.doctorInfo.appointmentDate) && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <Calendar size={16} color="#6c757d" />
+                      <span style={{ fontSize: "14px", fontWeight: "500" }}>
+                        Date: {formatDate(formData.doctorInfo.appointmentDate)}
+                      </span>
+                    </div>
+                  )}
+                {formData.doctorInfo?.appointmentStartTime &&
+                  formData.doctorInfo.appointmentStartTime !==
+                    "Not specified" && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <Clock size={16} color="#6c757d" />
+                      <span style={{ fontSize: "14px", fontWeight: "500" }}>
+                        Time: {formData.doctorInfo.appointmentStartTime}
+                      </span>
+                    </div>
+                  )}
               </div>
-              
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Clock size={16} color="#6c757d" />
-                <span style={{ fontSize: "14px", fontWeight: "500" }}>
-                  Time: {formData.doctorInfo?.appointmentStartTime || "Not specified"}
-                  
-                </span>
-              </div>
-            </div>
+            )}
 
             <div className="prescription-content">
-              <div className="prescription-section">
-                <div className="section-header">📋 PATIENT HISTORY</div>
-                <div className="history-row">
-                  <div className="detail-item">
-                    <div className="detail-label">Chief Complaint:</div>
-                    <div className="detail-value">
-                      {formData.patientInfo?.chiefComplaint || "Not provided"}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <div className="detail-label">Past History:</div>
-                    <div className="detail-value">
-                      {formData.patientInfo?.pastMedicalHistory || "Not provided"}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <div className="detail-label">Family History:</div>
-                    <div className="detail-value">
-                      {formData.patientInfo?.familyMedicalHistory || "Not provided"}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <div className="detail-label">Examination:</div>
-                    <div className="detail-value">
-                      {formData.patientInfo?.physicalExamination || "Not provided"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="prescription-section">
-                <div className="section-header">🩺 VITALS</div>
-                <div className="vitals-container">
-                  <div className="vitals-row">
-                    <div className="vital-item">
-                      <span className="vital-label">BP:</span>
-                      <span className="vital-value">
-                        {formData.vitals?.bp
-                          ? formData.vitals.bp
-                          : formData.vitals?.bpSystolic &&
-                            formData.vitals?.bpDiastolic
-                          ? `${formData.vitals.bpSystolic}/${formData.vitals.bpDiastolic}`
-                          : "Not provided"}{" "}
-                        mmHg
-                      </span>
-                    </div>
-                    <div className="vital-separator">|</div>
-                    <div className="vital-item">
-                      <span className="vital-label">Pulse:</span>
-                      <span className="vital-value">
-                        {formData.vitals?.pulseRate || "Not provided"} BPM
-                      </span>
-                    </div>
-                    <div className="vital-separator">|</div>
-                    <div className="vital-item">
-                      <span className="vital-label">Temp:</span>
-                      <span className="vital-value">
-                        {formData.vitals?.temperature || "Not provided"}°F
-                      </span>
-                    </div>
-                    <div className="vital-separator">|</div>
-                    <div className="vital-item">
-                      <span className="vital-label">SpO2:</span>
-                      <span className="vital-value">
-                        {formData.vitals?.spo2 || "Not provided"}%
-                      </span>
-                    </div>
-                    <div className="vital-separator">|</div>
-                    <div className="vital-item">
-                      <span className="vital-label">RR:</span>
-                      <span className="vital-value">
-                        {formData.vitals?.respiratoryRate || "Not provided"} breaths/min
-                      </span>
-                    </div>
-                    <div className="vital-separator">|</div>
-                    <div className="vital-item">
-                      <span className="vital-label">Height:</span>
-                      <span className="vital-value">
-                        {formData.vitals?.height || "Not provided"} cm
-                      </span>
-                    </div>
-                    <div className="vital-separator">|</div>
-                    <div className="vital-item">
-                      <span className="vital-label">Weight:</span>
-                      <span className="vital-value">
-                        {formData.vitals?.weight || "Not provided"} kg
-                      </span>
-                    </div>
-                    <div className="vital-separator">|</div>
-                    <div className="vital-item">
-                      <span className="vital-label">BMI:</span>
-                      <span className="vital-value">
-                        {formData.vitals?.bmi || "Not provided"}
-                      </span>
-                    </div>
-                    {formData.vitals?.other &&
-                      Object.entries(formData.vitals.other).map(([key, value]) => (
-                        <>
-                          <div className="vital-separator">|</div>
-                          <div className="vital-item" key={key}>
-                            <span className="vital-label">{key}:</span>
-                            <span className="vital-value">{value || "Not provided"}</span>
+              {(formData.patientInfo?.chiefComplaint ||
+                formData.patientInfo?.pastMedicalHistory ||
+                formData.patientInfo?.familyMedicalHistory ||
+                formData.patientInfo?.physicalExamination) && (
+                <div className="prescription-section">
+                  <div className="section-header">📋 PATIENT HISTORY</div>
+                  <div className="history-row">
+                    {formData.patientInfo?.chiefComplaint &&
+                      formData.patientInfo.chiefComplaint !== "Not provided" && (
+                        <div className="detail-item">
+                          <div className="detail-label">Chief Complaint:</div>
+                          <div className="detail-value">
+                            {formData.patientInfo.chiefComplaint}
                           </div>
-                        </>
-                      ))}
+                        </div>
+                      )}
+                    {formData.patientInfo?.pastMedicalHistory &&
+                      formData.patientInfo.pastMedicalHistory !==
+                        "Not provided" && (
+                        <div className="detail-item">
+                          <div className="detail-label">Past History:</div>
+                          <div className="detail-value">
+                            {formData.patientInfo.pastMedicalHistory}
+                          </div>
+                        </div>
+                      )}
+                    {formData.patientInfo?.familyMedicalHistory &&
+                      formData.patientInfo.familyMedicalHistory !==
+                        "Not provided" && (
+                        <div className="detail-item">
+                          <div className="detail-label">Family History:</div>
+                          <div className="detail-value">
+                            {formData.patientInfo.familyMedicalHistory}
+                          </div>
+                        </div>
+                      )}
+                    {formData.patientInfo?.physicalExamination &&
+                      formData.patientInfo.physicalExamination !==
+                        "Not provided" && (
+                        <div className="detail-item">
+                          <div className="detail-label">Examination:</div>
+                          <div className="detail-value">
+                            {formData.patientInfo.physicalExamination}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 </div>
-              </div>
+              )}
+
+              {(formData.vitals?.bp ||
+                formData.vitals?.bpSystolic ||
+                formData.vitals?.bpDiastolic ||
+                formData.vitals?.pulseRate ||
+                formData.vitals?.temperature ||
+                formData.vitals?.spo2 ||
+                formData.vitals?.respiratoryRate ||
+                formData.vitals?.height ||
+                formData.vitals?.weight ||
+                formData.vitals?.bmi ||
+                formData.vitals?.other) && (
+                <div className="prescription-section">
+                  <div className="section-header">🩺 VITALS</div>
+                  <div className="vitals-container">
+                    <div className="vitals-row">
+                      {(formData.vitals?.bp ||
+                        (formData.vitals?.bpSystolic &&
+                          formData.vitals?.bpDiastolic)) && (
+                        <div className="vital-item">
+                          <span className="vital-label">BP:</span>
+                          <span className="vital-value">
+                            {formData.vitals?.bp
+                              ? formData.vitals.bp
+                              : formData.vitals?.bpSystolic &&
+                                formData.vitals?.bpDiastolic
+                              ? `${formData.vitals.bpSystolic}/${formData.vitals.bpDiastolic}`
+                              : null}{" "}
+                            mmHg
+                          </span>
+                        </div>
+                      )}
+                      {formData.vitals?.pulseRate &&
+                        formData.vitals.pulseRate !== "Not provided" && (
+                          <>
+                            <div className="vital-separator">|</div>
+                            <div className="vital-item">
+                              <span className="vital-label">Pulse:</span>
+                              <span className="vital-value">
+                                {formData.vitals.pulseRate} BPM
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      {formData.vitals?.temperature &&
+                        formData.vitals.temperature !== "Not provided" && (
+                          <>
+                            <div className="vital-separator">|</div>
+                            <div className="vital-item">
+                              <span className="vital-label">Temp:</span>
+                              <span className="vital-value">
+                                {formData.vitals.temperature}°F
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      {formData.vitals?.spo2 &&
+                        formData.vitals.spo2 !== "Not provided" && (
+                          <>
+                            <div className="vital-separator">|</div>
+                            <div className="vital-item">
+                              <span className="vital-label">SpO2:</span>
+                              <span className="vital-value">
+                                {formData.vitals.spo2}%
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      {formData.vitals?.respiratoryRate &&
+                        formData.vitals.respiratoryRate !== "Not provided" && (
+                          <>
+                            <div className="vital-separator">|</div>
+                            <div className="vital-item">
+                              <span className="vital-label">RR:</span>
+                              <span className="vital-value">
+                                {formData.vitals.respiratoryRate} breaths/min
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      {formData.vitals?.height &&
+                        formData.vitals.height !== "Not provided" && (
+                          <>
+                            <div className="vital-separator">|</div>
+                            <div className="vital-item">
+                              <span className="vital-label">Height:</span>
+                              <span className="vital-value">
+                                {formData.vitals.height} cm
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      {formData.vitals?.weight &&
+                        formData.vitals.weight !== "Not provided" && (
+                          <>
+                            <div className="vital-separator">|</div>
+                            <div className="vital-item">
+                              <span className="vital-label">Weight:</span>
+                              <span className="vital-value">
+                                {formData.vitals.weight} kg
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      {formData.vitals?.bmi &&
+                        formData.vitals.bmi !== "Not provided" && (
+                          <>
+                            <div className="vital-separator">|</div>
+                            <div className="vital-item">
+                              <span className="vital-label">BMI:</span>
+                              <span className="vital-value">
+                                {formData.vitals.bmi}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      {formData.vitals?.other &&
+                        Object.entries(formData.vitals.other).map(
+                          ([key, value]) =>
+                            value &&
+                            value !== "Not provided" && (
+                              <>
+                                <div className="vital-separator">|</div>
+                                <div className="vital-item" key={key}>
+                                  <span className="vital-label">{key}:</span>
+                                  <span className="vital-value">{value}</span>
+                                </div>
+                              </>
+                            )
+                        )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {formData.diagnosis?.selectedTests?.length > 0 && (
                 <div className="prescription-section">
@@ -549,7 +692,9 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   <div className="investigation-row">
                     {formData.diagnosis.selectedTests.map((test, index) => (
                       <div key={index} className="investigation-item">
-                        <div className="detail-value">{test.testName || test}</div>
+                        <div className="detail-value">
+                          {test.testName || test}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -570,16 +715,19 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   <div className="diagnosis-row">
                     {formData.diagnosis.diagnosisList
                       .split(",")
-                      .map((diagnosis, index) => (
-                        <span key={index} className="diagnosis-tag">
-                          {diagnosis.trim().toUpperCase()}
-                        </span>
-                      ))}
+                      .map((diagnosis, index) =>
+                        diagnosis.trim() ? (
+                          <span key={index} className="diagnosis-tag">
+                            {diagnosis.trim().toUpperCase()}
+                          </span>
+                        ) : null
+                      )}
                   </div>
                 </div>
               )}
 
-              {(formData.diagnosis?.medications?.length > 0 || formData.advice?.medicationNotes) && (
+              {(formData.diagnosis?.medications?.length > 0 ||
+                formData.advice?.medicationNotes) && (
                 <div className="prescription-section">
                   <div className="section-header">💊 MEDICATION</div>
                   {formData.diagnosis?.medications?.length > 0 && (
@@ -599,21 +747,25 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                           {formData.diagnosis.medications.map((med, index) => (
                             <tr key={index}>
                               <td className="table-cell">
-                                {med.medicineType || "Not provided"}
+                                {med.medicineType || "Not specified"}
                               </td>
                               <td className="table-cell">
-                                {med.medName || med.name || "Not provided"}
+                                {med.medName || med.name || "Not specified"}
                               </td>
                               <td className="table-cell">
                                 {med.dosage || med.dosagePattern || "As directed"}
                               </td>
-                              <td className="table-cell">{med.frequency || "Not provided"}</td>
+                              <td className="table-cell">
+                                {med.frequency || "Not specified"}
+                              </td>
                               <td className="table-cell">
                                 {med.timings
                                   ? med.timings.join(", ")
-                                  : med.timing || "Not provided"}
+                                  : med.timing || "Not specified"}
                               </td>
-                              <td className="table-cell">{med.notes || "Not provided"}</td>
+                              <td className="table-cell">
+                                {med.notes || "Not specified"}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -648,16 +800,17 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                 </div>
               )}
 
-              {formData.advice?.followUpDate && (
-                <div className="prescription-section">
-                  <div className="section-header">📅 FOLLOW-UP</div>
-                  <div className="follow-up-container">
-                    <div className="follow-up-date">
-                      Next Visit: {formatDate(formData.advice.followUpDate)}
+              {formData.advice?.followUpDate &&
+                formatDate(formData.advice.followUpDate) && (
+                  <div className="prescription-section">
+                    <div className="section-header">📅 FOLLOW-UP</div>
+                    <div className="follow-up-container">
+                      <div className="follow-up-date">
+                        Next Visit: {formatDate(formData.advice.followUpDate)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               <div className="signature">
                 {selectedClinic?.digitalSignature ? (
@@ -667,12 +820,15 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                     className="digital-signature"
                   />
                 ) : (
-                  <>
-                    <div style={{ height: "48px" }}></div>
-                    <div style={{ fontWeight: "bold" }}>
-                      DR. {formData.doctorInfo?.doctorName || "Unknown Doctor"}
-                    </div>
-                  </>
+                  formData.doctorInfo?.doctorName &&
+                  formData.doctorInfo.doctorName !== "Unknown Doctor" && (
+                    <>
+                      <div style={{ height: "48px" }}></div>
+                      <div style={{ fontWeight: "bold" }}>
+                        DR. {formData.doctorInfo.doctorName}
+                      </div>
+                    </>
+                  )
                 )}
                 <div style={{ fontSize: "12px", marginTop: "4px" }}>
                   <CheckCircle size={14} style={{ marginRight: "4px" }} />
@@ -681,8 +837,8 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
               </div>
 
               <div className="prescription-footer">
-                This prescription is computer generated and does not require physical
-                signature
+                This prescription is computer generated and does not require
+                physical signature
               </div>
             </div>
 
