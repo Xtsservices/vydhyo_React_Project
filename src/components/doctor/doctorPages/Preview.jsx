@@ -510,7 +510,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   <div className="section-header">📋 PATIENT HISTORY</div>
                   <div className="history-row">
                     {formData.patientInfo?.chiefComplaint &&
-                      formData.patientInfo.chiefComplaint !== "Not provided" && (
+                      formData.patientInfo.chiefComplaint !== "Not specified" && (
                         <div className="detail-item">
                           <div className="detail-label">Chief Complaint:</div>
                           <div className="detail-value">
