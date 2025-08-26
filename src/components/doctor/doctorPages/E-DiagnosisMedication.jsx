@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus, X, AlertTriangle } from "lucide-react";
-import { AutoComplete, InputNumber, Select, Button } from "antd";
+import { AutoComplete, InputNumber, Select, Button, Input } from "antd";
 import { useSelector } from "react-redux";
 import { apiGet } from "../../api";
 import { toast } from "react-toastify";
@@ -20,6 +20,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
   const [showTestNotes, setShowTestNotes] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [selectedFromDropdown, setSelectedFromDropdown] = useState({});
 
   const [localData, setLocalData] = useState({
     diagnosisList: formData?.diagnosisList || "",
@@ -73,8 +74,12 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
       setMedInventory(sortedMedicines);
       setMedicineOptions(
         sortedMedicines.map((med) => ({
-          value: med.medName,
-          label: med.medName,
+          value: `${med.medName}|${med.dosage}`,
+          label: `${med.medName} ${med.dosage}`,
+          medName: med.medName,
+          dosage: med.dosage,
+          medInventoryId: med._id,
+          price: med.price,
         }))
       );
     } catch (error) {
@@ -178,7 +183,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     const medication = localData.medications.find((med) => med.id === id);
     if (!medication) return;
 
-    let medErrors = { ...errors[id] } || {};
+    let medErrors = errors[id] || {};
 
     if (!field || field === "medName") {
       if (touched[id]?.medName && !medication.medName.trim()) {
@@ -229,7 +234,6 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     }
 
     if (!field || field === "timings") {
-      // Remove the error for timings, do not set medErrors.timings
       delete medErrors.timings;
     }
 
@@ -292,6 +296,10 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
       ...prev,
       [newMedication.id]: {},
     }));
+    setSelectedFromDropdown((prev) => ({
+      ...prev,
+      [newMedication.id]: false,
+    }));
   };
 
   const removeMedication = (id) => {
@@ -311,6 +319,11 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
       delete newTouched[id];
       return newTouched;
     });
+    setSelectedFromDropdown((prev) => {
+      const newSelected = { ...prev };
+      delete newSelected[id];
+      return newSelected;
+    });
     toast.success("Medicine removed successfully");
   };
 
@@ -320,23 +333,43 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
         let updatedMed = { ...med, [field]: value };
 
         if (field === "medName") {
-          const selectedMed = medInventory.find((m) => m.medName === value);
-          if (selectedMed) {
+          const selectedOption = medicineOptions.find((m) => m.value === value);
+          if (selectedOption) {
             updatedMed = {
               ...updatedMed,
-              medInventoryId: selectedMed ? selectedMed._id : null,
-              price: selectedMed.price,
+              medName: selectedOption.medName,
+              dosage: selectedOption.dosage,
+              medInventoryId: selectedOption.medInventoryId,
+              price: selectedOption.price,
             };
+            setSelectedFromDropdown((prev) => ({
+              ...prev,
+              [id]: true,
+            }));
           } else {
-            updatedMed.medInventoryId = null;
-            updatedMed.price = null;
+            updatedMed = {
+              ...updatedMed,
+              medName: value,
+              medInventoryId: null,
+              price: null,
+              dosage: med.dosage, // Retain existing dosage if manually entered
+            };
+            setSelectedFromDropdown((prev) => ({
+              ...prev,
+              [id]: false,
+            }));
           }
+        }
+
+        if (field === "dosage" && selectedFromDropdown[id]) {
+          // Prevent updating dosage if selected from dropdown
+          return med;
         }
 
         if (field === "medicineType") {
           updatedMed.quantity = null;
           if (["Tablet", "Capsule", "Injection"].includes(value) && updatedMed.duration && updatedMed.frequency) {
-            const timesPerDay = updatedMed.frequency.split("-").filter(x => x === "1").length;
+            const timesPerDay = updatedMed.frequency.split("-").filter((x) => x === "1").length;
             updatedMed.quantity = updatedMed.duration * timesPerDay;
           }
         }
@@ -347,7 +380,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
 
           if (["Tablet", "Capsule", "Injection"].includes(med.medicineType)) {
             if (newFrequency && newDuration) {
-              const timesPerDay = newFrequency.split("-").filter(x => x === "1").length;
+              const timesPerDay = newFrequency.split("-").filter((x) => x === "1").length;
               updatedMed.quantity = newDuration * timesPerDay;
             } else {
               updatedMed.quantity = null;
@@ -394,7 +427,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
 
         let newQuantity = med.quantity;
         if (["Tablet", "Capsule", "Injection"].includes(med.medicineType) && med.duration) {
-          const timesPerDay = value.split("-").filter(x => x === "1").length;
+          const timesPerDay = value.split("-").filter((x) => x === "1").length;
           newQuantity = med.duration * timesPerDay;
         }
 
@@ -669,7 +702,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                       updateMedication(medication.id, "medName", value)
                     }
                     value={medication.medName}
-                    placeholder="Enter medicine name"
+                    placeholder="Enter or search medicine name"
                     filterOption={(input, option) =>
                       option.label.toLowerCase().includes(input.toLowerCase())
                     }
@@ -773,7 +806,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                   >
                     Dosage
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={medication.dosage}
                     onChange={(e) =>
@@ -782,6 +815,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     onBlur={() => handleDosageBlur(medication.id, medication.dosage)}
                     placeholder="Enter dosage"
                     className="medication-field"
+                    disabled={selectedFromDropdown[medication.id]}
                   />
                   {errors[medication.id]?.dosage && (
                     <div className="error" style={{ color: "red", fontSize: "12px" }}>
