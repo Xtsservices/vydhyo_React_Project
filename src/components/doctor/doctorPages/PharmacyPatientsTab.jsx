@@ -603,11 +603,16 @@ const handlePrint = (patient) => {
 
   const medicineColumns = [
     {
-      title: "Medicine Name",
-      dataIndex: "medName",
-      key: "medName",
-      render: (name) => <Text strong>{name}</Text>,
-    },
+    title: "Medicine Name",
+    dataIndex: "medName",
+    key: "medName",
+    render: (name, medicine) => (
+      <div>
+        <Text strong>{name} {medicine.dosage}</Text>
+       
+      </div>
+    ),
+  },
     {
       title: "Price",
       key: "price",

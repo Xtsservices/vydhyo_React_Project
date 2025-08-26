@@ -570,17 +570,18 @@ const handleEPrescription = (appointment) => {
       </Menu.Item>
 
       <Menu.Item
-        key="complete"
-        onClick={() => handleCompleteAppointment(record.appointmentId)}
-        disabled={
-          record.appointmentStatus === "completed" ||
-          record.appointmentStatus === "cancel" ||
-          record.appointmentStatus === "cancelled"
-        }
-        icon={<CheckOutlined />}
-      >
-        Mark as Completed
-      </Menu.Item>
+  key="complete"
+  onClick={() => handleCompleteAppointment(record.appointmentId)}
+  disabled={
+    record.appointmentStatus === "completed" ||
+    record.appointmentStatus === "cancel" ||
+    record.appointmentStatus === "cancelled" ||
+    disabledByTime
+  }
+  icon={<CheckOutlined />}
+>
+  Mark as Completed
+</Menu.Item>
       <Menu.Item
         key="reschedule"
         onClick={() => handleReschedule(record)}

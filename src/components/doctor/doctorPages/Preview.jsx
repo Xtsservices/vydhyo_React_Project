@@ -322,7 +322,7 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
                   style={{
                     width: "100%",
                     maxHeight: "120px",
-                    objectFit: "contain",
+                    objectFit: "cont</button>ain",
                     display: "block",
                     margin: "0 auto",
                   }}

@@ -144,25 +144,40 @@ const calculateAge = useCallback((dob) => {
   const dobDate = moment(dob, "DD-MM-YYYY").toDate();
   const today = new Date();
   
-  // Calculate years and months
-  const years = today.getFullYear() - dobDate.getFullYear();
-  const months = today.getMonth() - dobDate.getMonth();
+  // Calculate years, months and days
+  let years = today.getFullYear() - dobDate.getFullYear();
+  let months = today.getMonth() - dobDate.getMonth();
+  let days = today.getDate() - dobDate.getDate();
+  
+  // Adjust for negative days
+  if (days < 0) {
+    months--;
+    // Get days in the previous month
+    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+  
+  // Adjust for negative months
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
   
   let ageText = "";
   
-  if (years === 0 && months === 0) {
-    // Less than 1 month old
-    const days = today.getDate() - dobDate.getDate();
-    ageText = `${days}d`;
-  } else if (years === 0) {
-    // Less than 1 year old
-    ageText = `${months}m`;
-  } else {
-    // 1 year or older
-    ageText = `${years}y`;
+  if (years > 0) {
+    ageText += `${years}y `;
   }
   
-  return ageText;
+  if (months > 0) {
+    ageText += `${months}m `;
+  }
+  
+  if (days > 0 || ageText === "") {
+    ageText += `${days}d`;
+  }
+  
+  return ageText.trim();
 }, [validateDOB]);
 
   const formatTimeForAPI = useCallback((timeSlot) => {
@@ -278,11 +293,11 @@ const calculateAge = useCallback((dob) => {
     }
   }, []);
 
-  // Add this validation function
+// Update the validateAge function
 const validateAge = useCallback((age) => {
   if (!age) return false;
-  // Valid formats: 6m, 2y, 15d, or plain numbers
-  return /^(\d+[myd]?|\d+[myd])$/i.test(age);
+  // Valid formats: 6m, 2y, 15d, 1y 2m, 3m 15d, etc.
+  return /^(\d+[myd])(\s\d+[myd])*$/i.test(age.replace(/\s+/g, ' ').trim());
 }, []);
 
 // Use it in your validation logic
