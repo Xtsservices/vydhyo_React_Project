@@ -547,7 +547,7 @@ const AccountsPage = () => {
         {/* Summary Cards */}
         <Row gutter={[16, 16]} className="summary-row">
           <Col xs={24} sm={12} md={8}>
-            <Card className="summary-card">
+            <Card className="summary-card" style={{ height: "100%" }}>
               <div className="card-icon-container">
                 <div className="card-icon green">
                   <CreditCardOutlined className="card-icon-inner" />
@@ -568,8 +568,9 @@ const AccountsPage = () => {
               onClick={() => {
                 navigate("/doctor/doctorPages/TotalExpenditure");
               }}
+              style={{ height: "100%" }}
             >
-              <Card className="summary-card clickable">
+              <Card className="summary-card clickable" style={{ height: "100%" }}>
                 <div className="card-icon-container">
                   <div className="card-icon red">
                     <CreditCardOutlined className="card-icon-inner" />
@@ -586,7 +587,7 @@ const AccountsPage = () => {
           </Col>
 
           <Col xs={24} sm={12} md={8}>
-            <Card className="summary-card">
+            <Card className="summary-card" style={{ height: "100%" }}>
               <div className="card-icon-container">
                 <div className="card-icon blue">
                   <SyncOutlined className="card-icon-inner" />
@@ -594,18 +595,26 @@ const AccountsPage = () => {
               </div>
               <div>
                 <Text className="card-title">Recent Transactions</Text>
-                <div className="recent-transactions">
-                  {accountSummary.recentTransactions.map(
-                    (transaction, index) => (
-                      <div key={index} className="transaction-item">
-                        <Text className="transaction-name">
-                          {transaction.name}
-                        </Text>
-                        <Text className="transaction-amount">
-                          ₹{transaction.amount}
-                        </Text>
-                      </div>
+                <div className="recent-transactions" style={{ maxHeight: "80px", overflow: "auto" }}>
+                  {accountSummary.recentTransactions.length > 0 ? (
+                    accountSummary.recentTransactions.map(
+                      (transaction, index) => (
+                        <div key={index} className="transaction-item">
+                          <Text className="transaction-name" ellipsis={{ tooltip: transaction.name }}>
+                            {transaction.name}
+                          </Text>
+                          <Text className="transaction-amount">
+                            ₹{transaction.amount}
+                          </Text>
+                        </div>
+                      )
                     )
+                  ) : (
+                    <div className="transaction-item">
+                      <Text className="transaction-name" type="secondary">
+                        No recent transactions
+                      </Text>
+                    </div>
                   )}
                 </div>
               </div>

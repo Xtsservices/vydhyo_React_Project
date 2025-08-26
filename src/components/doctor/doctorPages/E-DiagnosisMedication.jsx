@@ -229,16 +229,8 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     }
 
     if (!field || field === "timings") {
-      if (touched[id]?.timings && medication.frequency && medication.frequency !== "SOS") {
-        const requiredTimings = medication.frequency.split("-").filter((x) => x === "1").length;
-        if (medication.timings.length !== requiredTimings) {
-          medErrors.timings = `Please select exactly ${requiredTimings} timing${requiredTimings > 1 ? "s" : ""} to match the frequency ${medication.frequency}`;
-        } else {
-          delete medErrors.timings;
-        }
-      } else {
-        delete medErrors.timings;
-      }
+      // Remove the error for timings, do not set medErrors.timings
+      delete medErrors.timings;
     }
 
     setErrors((prev) => ({

@@ -61,7 +61,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
     },
   };
 
-useEffect(() => {
+  useEffect(() => {
     if (formData && Object.keys(formData).length > 0) {
       const [bpSystolic, bpDiastolic] =
         formData.bp && formData.bp !== "undefined/undefined"
@@ -250,44 +250,21 @@ useEffect(() => {
           </div>
 
           {[
-            "PulseRate",
-            "RespiratoryRate",
-            "Temperature",
-            "SpO₂",
-            "Height",
-            "Weight",
-          ].map((field) => (
+            { field: "pulseRate", label: "Pulse Rate", unit: "BPM" },
+            { field: "respiratoryRate", label: "Respiratory Rate", unit: "breaths/min" },
+            { field: "temperature", label: "Temperature", unit: "°F" },
+            { field: "spo2", label: "SpO₂", unit: "%" },
+            { field: "height", label: "Height", unit: "CM" },
+            { field: "weight", label: "Weight", unit: "KG" },
+          ].map(({ field, label, unit }) => (
             <div className="vitals-input-group" key={field}>
               <label className="vitals-label">
-                {field.replace(/([A-Z])/g, " $1").trim()}
-                {field === "Temperature"
-                  ? " °F"
-                  : field === "SpO₂"
-                    ? "%"
-                    : field === "Height"
-                      ? " CM"
-                      : field === "Weight"
-                        ? " KG"
-                        : " BPM"}
+                {label} ({unit})
               </label>
               <input
                 type="number"
                 value={localData[field]}
-                placeholder={
-                  field === "PulseRate"
-                    ? "Enter pulse rate"
-                    : field === "RespiratoryRate"
-                      ? "Enter respiratory rate"
-                      : field === "Temperature"
-                        ? "Enter temperature"
-                        : field === "SpO₂"
-                          ? "Enter SpO₂"
-                          : field === "Height"
-                            ? "Enter height"
-                            : field === "Weight"
-                              ? "Enter weight"
-                              : ""
-                }
+                placeholder={`Enter ${label.toLowerCase()}`}
                 onChange={(e) => handleVitalChange(field, e.target.value)}
                 onBlur={() => handleBlur(field)}
                 className={`vitals-input ${errors[field] ? "error" : ""}`}
@@ -297,7 +274,6 @@ useEffect(() => {
               )}
             </div>
           ))}
-
 
           <div className="vitals-input-group">
             <label className="vitals-label">BMI (kg/m²)</label>
@@ -362,6 +338,9 @@ useEffect(() => {
           <button className="add-other-button" onClick={handleAddOther}>
             <Plus size={16} /> Add
           </button>
+          {errors.newOther && (
+            <div className="error-message">{errors.newOther}</div>
+          )}
         </div>
       </div>
 
