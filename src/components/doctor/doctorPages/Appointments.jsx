@@ -524,22 +524,34 @@ const handleEPrescription = (appointment) => {
     return 'Select a date range';
   };
 
-  const renderActionMenu = (record) => (
-    <Menu>
-      {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
+  const [now, setNow] = useState(() => moment());
+
+  function parseAppointment(record) {
+  const raw = record.appointmentDateTime
+    ? String(record.appointmentDateTime).trim()
+    : `${record.appointmentDate} ${record.appointmentTime}`; // e.g., "26-Aug-2025 2:00 PM"
+
+  return moment(raw, [
+    "DD-MMM-YYYY h:mm A",
+    "DD-MMM-YYYY hh:mm A",
+    "D-MMM-YYYY h:mm A",
+  ], true);
+}
+
+  const renderActionMenu = (record) => {
+      const appt = parseAppointment(record);
+    const disabledByTime = !appt.isValid()
+      ? true // if we can't parse, keep it disabled
+      : now.isBefore(appt.clone().subtract(1, "hour"));
+    return (
+      <Menu>
+        {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
 <Menu.Item
   key="e-prescription"
   onClick={() => handleEPrescription(record)}
   disabled={
     record.appointmentStatus === "completed" ||
-    record.appointmentStatus === "cancelled" ||
-    // Enable only from 1 hour before appointment time
-    moment().isBefore(
-      moment(
-        `${record.appointmentDate} ${record.appointmentTime.split(' ')[0]}`,
-        "DD-MMM-YYYY HH:mm"
-      ).subtract(1, "hours")
-    )
+    record.appointmentStatus === "cancelled" || disabledByTime   
   }
   icon={<EyeOutlined />}
 >
@@ -594,6 +606,7 @@ const handleEPrescription = (appointment) => {
       </Menu.Item>
     </Menu>
   );
+}
 
   const columns = [
     {

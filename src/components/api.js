@@ -9,7 +9,7 @@ import axios from "axios";
 // const API_BASE_URL = "http://172.16.4.118:3000";
 
 // const API_BASE_URL = "http://192.168.48.236:3000";
-// const API_BASE_URL = "http://192.168.0.106:3000";
+// const API_BASE_URL = "http://192.168.1.26:3000";
 
 
 
@@ -27,6 +27,8 @@ const axiosWithToken = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+
 
 // Add token to request if available
 axiosWithToken.interceptors.request.use((config) => {
@@ -66,6 +68,19 @@ export const apiGetWithoutToken = (url, config = {}) =>
 
 export const apiPostWithoutToken = (url, data = {}, config = {}) =>
   axiosWithoutToken.post(url, data, config);
+
+
+export function postKYCDetails({ file, userId, panNumber }) {
+  const fd = new FormData();
+  fd.append("panFile", file, file.name);           // <-- must be 'panFile'
+  fd.append("userId", String(userId));
+  fd.append("panNumber", String(panNumber).toUpperCase());
+
+  return axiosWithToken.post("/users/addKYCDetails", fd, {
+    // DO NOT set Content-Type manually; browser adds boundary
+    transformRequest: [(data) => data],
+  });
+}
 
 // File upload with token (multipart/form-data)
 export const apiUploadFile = (
