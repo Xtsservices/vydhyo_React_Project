@@ -19,7 +19,9 @@ import {
   Descriptions,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { apiGet, apiPut, apiUploadFile, apiPost } from "../../api";
+import { apiGet, apiPut, apiUploadFile, apiPost, postKYCDetails } from "../../api";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 // import crypto = require('crypto');
 
 import {
@@ -56,6 +58,7 @@ const DoctorProfileView = () => {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [doctorData, setDoctorData] = useState(null);
   const [editModalType, setEditModalType] = useState(null);
+  const [kyc, setKyc] = useState(null)
   const [form] = Form.useForm();
   const location = useLocation();
   const navigate = useNavigate();
@@ -238,6 +241,22 @@ const decryptedBankDetails = {
       setLoading(false);
     }
   };
+
+   const fetchKyc = async () => {
+    setLoading(true);
+    try {
+      const response = await apiGet("/users/getKycByUserId");
+      console.log(response, "kyc data");
+      const userData = response.data?.data;
+      setKyc(userData)
+
+    } catch (error) {
+      console.error("Error fetching doctor data:", error);
+      message.error("Failed to load doctor data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 const [degrees, setDegrees] = useState([]);
 const [specializations, setSpecializations] = useState([]);
 const [loadingDegrees, setLoadingDegrees] = useState(false);
@@ -249,33 +268,22 @@ const fetchDegrees = async () => {
     setLoadingDegrees(true);
     const response = await apiGet('/catalogue/degree/getAllDegrees');
     const data = response?.data?.data || [];
+    console.log(data, "1234")
     setDegrees(data);
   } catch (error) {
     console.error('Error fetching degrees:', error);
-    Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to fetch degrees.', position: 'top', visibilityTime: 4000 });
+    toast.error('Failed to fetch degrees.');
   } finally {
     setLoadingDegrees(false);
   }
 };
 
-const fetchSpecializations = async () => {
-  try {
-    setLoadingSpecs(true);
-    const response = await apiGet('/catalogue/specialization/getAllSpecializations');
-    const data = response?.data?.data || [];
-    setSpecializations(data);
-  } catch (error) {
-    console.error('Error fetching specializations:', error);
-    Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to fetch specializations.', position: 'top', visibilityTime: 4000 });
-  } finally {
-    setLoadingSpecs(false);
-  }
-};
+
 
   useEffect(() => {
     fetchDoctorData();
     fetchDegrees();
-    fetchSpecializations();
+    fetchKyc();
   }, []);
 
   const showModal = (doc) => {
@@ -322,18 +330,22 @@ const fetchSpecializations = async () => {
           maritalStatus: doctorData?.maritalStatus,
           medicalRegistrationNumber: doctorData?.medicalRegistrationNumber,
           spokenLanguage: doctorData?.spokenLanguage || [],
+          mobileNumber: doctorData?.mobile,
         };
-      case 'professional': {
-        const initialDegreeId = degrees.find(d => d.name === doctorData?.specialization?.[0]?.degree)?._id;
-        const initialSpecs = doctorData?.specialization?.map(s => s.name) || [];
-        return {
-          degreeId: initialDegreeId,
-          degree: doctorData?.specialization?.[0]?.degree,
-          specialization: initialSpecs,
-          experience: doctorData?.specialization?.[0]?.experience,
-          certifications: doctorData?.certifications,
-        };
-      }
+     case 'professional': {
+  const initialDegreeIds = doctorData?.specialization?.[0]?.degree 
+    ? doctorData.specialization[0].degree.split(',').map(deg => deg.trim())
+    : [];
+  
+  const initialSpecs = doctorData?.specialization?.map(s => s.name) || [];
+  
+  return {
+    degreeId: initialDegreeIds,
+    specialization: initialSpecs,
+    experience: doctorData?.specialization?.[0]?.experience,
+    about: doctorData?.specialization?.[0]?.bio
+  };
+}
       case 'locations':
         return {
           workingLocations: doctorData?.workingLocations,
@@ -356,28 +368,51 @@ const fetchSpecializations = async () => {
     }
   };
 
+
+  function extractFileFromAntdValue(value) {
+  if (!value) return null;
+  if (Array.isArray(value) && value.length) {
+    const f = value[0];
+    return f?.originFileObj instanceof File ? f.originFileObj : (f instanceof File ? f : null);
+  }
+  if (value?.originFileObj instanceof File) return value.originFileObj;
+  if (value instanceof File) return value;
+  return null;
+}
+
   const handleSaveProfile = async (values) => {
-    console.log(values, "for personal 1234");
+
     let response;
     try {
       switch (editModalType) {
         case 'personal':
+          console.log("Updating personal information", values);
+            const { mobileNumber, ...rest } = values;
           await apiPut("/users/updateUser", {
-            ...values,
+            ...rest,
             spokenLanguage: values.spokenLanguage || []
           });
           break;
        
-
-    case 'professional': {
+case 'professional': {
   const formDataObj = new FormData();
   formDataObj.append('id', doctorData?.userId || '');
-
-  formDataObj.append('name', Array.isArray(values.specialization) ? values.specialization.join(',') : values.specialization || '');
+  
+  // Join specializations array into comma-separated string
+  formDataObj.append('name', Array.isArray(values.specialization) 
+    ? values.specialization.join(',') 
+    : values.specialization || '');
+  
   formDataObj.append('experience', values.experience || '');
-  formDataObj.append('degree', Array.isArray(values.degreeId) ? values.degreeId.join(',') : values.degreeId || '');
+  
+  // Join degrees array into comma-separated string
+  formDataObj.append('degree', Array.isArray(values.degreeId) 
+    ? values.degreeId.join(',') 
+    : values.degreeId || '');
+  
   formDataObj.append('bio', values.about || '');
-  formDataObj.append('services', values.services || ''); // Optional field
+  
+  // Handle file uploads if needed
   if (values.drgreeCertificate) {
     formDataObj.append('drgreeCertificate', values.drgreeCertificate);
   }
@@ -385,39 +420,29 @@ const fetchSpecializations = async () => {
     formDataObj.append('specializationCertificate', values.specializationCertificate);
   }
 
-  // Log FormData entries for debugging
-  for (let pair of formDataObj.entries()) {
-    console.log(pair[0] + ': ' + pair[1]);
-  }
-
   await apiPost(
     `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
-   
-    formDataObj, // FormData with fields
-    // { headers: { id: doctorData?.userId || '' } } // Send userId in headers as fallback
+    formDataObj
   );
   break;
 }
         case 'locations':
           await apiPut("/users/updateLocations", { addresses: values.workingLocations });
           break;
- case 'kyc': {
-  const file =
-    values?.panImage?.originFileObj instanceof File
-      ? values.panImage.originFileObj
-      : (values?.panImage instanceof File ? values.panImage : null);
+ case "kyc": {
+  const file = extractFileFromAntdValue(values?.panImage);
+  if (!file) {
+    message.error("Please select a PAN image/PDF.");
+    break;
+  }
 
-      console.log(file, "file");
+  const userId = String(doctorData?.userId ?? values?.userId ?? "").trim();
+  const panNumber = String(values?.panNumber ?? "").trim();
+  console.log()
 
-response =  await apiUploadFile(
-    "/users/addKYCDetails",
-    file,                    // <-- raw File (or null)
-    "panFile",               // <-- field name your backend expects
-    {
-      userId: String(doctorData?.userId),
-      panNumber: (values?.panNumber || "").toUpperCase(),
-    }
-  );
+  const resp = await postKYCDetails({ file, userId, panNumber });
+  console.log(resp, "1234")
+  // handle resp.data as needed
   break;
 }
 
@@ -470,6 +495,10 @@ response =  await apiUploadFile(
   if (!doctorData) {
     return <Spin spinning={loading} tip="Loading doctor details..." />;
   }
+
+  // put this near the top of your file
+const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 alnum
+
 
   return (
     <div className="doctor-profile-container">
@@ -583,21 +612,22 @@ response =  await apiUploadFile(
                     <strong>State Medical Council: </strong> TSMC
                   </Text>
                 </div>
-                 <div className="info-item">
-                  <Text className="info-text">
-                    <strong>Degrees: </strong>  {doctorData.specialization.length > 0 ? (
-                    doctorData.specialization.map((spec, index) => (
-                      <Tag key={index} className="specialization-tag">
-                        {spec.degree || "Not specified"}
-                      </Tag>
-                    ))
-                  ) : (
-                    <Text style={{ color: "#6b7280" }}>
-                      No specializations added
-                    </Text>
-                  )}
-                  </Text>
-                </div>
+                <div className="info-item">
+  <Text className="info-text">
+    <strong>Degrees: </strong>  
+    {doctorData.specialization[0]?.degree ? (
+      doctorData.specialization[0].degree.split(',').map((degree, index) => (
+        <Tag key={index} className="specialization-tag">
+          {degree.trim()}
+        </Tag>
+      ))
+    ) : (
+      <Text style={{ color: "#6b7280" }}>
+        No degrees added
+      </Text>
+    )}
+  </Text>
+</div>
               
               <div style={{ marginBottom: "20px" }}>
                 <Text strong style={{ fontSize: "14px", color: "#166534", display: "block", marginBottom: "8px", fontWeight: "600" }}>
@@ -625,7 +655,7 @@ response =  await apiUploadFile(
 
                  <div className="info-item">
                   <Text className="info-text">
-                    <strong>About:</strong>
+                    <strong>About:</strong>{doctorData.specialization[0]?.bio || "N/A"}
                   </Text>
                 </div>
               {/* <div style={{ marginBottom: "20px" }}>
@@ -702,31 +732,32 @@ response =  await apiUploadFile(
                     <IdcardOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
                     KYC Details
                   </div>
-                  <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('kyc')}>
+                  {!kyc?.pan?.number &&  <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('kyc')}>
                     
-                  </Button>
+                  </Button>}
+                 
                 </div>
               }
               className="profile-card"
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center" }}>
-                  <IdcardOutlined className="info-icon" />
+ <IdcardOutlined className="info-icon" />
                   <div>
                     <Text strong className="info-text">PAN Number:</Text>
                     <Text className="info-text" style={{ marginLeft: "8px" }}>
-                      {doctorData.kycDetails.panNumber || "N/A"}
+                      {kyc?.pan?.number || "N/A"}
                     </Text>
                   </div>
                 </div>
-                {doctorData.kycDetails.panImage && (
+                {/* {doctorData.kycDetails.panImage && (
                   <Button
                     type="link"
                     size="small"
                     onClick={() => showModal({ type: "pan", data: doctorData.kycDetails.panImage })}
                     style={{ padding: "4px 8px" }}
                   />
-                )}
+                )} */}
               </div>
 
             </Card>
@@ -857,112 +888,130 @@ response =  await apiUploadFile(
                 <Form.Item label="Last Name" name="lastname">
                   <Input />
                 </Form.Item>
-                <Form.Item label="Medical Registration Number" name="medicalRegistrationNumber">
-                  <Input />
+                <Form.Item label="Mobile Number" name="mobileNumber" >
+                  <Input disabled/>
                 </Form.Item>
                 <Form.Item label="Email" name="email">
                   <Input />
                 </Form.Item>
                
-                <Form.List name="spokenLanguage">
-                  {(fields, { add, remove }) => (
-                    <>
-                      {fields.map(({ key, name, ...restField }) => (
-                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                          <Form.Item
-                            {...restField}
-                            name={name}
-                            label="Language"
-                            rules={[{ required: true, message: 'Please select a language' }]}
-                          >
-                            <Select
-                              style={{ width: 200 }}
-                              placeholder="Select a language"
-                                // Prevent selecting already chosen languages
-                                disabledOptions={form.getFieldValue('spokenLanguage') || []}
-                              >
-                                {languageOptions.map(option => (
-                                <Option
-                                  key={option.value}
-                                  value={option.value}
-                                  disabled={form.getFieldValue('spokenLanguage')?.includes(option.value)}
-                                >
-                                  {option.label}
-                                </Option>
-                              ))}
-                            </Select>
-                          </Form.Item>
-                          <Button onClick={() => remove(name)}>Remove</Button>
-                        </Space>
-                      ))}
-                      <Form.Item>
-                        <Button
-                          type="dashed"
-                          onClick={() => add()}
-                          block
-                          disabled={fields.length >= languageOptions.length}
-                        >
-                          Add Language
-                        </Button>
-                      </Form.Item>
-                    </>
-                  )}
-                </Form.List>
+               {/* inside your 'personal' block */}
+<Form.List name="spokenLanguage">
+  {(fields, { add, remove }) => (
+    <>
+      {fields.map(({ key, name, ...restField }) => (
+        <Form.Item
+          key={key}
+          label="Language"
+          style={{ marginBottom: 12 }}
+          // keep validation on the inner noStyle item
+        >
+          <Space.Compact block>
+            <Form.Item
+              {...restField}
+              name={name}
+              noStyle
+              rules={[{ required: true, message: 'Please select a language' }]}
+            >
+              <Select
+                placeholder="Select a language"
+                popupMatchSelectWidth={false}
+                style={{ minWidth: 220 }}
+              >
+                {languageOptions.map((option) => (
+                  <Option
+                    key={option.value}
+                    value={option.value}
+                    disabled={(form.getFieldValue('spokenLanguage') || []).includes(option.value)}
+                  >
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Button
+              danger
+              onClick={() => remove(name)}
+              // icon only keeps row tight; add text if you prefer
+              // icon={<DeleteOutlined />}
+            >
+              Remove
+            </Button>
+          </Space.Compact>
+        </Form.Item>
+      ))}
+
+      <Form.Item>
+        <Button
+          type="dashed"
+          onClick={() => add()}
+          block
+          disabled={fields.length >= languageOptions.length}
+        >
+          Add Language
+        </Button>
+      </Form.Item>
+    </>
+  )}
+</Form.List>
+
               </>
             )}
             {editModalType === 'professional' && (
-              <>
-<Form.Item
-  label="Degree"
-  name="degreeId"
-  rules={[{ required: true, message: 'Please select a degree' }]}
->
-  <Select
-    mode="multiple"
-    placeholder="Select degree"
-    loading={loadingDegrees}
-    showSearch
-    optionFilterProp="label"
-    options={degrees.map(d => ({
-      label: d.name || d.degreeName || d.title, // adapt to your API fields
-      value: d.degreeName || d.name || d.title, // adapt to your API fields
-    }))}
-  />
-</Form.Item>
-<Form.Item
-  label="Specializations"
-  name="specialization"
-  rules={[{ required: true, message: 'Please select at least one specialization' }]}
->
-  <Select
-    mode="multiple"
-    placeholder="Select specializations"
-    loading={loadingSpecs}
-    showSearch
-    optionFilterProp="label"
-    options={specializationOptions.map(s => ({
-      label: s,
-      value: s,
-    }))}
-  />
-</Form.Item>
-<Form.Item
-  label="Experience"
-  name="experience"
-  rules={[{ required: true, message: 'Please enter your experience' }]}
->
-  <Input type="number" />
-</Form.Item>
+  <>
+    <Form.Item
+      label="Degree"
+      name="degreeId"
+      rules={[{ required: true, message: 'Please select a degree' }]}
+    >
+      <Select
+        mode="multiple"
+        placeholder="Select degree"
+        loading={loadingDegrees}
+        showSearch
+        optionFilterProp="label"
+        options={degrees.map(d => ({
+          label: d.name || d.degreeName || d.title,
+          value: d.name || d.degreeName || d.title, // Use the name as value
+        }))}
+      />
+    </Form.Item>
+    
+    <Form.Item
+      label="Specializations"
+      name="specialization"
+      rules={[{ required: true, message: 'Please select at least one specialization' }]}
+    >
+      <Select
+        mode="multiple"
+        placeholder="Select specializations"
+        loading={loadingSpecs}
+        showSearch
+        optionFilterProp="label"
+        options={specializationOptions.map(s => ({
+          label: s,
+          value: s,
+        }))}
+      />
+    </Form.Item>
+    
+    <Form.Item
+      label="Experience"
+      name="experience"
+      rules={[{ required: true, message: 'Please enter your experience' }]}
+    >
+      <Input type="number" />
+    </Form.Item>
 
-<Form.Item
-  label="About"
-  name="about"
->
-  <Input.TextArea />
-</Form.Item>
-
-              </>
-            )}
+    <Form.Item
+      label="About"
+      name="about"
+    >
+      <Input.TextArea />
+    </Form.Item>
+  </>
+)}
           {editModalType === 'kyc' && (
   <>
     <Form.Item
@@ -1005,21 +1054,11 @@ response =  await apiUploadFile(
                         >
                           <Input type="number" />
                         </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'currency']}
-                          label="Currency"
-                        >
-                          <Input />
-                        </Form.Item>
-                        <Button onClick={() => remove(name)}>Remove</Button>
+                       
+                       
                       </Space>
                     ))}
-                    <Form.Item>
-                      <Button type="dashed" onClick={() => add()} block>
-                        Add Consultation Mode
-                      </Button>
-                    </Form.Item>
+                   
                   </>
                 )}
               </Form.List>
@@ -1040,10 +1079,33 @@ response =  await apiUploadFile(
   ]}>
                   <Input />
                 </Form.Item>
-                <Form.Item label="IFSC Code" name={["bankDetails", "ifscCode"]}>
-                  <Input />
-                </Form.Item>
-               
+                <Form.Item
+  label="IFSC Code"
+  name={['bankDetails', 'ifscCode']}
+  validateFirst
+  hasFeedback
+  getValueFromEvent={(e) =>
+    String(e?.target?.value || '')
+      .toUpperCase()
+      .replace(/\s|-/g, '') // strip spaces/dashes if pasted
+  }
+  rules={[
+    { required: true, message: 'IFSC is required' },
+    { len: 11, message: 'IFSC must be exactly 11 characters' },
+    {
+      pattern: IFSC_REGEX,
+      message: 'Invalid IFSC format (e.g., HDFC0XXXXXX)',
+    },
+  ]}
+>
+  <Input
+    placeholder="e.g., HDFC0ABCD12"
+    maxLength={11}
+    autoComplete="off"
+    allowClear
+  />
+</Form.Item>
+
               </>
             )}
           </Form>
