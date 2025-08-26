@@ -20,6 +20,8 @@ import {
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { apiGet, apiPut, apiUploadFile, apiPost } from "../../api";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 // import crypto = require('crypto');
 
 import {
@@ -249,33 +251,21 @@ const fetchDegrees = async () => {
     setLoadingDegrees(true);
     const response = await apiGet('/catalogue/degree/getAllDegrees');
     const data = response?.data?.data || [];
+    console.log(data, "1234")
     setDegrees(data);
   } catch (error) {
     console.error('Error fetching degrees:', error);
-    Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to fetch degrees.', position: 'top', visibilityTime: 4000 });
+    toast.error('Failed to fetch degrees.');
   } finally {
     setLoadingDegrees(false);
   }
 };
 
-const fetchSpecializations = async () => {
-  try {
-    setLoadingSpecs(true);
-    const response = await apiGet('/catalogue/specialization/getAllSpecializations');
-    const data = response?.data?.data || [];
-    setSpecializations(data);
-  } catch (error) {
-    console.error('Error fetching specializations:', error);
-    Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to fetch specializations.', position: 'top', visibilityTime: 4000 });
-  } finally {
-    setLoadingSpecs(false);
-  }
-};
+
 
   useEffect(() => {
     fetchDoctorData();
     fetchDegrees();
-    fetchSpecializations();
   }, []);
 
   const showModal = (doc) => {
@@ -322,6 +312,7 @@ const fetchSpecializations = async () => {
           maritalStatus: doctorData?.maritalStatus,
           medicalRegistrationNumber: doctorData?.medicalRegistrationNumber,
           spokenLanguage: doctorData?.spokenLanguage || [],
+          mobileNumber: doctorData?.mobile,
         };
       case 'professional': {
         const initialDegreeId = degrees.find(d => d.name === doctorData?.specialization?.[0]?.degree)?._id;
@@ -332,6 +323,7 @@ const fetchSpecializations = async () => {
           specialization: initialSpecs,
           experience: doctorData?.specialization?.[0]?.experience,
           certifications: doctorData?.certifications,
+          about :doctorData?.specialization?.[0]?.bio
         };
       }
       case 'locations':
@@ -357,13 +349,15 @@ const fetchSpecializations = async () => {
   };
 
   const handleSaveProfile = async (values) => {
-    console.log(values, "for personal 1234");
+
     let response;
     try {
       switch (editModalType) {
         case 'personal':
+          console.log("Updating personal information", values);
+            const { mobileNumber, ...rest } = values;
           await apiPut("/users/updateUser", {
-            ...values,
+            ...rest,
             spokenLanguage: values.spokenLanguage || []
           });
           break;
@@ -470,6 +464,10 @@ response =  await apiUploadFile(
   if (!doctorData) {
     return <Spin spinning={loading} tip="Loading doctor details..." />;
   }
+
+  // put this near the top of your file
+const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 alnum
+
 
   return (
     <div className="doctor-profile-container">
@@ -625,7 +623,7 @@ response =  await apiUploadFile(
 
                  <div className="info-item">
                   <Text className="info-text">
-                    <strong>About:</strong>
+                    <strong>About:</strong>{doctorData.specialization[0]?.bio || "N/A"}
                   </Text>
                 </div>
               {/* <div style={{ marginBottom: "20px" }}>
@@ -857,57 +855,74 @@ response =  await apiUploadFile(
                 <Form.Item label="Last Name" name="lastname">
                   <Input />
                 </Form.Item>
-                <Form.Item label="Medical Registration Number" name="medicalRegistrationNumber">
-                  <Input />
+                <Form.Item label="Mobile Number" name="mobileNumber" >
+                  <Input disabled/>
                 </Form.Item>
                 <Form.Item label="Email" name="email">
                   <Input />
                 </Form.Item>
                
-                <Form.List name="spokenLanguage">
-                  {(fields, { add, remove }) => (
-                    <>
-                      {fields.map(({ key, name, ...restField }) => (
-                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                          <Form.Item
-                            {...restField}
-                            name={name}
-                            label="Language"
-                            rules={[{ required: true, message: 'Please select a language' }]}
-                          >
-                            <Select
-                              style={{ width: 200 }}
-                              placeholder="Select a language"
-                                // Prevent selecting already chosen languages
-                                disabledOptions={form.getFieldValue('spokenLanguage') || []}
-                              >
-                                {languageOptions.map(option => (
-                                <Option
-                                  key={option.value}
-                                  value={option.value}
-                                  disabled={form.getFieldValue('spokenLanguage')?.includes(option.value)}
-                                >
-                                  {option.label}
-                                </Option>
-                              ))}
-                            </Select>
-                          </Form.Item>
-                          <Button onClick={() => remove(name)}>Remove</Button>
-                        </Space>
-                      ))}
-                      <Form.Item>
-                        <Button
-                          type="dashed"
-                          onClick={() => add()}
-                          block
-                          disabled={fields.length >= languageOptions.length}
-                        >
-                          Add Language
-                        </Button>
-                      </Form.Item>
-                    </>
-                  )}
-                </Form.List>
+               {/* inside your 'personal' block */}
+<Form.List name="spokenLanguage">
+  {(fields, { add, remove }) => (
+    <>
+      {fields.map(({ key, name, ...restField }) => (
+        <Form.Item
+          key={key}
+          label="Language"
+          style={{ marginBottom: 12 }}
+          // keep validation on the inner noStyle item
+        >
+          <Space.Compact block>
+            <Form.Item
+              {...restField}
+              name={name}
+              noStyle
+              rules={[{ required: true, message: 'Please select a language' }]}
+            >
+              <Select
+                placeholder="Select a language"
+                popupMatchSelectWidth={false}
+                style={{ minWidth: 220 }}
+              >
+                {languageOptions.map((option) => (
+                  <Option
+                    key={option.value}
+                    value={option.value}
+                    disabled={(form.getFieldValue('spokenLanguage') || []).includes(option.value)}
+                  >
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Button
+              danger
+              onClick={() => remove(name)}
+              // icon only keeps row tight; add text if you prefer
+              // icon={<DeleteOutlined />}
+            >
+              Remove
+            </Button>
+          </Space.Compact>
+        </Form.Item>
+      ))}
+
+      <Form.Item>
+        <Button
+          type="dashed"
+          onClick={() => add()}
+          block
+          disabled={fields.length >= languageOptions.length}
+        >
+          Add Language
+        </Button>
+      </Form.Item>
+    </>
+  )}
+</Form.List>
+
               </>
             )}
             {editModalType === 'professional' && (
@@ -1005,21 +1020,11 @@ response =  await apiUploadFile(
                         >
                           <Input type="number" />
                         </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'currency']}
-                          label="Currency"
-                        >
-                          <Input />
-                        </Form.Item>
-                        <Button onClick={() => remove(name)}>Remove</Button>
+                       
+                       
                       </Space>
                     ))}
-                    <Form.Item>
-                      <Button type="dashed" onClick={() => add()} block>
-                        Add Consultation Mode
-                      </Button>
-                    </Form.Item>
+                   
                   </>
                 )}
               </Form.List>
@@ -1040,10 +1045,33 @@ response =  await apiUploadFile(
   ]}>
                   <Input />
                 </Form.Item>
-                <Form.Item label="IFSC Code" name={["bankDetails", "ifscCode"]}>
-                  <Input />
-                </Form.Item>
-               
+                <Form.Item
+  label="IFSC Code"
+  name={['bankDetails', 'ifscCode']}
+  validateFirst
+  hasFeedback
+  getValueFromEvent={(e) =>
+    String(e?.target?.value || '')
+      .toUpperCase()
+      .replace(/\s|-/g, '') // strip spaces/dashes if pasted
+  }
+  rules={[
+    { required: true, message: 'IFSC is required' },
+    { len: 11, message: 'IFSC must be exactly 11 characters' },
+    {
+      pattern: IFSC_REGEX,
+      message: 'Invalid IFSC format (e.g., HDFC0XXXXXX)',
+    },
+  ]}
+>
+  <Input
+    placeholder="e.g., HDFC0ABCD12"
+    maxLength={11}
+    autoComplete="off"
+    allowClear
+  />
+</Form.Item>
+
               </>
             )}
           </Form>
