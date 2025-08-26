@@ -417,7 +417,8 @@ console.log("user====",user.access)
                     lineHeight: "1.2",
                   }}
                 >
-                  {user?.role || "Doctor"}
+{((user?.role || "Doctor").charAt(0).toUpperCase() + (user?.role || "Doctor").slice(1).toLowerCase())}
+
                 </div>
               </div>
             </div>

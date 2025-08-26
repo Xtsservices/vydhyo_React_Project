@@ -371,6 +371,63 @@ const styles = {
       backgroundColor: "#2563eb",
     },
   },
+    prescriptionSection: {
+    marginBottom: 24,
+    padding: "16px 20px",
+    border: "1px solid #e8e8e8",
+    borderRadius: 6,
+    backgroundColor: "#fafafa"
+  },
+  sectionTitle: {
+    marginBottom: 16,
+    color: "#1890ff",
+    fontSize: 18,
+    borderBottom: "1px solid #e8e8e8",
+    paddingBottom: 8
+  },
+  subSection: {
+    marginBottom: 16,
+    padding: "12px 16px",
+    backgroundColor: "#fff",
+    borderRadius: 4,
+    border: "1px solid #f0f0f0"
+  },
+  subSectionTitle: {
+    marginBottom: 12,
+    fontSize: 16,
+    color: "#262626"
+  },
+  infoGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+    gap: "12px 20px"
+  },
+  infoItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "8px 0",
+    borderBottom: "1px dotted #f0f0f0"
+  },
+  loadingMessage: {
+    textAlign: "center",
+    padding: 20,
+    color: "#8c8c8c",
+    fontStyle: "italic"
+  },
+  noDataMessage: {
+    textAlign: "center",
+    padding: 20,
+    color: "#8c8c8c",
+    fontStyle: "italic"
+  },
+  prescriptionModal: {
+    padding: "16px",
+    borderRadius: "8px",
+    backgroundColor: "#fff",
+    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+    marginLeft: "150px"
+  }
+
 };
 
 export default styles;
