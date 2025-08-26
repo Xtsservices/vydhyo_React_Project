@@ -527,17 +527,17 @@ const handleEPrescription = (appointment) => {
   const renderActionMenu = (record) => (
     <Menu>
       {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
-     <Menu.Item
+<Menu.Item
   key="e-prescription"
   onClick={() => handleEPrescription(record)}
   disabled={
     record.appointmentStatus === "completed" ||
     record.appointmentStatus === "cancelled" ||
-    // disable if current time is not within 1 hour before appointment
+    // Enable only from 1 hour before appointment time
     moment().isBefore(
       moment(
-        `${record.appointmentDate} ${record.appointmentTime}`,
-        "YYYY-MM-DD HH:mm"
+        `${record.appointmentDate} ${record.appointmentTime.split(' ')[0]}`,
+        "DD-MMM-YYYY HH:mm"
       ).subtract(1, "hours")
     )
   }
