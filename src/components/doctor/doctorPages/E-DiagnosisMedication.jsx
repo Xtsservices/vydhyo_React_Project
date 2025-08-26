@@ -175,7 +175,8 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     if (!dosage || !dosage.trim()) {
       return false;
     }
-    const dosageRegex = /^\d+(\.\d+)?\s*(mg|mcg|g|kg|ml|l|tablet|tab|capsule|cap|tsp|tbsp|tablespoon|teaspoon|spoon|drop|unit|puff|spray|amp|ampoule|vial)s?$/i;
+    const dosageRegex =
+      /^\d+(\.\d+)?\s*(mg|mcg|g|kg|ml|l|tablet|tab|capsule|cap|tsp|tbsp|tablespoon|teaspoon|spoon|drop|unit|puff|spray|amp|ampoule|vial)s?$/i;
     return dosageRegex.test(dosage);
   };
 
@@ -194,7 +195,10 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     }
 
     if (!field || field === "quantity") {
-      if (touched[id]?.quantity && (medication.quantity === null || medication.quantity <= 0)) {
+      if (
+        touched[id]?.quantity &&
+        (medication.quantity === null || medication.quantity <= 0)
+      ) {
         medErrors.quantity = "Please enter a valid quantity greater than 0";
       } else {
         delete medErrors.quantity;
@@ -210,16 +214,24 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     }
 
     if (!field || field === "dosage") {
-      if (touched[id]?.dosage && (!medication.dosage || !validateDosage(medication.dosage))) {
-        medErrors.dosage = "Please enter a valid dosage (e.g., 100mg, 5ml, 1 tablet, 0.5 tsp, 1 tbsp)";
+      if (
+        touched[id]?.dosage &&
+        (!medication.dosage || !validateDosage(medication.dosage))
+      ) {
+        medErrors.dosage =
+          "Please enter a valid dosage (e.g., 100mg, 5ml, 1 tablet, 0.5 tsp, 1 tbsp)";
       } else {
         delete medErrors.dosage;
       }
     }
 
     if (!field || field === "duration") {
-      if (touched[id]?.duration && (medication.duration === null || medication.duration <= 0)) {
-        medErrors.duration = "Please enter a valid duration greater than 0 days";
+      if (
+        touched[id]?.duration &&
+        (medication.duration === null || medication.duration <= 0)
+      ) {
+        medErrors.duration =
+          "Please enter a valid duration greater than 0 days";
       } else {
         delete medErrors.duration;
       }
@@ -245,7 +257,9 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
 
   const validateMedication = (medication) => {
     validateSingleMedication(medication.id);
-    return !errors[medication.id] || Object.keys(errors[medication.id]).length === 0;
+    return (
+      !errors[medication.id] || Object.keys(errors[medication.id]).length === 0
+    );
   };
 
   const validateAllMedications = () => {
@@ -258,16 +272,24 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     });
 
     return localData.medications.every(
-      (medication) => !errors[medication.id] || Object.keys(errors[medication.id]).length === 0
+      (medication) =>
+        !errors[medication.id] ||
+        Object.keys(errors[medication.id]).length === 0
     );
   };
 
   const addMedication = () => {
     if (localData.medications.length > 0) {
-      const lastMedication = localData.medications[localData.medications.length - 1];
+      const lastMedication =
+        localData.medications[localData.medications.length - 1];
       validateSingleMedication(lastMedication.id);
-      if (errors[lastMedication.id] && Object.keys(errors[lastMedication.id]).length > 0) {
-        toast.error("Please fix the errors in the last medication before adding a new one");
+      if (
+        errors[lastMedication.id] &&
+        Object.keys(errors[lastMedication.id]).length > 0
+      ) {
+        toast.error(
+          "Please fix the errors in the last medication before adding a new one"
+        );
         return;
       }
     }
@@ -368,8 +390,14 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
 
         if (field === "medicineType") {
           updatedMed.quantity = null;
-          if (["Tablet", "Capsule", "Injection"].includes(value) && updatedMed.duration && updatedMed.frequency) {
-            const timesPerDay = updatedMed.frequency.split("-").filter((x) => x === "1").length;
+          if (
+            ["Tablet", "Capsule", "Injection"].includes(value) &&
+            updatedMed.duration &&
+            updatedMed.frequency
+          ) {
+            const timesPerDay = updatedMed.frequency
+              .split("-")
+              .filter((x) => x === "1").length;
             updatedMed.quantity = updatedMed.duration * timesPerDay;
           }
         }
@@ -380,7 +408,9 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
 
           if (["Tablet", "Capsule", "Injection"].includes(med.medicineType)) {
             if (newFrequency && newDuration) {
-              const timesPerDay = newFrequency.split("-").filter((x) => x === "1").length;
+              const timesPerDay = newFrequency
+                .split("-")
+                .filter((x) => x === "1").length;
               updatedMed.quantity = newDuration * timesPerDay;
             } else {
               updatedMed.quantity = null;
@@ -426,7 +456,10 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
         const filteredTimings = med.timings.slice(0, requiredTimingsCount);
 
         let newQuantity = med.quantity;
-        if (["Tablet", "Capsule", "Injection"].includes(med.medicineType) && med.duration) {
+        if (
+          ["Tablet", "Capsule", "Injection"].includes(med.medicineType) &&
+          med.duration
+        ) {
           const timesPerDay = value.split("-").filter((x) => x === "1").length;
           newQuantity = med.duration * timesPerDay;
         }
@@ -671,9 +704,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
         </div>
 
         {validationError && (
-          <div className="medication-validation-error">
-            {validationError}
-          </div>
+          <div className="medication-validation-error">{validationError}</div>
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -708,7 +739,10 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     }
                   />
                   {errors[medication.id]?.medName && (
-                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                    <div
+                      className="error"
+                      style={{ color: "red", fontSize: "12px" }}
+                    >
                       {errors[medication.id].medName}
                     </div>
                   )}
@@ -742,7 +776,10 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     ))}
                   </Select>
                   {errors[medication.id]?.medicineType && (
-                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                    <div
+                      className="error"
+                      style={{ color: "red", fontSize: "12px" }}
+                    >
                       {errors[medication.id].medicineType}
                     </div>
                   )}
@@ -777,20 +814,21 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     />
                   )}
                   {errors[medication.id]?.quantity && (
-                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                    <div
+                      className="error"
+                      style={{ color: "red", fontSize: "12px" }}
+                    >
                       {errors[medication.id].quantity}
                     </div>
                   )}
                 </div>
 
-                {localData.medications.length > 1 && (
-                  <button
-                    onClick={() => removeMedication(medication.id)}
-                    className="remove-medication-button"
-                  >
-                    <X style={{ width: "16px", height: "16px" }} />
-                  </button>
-                )}
+                <button
+                  onClick={() => removeMedication(medication.id)}
+                  className="remove-medication-button"
+                >
+                  <X style={{ width: "16px", height: "16px" }} />
+                </button>
               </div>
 
               <div className="medication-dosage-row">
@@ -812,13 +850,18 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     onChange={(e) =>
                       updateMedication(medication.id, "dosage", e.target.value)
                     }
-                    onBlur={() => handleDosageBlur(medication.id, medication.dosage)}
+                    onBlur={() =>
+                      handleDosageBlur(medication.id, medication.dosage)
+                    }
                     placeholder="Enter dosage"
                     className="medication-field"
                     disabled={selectedFromDropdown[medication.id]}
                   />
                   {errors[medication.id]?.dosage && (
-                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                    <div
+                      className="error"
+                      style={{ color: "red", fontSize: "12px" }}
+                    >
                       {errors[medication.id].dosage}
                     </div>
                   )}
@@ -841,12 +884,17 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     onChange={(value) =>
                       updateMedication(medication.id, "duration", value)
                     }
-                    onBlur={() => handleDurationBlur(medication.id, medication.duration)}
+                    onBlur={() =>
+                      handleDurationBlur(medication.id, medication.duration)
+                    }
                     style={{ width: "100%" }}
                     min={1}
                   />
                   {errors[medication.id]?.duration && (
-                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                    <div
+                      className="error"
+                      style={{ color: "red", fontSize: "12px" }}
+                    >
                       {errors[medication.id].duration}
                     </div>
                   )}
@@ -881,7 +929,10 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     ))}
                   </Select>
                   {errors[medication.id]?.frequency && (
-                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                    <div
+                      className="error"
+                      style={{ color: "red", fontSize: "12px" }}
+                    >
                       {errors[medication.id].frequency}
                     </div>
                   )}
@@ -934,7 +985,10 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     ))}
                   </Select>
                   {errors[medication.id]?.timings && (
-                    <div className="error" style={{ color: "red", fontSize: "12px" }}>
+                    <div
+                      className="error"
+                      style={{ color: "red", fontSize: "12px" }}
+                    >
                       {errors[medication.id].timings}
                     </div>
                   )}

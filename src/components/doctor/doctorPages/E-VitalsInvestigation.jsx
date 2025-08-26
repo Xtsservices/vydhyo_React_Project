@@ -216,7 +216,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
 
         <div className="vitals-grid">
           <div className="vitals-input-group bp-group-container">
-            <label className="vitals-label">Blood Pressure (mmHg)</label>
+            <label className="vitals-label">Blood Pressure (MMHG)</label>
             <div className="bp-inputs">
               <input
                 type="number"
@@ -251,7 +251,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
 
           {[
             { field: "pulseRate", label: "Pulse Rate", unit: "BPM" },
-            { field: "respiratoryRate", label: "Respiratory Rate", unit: "breaths/min" },
+            { field: "respiratoryRate", label: "Respiratory Rate", unit: "Breaths/Min" },
             { field: "temperature", label: "Temperature", unit: "°F" },
             { field: "spo2", label: "SpO₂", unit: "%" },
             { field: "height", label: "Height", unit: "CM" },
@@ -276,7 +276,7 @@ const VitalsInvestigation = ({ formData, updateFormData }) => {
           ))}
 
           <div className="vitals-input-group">
-            <label className="vitals-label">BMI (kg/m²)</label>
+            <label className="vitals-label">BMI (KG/M²)</label>
             <input
               type="text"
               value={localData.bmi}
