@@ -246,497 +246,496 @@ const AdvertisingDoctorsPage = () => {
       </section>
 
       {/* Features */}
-      <section style={{ maxWidth: 1200, marginBottom:"-40px", margin: "0px auto", padding: "32px 16px" }}>
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={6}>
-            <Card
-              style={{
-                textAlign: "center",
-                height: "90%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                borderRadius: 12,
-                padding: 24
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: "#EAFBF2",
-                  borderRadius: "50%",
-                  width: 60,
-                  height: 60,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 10,
-                }}
-              >
-                <ClockCircleOutlined
-                  style={{
-                    fontSize: 28,
-                    color: "#6EDC8C",
-                  }}
-                />
-              </div>
-              <h3
-                style={{
-                  fontWeight: 600,
-                  fontSize: 20,
-                  color: "#1A3B34",
-                  marginBottom: 16,
-                }}
-              >
-                Efficient Appointment Management
-              </h3>
-              <p style={{ color: "#4B5C58", fontSize: 16, lineHeight: 1.6 }}>
-                Access your schedule anytime, anywhere with live updates on your
-                appointments.
-              </p>
-            </Card>
-          </Col>
-          <Col xs={24} md={6}>
-            <Card
-              style={{
-                textAlign: "center",
-                height: "90%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                borderRadius: 12,
-                padding: 24
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: "#EAFBF2",
-                  borderRadius: "50%",
-                  width: 60,
-                  height: 60,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 10,
-                }}
-              >
-                <ToolOutlined
-                  style={{
-                    fontSize: 28,
-                    color: "#6EDC8C",
-                  }}
-                />
-              </div>
-              <h3
-                style={{
-                  fontWeight: 600,
-                  fontSize: 20,
-                  color: "#1A3B34",
-                  marginBottom: 16,
-                }}
-              >
-                Digital Tool for Practice Management
-              </h3>
-              <p style={{ color: "#4B5C58", fontSize: 16, lineHeight: 1.6 }}>
-                VYDHYO offers all-in-one tools for easy, seamless patient care.
-              </p>
-            </Card>
-          </Col>
-          <Col xs={24} md={6}>
-            <Card
-              style={{
-                textAlign: "center",
-                height: "90%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                borderRadius: 12,
-                padding: 24
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: "#EAFBF2",
-                  borderRadius: "50%",
-                  width: 60,
-                  height: 60,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <EyeOutlined
-                  style={{
-                    fontSize: 28,
-                    color: "#6EDC8C",
-                  }}
-                />
-              </div>
-              <h3
-                style={{
-                  fontWeight: 600,
-                  fontSize: 20,
-                  color: "#1A3B34",
-                  marginBottom: 16,
-                }}
-              >
-                Increased Visibility & Patient Reach
-              </h3>
-              <p style={{ color: "#4B5C58", fontSize: 16, lineHeight: 1.6 }}>
-                Be seen. Be chosen. Go digital with Vydhyo.
-              </p>
-            </Card>
-          </Col>
-          <Col xs={24} md={6}>
-            <Card
-              style={{
-                textAlign: "center",
-                height: "90%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                borderRadius: 12,
-                padding: 24
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: "#EAFBF2",
-                  borderRadius: "50%",
-                  width: 60,
-                  height: 60,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <CheckOutlined
-                  style={{
-                    fontSize: 28,
-                    color: "#6EDC8C",
-                  }}
-                />
-              </div>
-              <h3
-                style={{
-                  fontWeight: 600,
-                  fontSize: 20,
-                  color: "#1A3B34",
-                  marginBottom: 10,
-                }}
-              >
-                Consistent care with smart  follow-ups 
-              </h3>
-              <p style={{ color: "#4B5C58", fontSize: 16, lineHeight: 1.6 }}>
-                automated follow-ups reminders ensure timely check-ins---building trust and long-term relationship.
-              </p>
-            </Card>
-          </Col>
-
-        </Row>
-      </section>
+      <section style={{ maxWidth: 1200, marginBottom: "-40px", margin: "0px auto", padding: "32px 16px" }}>
+  <Row gutter={[24, 24]}>
+    <Col xs={24} md={6}>
+      <Card
+        style={{
+          textAlign: "center",
+          height: "90%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          borderRadius: 12,
+          padding: 24
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#EAFBF2",
+            borderRadius: "50%",
+            width: 60,
+            height: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 10px",
+          }}
+        >
+          <ClockCircleOutlined
+            style={{
+              fontSize: 28,
+              color: "#6EDC8C",
+            }}
+          />
+        </div>
+        <h3
+          style={{
+            fontWeight: 600,
+            fontSize: 20,
+            color: "#1A3B34",
+            marginBottom: 16,
+          }}
+        >
+          Efficient Appointment Management
+        </h3>
+        <p style={{ color: "#4B5C58", fontSize: 16, lineHeight: 1.6 }}>
+          Access your schedule anytime, anywhere with live updates on your
+          appointments.
+        </p>
+      </Card>
+    </Col>
+    <Col xs={24} md={6}>
+      <Card
+        style={{
+          textAlign: "center",
+          height: "90%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          borderRadius: 12,
+          padding: 24
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#EAFBF2",
+            borderRadius: "50%",
+            width: 60,
+            height: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 10px",
+          }}
+        >
+          <ToolOutlined
+            style={{
+              fontSize: 28,
+              color: "#6EDC8C",
+            }}
+          />
+        </div>
+        <h3
+          style={{
+            fontWeight: 600,
+            fontSize: 20,
+            color: "#1A3B34",
+            marginBottom: 16,
+          }}
+        >
+          Digital Tool for Practice Management
+        </h3>
+        <p style={{ color: "#4B5C58", fontSize: 16, lineHeight: 1.6 }}>
+          VYDHYO offers all-in-one tools for easy, seamless patient care.
+        </p>
+      </Card>
+    </Col>
+    <Col xs={24} md={6}>
+      <Card
+        style={{
+          textAlign: "center",
+          height: "90%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          borderRadius: 12,
+          padding: 24
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#EAFBF2",
+            borderRadius: "50%",
+            width: 60,
+            height: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 16px",
+          }}
+        >
+          <EyeOutlined
+            style={{
+              fontSize: 28,
+              color: "#6EDC8C",
+            }}
+          />
+        </div>
+        <h3
+          style={{
+            fontWeight: 600,
+            fontSize: 20,
+            color: "#1A3B34",
+            marginBottom: 16,
+          }}
+        >
+          Increased Visibility & Patient Reach
+        </h3>
+        <p style={{ color: "#4B5C58", fontSize: 16, lineHeight: 1.6 }}>
+          Be seen. Be chosen. Go digital with Vydhyo.
+        </p>
+      </Card>
+    </Col>
+    <Col xs={24} md={6}>
+      <Card
+        style={{
+          textAlign: "center",
+          height: "90%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          borderRadius: 12,
+          padding: 24
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#EAFBF2",
+            borderRadius: "50%",
+            width: 60,
+            height: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 16px",
+          }}
+        >
+          <CheckOutlined
+            style={{
+              fontSize: 28,
+              color: "#6EDC8C",
+            }}
+          />
+        </div>
+        <h3
+          style={{
+            fontWeight: 600,
+            fontSize: 20,
+            color: "#1A3B34",
+            marginBottom: 10,
+          }}
+        >
+          Consistent care with smart follow-ups
+        </h3>
+        <p style={{ color: "#4B5C58", fontSize: 16, lineHeight: 1.6 }}>
+          Automated follow-up reminders ensure timely check-ins---building trust and long-term relationship.
+        </p>
+      </Card>
+    </Col>
+  </Row>
+</section>
 
       {/* Why Choose */}
-      <section style={{ backgroundColor: "#EAFBF2", padding: "64px 0" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px" }}>
-          <h2
+     <section style={{ backgroundColor: "#EAFBF2", padding: "64px 0" }}>
+  <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px" }}>
+    <h2
+      style={{
+        fontSize: screens.md ? 32 : 24,
+        fontWeight: 700,
+        textAlign: "center",
+        color: "#1A3B34",
+        marginBottom: 48,
+      }}
+    >
+      Why Choose Vydhyo?
+    </h2>
+    <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
+      <Col xs={24} sm={12} md={6}>
+        <Card
+          style={{
+            textAlign: "center",
+            borderRadius: 12,
+            padding: 24,
+            minHeight: 220,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <div
             style={{
-              fontSize: screens.md ? 32 : 24,
-              fontWeight: 700,
-              textAlign: "center",
-              color: "#1A3B34",
-              marginBottom: 48,
+              backgroundColor: "#6EDC8C",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
             }}
           >
-            Why Choose Vydhyo?
-          </h2>
-          <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
-            <Col xs={24} sm={12} md={6}>
-              <Card
-                style={{
-                  textAlign: "center",
-                  borderRadius: 12,
-                  padding: 24,
-                  minHeight: 220,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#6EDC8C",
-                    borderRadius: "50%",
-                    width: 48,
-                    height: 48,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <EyeOutlined style={{ color: "#fff", fontSize: 24 }} />
-                </div>
-                <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
-                  Smart, Localized, Digital Profile
-                </p>
-                <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
-                  Geo-targeted, SEO-optimized, Telugu-friendly
-                </p>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Card
-                style={{
-                  textAlign: "center",
-                  borderRadius: 12,
-                  padding: 12,
-                  minHeight: 220,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#6EDC8C",
-                    borderRadius: "50%",
-                    width: 48,
-                    height: 48,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <ClockCircleOutlined style={{ color: "#fff", fontSize: 24 }} />
-                </div>
-                <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
-                  Intelligent Appointment Engine
-                </p>
-                <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
-                  Live slot booking via WhatsApp, IVR with local language support & APP
-                </p>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Card
-                style={{
-                  textAlign: "center",
-                  borderRadius: 12,
-                  padding: 24,
-                  minHeight: 220,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#6EDC8C",
-                    borderRadius: "50%",
-                    width: 48,
-                    height: 48,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <UserOutlined style={{ color: "#fff", fontSize: 24 }} />
-                </div>
-                <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
-                  Hyperlocal Patient Discovery
-                </p>
-                <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
-                  Be seen by local patients instantly
-                </p>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Card
-                style={{
-                  textAlign: "center",
-                  borderRadius: 12,
-                  padding: 24,
-                  minHeight: 220,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#6EDC8C",
-                    borderRadius: "50%",
-                    width: 48,
-                    height: 48,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <StarFilled style={{ color: "#fff", fontSize: 24 }} />
-                </div>
-                <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
-                  Connected Local Ecosystem
-                </p>
-                <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
-                  Labs, pharmacies & home care all in one flow
-                </p>
-              </Card>
-            </Col>
-          </Row>
-          <Row gutter={[24, 24]}>
-            <Col xs={24} sm={12} md={6}>
-              <Card
-                style={{
-                  textAlign: "center",
-                  borderRadius: 12,
-                  padding: 24,
-                  minHeight: 220,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#6EDC8C",
-                    borderRadius: "50%",
-                    width: 48,
-                    height: 48,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <CheckOutlined style={{ color: "#fff", fontSize: 24 }} />
-                </div>
-                <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
-                  Reputation Builder
-                </p>
-                <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
-                  Collect reviews & promote trust locally
-                </p>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Card
-                style={{
-                  textAlign: "center",
-                  borderRadius: 12,
-                  padding: 24,
-                  minHeight: 220,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#6EDC8C",
-                    borderRadius: "50%",
-                    width: 48,
-                    height: 48,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <FundOutlined style={{ color: "#fff", fontSize: 24 }} />
-                </div>
-                <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
-                  Practice Growth Tools
-                </p>
-                <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
-                  Digital branding, patient education & brand tools
-                </p>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Card
-                style={{
-                  textAlign: "center",
-                  borderRadius: 12,
-                  padding: 24,
-                  minHeight: 220,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#6EDC8C",
-                    borderRadius: "50%",
-                    width: 48,
-                    height: 48,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <FormOutlined  style={{ color: "#fff", fontSize: 24 }} />
-                </div>
-                <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
-                  EMR + E-Prescriptions
-                </p>
-                <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
-                  Secure, digital prescriptions & patient records
-                </p>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Card
-                style={{
-                  textAlign: "center",
-                  borderRadius: 12,
-                  padding: 14,
-                  minHeight: 220,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#6EDC8C",
-                    borderRadius: "50%",
-                    width: 48,
-                    height: 48,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 10,
-                  }}
-                >
-                  <ToolOutlined style={{ color: "#fff", fontSize: 24 }} />
-                </div>
-                <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
-                  CRM & Analytics Dashboard
-                </p>
-                <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
-                  Track visits, send reminders & grow repeat business
-                </p>
-              </Card>
-            </Col>
-          </Row>
-        </div>
-      </section>
+            <EyeOutlined style={{ color: "#fff", fontSize: 24 }} />
+          </div>
+          <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
+            Smart, Localized, Digital Profile
+          </p>
+          <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
+            Geo-targeted, SEO-optimized, Telugu-friendly
+          </p>
+        </Card>
+      </Col>
+      <Col xs={24} sm={12} md={6}>
+        <Card
+          style={{
+            textAlign: "center",
+            borderRadius: 12,
+            padding: 12,
+            minHeight: 220,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#6EDC8C",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <ClockCircleOutlined style={{ color: "#fff", fontSize: 24 }} />
+          </div>
+          <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
+            Intelligent Appointment Engine
+          </p>
+          <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
+            Live slot booking via WhatsApp, IVR with local language support & APP
+          </p>
+        </Card>
+      </Col>
+      <Col xs={24} sm={12} md={6}>
+        <Card
+          style={{
+            textAlign: "center",
+            borderRadius: 12,
+            padding: 24,
+            minHeight: 220,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#6EDC8C",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <UserOutlined style={{ color: "#fff", fontSize: 24 }} />
+          </div>
+          <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
+            Hyperlocal Patient Discovery
+          </p>
+          <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
+            Be seen by local patients instantly
+          </p>
+        </Card>
+      </Col>
+      <Col xs={24} sm={12} md={6}>
+        <Card
+          style={{
+            textAlign: "center",
+            borderRadius: 12,
+            padding: 24,
+            minHeight: 220,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#6EDC8C",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <StarFilled style={{ color: "#fff", fontSize: 24 }} />
+          </div>
+          <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
+            Connected Local Ecosystem
+          </p>
+          <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
+            Labs, pharmacies & home care all in one flow
+          </p>
+        </Card>
+      </Col>
+    </Row>
+    <Row gutter={[24, 24]}>
+      <Col xs={24} sm={12} md={6}>
+        <Card
+          style={{
+            textAlign: "center",
+            borderRadius: 12,
+            padding: 24,
+            minHeight: 220,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#6EDC8C",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <CheckOutlined style={{ color: "#fff", fontSize: 24 }} />
+          </div>
+          <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
+            Reputation Builder
+          </p>
+          <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
+            Collect reviews & promote trust locally
+          </p>
+        </Card>
+      </Col>
+      <Col xs={24} sm={12} md={6}>
+        <Card
+          style={{
+            textAlign: "center",
+            borderRadius: 12,
+            padding: 24,
+            minHeight: 220,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#6EDC8C",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <FundOutlined style={{ color: "#fff", fontSize: 24 }} />
+          </div>
+          <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
+            Practice Growth Tools
+          </p>
+          <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
+            Digital branding, patient education & brand tools
+          </p>
+        </Card>
+      </Col>
+      <Col xs={24} sm={12} md={6}>
+        <Card
+          style={{
+            textAlign: "center",
+            borderRadius: 12,
+            padding: 24,
+            minHeight: 220,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#6EDC8C",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <FormOutlined style={{ color: "#fff", fontSize: 24 }} />
+          </div>
+          <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
+            EMR + E-Prescriptions
+          </p>
+          <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
+            Secure, digital prescriptions & patient records
+          </p>
+        </Card>
+      </Col>
+      <Col xs={24} sm={12} md={6}>
+        <Card
+          style={{
+            textAlign: "center",
+            borderRadius: 12,
+            padding: 14,
+            minHeight: 220,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#6EDC8C",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 10px", // Adjusted to match original padding
+            }}
+          >
+            <ToolOutlined style={{ color: "#fff", fontSize: 24 }} />
+          </div>
+          <p style={{ fontWeight: 600, color: "#1A3B34", marginBottom: 8, fontSize: 16 }}>
+            CRM & Analytics Dashboard
+          </p>
+          <p style={{ color: "#4B5C58", fontSize: 14, lineHeight: 1.5 }}>
+            Track visits, send reminders & grow repeat business
+          </p>
+        </Card>
+      </Col>
+    </Row>
+  </div>
+</section>
       {/* 3-Step Process */}
       <section style={{ padding: "20px 0" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "0 16px" }}>

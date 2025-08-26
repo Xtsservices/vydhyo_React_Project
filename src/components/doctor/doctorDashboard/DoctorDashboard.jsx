@@ -1313,7 +1313,7 @@ const RevenueSummary = ({ revenueSummaryData, startDate, endDate, onDateRangeCha
                 borderRadius: '8px',
                 border: '1px solid #d9d9d9',
                 padding: '8px 16px',
-                width: '200px',
+                width: '220px',
                 textAlign: 'left',
                 backgroundColor: '#fff',
                 display: 'flex',
