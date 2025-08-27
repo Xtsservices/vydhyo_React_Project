@@ -926,29 +926,29 @@ const handleEPrescription = (appointment) => {
       </Modal>
 
       <Modal
-        title="Cancel Appointment"
-        visible={isCancelModalVisible}
-        onOk={handleCancelConfirm}
-        onCancel={() => setIsCancelModalVisible(false)}
-        okText="Confirm Cancel"
-        cancelText="Close"
-        okButtonProps={{ danger: true }}
-        confirmLoading={cancelLoading}
-      >
-        {selectedAppointment && (
-          <div>
-            <p>
-              Are you sure you want to cancel the appointment for{" "}
-              <strong>{selectedAppointment.patientName}</strong>?
-            </p>
-            <p>
-              Appointment Date:{" "}
-              {moment(selectedAppointment.appointmentDate).format("YYYY-MM-DD")}{" "}
-              {selectedAppointment.appointmentTime}
-            </p>
-          </div>
-        )}
-      </Modal>
+  title="Cancel Appointment"
+  visible={isCancelModalVisible}
+  onOk={handleCancelConfirm}
+  onCancel={() => setIsCancelModalVisible(false)}
+  okText="Confirm Cancel"
+  cancelText="Close"
+  okButtonProps={{ danger: true }}
+  confirmLoading={cancelLoading}
+>
+  {selectedAppointment && (
+    <div>
+      <p>
+        Are you sure you want to cancel the appointment for{" "}
+        <strong>{selectedAppointment.patientName}</strong>?
+      </p>
+      <p>
+        Appointment Date:{" "}
+        {moment(selectedAppointment.appointmentDate).format("DD MMM YYYY")}{" "}
+        {selectedAppointment.appointmentTime}
+      </p>
+    </div>
+  )}
+</Modal>
 
       <ToastContainer
         position="top-right"

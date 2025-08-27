@@ -579,23 +579,26 @@ const MyPatients = () => {
           )}
 
           {/* Advice Subsection */}
-          {(ePrescriptionData.advice?.followUpDate || ePrescriptionData.advice?.advice) && (
-            <div style={styles.subSection}>
-              <h4 style={styles.subSectionTitle}>Advice</h4>
-              <div style={styles.infoGrid}>
-                {shouldDisplayValue(ePrescriptionData.advice?.followUpDate) && (
-                  <div style={styles.infoItem}>
-                    <strong>Follow-up Date:</strong> {moment(ePrescriptionData.advice.followUpDate).format("DD MMMM YYYY")}
-                  </div>
-                )}
-                {shouldDisplayValue(ePrescriptionData.advice?.advice) && (
-                  <div style={styles.infoItem}>
-                    <strong>Advice:</strong> {ePrescriptionData.advice.advice}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+{(ePrescriptionData.advice?.followUpDate || ePrescriptionData.advice?.advice) && (
+  <div style={styles.subSection}>
+    <h4 style={styles.subSectionTitle}>Advice</h4>
+    <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+      {shouldDisplayValue(ePrescriptionData.advice?.followUpDate) && (
+        <div style={styles.infoItem}>
+          <strong>Follow-up Date:</strong> {moment(ePrescriptionData.advice.followUpDate).format("DD MMMM YYYY")}
+        </div>
+      )}
+      {shouldDisplayValue(ePrescriptionData.advice?.advice) && (
+        <div style={styles.infoItem}>
+          <strong>Advice:</strong> 
+          <div style={{marginTop: '25px', whiteSpace: 'pre-wrap'}}>
+            {ePrescriptionData.advice.advice}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
         </div>
       )}
 
