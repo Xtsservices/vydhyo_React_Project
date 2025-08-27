@@ -69,6 +69,7 @@ const LoginForm = ({
             onClick={onSendOTP}
             disabled={!phone || phone.length !== 10 || isLoading}
             className="action-button"
+            style={{ color: 'white' }}
           >
             {isLoading ? "Sending OTP..." : "Send OTP"}
           </button>
@@ -116,6 +117,7 @@ const LoginForm = ({
             onClick={onVerifyOTP}
             disabled={!otp || otp.length !== 6 || isLoading}
             className="action-button"
+            style={{ color: 'white' }}
           >
             {isLoading ? "Verifying..." : "Verify & Sign In"}
           </button>

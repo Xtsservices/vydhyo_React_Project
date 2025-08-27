@@ -144,29 +144,64 @@ const calculateAge = useCallback((dob) => {
   const dobDate = moment(dob, "DD-MM-YYYY").toDate();
   const today = new Date();
   
-  // Calculate years and months
-  const years = today.getFullYear() - dobDate.getFullYear();
-  const months = today.getMonth() - dobDate.getMonth();
+  // Calculate years, months and days
+  let years = today.getFullYear() - dobDate.getFullYear();
+  let months = today.getMonth() - dobDate.getMonth();
+  let days = today.getDate() - dobDate.getDate();
+  
+  // Adjust for negative days
+  if (days < 0) {
+    months--;
+    // Get days in the previous month
+    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+  
+  // Adjust for negative months
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
   
   let ageText = "";
   
-  if (years === 0 && months === 0) {
-    // Less than 1 month old
-    const days = today.getDate() - dobDate.getDate();
-    ageText = `${days}d`;
-  } else if (years === 0) {
-    // Less than 1 year old
-    ageText = `${months}m`;
-  } else {
-    // 1 year or older
-    ageText = `${years}y`;
+  if (years > 0) {
+    ageText += `${years}y `;
   }
   
-  return ageText;
+  if (months > 0) {
+    ageText += `${months}m `;
+  }
+  
+  if (days > 0 || ageText === "") {
+    ageText += `${days}d`;
+  }
+  
+  return ageText.trim();
 }, [validateDOB]);
 
-  const formatTimeForAPI = useCallback((timeSlot) => {
-    if (!timeSlot) return "";
+const formatTimeForDisplay = useCallback((time24h) => {
+  if (!time24h) return "";
+  
+  const [hours, minutes] = time24h.split(':');
+  const hourInt = parseInt(hours, 10);
+  
+  if (hourInt === 0) {
+    return `12:${minutes} AM`;
+  } else if (hourInt === 12) {
+    return `12:${minutes} PM`;
+  } else if (hourInt > 12) {
+    return `${hourInt - 12}:${minutes} PM`;
+  } else {
+    return `${hourInt}:${minutes} AM`;
+  }
+}, []);
+
+const formatTimeForAPI = useCallback((timeSlot) => {
+  if (!timeSlot) return "";
+  
+  // If it's already in 12-hour format (contains AM/PM), convert to 24-hour
+  if (timeSlot.includes('AM') || timeSlot.includes('PM')) {
     const [time, period] = timeSlot.split(" ");
     let [hours, minutes] = time.split(":");
     hours = parseInt(hours, 10);
@@ -178,8 +213,11 @@ const calculateAge = useCallback((dob) => {
     }
 
     return `${hours.toString().padStart(2, "0")}:${minutes}`;
-  }, []);
-
+  }
+  
+  // If it's already in 24-hour format, return as is
+  return timeSlot;
+}, []);
   const validateAppointmentData = useCallback(() => {
     const errors = {};
     let isValid = true;
@@ -278,11 +316,11 @@ const calculateAge = useCallback((dob) => {
     }
   }, []);
 
-  // Add this validation function
+// Update the validateAge function
 const validateAge = useCallback((age) => {
   if (!age) return false;
-  // Valid formats: 6m, 2y, 15d, or plain numbers
-  return /^(\d+[myd]?|\d+[myd])$/i.test(age);
+  // Valid formats: 6m, 2y, 15d, 1y 2m, 3m 15d, etc.
+  return /^(\d+[myd])(\s\d+[myd])*$/i.test(age.replace(/\s+/g, ' ').trim());
 }, []);
 
 // Use it in your validation logic
@@ -780,15 +818,17 @@ console.log("first2")
       console.log("response122334",response)
       const data = response.data;
 
-      if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
-        const availableSlots = data.data.slots     
-        .filter((slot) => slot.status === "available")
-  .map((slot) => formatTimeForAPI(slot.time)) 
-  .filter((formattedTime) => {
-    const slotMoment = moment(`${selectedDate} ${formattedTime}`, 'YYYY-MM-DD HH:mm');
-    return slotMoment.isAfter(moment());
-  });
-        setTimeSlots(availableSlots);
+     if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
+    const availableSlots = data.data.slots     
+      .filter((slot) => slot.status === "available")
+      .map((slot) => slot.time)  // Keep as 24-hour format for API
+      .filter((time) => {
+        const slotMoment = moment(`${selectedDate} ${time}`, 'YYYY-MM-DD HH:mm');
+        return slotMoment.isAfter(moment());
+      });
+    
+    setTimeSlots(availableSlots);
+
         if (!availableSlots.includes(patientData.selectedTimeSlot)) {
           setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
         }
@@ -1134,11 +1174,12 @@ console.log("first2")
             allowClear
             style={{ width: "100%", marginTop: 8 }}
           >
-            {timeSlots.map((slot) => (
-              <Option key={slot} value={slot}>
-                {slot}
-              </Option>
-            ))}
+           // In the time slots dropdown options:
+{timeSlots.map((slot) => (
+  <Option key={slot} value={slot}>
+    {formatTimeForDisplay(slot)}  {/* Use the display formatter here */}
+  </Option>
+))}
           </Select>
           {fieldErrors.time && <Text type="danger">{fieldErrors.time}</Text>}
         </Col>

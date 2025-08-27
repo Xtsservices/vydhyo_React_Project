@@ -377,11 +377,13 @@ const StaffManagement = () => {
   };
 
   const handleStaffOperation = async (staffData, mode, form) => {
+    console.log("12")
     try {
       setLoading(true);
       let errorMessage = "An error occurred";
 
       if (mode === "add") {
+        console.log("123")
         try {
           const userid = user.createdBy;
 
@@ -391,7 +393,9 @@ const StaffManagement = () => {
           );
 
           if (emailExists) {
-            toast.error("Email already exists for another staff member");
+            console.log("1234")
+            alert("Email already exists for another staff member");
+            // toast.error("Email already exists for another staff member");
             setFormData(staffData);
             return;
           }
@@ -404,8 +408,11 @@ const StaffManagement = () => {
               ...staffData,
             }
           );
+          console.log("qwer")
 
           if (response.status !== 200) {
+            console.log("12345")
+            alert(response?.data?.message);
             throw new Error(response?.data?.message || "Failed to add staff");
           }
 
@@ -434,6 +441,7 @@ const StaffManagement = () => {
           fetchStaff();
         } catch (error) {
           console.log("Error while adding staff:", error);
+          alert(error?.response?.data?.message?.message || error.message || "Failed to add staff");
           setFormData(staffData);
 
           errorMessage =
