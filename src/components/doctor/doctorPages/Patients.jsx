@@ -449,259 +449,236 @@ const MyPatients = () => {
       </div>
 
       {/* Prescription Modal */}
-      <Modal
-        title="Patient Prescription Details"
-        open={isPrescriptionModalVisible}
-        onCancel={() => setIsPrescriptionModalVisible(false)}
-        width={800}
-        className="prescription-modal"
-        footer={[
-          <Button
-            key="close"
-            onClick={() => setIsPrescriptionModalVisible(false)}
-          >
-            Close
-          </Button>,
-        ]}
-        style={{ transform: "translateX(90px)" }}
-      >
-        {selectedPatient && (
-          <div style={{ padding: "20px 0" }}>
-            {/* Patient Information Section */}
-            <div style={styles.prescriptionSection}>
-              <h3 style={styles.sectionTitle}>Patient Information</h3>
+     <Modal
+  title="Patient Prescription Details"
+  open={isPrescriptionModalVisible}
+  onCancel={() => setIsPrescriptionModalVisible(false)}
+  width={750}
+  className="prescriptionModal"
+  footer={[
+    <Button
+      key="close"
+      onClick={() => setIsPrescriptionModalVisible(false)}
+    >
+      Close
+    </Button>,
+  ]}
+  // Removed the transform style as it was pushing content off-center
+>
+  {selectedPatient && (
+    <div style={{ padding: "20px 0" }}>
+      {/* Patient Information Section */}
+      <div style={styles.prescriptionSection}>
+        <h3 style={styles.sectionTitle}>Patient Information</h3>
+        <div style={styles.infoGrid}>
+          <div style={styles.infoItem}>
+            <strong>Patient ID:</strong> {selectedPatient.id}
+          </div>
+          <div style={styles.infoItem}>
+            <strong>Name:</strong> {selectedPatient.name}
+          </div>
+          <div style={styles.infoItem}>
+            <strong>Gender:</strong> {selectedPatient.gender}
+          </div>
+          <div style={styles.infoItem}>
+            <strong>Phone:</strong> {selectedPatient.phone}
+          </div>
+          <div style={styles.infoItem}>
+            <strong>Last Visit:</strong> {selectedPatient.lastVisit}
+          </div>
+          <div style={styles.infoItem}>
+            <strong>Department:</strong> {selectedPatient.department}
+          </div>
+          <div style={styles.infoItem}>
+            <strong>Status:</strong> {selectedPatient.status}
+          </div>
+        </div>
+      </div>
+
+      {/* ePrescription Section */}
+      {ePrescriptionData && (
+        <div style={styles.prescriptionSection}>
+          <h3 style={styles.sectionTitle}>ePrescription Details</h3>
+
+          {/* Patient Info Subsection */}
+          {(ePrescriptionData.patientInfo?.age || ePrescriptionData.patientInfo?.chiefComplaint) && (
+            <div style={styles.subSection}>
+              <h4 style={styles.subSectionTitle}>Patient Info</h4>
               <div style={styles.infoGrid}>
-                <div style={styles.infoItem}>
-                  <strong>Patient ID:</strong> {selectedPatient.id}
-                </div>
-                <div style={styles.infoItem}>
-                  <strong>Name:</strong> {selectedPatient.name}
-                </div>
-                <div style={styles.infoItem}>
-                  <strong>Gender:</strong> {selectedPatient.gender}
-                </div>
-                <div style={styles.infoItem}>
-                  <strong>Phone:</strong> {selectedPatient.phone}
-                </div>
-                <div style={styles.infoItem}>
-                  <strong>Last Visit:</strong> {selectedPatient.lastVisit}
-                </div>
-                <div style={styles.infoItem}>
-                  <strong>Department:</strong> {selectedPatient.department}
-                </div>
-                <div style={styles.infoItem}>
-                  <strong>Status:</strong> {selectedPatient.status}
-                </div>
+                {shouldDisplayValue(ePrescriptionData.patientInfo?.age) && (
+                  <div style={styles.infoItem}>
+                    <strong>Age:</strong> {ePrescriptionData.patientInfo.age}
+                  </div>
+                )}
+                {shouldDisplayValue(ePrescriptionData.patientInfo?.chiefComplaint) && (
+                  <div style={styles.infoItem}>
+                    <strong>Chief Complaint:</strong> {ePrescriptionData.patientInfo.chiefComplaint}
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            {/* ePrescription Section */}
-            {ePrescriptionData && (
-              <>
-                {/* Patient Info Section */}
-                <div style={styles.prescriptionSection}>
-                  <h3 style={styles.sectionTitle}>ePrescription Details</h3>
-
-                  <div style={styles.subSection}>
-                    <h4 style={styles.subSectionTitle}>Patient Info</h4>
-                    <div style={styles.infoGrid}>
-                      {shouldDisplayValue(ePrescriptionData.patientInfo?.age) && (
-                        <div style={styles.infoItem}>
-                          <strong>Age:</strong> {ePrescriptionData.patientInfo.age}
-                        </div>
-                      )}
-                      {shouldDisplayValue(
-                        ePrescriptionData.patientInfo?.chiefComplaint
-                      ) && (
-                          <div style={styles.infoItem}>
-                            <strong>Chief Complaint:</strong>{" "}
-                            {ePrescriptionData.patientInfo.chiefComplaint}
-                          </div>
-                        )}
-                    </div>
+          {/* Vitals Subsection */}
+          {Object.values(ePrescriptionData.vitals || {}).some(val => shouldDisplayValue(val)) && (
+            <div style={styles.subSection}>
+              <h4 style={styles.subSectionTitle}>Vitals</h4>
+              <div style={styles.infoGrid}>
+                {shouldDisplayValue(ePrescriptionData.vitals?.bp) && (
+                  <div style={styles.infoItem}>
+                    <strong>BP:</strong> {ePrescriptionData.vitals.bp}
                   </div>
-
-                  {/* Vitals Section */}
-                  <div style={styles.subSection}>
-                    <h4 style={styles.subSectionTitle}>Vitals</h4>
-                    <div style={styles.infoGrid}>
-                      {shouldDisplayValue(ePrescriptionData.vitals?.bp) && (
-                        <div style={styles.infoItem}>
-                          <strong>BP:</strong> {ePrescriptionData.vitals.bp}
-                        </div>
-                      )}
-                      {shouldDisplayValue(
-                        ePrescriptionData.vitals?.pulseRate
-                      ) && (
-                          <div style={styles.infoItem}>
-                            <strong>Pulse Rate:</strong>{" "}
-                            {ePrescriptionData.vitals.pulseRate}
-                          </div>
-                        )}
-                      {shouldDisplayValue(
-                        ePrescriptionData.vitals?.respiratoryRate
-                      ) && (
-                          <div style={styles.infoItem}>
-                            <strong>Respiratory Rate:</strong>{" "}
-                            {ePrescriptionData.vitals.respiratoryRate}
-                          </div>
-                        )}
-                      {shouldDisplayValue(
-                        ePrescriptionData.vitals?.temperature
-                      ) && (
-                          <div style={styles.infoItem}>
-                            <strong>Temperature:</strong>{" "}
-                            {ePrescriptionData.vitals.temperature}
-                          </div>
-                        )}
-                      {shouldDisplayValue(ePrescriptionData.vitals?.spo2) && (
-                        <div style={styles.infoItem}>
-                          <strong>SPO2:</strong> {ePrescriptionData.vitals.spo2}
-                        </div>
-                      )}
-                      {shouldDisplayValue(ePrescriptionData.vitals?.height) && (
-                        <div style={styles.infoItem}>
-                          <strong>Height:</strong>{" "}
-                          {ePrescriptionData.vitals.height}
-                        </div>
-                      )}
-                      {shouldDisplayValue(ePrescriptionData.vitals?.weight) && (
-                        <div style={styles.infoItem}>
-                          <strong>Weight:</strong>{" "}
-                          {ePrescriptionData.vitals.weight}
-                        </div>
-                      )}
-                      {shouldDisplayValue(ePrescriptionData.vitals?.bmi) && (
-                        <div style={styles.infoItem}>
-                          <strong>BMI:</strong> {ePrescriptionData.vitals.bmi}
-                        </div>
-                      )}
-                    </div>
+                )}
+                {shouldDisplayValue(ePrescriptionData.vitals?.pulseRate) && (
+                  <div style={styles.infoItem}>
+                    <strong>Pulse Rate:</strong> {ePrescriptionData.vitals.pulseRate}
                   </div>
-
-                  {/* Diagnosis Section */}
-                  {shouldDisplayValue(
-                    ePrescriptionData.diagnosis?.diagnosisNote
-                  ) && (
-                      <div style={styles.subSection}>
-                        <h4 style={styles.subSectionTitle}>Diagnosis</h4>
-                        <div style={styles.infoItem}>
-                          <strong>Diagnosis Note:</strong>{" "}
-                          {ePrescriptionData.diagnosis.diagnosisNote}
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Advice Section */}
-                  <div style={styles.subSection}>
-                    <h4 style={styles.subSectionTitle}>Advice</h4>
-                    <div style={styles.infoGrid}>
-                      {shouldDisplayValue(
-                        ePrescriptionData.advice?.followUpDate
-                      ) && (
-                          <div style={styles.infoItem}>
-                            <strong>Follow-up Date:</strong>{" "}
-                            {moment(ePrescriptionData.advice.followUpDate).format(
-                              "DD MMMM YYYY"
-                            )}
-                          </div>
-                        )}
-                      {shouldDisplayValue(ePrescriptionData.advice?.advice) && (
-                        <div style={styles.infoItem}>
-                          <strong>Advice:</strong>{" "}
-                          {ePrescriptionData.advice.advice}
-                        </div>
-                      )}
-                    </div>
+                )}
+                {shouldDisplayValue(ePrescriptionData.vitals?.respiratoryRate) && (
+                  <div style={styles.infoItem}>
+                    <strong>Respiratory Rate:</strong> {ePrescriptionData.vitals.respiratoryRate}
                   </div>
-                </div>
-              </>
-            )}
-
-            {/* Prescribed Medicines Section */}
-            <div style={styles.prescriptionSection}>
-              <h3 style={styles.sectionTitle}>Prescribed Medicines</h3>
-              {prescriptionLoading ? (
-                <div style={styles.loadingMessage}>
-                  Loading prescription details...
-                </div>
-              ) : (
-                <>
-                  {ePrescriptionData?.diagnosis?.medications?.length > 0 ? (
-                    <Table
-                      dataSource={ePrescriptionData.diagnosis.medications.map(
-                        (med) => ({
-                          ...med,
-                          key: med.medInventoryId,
-                        })
-                      )}
-                      columns={medicineColumns}
-                      pagination={false}
-                      size="small"
-                      style={{ marginTop: "16px" }}
-                    />
-                  ) : prescriptionData.medicines.length > 0 ? (
-                    <Table
-                      dataSource={prescriptionData.medicines}
-                      columns={medicineColumns}
-                      rowKey="id"
-                      pagination={false}
-                      size="small"
-                      style={{ marginTop: "16px" }}
-                    />
-                  ) : (
-                    <div style={styles.noDataMessage}>
-                      No medicines prescribed for this patient.
-                    </div>
-                  )}
-                </>
-              )}
+                )}
+                {shouldDisplayValue(ePrescriptionData.vitals?.temperature) && (
+                  <div style={styles.infoItem}>
+                    <strong>Temperature:</strong> {ePrescriptionData.vitals.temperature}
+                  </div>
+                )}
+                {shouldDisplayValue(ePrescriptionData.vitals?.spo2) && (
+                  <div style={styles.infoItem}>
+                    <strong>SPO2:</strong> {ePrescriptionData.vitals.spo2}
+                  </div>
+                )}
+                {shouldDisplayValue(ePrescriptionData.vitals?.height) && (
+                  <div style={styles.infoItem}>
+                    <strong>Height:</strong> {ePrescriptionData.vitals.height}
+                  </div>
+                )}
+                {shouldDisplayValue(ePrescriptionData.vitals?.weight) && (
+                  <div style={styles.infoItem}>
+                    <strong>Weight:</strong> {ePrescriptionData.vitals.weight}
+                  </div>
+                )}
+                {shouldDisplayValue(ePrescriptionData.vitals?.bmi) && (
+                  <div style={styles.infoItem}>
+                    <strong>BMI:</strong> {ePrescriptionData.vitals.bmi}
+                  </div>
+                )}
+              </div>
             </div>
+          )}
 
-            {/* Prescribed Tests Section */}
-            <div style={styles.prescriptionSection}>
-              <h3 style={styles.sectionTitle}>Prescribed Tests</h3>
-              {prescriptionLoading ? (
-                <div style={styles.loadingMessage}>
-                  Loading prescription details...
-                </div>
-              ) : (
-                <>
-                  {ePrescriptionData?.diagnosis?.selectedTests?.length > 0 ? (
-                    <Table
-                      dataSource={ePrescriptionData.diagnosis.selectedTests.map(
-                        (test) => ({
-                          name: test.testName,
-                          labTestID: test.testInventoryId,
-                          status: "Prescribed",
-                          key: test.testInventoryId || test.testName,
-                        })
-                      )}
-                      columns={testColumns}
-                      pagination={false}
-                      size="small"
-                      style={{ marginTop: "16px" }}
-                    />
-                  ) : prescriptionData.tests.length > 0 ? (
-                    <Table
-                      dataSource={prescriptionData.tests}
-                      columns={testColumns}
-                      rowKey="id"
-                      pagination={false}
-                      size="small"
-                      style={{ marginTop: "16px" }}
-                    />
-                  ) : (
-                    <div style={styles.noDataMessage}>
-                      No tests prescribed for this patient.
-                    </div>
-                  )}
-                </>
-              )}
+          {/* Diagnosis Subsection */}
+          {shouldDisplayValue(ePrescriptionData.diagnosis?.diagnosisNote) && (
+            <div style={styles.subSection}>
+              <h4 style={styles.subSectionTitle}>Diagnosis</h4>
+              <div style={styles.infoItem}>
+                <strong>Diagnosis Note:</strong> {ePrescriptionData.diagnosis.diagnosisNote}
+              </div>
             </div>
+          )}
+
+          {/* Advice Subsection */}
+          {(ePrescriptionData.advice?.followUpDate || ePrescriptionData.advice?.advice) && (
+            <div style={styles.subSection}>
+              <h4 style={styles.subSectionTitle}>Advice</h4>
+              <div style={styles.infoGrid}>
+                {shouldDisplayValue(ePrescriptionData.advice?.followUpDate) && (
+                  <div style={styles.infoItem}>
+                    <strong>Follow-up Date:</strong> {moment(ePrescriptionData.advice.followUpDate).format("DD MMMM YYYY")}
+                  </div>
+                )}
+                {shouldDisplayValue(ePrescriptionData.advice?.advice) && (
+                  <div style={styles.infoItem}>
+                    <strong>Advice:</strong> {ePrescriptionData.advice.advice}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Prescribed Medicines Section */}
+      <div style={styles.prescriptionSection}>
+        <h3 style={styles.sectionTitle}>Prescribed Medicines</h3>
+        {prescriptionLoading ? (
+          <div style={styles.loadingMessage}>
+            Loading prescription details...
           </div>
+        ) : (
+          <>
+            {ePrescriptionData?.diagnosis?.medications?.length > 0 ? (
+              <Table
+                dataSource={ePrescriptionData.diagnosis.medications.map(med => ({
+                  ...med,
+                  key: med.medInventoryId,
+                }))}
+                columns={medicineColumns}
+                pagination={false}
+                size="small"
+                style={{ marginTop: "16px" }}
+              />
+            ) : prescriptionData.medicines.length > 0 ? (
+              <Table
+                dataSource={prescriptionData.medicines}
+                columns={medicineColumns}
+                rowKey="id"
+                pagination={false}
+                size="small"
+                style={{ marginTop: "16px" }}
+              />
+            ) : (
+              <div style={styles.noDataMessage}>
+                No medicines prescribed for this patient.
+              </div>
+            )}
+          </>
         )}
-      </Modal>
+      </div>
+
+      {/* Prescribed Tests Section */}
+      <div style={styles.prescriptionSection}>
+        <h3 style={styles.sectionTitle}>Prescribed Tests</h3>
+        {prescriptionLoading ? (
+          <div style={styles.loadingMessage}>
+            Loading prescription details...
+          </div>
+        ) : (
+          <>
+            {ePrescriptionData?.diagnosis?.selectedTests?.length > 0 ? (
+              <Table
+                dataSource={ePrescriptionData.diagnosis.selectedTests.map(test => ({
+                  name: test.testName,
+                  labTestID: test.testInventoryId,
+                  status: "Prescribed",
+                  key: test.testInventoryId || test.testName,
+                }))}
+                columns={testColumns}
+                pagination={false}
+                size="small"
+                style={{ marginTop: "16px" }}
+              />
+            ) : prescriptionData.tests.length > 0 ? (
+              <Table
+                dataSource={prescriptionData.tests}
+                columns={testColumns}
+                rowKey="id"
+                pagination={false}
+                size="small"
+                style={{ marginTop: "16px" }}
+              />
+            ) : (
+              <div style={styles.noDataMessage}>
+                No tests prescribed for this patient.
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )}
+</Modal>
 
       <div style={styles.tableContainer}>
         <div style={styles.tableHeader}>

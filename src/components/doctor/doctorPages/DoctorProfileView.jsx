@@ -22,7 +22,6 @@ import { UploadOutlined } from "@ant-design/icons";
 import { apiGet, apiPut, apiUploadFile, apiPost, postKYCDetails } from "../../api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// import crypto = require('crypto');
 
 import {
   UserOutlined,
@@ -52,16 +51,57 @@ const languageOptions = [
   { label: 'Urdu', value: 'Urdu' },
 ];
 
-const DoctorProfileView = () => {
-  const [loading, setLoading] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState(null);
-  const [doctorData, setDoctorData] = useState(null);
-  const [editModalType, setEditModalType] = useState(null);
-  const [kyc, setKyc] = useState(null)
-  const [form] = Form.useForm();
-  const location = useLocation();
-  const navigate = useNavigate();
+// Validation Constants
+const VALIDATION_RULES = {
+
+  name: [
+    { required: true, message: 'This field is required' },
+    { pattern: /^[A-Za-z\s]+$/, message: 'Only letters and spaces allowed' },
+    { min: 2, message: 'Minimum 2 characters required' },
+    { max: 50, message: 'Maximum 50 characters allowed' }
+  ],
+  email: [
+    { required: true, message: 'Email is required' },
+    { type: 'email', message: 'Please enter a valid email' }
+  ],
+  mobile: [
+    { required: true, message: 'Mobile number is required' },
+    { pattern: /^[0-9]{10}$/, message: 'Please enter a valid 10-digit mobile number' }
+  ],
+experience: [
+    { required: true, message: 'Experience is required' },
+    {
+  pattern: /^[0-9]{10}$/,
+  message: 'Mobile number must be exactly 10 digits',
+},
+    { type: 'number', min: 0, message: 'Experience cannot be negative' },
+    { type: 'number', max: 60, message: 'Experience cannot exceed 60 years' }
+  ],
+  pan: [
+    { required: true, message: 'PAN number is required' },
+    { pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, message: 'Invalid PAN format (e.g., ABCDE1234F)' }
+  ],
+  ifsc: [
+    { required: true, message: 'IFSC code is required' },
+    { pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/, message: 'Invalid IFSC format (e.g., HDFC0ABCD12)' }
+  ],
+  accountNumber: [
+    { required: true, message: 'Account number is required' },
+    { pattern: /^[0-9]{9,18}$/, message: 'Account number must be 9-18 digits' }
+  ],
+  experience: [
+    { required: true, message: 'Experience is required' },
+    { pattern: /^[0-9]+$/, message: 'Please enter numbers only' },
+    { min: 0, message: 'Experience cannot be negative' },
+    { max: 60, message: 'Experience cannot exceed 60 years' }
+  ],
+  fee: [
+    { required: true, message: 'Fee is required' },
+    { pattern: /^[0-9]+$/, message: 'Please enter numbers only' },
+    { min: 0, message: 'Fee cannot be negative' }
+  ]
+};
+
 const specializationOptions = [
   'General Medicine',
   'Internal Medicine',
@@ -149,17 +189,36 @@ const specializationOptions = [
   'Pedodontics and Preventive Dentistry',
   'Oral Medicine and Radiology'
 ];
-// const algorithm = 'aes-256-cbc';
-// const secretKey = process.env.ENCRYPTION_KEY; // 32-byte hex key
-// const iv = Buffer.from(process.env.ENCRYPTION_IV, 'hex'); // 16-byte IV
 
-// function decrypt2(text) {
-//   const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey, 'hex'), iv);
-//   let decrypted = decipher.update(text, 'hex', 'utf8');
-//   decrypted += decipher.final('utf8');
-//   return decrypted;
-// }
+const DoctorProfileView = () => {
+  const [loading, setLoading] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [doctorData, setDoctorData] = useState(null);
+  const [editModalType, setEditModalType] = useState(null);
+  const [kyc, setKyc] = useState(null)
+  const [form] = Form.useForm();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [degrees, setDegrees] = useState([]);
+  const [specializations, setSpecializations] = useState([]);
+  const [loadingDegrees, setLoadingDegrees] = useState(false);
+  const [loadingSpecs, setLoadingSpecs] = useState(false);
 
+  const fetchDegrees = async () => {
+    try {
+      setLoadingDegrees(true);
+      const response = await apiGet('/catalogue/degree/getAllDegrees');
+      const data = response?.data?.data || [];
+      console.log(data, "1234")
+      setDegrees(data);
+    } catch (error) {
+      console.error('Error fetching degrees:', error);
+      toast.error('Failed to fetch degrees.');
+    } finally {
+      setLoadingDegrees(false);
+    }
+  };
 
   const fetchDoctorData = async () => {
     setLoading(true);
@@ -169,8 +228,6 @@ const specializationOptions = [
       const userData = response.data?.data;
 
       if (userData) {
-
-        
         const specializations = userData.specialization
           ? Array.isArray(userData.specialization)
             ? userData.specialization
@@ -186,12 +243,12 @@ const specializationOptions = [
 
         const bankDetails = userData.bankDetails;
 
-const decryptedBankDetails = {
-  accountNumber: bankDetails.accountNumber,
-  accountHolderName: bankDetails.accountHolderName,
-  ifscCode: bankDetails.ifscCode, // assuming this is not encrypted
-  bankName: bankDetails.bankName,
-};
+        const decryptedBankDetails = {
+          accountNumber: bankDetails.accountNumber,
+          accountHolderName: bankDetails.accountHolderName,
+          ifscCode: bankDetails.ifscCode,
+          bankName: bankDetails.bankName,
+        };
 
         setDoctorData({
           ...userData,
@@ -224,11 +281,10 @@ const decryptedBankDetails = {
                 endTime: addr.endTime,
               }))
             : [],
-          bankDetails:decryptedBankDetails || userData.bankDetails || {},
+          bankDetails: decryptedBankDetails || userData.bankDetails || {},
           kycDetails: {
             panNumber: userData.kycDetails?.pan?.number || "N/A",
             panImage: userData.kycDetails?.pan?.attachmentUrl || null,
-           
           },
           certifications: certifications,
           profilepic: null,
@@ -242,14 +298,13 @@ const decryptedBankDetails = {
     }
   };
 
-   const fetchKyc = async () => {
+  const fetchKyc = async () => {
     setLoading(true);
     try {
       const response = await apiGet("/users/getKycByUserId");
       console.log(response, "kyc data");
       const userData = response.data?.data;
       setKyc(userData)
-
     } catch (error) {
       console.error("Error fetching doctor data:", error);
       message.error("Failed to load doctor data.");
@@ -257,28 +312,6 @@ const decryptedBankDetails = {
       setLoading(false);
     }
   };
-const [degrees, setDegrees] = useState([]);
-const [specializations, setSpecializations] = useState([]);
-const [loadingDegrees, setLoadingDegrees] = useState(false);
-const [loadingSpecs, setLoadingSpecs] = useState(false);
-
-// fetch degrees (you already have this—kept same, just added a loading flag)
-const fetchDegrees = async () => {
-  try {
-    setLoadingDegrees(true);
-    const response = await apiGet('/catalogue/degree/getAllDegrees');
-    const data = response?.data?.data || [];
-    console.log(data, "1234")
-    setDegrees(data);
-  } catch (error) {
-    console.error('Error fetching degrees:', error);
-    toast.error('Failed to fetch degrees.');
-  } finally {
-    setLoadingDegrees(false);
-  }
-};
-
-
 
   useEffect(() => {
     fetchDoctorData();
@@ -332,20 +365,20 @@ const fetchDegrees = async () => {
           spokenLanguage: doctorData?.spokenLanguage || [],
           mobileNumber: doctorData?.mobile,
         };
-     case 'professional': {
-  const initialDegreeIds = doctorData?.specialization?.[0]?.degree 
-    ? doctorData.specialization[0].degree.split(',').map(deg => deg.trim())
-    : [];
-  
-  const initialSpecs = doctorData?.specialization?.map(s => s.name) || [];
-  
-  return {
-    degreeId: initialDegreeIds,
-    specialization: initialSpecs,
-    experience: doctorData?.specialization?.[0]?.experience,
-    about: doctorData?.specialization?.[0]?.bio
-  };
-}
+      case 'professional': {
+        const initialDegreeIds = doctorData?.specialization?.[0]?.degree 
+          ? doctorData.specialization[0].degree.split(',').map(deg => deg.trim())
+          : [];
+        
+        const initialSpecs = doctorData?.specialization?.map(s => s.name) || [];
+        
+        return {
+          degreeId: initialDegreeIds,
+          specialization: initialSpecs,
+          experience: doctorData?.specialization?.[0]?.experience,
+          about: doctorData?.specialization?.[0]?.bio
+        };
+      }
       case 'locations':
         return {
           workingLocations: doctorData?.workingLocations,
@@ -353,7 +386,6 @@ const fetchDegrees = async () => {
       case 'kyc':
         return {
           panNumber: doctorData?.kycDetails?.panNumber,
-         
         };
       case 'consultation':
         return {
@@ -368,95 +400,90 @@ const fetchDegrees = async () => {
     }
   };
 
-
   function extractFileFromAntdValue(value) {
-  if (!value) return null;
-  if (Array.isArray(value) && value.length) {
-    const f = value[0];
-    return f?.originFileObj instanceof File ? f.originFileObj : (f instanceof File ? f : null);
+    if (!value) return null;
+    if (Array.isArray(value) && value.length) {
+      const f = value[0];
+      return f?.originFileObj instanceof File ? f.originFileObj : (f instanceof File ? f : null);
+    }
+    if (value?.originFileObj instanceof File) return value.originFileObj;
+    if (value instanceof File) return value;
+    return null;
   }
-  if (value?.originFileObj instanceof File) return value.originFileObj;
-  if (value instanceof File) return value;
-  return null;
-}
 
   const handleSaveProfile = async (values) => {
-
     let response;
     try {
       switch (editModalType) {
         case 'personal':
           console.log("Updating personal information", values);
-            const { mobileNumber, ...rest } = values;
+          const { mobileNumber, ...rest } = values;
           await apiPut("/users/updateUser", {
             ...rest,
             spokenLanguage: values.spokenLanguage || []
           });
           break;
-       
-case 'professional': {
-  const formDataObj = new FormData();
-  formDataObj.append('id', doctorData?.userId || '');
-  
-  // Join specializations array into comma-separated string
-  formDataObj.append('name', Array.isArray(values.specialization) 
-    ? values.specialization.join(',') 
-    : values.specialization || '');
-  
-  formDataObj.append('experience', values.experience || '');
-  
-  // Join degrees array into comma-separated string
-  formDataObj.append('degree', Array.isArray(values.degreeId) 
-    ? values.degreeId.join(',') 
-    : values.degreeId || '');
-  
-  formDataObj.append('bio', values.about || '');
-  
-  // Handle file uploads if needed
-  if (values.drgreeCertificate) {
-    formDataObj.append('drgreeCertificate', values.drgreeCertificate);
-  }
-  if (values.specializationCertificate) {
-    formDataObj.append('specializationCertificate', values.specializationCertificate);
-  }
+        
+        case 'professional': {
+          const formDataObj = new FormData();
+          formDataObj.append('id', doctorData?.userId || '');
+          
+          formDataObj.append('name', Array.isArray(values.specialization) 
+            ? values.specialization.join(',') 
+            : values.specialization || '');
+          
+          formDataObj.append('experience', values.experience || '');
+          
+          formDataObj.append('degree', Array.isArray(values.degreeId) 
+            ? values.degreeId.join(',') 
+            : values.degreeId || '');
+          
+          formDataObj.append('bio', values.about || '');
+          
+          if (values.drgreeCertificate) {
+            formDataObj.append('drgreeCertificate', values.drgreeCertificate);
+          }
+          if (values.specializationCertificate) {
+            formDataObj.append('specializationCertificate', values.specializationCertificate);
+          }
 
-  await apiPost(
-    `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
-    formDataObj
-  );
-  break;
-}
+          await apiPost(
+            `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
+            formDataObj
+          );
+          break;
+        }
+        
         case 'locations':
           await apiPut("/users/updateLocations", { addresses: values.workingLocations });
           break;
- case "kyc": {
-  const file = extractFileFromAntdValue(values?.panImage);
-  if (!file) {
-    message.error("Please select a PAN image/PDF.");
-    break;
-  }
+        
+        case "kyc": {
+          const file = extractFileFromAntdValue(values?.panImage);
+          if (!file) {
+            message.error("Please select a PAN image/PDF.");
+            break;
+          }
 
-  const userId = String(doctorData?.userId ?? values?.userId ?? "").trim();
-  const panNumber = String(values?.panNumber ?? "").trim();
-  console.log()
+          const userId = String(doctorData?.userId ?? values?.userId ?? "").trim();
+          const panNumber = String(values?.panNumber ?? "").trim();
+          console.log()
 
-  const resp = await postKYCDetails({ file, userId, panNumber });
-  console.log(resp, "1234")
-  // handle resp.data as needed
-  break;
-}
-
+          const resp = await postKYCDetails({ file, userId, panNumber });
+          console.log(resp, "1234")
+          break;
+        }
 
         case 'consultation':
-           const cleanedFees = values.consultationModeFee.map(item => ({
-    type: item.type,
-    fee: Number(item.fee),       // Convert fee to number
-    currency: item.currency,
-  }));
+          const cleanedFees = values.consultationModeFee.map(item => ({
+            type: item.type,
+            fee: Number(item.fee),
+            currency: item.currency,
+          }));
           console.log(cleanedFees, "consultation values")
           await apiPost("/users/updateConsultationModes", { consultationModeFee: cleanedFees });
-
           break;
+        
         case 'bank':
           await apiPost("/users/updateBankDetails", values);
           break;
@@ -471,23 +498,32 @@ case 'professional': {
     }
   };
 
-  const UploadImage = ({ onUpload }) => {
+  const UploadImage = ({ onUpload, accept = "image/*,.pdf" }) => {
     return (
       <Upload
         beforeUpload={(file) => {
-          const isValidType =
-            file.type.startsWith("image/") || file.type === "application/pdf";
+          const isValidType = file.type.startsWith("image/") || 
+                            file.type === "application/pdf";
+          const isLt5M = file.size / 1024 / 1024 < 5;
+          
           if (!isValidType) {
-            message.error("You can only upload JPG/PNG/PDF files!");
+            message.error("You can only upload JPG, PNG, or PDF files!");
             return Upload.LIST_IGNORE;
           }
+          
+          if (!isLt5M) {
+            message.error("File must be smaller than 5MB!");
+            return Upload.LIST_IGNORE;
+          }
+          
           onUpload(file);
           return false;
         }}
         maxCount={1}
+        accept={accept}
         showUploadList={{ showRemoveIcon: true }}
       >
-        <Button icon={<UploadOutlined />}>Upload File</Button>
+        <Button icon={<UploadOutlined />}>Upload File (Max 5MB)</Button>
       </Upload>
     );
   };
@@ -495,10 +531,6 @@ case 'professional': {
   if (!doctorData) {
     return <Spin spinning={loading} tip="Loading doctor details..." />;
   }
-
-  // put this near the top of your file
-const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 alnum
-
 
   return (
     <div className="doctor-profile-container">
@@ -532,17 +564,9 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
                   Dr. {doctorData.firstname} {doctorData.lastname}
                 </Title>
                 
-                {/* <Text className="doctor-meta">
-                  Mobile Number: {doctorData.mobile}
-                </Text> */}
+               
               </div>
               <div className="info-section">
-                {/* <div className="info-item">
-                  <CalendarOutlined className="info-icon" />
-                  <Text className="info-text">
-                    <strong>Date of Birth:</strong> {doctorData.DOB}
-                  </Text>
-                </div> */}
                  <div className="info-item">
                   <Text className="info-text" style={{ marginLeft: "24px" }}>
                     <strong>Mobile Number:</strong> {doctorData.mobile}
@@ -554,10 +578,6 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
                     <strong>Gender:</strong> {doctorData.gender}
                   </Text>
                 </div>
-               
-                
-              </div>
-              <div className="info-section">
                 <div className="info-item">
                   <MailOutlined className="info-icon" />
                   <Text className="info-text">
@@ -603,31 +623,31 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
               className="profile-card"
             >
               <div className="info-item">
-                  <Text className="info-text">
-                    <strong>Medical Registration:</strong> {doctorData.medicalRegistrationNumber}
-                  </Text>
-                </div>
-                 <div className="info-item">
-                  <Text className="info-text">
-                    <strong>State Medical Council: </strong> TSMC
-                  </Text>
-                </div>
-                <div className="info-item">
-  <Text className="info-text">
-    <strong>Degrees: </strong>  
-    {doctorData.specialization[0]?.degree ? (
-      doctorData.specialization[0].degree.split(',').map((degree, index) => (
-        <Tag key={index} className="specialization-tag">
-          {degree.trim()}
-        </Tag>
-      ))
-    ) : (
-      <Text style={{ color: "#6b7280" }}>
-        No degrees added
-      </Text>
-    )}
-  </Text>
-</div>
+                <Text className="info-text">
+                  <strong>Medical Registration:</strong> {doctorData.medicalRegistrationNumber}
+                </Text>
+              </div>
+              <div className="info-item">
+                <Text className="info-text">
+                  <strong>State Medical Council: </strong> TSMC
+                </Text>
+              </div>
+              <div className="info-item">
+                <Text className="info-text">
+                  <strong>Degrees: </strong>  
+                  {doctorData.specialization[0]?.degree ? (
+                    doctorData.specialization[0].degree.split(',').map((degree, index) => (
+                      <Tag key={index} className="specialization-tag">
+                        {degree.trim()}
+                      </Tag>
+                    ))
+                  ) : (
+                    <Text style={{ color: "#6b7280" }}>
+                      No degrees added
+                    </Text>
+                  )}
+                </Text>
+              </div>
               
               <div style={{ marginBottom: "20px" }}>
                 <Text strong style={{ fontSize: "14px", color: "#166534", display: "block", marginBottom: "8px", fontWeight: "600" }}>
@@ -635,9 +655,9 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
                 </Text>
                 <div>
                   {doctorData.specialization.length > 0 ? (
-                    doctorData.specialization.map((spec, index) => (
+                    doctorData.specialization[0].name.split(',').map((spec, index) => (
                       <Tag key={index} className="specialization-tag">
-                        {spec.name || "Not specified"}
+                        {spec || "Not specified"}
                       </Tag>
                     ))
                   ) : (
@@ -647,79 +667,17 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
                   )}
                 </div>
               </div>
-               <div className="info-item">
-                  <Text className="info-text">
-                    <strong>Work Experience:</strong>{doctorData.specialization[0]?.experience || 0} Years
-                  </Text>
-                </div>
+              <div className="info-item">
+                <Text className="info-text">
+                  <strong>Work Experience:</strong>{doctorData.specialization[0]?.experience || 0} Years
+                </Text>
+              </div>
 
-                 <div className="info-item">
-                  <Text className="info-text">
-                    <strong>About:</strong>{doctorData.specialization[0]?.bio || "N/A"}
-                  </Text>
-                </div>
-              {/* <div style={{ marginBottom: "20px" }}>
-                <Text strong className="info-text" style={{ display: "block", marginBottom: "8px" }}>
-                  Work Experience
+              <div className="info-item">
+                <Text className="info-text">
+                  <strong>About:</strong>{doctorData.specialization[0]?.bio || "N/A"}
                 </Text>
-                <div className="experience-container">
-                  <Title level={2} className="experience-years">
-                    {doctorData.specialization[0]?.experience || 0} Years
-                  </Title>
-                </div>
-              </div> */}
-              {/* <div>
-                <Text strong className="info-text" style={{ display: "block", marginBottom: "12px" }}>
-                  Certifications
-                </Text>
-                {doctorData.certifications.length > 0 ? (
-                  doctorData.certifications.map((cert, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "12px 0",
-                        borderBottom: index < doctorData.certifications.length - 1 ? "1px solid #e5e7eb" : "none",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: "500", fontSize: "14px", color: "#374151", marginBottom: "2px" }}>
-                          {cert.name || "N/A"}
-                        </div>
-                        <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                          {cert.registrationNo || "N/A"}
-                        </Text>
-                      </div>
-                      <Space>
-                        {cert.image && (
-                          <Button
-                            className="view-button"
-                            size="small"
-                            onClick={() => showModal({ type: "Specialization Certificate", data: cert.image })}
-                          >
-                            View Certificate
-                          </Button>
-                        )}
-                        {cert.degreeCertificate && (
-                          <Button
-                            className="view-button"
-                            size="small"
-                            onClick={() => showModal({ type: "Degree Certificate", data: cert.degreeCertificate })}
-                          >
-                            View Degree
-                          </Button>
-                        )}
-                      </Space>
-                    </div>
-                  ))
-                ) : (
-                  <Text style={{ color: "#6b7280" }}>
-                    No certifications added
-                  </Text>
-                )}
-              </div> */}
+              </div>
             </Card>
           </Col>         
 
@@ -735,14 +693,13 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
                   {!kyc?.pan?.number &&  <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('kyc')}>
                     
                   </Button>}
-                 
                 </div>
               }
               className="profile-card"
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center" }}>
- <IdcardOutlined className="info-icon" />
+                  <IdcardOutlined className="info-icon" />
                   <div>
                     <Text strong className="info-text">PAN Number:</Text>
                     <Text className="info-text" style={{ marginLeft: "8px" }}>
@@ -750,16 +707,7 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
                     </Text>
                   </div>
                 </div>
-                {/* {doctorData.kycDetails.panImage && (
-                  <Button
-                    type="link"
-                    size="small"
-                    onClick={() => showModal({ type: "pan", data: doctorData.kycDetails.panImage })}
-                    style={{ padding: "4px 8px" }}
-                  />
-                )} */}
               </div>
-
             </Card>
           </Col>
 
@@ -790,7 +738,6 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
                     {mode.type === "Home Visit" && <CarOutlined className="consultation-icon" style={{ color: "#9333ea" }} />}
                     <div>
                       <Text strong className="info-text" style={{ display: "block" }}>{mode.type}</Text>
-                      {/* <Text style={{ fontSize: "12px", color: "#6b7280" }}>{mode.description || "N/A"}</Text> */}
                     </div>
                   </div>
                   <div className="consultation-price">
@@ -869,11 +816,14 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
         </Modal>
 
         <Modal
-          title={`Edit ${editModalType ? editModalType.charAt(0).toUpperCase() + editModalType.slice(1) : ''} Details`}
+
+          title=
+          {editModalType === 'kyc' ? `Add KYC Details` : `Edit ${editModalType ? editModalType.charAt(0).toUpperCase() + editModalType.slice(1) : ''} Details`}
           open={!!editModalType}
           onCancel={handleEditModalClose}
           onOk={() => form.submit()}
           okText="Save Changes"
+          width={600}
         >
           <Form
             form={form}
@@ -882,157 +832,205 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
           >
             {editModalType === 'personal' && (
               <>
-                <Form.Item label="First Name" name="firstname">
-                  <Input />
+                <Form.Item 
+                  label="First Name" 
+                  name="firstname"
+                  rules={VALIDATION_RULES.name}
+                >
+                  <Input 
+                    onChange={(e) => {
+                      e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                    }}
+                  />
                 </Form.Item>
-                <Form.Item label="Last Name" name="lastname">
-                  <Input />
+                
+                <Form.Item 
+                  label="Last Name" 
+                  name="lastname"
+                  rules={VALIDATION_RULES.name}
+                >
+                  <Input 
+                    onChange={(e) => {
+                      e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                    }}
+                  />
                 </Form.Item>
-                <Form.Item label="Mobile Number" name="mobileNumber" >
-                  <Input disabled/>
+                
+                <Form.Item 
+                  label="Mobile Number" 
+                  name="mobileNumber"
+                  rules={VALIDATION_RULES.mobile}
+                >
+                  <Input 
+                    disabled
+                    maxLength={10}
+                    onChange={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    }}
+                  />
                 </Form.Item>
-                <Form.Item label="Email" name="email">
-                  <Input />
+                
+                <Form.Item 
+                  label="Email" 
+                  name="email"
+                  rules={VALIDATION_RULES.email}
+                >
+                  <Input type="email" />
                 </Form.Item>
-               
-               {/* inside your 'personal' block */}
-<Form.List name="spokenLanguage">
-  {(fields, { add, remove }) => (
-    <>
-      {fields.map(({ key, name, ...restField }) => (
-        <Form.Item
-          key={key}
-          label="Language"
-          style={{ marginBottom: 12 }}
-          // keep validation on the inner noStyle item
-        >
-          <Space.Compact block>
-            <Form.Item
-              {...restField}
-              name={name}
-              noStyle
-              rules={[{ required: true, message: 'Please select a language' }]}
-            >
-              <Select
-                placeholder="Select a language"
-                popupMatchSelectWidth={false}
-                style={{ minWidth: 220 }}
-              >
-                {languageOptions.map((option) => (
-                  <Option
-                    key={option.value}
-                    value={option.value}
-                    disabled={(form.getFieldValue('spokenLanguage') || []).includes(option.value)}
-                  >
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
+                
+                <Form.List name="spokenLanguage">
+                  {(fields, { add, remove }) => (
+                    <>
+                      {fields.map(({ key, name, ...restField }) => (
+                        <Form.Item
+                          key={key}
+                          label="Language"
+                          style={{ marginBottom: 12 }}
+                        >
+                          <Space.Compact block>
+                            <Form.Item
+                              {...restField}
+                              name={name}
+                              noStyle
+                              rules={[{ required: true, message: 'Please select a language' }]}
+                            >
+                              <Select
+                                placeholder="Select a language"
+                                popupMatchSelectWidth={false}
+                                style={{ minWidth: 220 }}
+                              >
+                                {languageOptions.map((option) => (
+                                  <Option
+                                    key={option.value}
+                                    value={option.value}
+                                    disabled={(form.getFieldValue('spokenLanguage') || []).includes(option.value)}
+                                  >
+                                    {option.label}
+                                  </Option>
+                                ))}
+                              </Select>
+                            </Form.Item>
 
-            <Button
-              danger
-              onClick={() => remove(name)}
-              // icon only keeps row tight; add text if you prefer
-              // icon={<DeleteOutlined />}
-            >
-              Remove
-            </Button>
-          </Space.Compact>
-        </Form.Item>
-      ))}
+                            <Button
+                              danger
+                              onClick={() => remove(name)}
+                            >
+                              Remove
+                            </Button>
+                          </Space.Compact>
+                        </Form.Item>
+                      ))}
 
-      <Form.Item>
-        <Button
-          type="dashed"
-          onClick={() => add()}
-          block
-          disabled={fields.length >= languageOptions.length}
-        >
-          Add Language
-        </Button>
-      </Form.Item>
-    </>
-  )}
-</Form.List>
-
+                      <Form.Item>
+                        <Button
+                          type="dashed"
+                          onClick={() => add()}
+                          block
+                          disabled={fields.length >= languageOptions.length}
+                        >
+                          Add Language
+                        </Button>
+                      </Form.Item>
+                    </>
+                  )}
+                </Form.List>
               </>
             )}
+            
             {editModalType === 'professional' && (
-  <>
-    <Form.Item
-      label="Degree"
-      name="degreeId"
-      rules={[{ required: true, message: 'Please select a degree' }]}
-    >
-      <Select
-        mode="multiple"
-        placeholder="Select degree"
-        loading={loadingDegrees}
-        showSearch
-        optionFilterProp="label"
-        options={degrees.map(d => ({
-          label: d.name || d.degreeName || d.title,
-          value: d.name || d.degreeName || d.title, // Use the name as value
-        }))}
-      />
-    </Form.Item>
-    
-    <Form.Item
-      label="Specializations"
-      name="specialization"
-      rules={[{ required: true, message: 'Please select at least one specialization' }]}
-    >
-      <Select
-        mode="multiple"
-        placeholder="Select specializations"
-        loading={loadingSpecs}
-        showSearch
-        optionFilterProp="label"
-        options={specializationOptions.map(s => ({
-          label: s,
-          value: s,
-        }))}
-      />
-    </Form.Item>
-    
-    <Form.Item
-      label="Experience"
-      name="experience"
-      rules={[{ required: true, message: 'Please enter your experience' }]}
-    >
-      <Input type="number" />
-    </Form.Item>
+              <>
+                <Form.Item
+                  label="Degree"
+                  name="degreeId"
+                  rules={[{ required: true, message: 'Please select a degree' }]}
+                >
+                  <Select
+                    mode="multiple"
+                    placeholder="Select degree"
+                    loading={loadingDegrees}
+                    showSearch
+                    optionFilterProp="label"
+                    options={degrees.map(d => ({
+                      label: d.name || d.degreeName || d.title,
+                      value: d.name || d.degreeName || d.title,
+                    }))}
+                  />
+                </Form.Item>
+                
+                <Form.Item
+                  label="Specializations"
+                  name="specialization"
+                  rules={[{ required: true, message: 'Please select at least one specialization' }]}
+                >
+                  <Select
+                    mode="multiple"
+                    placeholder="Select specializations"
+                    loading={loadingSpecs}
+                    showSearch
+                    optionFilterProp="label"
+                    options={specializationOptions.map(s => ({
+                      label: s,
+                      value: s,
+                    }))}
+                  />
+                </Form.Item>
+                
+                <Form.Item
+                  label="Experience (Years)"
+                  name="experience"
+                  rules={VALIDATION_RULES.experience}
+                >
+                  <Input 
+                    type="number"
+                    min={0}
+                    max={60}
+                    onChange={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    }}
+                  />
+                </Form.Item>
 
-    <Form.Item
-      label="About"
-      name="about"
-    >
-      <Input.TextArea />
-    </Form.Item>
-  </>
-)}
-          {editModalType === 'kyc' && (
-  <>
-    <Form.Item
-      label="PAN Number"
-      name="panNumber"
-      rules={[
-        { required: true, message: 'Please enter your PAN number' },
-      ]}
-    >
-      <Input style={{ textTransform: 'uppercase' }} maxLength={10} />
-    </Form.Item>
+                <Form.Item
+                  label="About"
+                  name="about"
+                  rules={[
+                    { max: 500, message: 'About cannot exceed 500 characters' }
+                  ]}
+                >
+                  <Input.TextArea 
+                    showCount 
+                    maxLength={500}
+                    rows={4}
+                  />
+                </Form.Item>
+              </>
+            )}
+            
+            {editModalType === 'kyc' && (
+              <>
+                <Form.Item
+                  label="PAN Number"
+                  name="panNumber"
+                  rules={VALIDATION_RULES.pan}
+                >
+                  <Input 
+                    style={{ textTransform: 'uppercase' }} 
+                    maxLength={10}
+                    onChange={(e) => {
+                      e.target.value = e.target.value.replace(/[^A-Z0-9]/g, '').toUpperCase();
+                    }}
+                  />
+                </Form.Item>
 
-    <Form.Item
-      label="PAN Image"
-      name="panImage"
-      rules={[{ required: true, message: 'Please upload a PAN image' }]}
-    >
-      <UploadImage onUpload={(file) => form.setFieldsValue({ panImage: file })} />
-    </Form.Item>
-  </>
-)}
+                <Form.Item
+                  label="PAN Image"
+                  name="panImage"
+                  rules={[{ required: true, message: 'Please upload a PAN image' }]}
+                >
+                  <UploadImage onUpload={(file) => form.setFieldsValue({ panImage: file })} />
+                </Form.Item>
+              </>
+            )}
 
             {editModalType === 'consultation' && (
               <Form.List name="consultationModeFee">
@@ -1044,70 +1042,160 @@ const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/; // 11 chars: 4 letters + '0' + 6 al
                           {...restField}
                           name={[name, 'type']}
                           label="Consultation Type"
+                          rules={[{ required: true, message: 'Type is required' }]}
                         >
                           <Input />
                         </Form.Item>
                         <Form.Item
                           {...restField}
                           name={[name, 'fee']}
-                          label="Fee"
+                          label="Fee (₹)"
+                          rules={VALIDATION_RULES.fee}
                         >
-                          <Input type="number" />
+                          <Input 
+                            type="number"
+                            min={0}
+                            onChange={(e) => {
+                              e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                            }}
+                          />
                         </Form.Item>
-                       
                        
                       </Space>
                     ))}
-                   
+
                   </>
                 )}
               </Form.List>
             )}
-            {editModalType === 'bank' && (
-              <>
-                <Form.Item label="Bank Name" name={["bankDetails", "bankName"]}>
-                  <Input />
-                </Form.Item>
-                <Form.Item label="Account Holder Name" name={["bankDetails", "accountHolderName"]}>
-                  <Input />
-                </Form.Item>
-                <Form.Item label="Account Number" name={["bankDetails", "accountNumber"]}  rules={[
-    {
-      pattern: /^\d{6,14}$/,
-      message: "Account number must be 6 to 14 digits",
-    },
-  ]}>
-                  <Input />
-                </Form.Item>
-                <Form.Item
+            
+          {editModalType === 'bank' && (
+  <>
+    <Form.Item 
+      label="Bank Name" 
+      name={["bankDetails", "bankName"]}
+      rules={[
+        { required: true, message: 'Please enter bank name' },
+        { min: 2, message: 'Bank name must be at least 2 characters' },
+        { max: 100, message: 'Bank name cannot exceed 100 characters' },
+        {
+          pattern: /^[a-zA-Z\s]+$/,
+          message: 'Bank name should contain only letters and spaces',
+        },
+      ]}
+    >
+      <Input 
+        onKeyPress={(e) => {
+          // Prevent typing numbers and special characters
+          if (!/^[a-zA-Z\s]$/.test(e.key)) {
+            e.preventDefault();
+          }
+        }}
+        onPaste={(e) => {
+          // Get pasted data and validate
+          const pastedData = e.clipboardData.getData('text');
+          if (!/^[a-zA-Z\s]*$/.test(pastedData)) {
+            e.preventDefault();
+            message.error('Only letters and spaces are allowed');
+          }
+        }}
+      />
+    </Form.Item>
+    
+    <Form.Item 
+      label="Account Holder Name" 
+      name={["bankDetails", "accountHolderName"]}
+      rules={[
+        { required: true, message: 'Please enter account holder name' },
+        { min: 2, message: 'Account holder name must be at least 2 characters' },
+        { max: 100, message: 'Account holder name cannot exceed 100 characters' },
+        {
+          pattern: /^[a-zA-Z\s]+$/,
+          message: 'Account holder name should contain only letters and spaces'
+        }
+      ]}
+    >
+      <Input 
+        onKeyPress={(e) => {
+          // Prevent typing numbers and special characters
+          if (!/^[a-zA-Z\s]$/.test(e.key)) {
+            e.preventDefault();
+          }
+        }}
+        onPaste={(e) => {
+          // Get pasted data and validate
+          const pastedData = e.clipboardData.getData('text');
+          if (!/^[a-zA-Z\s]*$/.test(pastedData)) {
+            e.preventDefault();
+            message.error('Only letters and spaces are allowed');
+          }
+        }}
+      />
+    </Form.Item>
+    
+    <Form.Item 
+      label="Account Number" 
+      name={["bankDetails", "accountNumber"]}
+      rules={VALIDATION_RULES.accountNumber}
+    >
+      <Input 
+        maxLength={18}
+        onChange={(e) => {
+          e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        }}
+        onKeyPress={(e) => {
+          // Allow only numbers
+          if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+          }
+        }}
+      />
+    </Form.Item>
+    
+  <Form.Item
   label="IFSC Code"
   name={['bankDetails', 'ifscCode']}
-  validateFirst
-  hasFeedback
-  getValueFromEvent={(e) =>
-    String(e?.target?.value || '')
-      .toUpperCase()
-      .replace(/\s|-/g, '') // strip spaces/dashes if pasted
-  }
   rules={[
-    { required: true, message: 'IFSC is required' },
-    { len: 11, message: 'IFSC must be exactly 11 characters' },
-    {
-      pattern: IFSC_REGEX,
-      message: 'Invalid IFSC format (e.g., HDFC0XXXXXX)',
-    },
+    { required: true, message: 'IFSC code is required' },
+    { 
+      pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/, 
+      message: 'Invalid IFSC format (e.g., HDFC0ABCD12)' 
+    }
   ]}
 >
   <Input
     placeholder="e.g., HDFC0ABCD12"
     maxLength={11}
-    autoComplete="off"
-    allowClear
+    onChange={(e) => {
+      // Convert to uppercase and remove invalid characters
+      e.target.value = e.target.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+    }}
+    onKeyPress={(e) => {
+      // Allow only alphanumeric characters
+      if (!/^[A-Z0-9]$/i.test(e.key)) {
+        e.preventDefault();
+      }
+    }}
+    onPaste={(e) => {
+      // Validate pasted content
+      const pastedData = e.clipboardData.getData('text');
+      if (!/^[A-Z0-9]{0,11}$/i.test(pastedData)) {
+        e.preventDefault();
+        message.error('IFSC code can only contain letters and numbers');
+      }
+    }}
+    onBlur={(e) => {
+      // Validate format on blur
+      const value = e.target.value;
+      if (value && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
+        message.error('Invalid IFSC format. Format should be ABCD0EFGHIJ (4 letters, 0, 6 alphanumeric)');
+      }
+    }}
+    style={{ textTransform: 'uppercase' }}
   />
 </Form.Item>
-
-              </>
-            )}
+  </>
+)}
           </Form>
         </Modal>
       </Spin>
