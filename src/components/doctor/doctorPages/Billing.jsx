@@ -1568,7 +1568,7 @@ const printDisabled = !hasCompletedPharmacyItem;
                                             color: "#6b7280",
                                           }}
                                         >
-                                          Sgst
+                                          SGST
                                         </th>
                                         <th
                                           style={{
@@ -1579,7 +1579,7 @@ const printDisabled = !hasCompletedPharmacyItem;
                                             color: "#6b7280",
                                           }}
                                         >
-                                          Cgst
+                                          CGST
                                         </th>
                                         <th
                                           style={{

@@ -218,9 +218,20 @@ const formatTimeForAPI = useCallback((timeSlot) => {
   // If it's already in 24-hour format, return as is
   return timeSlot;
 }, []);
+const validateAge = useCallback((age) => {
+  if (!age) return false;
+  // Valid formats: 6m, 2y, 15d, 1y 2m, 3m 15d, etc.
+  return /^(\d+[myd])(\s\d+[myd])*$/i.test(age.replace(/\s+/g, ' ').trim());
+}, []);
+
   const validateAppointmentData = useCallback(() => {
     const errors = {};
     let isValid = true;
+
+    if (patientData.age && !validateAge(patientData.age)) {
+    errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
+    isValid = false;
+  }
 
     if (!patientCreated) {
       errors.patient = "Please create or find a patient first";
@@ -290,6 +301,7 @@ const formatTimeForAPI = useCallback((timeSlot) => {
     validateDOB,
     validateName,
     validatePhoneNumber,
+    validateAge
   ]);
 
   const searchUser = useCallback(async (mobile) => {
@@ -316,17 +328,12 @@ const formatTimeForAPI = useCallback((timeSlot) => {
     }
   }, []);
 
-// Update the validateAge function
-const validateAge = useCallback((age) => {
-  if (!age) return false;
-  // Valid formats: 6m, 2y, 15d, 1y 2m, 3m 15d, etc.
-  return /^(\d+[myd])(\s\d+[myd])*$/i.test(age.replace(/\s+/g, ' ').trim());
-}, []);
+
 
 // Use it in your validation logic
-if (patientData.age && !validateAge(patientData.age)) {
-  errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
-}
+// if (patientData.age && !validateAge(patientData.age)) {
+//   errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
+// }
 
 const createPatient = useCallback(async () => {
   try {
@@ -595,6 +602,10 @@ const handleInputChange = useCallback((field, value) => {
     ];
     const errors = {};
 
+    if (patientData.age && !validateAge(patientData.age)) {
+    errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
+  }
+
     requiredFields.forEach((field) => {
       if (!patientData[field]) errors[field] = "This field is required";
     });
@@ -627,7 +638,7 @@ const handleInputChange = useCallback((field, value) => {
     } finally {
       setIsCreatingPatient(false);
     }
-  }, [patientData, validatePhoneNumber, validateDOB, createPatient]);
+  }, [patientData, validatePhoneNumber, validateAge, createPatient]);
 
   const handleContinueToPayment = useCallback(async () => {
     if (!validateAppointmentData()) return;
