@@ -40,41 +40,41 @@ const transformPatientData = (result, user) => {
     const tests = Array.isArray(patient.tests) ? patient.tests : [];
     const medicines = Array.isArray(patient.medicines) ? patient.medicines : [];
 
-const appointmentDetails = appointments.map((appointment, idx) => ({
-  id: `A${index}${idx}`,
-  appointmentId: appointment.appointmentId,
-  appointmentType: appointment.appointmentType,
-  appointmentFees: appointment?.feeDetails?.finalAmount || 0,
-  addressId: appointment.addressId,
-  updatedAt: appointment.createdAt
-    ? new Date(appointment.createdAt).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "N/A",
-  clinicName: appointment.addressId
-    ? user?.addresses?.find(
-        (addr) => addr.addressId === appointment.addressId
-      )?.clinicName || "N/A"
-    : "N/A",
-  appointmentDate: appointment.appointmentDate
-    ? new Date(appointment.appointmentDate).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
-    : "N/A",
-  appointmentTime: appointment.appointmentTime || "N/A",
-  status: "Completed", // Set status to "Completed" by default
-  clinicHeaderUrl: appointment.addressId
-    ? user?.addresses?.find(
-        (addr) => addr.addressId === appointment.addressId
-      )?.headerImage || "N/A"
-    : "N/A",
-}));
+    const appointmentDetails = appointments.map((appointment, idx) => ({
+      id: `A${index}${idx}`,
+      appointmentId: appointment.appointmentId,
+      appointmentType: appointment.appointmentType,
+      appointmentFees: appointment?.feeDetails?.finalAmount || 0,
+      addressId: appointment.addressId,
+      updatedAt: appointment.createdAt
+        ? new Date(appointment.createdAt).toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "N/A",
+      clinicName: appointment.addressId
+        ? user?.addresses?.find(
+          (addr) => addr.addressId === appointment.addressId
+        )?.clinicName || "N/A"
+        : "N/A",
+      appointmentDate: appointment.appointmentDate
+        ? new Date(appointment.appointmentDate).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+        : "N/A",
+      appointmentTime: appointment.appointmentTime || "N/A",
+      status: "Completed", // Set status to "Completed" by default
+      clinicHeaderUrl: appointment.addressId
+        ? user?.addresses?.find(
+          (addr) => addr.addressId === appointment.addressId
+        )?.headerImage || "N/A"
+        : "N/A",
+    }));
 
     const totalTestAmount = tests.reduce(
       (sum, test) => sum + (test?.price || 0),
@@ -102,64 +102,65 @@ const appointmentDetails = appointments.map((appointment, idx) => ({
       prescriptionId: patient.prescriptionId || "N/A", // Add prescriptionId here
       prescriptionCreatedAt: patient.prescriptionCreatedAt
         ? new Date(patient.prescriptionCreatedAt).toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "N/A",
+      appointmentDetails,
+      tests: tests.map((test, idx) => ({
+        id: `T${index}${idx}`,
+        testId: test.testId,
+        labTestID: test.labTestID,
+        name: test.testName,
+        price: test?.price || 0,
+        status: test.status?.charAt(0).toUpperCase() + test.status?.slice(1) || "Unknown",
+        createdAt: test.createdAt,
+        updatedAt: test.updatedAt,
+        createdDate: test.createdAt
+          ? new Date(test.createdAt).toLocaleString("en-US", {
             year: "numeric",
             month: "short",
             day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
           })
-        : "N/A",
-      appointmentDetails,
-tests: tests.map((test, idx) => ({
-  id: `T${index}${idx}`,
-  testId: test.testId,
-  labTestID: test.labTestID,
-  name: test.testName,
-  price: test?.price || 0,
-  status: test.status?.charAt(0).toUpperCase() + test.status?.slice(1) || "Unknown",
-  createdAt: test.createdAt,
-  updatedAt: test.updatedAt,
-  createdDate: test.createdAt
-    ? new Date(test.createdAt).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "N/A",
-  updatedDate: test.updatedAt
-    ? new Date(test.updatedAt).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "N/A",
-  labDetails: patient.labDetails || {}, // Use patient.labDetails instead of test.labDetails
-})),
+          : "N/A",
+        updatedDate: test.updatedAt
+          ? new Date(test.updatedAt).toLocaleString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          : "N/A",
+        labDetails: patient.labDetails || {}, // Use patient.labDetails instead of test.labDetails
+      })),
       medicines: medicines.map((med, idx) => ({
         id: `M${index}${idx}`,
         medicineId: med.medicineId,
         pharmacyMedID: med.pharmacyMedID,
         name: med.medName,
+        dosage: med.dosage,
         quantity: med.quantity || 1,
         price: med.price || 0,
         gst: med.gst || 0,
         cgst: med.cgst || 0,
-updatedAt: med.updatedAt || "N/A",
+        updatedAt: med.updatedAt || "N/A",
         status:
           med.status?.charAt(0).toUpperCase() + med.status?.slice(1) ||
           "Unknown",
         createdDate: med.createdAt
           ? new Date(med.createdAt).toLocaleString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
           : "N/A",
         pharmacyDetails: med.pharmacyDetails || {},
       })),
@@ -176,6 +177,10 @@ const BillingSystem = () => {
   const debouncedMarkAsPaidMap = useRef({});
 
   const [patients, setPatients] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalType, setModalType] = useState(""); // 'lab', 'pharmacy', or 'appointment'
+  const [modalPatientId, setModalPatientId] = useState(null);
   const [expandedPatients, setExpandedPatients] = useState({});
   const [expandedSections, setExpandedSections] = useState({});
   const [billingCompleted, setBillingCompleted] = useState({});
@@ -191,7 +196,7 @@ const BillingSystem = () => {
     totalItems: 0,
   });
   const [viewModePatientId, setViewModePatientId] = useState(null);
-const [loadingPatients, setLoadingPatients] = useState({});
+  const [loadingPatients, setLoadingPatients] = useState({});
 
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
@@ -233,7 +238,7 @@ const [loadingPatients, setLoadingPatients] = useState({});
 
       const response = await apiGet(
         `/receptionist/fetchMyDoctorPatients/${doctorId}?${queryParams.toString()}`,
-      
+
       );
 
       if (response?.status === 200 && response?.data?.data) {
@@ -256,8 +261,7 @@ const [loadingPatients, setLoadingPatients] = useState({});
         setTimeout(() => fetchPatients(page, pageSize, search), 2000);
       } else {
         setError(
-          `Failed to fetch patient data: ${
-            err.message || "Unknown error"
+          `Failed to fetch patient data: ${err.message || "Unknown error"
           }. Please try again later.`
         );
         setLoading(false);
@@ -401,10 +405,9 @@ const [loadingPatients, setLoadingPatients] = useState({});
           searchTerm
         );
         alert(
-          `Payment processed successfully for ${
-            type === "all"
-              ? "all items"
-              : type === "pharmacy"
+          `Payment processed successfully for ${type === "all"
+            ? "all items"
+            : type === "pharmacy"
               ? "pharmacy"
               : "labs"
           }!`
@@ -477,32 +480,32 @@ const [loadingPatients, setLoadingPatients] = useState({});
     if (!patient) return;
 
     const isCompleted = (s) => {
-  const v = String(s || "").toLowerCase();
-  return v === "completed" || v === "complete" || v === "paid";
-};
+      const v = String(s || "").toLowerCase();
+      return v === "completed" || v === "complete" || v === "paid";
+    };
 
     let itemDate = "N/A";
 
     if (type === "pharmacy") {
       //console.log("123")
       // In the pharmacy section of handlePrintInvoice:
-const completedMedicines = (patient.medicines || []).filter((m) =>
-  isCompleted(m.status)
-);
-if (completedMedicines.length > 0) {
-  const firstMed = completedMedicines[0];
-  // Use updatedAt instead of updatedDate
-  itemDate = firstMed.updatedAt
-    ? new Date(firstMed.updatedAt).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      })
-    : "N/A";
-}
+      const completedMedicines = (patient.medicines || []).filter((m) =>
+        isCompleted(m.status)
+      );
+      if (completedMedicines.length > 0) {
+        const firstMed = completedMedicines[0];
+        // Use updatedAt instead of updatedDate
+        itemDate = firstMed.updatedAt
+          ? new Date(firstMed.updatedAt).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })
+          : "N/A";
+      }
     } else if (type === "labs") {
       //console.log("1234")
       const completedTests = (patient.tests || []).filter((t) =>
@@ -511,32 +514,32 @@ if (completedMedicines.length > 0) {
       if (completedTests.length > 0) {
         const firstTest = completedTests[0];
         itemDate = firstTest.updatedAt
-  ? new Date(firstTest.updatedAt).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    })
-  : "N/A";
+          ? new Date(firstTest.updatedAt).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })
+          : "N/A";
       }
     } else if (type === "appointments") {
       const completedAppointments = (patient.appointments || [])
-      
+
 
       if (completedAppointments.length > 0) {
         const firstAppt = patient?.appointments[0];
         //console.log("First Appointment:", firstAppt);
         itemDate = firstAppt.feeDetails.paidAt
           ? new Date(firstAppt.feeDetails.paidAt).toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            })
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })
           : "N/A";
       }
     }
@@ -568,18 +571,26 @@ if (completedMedicines.length > 0) {
         patient.medicines?.[0]?.pharmacyDetails ||
         {};
 
-        //console.log("pharmacy details:", pharmacyDetails);
+      //console.log("pharmacy details:", pharmacyDetails);
 
       const isPharmacyDetailsEmptyOrNull =
-  !pharmacyDetails ||
-  Object.keys(pharmacyDetails).length === 0 ||
-  (!pharmacyDetails.pharmacyName && !pharmacyDetails.pharmacyAddress); // Relaxed condition
+        !pharmacyDetails ||
+        Object.keys(pharmacyDetails).length === 0 ||
+        (!pharmacyDetails.pharmacyName && !pharmacyDetails.pharmacyAddress); // Relaxed condition
 
-if (isPharmacyDetailsEmptyOrNull) {
-  alert("Please fill the pharmacy details to generate a bill.");
-  // toast?.error?.("Please fill the pharmacy details (name or address) to generate a bill.");
-  return;
-}
+      if (isPharmacyDetailsEmptyOrNull) {
+        // Get the clinic name from the appointment
+        const appointment = patient.appointments && patient.appointments[0];
+        const clinicName = appointment && appointment.addressId
+          ? user?.addresses?.find(addr => addr.addressId === appointment.addressId)?.clinicName
+          : "this clinic";
+
+        setModalMessage(`No Pharmacy Details Are Found. Please go to Clinic Management and add the pharmacy details for the clinic "${clinicName}" with this appointment.`);
+        setModalType("pharmacy");
+        setModalPatientId(patientId);
+        setModalOpen(true);
+        return;
+      }
 
       headerUrl = pharmacyDetails.pharmacyHeaderUrl || "";
       providerName = pharmacyDetails.pharmacyName || "N/A";
@@ -617,20 +628,19 @@ if (isPharmacyDetailsEmptyOrNull) {
           </thead>
           <tbody>
             ${completedMedicines
-              .map(
-                (med, idx) => `
+          .map(
+            (med, idx) => `
               <tr>
                 <td>${idx + 1}.</td>
-                <td>${med.name || med.medName || ""}</td>
-                <td>${med.quantity}</td>
+                <td>${med.name || med.medName || ""}${med.dosage ? ` ${med.dosage}` : ""}</td>                <td>${med.quantity}</td>
                 <td>${Number(med.price || 0).toFixed(2)}</td>
                 <td>${(
-                  (Number(med.price) || 0) * (Number(med.quantity) || 0)
-                ).toFixed(2)}</td>
+                (Number(med.price) || 0) * (Number(med.quantity) || 0)
+              ).toFixed(2)}</td>
               </tr>
             `
-              )
-              .join("")}
+          )
+          .join("")}
           </tbody>
         </table>
         <div class="section-total" style="display: flex; justify-content: space-between; align-items: center;">
@@ -641,28 +651,36 @@ if (isPharmacyDetailsEmptyOrNull) {
         </div>
       </div>
     `;
-   } else if (type === "labs") {
-  const completedTests = (patient.tests || []).filter((t) =>
-    isCompleted(t.status)
-  );
-  const labDetails = patient.labDetails || {}; // Use patient.labDetails directly
+    } else if (type === "labs") {
+      const completedTests = (patient.tests || []).filter((t) =>
+        isCompleted(t.status)
+      );
+      const labDetails = patient.labDetails || {}; // Use patient.labDetails directly
 
-  const isLabDetailsEmptyOrNull =
-    !labDetails ||
-    Object.keys(labDetails).length === 0 ||
-    Object.values(labDetails).every(
-      (value) => value === null || value === undefined
-    );
+      const isLabDetailsEmptyOrNull =
+        !labDetails ||
+        Object.keys(labDetails).length === 0 ||
+        Object.values(labDetails).every(
+          (value) => value === null || value === undefined
+        );
 
-  if (isLabDetailsEmptyOrNull) {
-    alert("Please fill the lab details to generate a bill.");
-    // toast?.error?.("Please fill the lab details to generate a bill.");
-    return;
-  }
+      if (isLabDetailsEmptyOrNull) {
+        // Get the clinic name from the appointment
+        const appointment = patient.appointments && patient.appointments[0];
+        const clinicName = appointment && appointment.addressId
+          ? user?.addresses?.find(addr => addr.addressId === appointment.addressId)?.clinicName
+          : "this clinic";
 
-  headerUrl = labDetails.labHeaderUrl || "";
-  providerName = labDetails.labName || "N/A";
-  contactInfoHTML = `
+        setModalMessage(`No Lab Details Are Found. Please go to Clinic Management and add the lab details for the clinic "${clinicName}" with this appointment.`);
+        setModalType("lab");
+        setModalPatientId(patientId);
+        setModalOpen(true);
+        return;
+      }
+
+      headerUrl = labDetails.labHeaderUrl || "";
+      providerName = labDetails.labName || "N/A";
+      contactInfoHTML = `
     <div class="provider-name">${providerName}</div>
     <p>${labDetails.labAddress || "N/A"}</p>
     <p>GST: ${labDetails.labGst || "N/A"}</p>
@@ -693,18 +711,18 @@ if (isPharmacyDetailsEmptyOrNull) {
           </thead>
           <tbody>
             ${completedTests
-              .map(
-                (test, idx) => `
+          .map(
+            (test, idx) => `
               <tr>
                 <td>${idx + 1}.</td>
                 <td>${test.name || test.testName || ""}</td>
                 <td class="price-column">${Number(test.price || 0).toFixed(
-                  2
-                )}</td>
+              2
+            )}</td>
               </tr>
             `
-              )
-              .join("")}
+          )
+          .join("")}
           </tbody>
         </table>
         <div class="section-total">
@@ -730,26 +748,30 @@ if (isPharmacyDetailsEmptyOrNull) {
         );
 
       if (isAddressEmptyOrNull) {
-        alert("Please fill the appointment address details (clinic name or address) to generate a bill.");
-        // toast?.error?.(
-        //   "Please fill the appointment address details to generate a bill."
-        // );
+        // Get the clinic name from the appointment
+        const appointment = patient.appointments && patient.appointments[0];
+        const clinicName = appointment && appointment.addressId
+          ? user?.addresses?.find(addr => addr.addressId === appointment.addressId)?.clinicName
+          : "this clinic";
+
+        setModalMessage(`No Clinic Details Are Found. Please go to Clinic Management and add the clinic details for "${clinicName}" with this appointment.`);
+        setModalType("appointment");
+        setModalPatientId(patientId);
+        setModalOpen(true);
         return;
       }
-
       headerUrl = addr.headerImage || "";
       providerName = firstAppt.clinicName || addr.clinicName || "N/A";
       //console.log("Found provider:", providerName);
       contactInfoHTML = `
       <div class="provider-name">Name: ${providerName}</div>
       <p>${addr.address || "N/A"}</p>
-      <p>${addr.city || "N/A"}, ${addr.state || "N/A"} ${
-        addr.pincode || "N/A"
-      }</p>
+      <p>${addr.city || "N/A"}, ${addr.state || "N/A"} ${addr.pincode || "N/A"
+        }</p>
       <p>Phone: ${addr.mobile || "N/A"}</p>
     `;
-    //console.log(firstAppt?.feeDetails?.finalAmount, "fee details");
-    total = firstAppt?.feeDetails?.finalAmount || 0;
+      //console.log(firstAppt?.feeDetails?.finalAmount, "fee details");
+      total = firstAppt?.feeDetails?.finalAmount || 0;
 
       // total = firstAppt.reduce(
       //   (sum, a) => sum + (Number(a.appointmentFees) || 0),
@@ -777,8 +799,8 @@ if (isPharmacyDetailsEmptyOrNull) {
           </thead>
           <tbody>
             ${patient?.appointments
-              .map(
-                (appt, idx) => `
+          .map(
+            (appt, idx) => `
               <tr>
                 <td>${idx + 1}.</td>
                 <td>Consultation Bill</td>
@@ -786,8 +808,8 @@ if (isPharmacyDetailsEmptyOrNull) {
                 <td>${appt.appointmentType || ""}</td>
               </tr>
             `
-              )
-              .join("")}
+          )
+          .join("")}
           </tbody>
         </table>
         <div class="section-total">
@@ -808,7 +830,7 @@ if (isPharmacyDetailsEmptyOrNull) {
     `
       : "";
 
-      //console.log("pharmacy")
+    //console.log("pharmacy")
 
     const printHTML = `
     <!DOCTYPE html>
@@ -851,10 +873,9 @@ if (isPharmacyDetailsEmptyOrNull) {
       <body>
         <div class="invoice-container">
           <div class="invoice-content">
-            ${
-              headerSectionHTML ||
-              `<div class="provider-details">${contactInfoHTML}</div>`
-            }
+            ${headerSectionHTML ||
+      `<div class="provider-details">${contactInfoHTML}</div>`
+      }
             <div class="section compact-spacing">
               <h3 class="section-title">Patient Information</h3>
               <div class="patient-info">
@@ -867,9 +888,8 @@ if (isPharmacyDetailsEmptyOrNull) {
                 <div>
                   <p><strong>Age:</strong> ${patient.age}</p>
                   <p><strong>Gender:</strong> ${patient.gender}</p>
-                  <p><strong>Referred by Dr.</strong> ${
-                    user?.firstname || "N/A"
-                  } ${user?.lastname || "N/A"}</p>
+                  <p><strong>Referred by Dr.</strong> ${user?.firstname || "N/A"
+      } ${user?.lastname || "N/A"}</p>
                   <p><strong>Date Time:</strong> ${itemDate}</p>
                   <div class="invoice-detail-item"><strong>Invoice No:</strong> #${invoiceNumber}</div>
                 </div>
@@ -936,7 +956,7 @@ if (isPharmacyDetailsEmptyOrNull) {
     const cleanup = () => {
       try {
         iframe.remove();
-      } catch {}
+      } catch { }
     };
 
     const onAfterPrint = () => {
@@ -982,55 +1002,55 @@ if (isPharmacyDetailsEmptyOrNull) {
   };
 
 
-const handleViewClick = async (patientId) => {
-  const isCurrentlyExpanded = viewModePatientId === patientId;
-  setViewModePatientId(isCurrentlyExpanded ? null : patientId);
+  const handleViewClick = async (patientId) => {
+    const isCurrentlyExpanded = viewModePatientId === patientId;
+    setViewModePatientId(isCurrentlyExpanded ? null : patientId);
 
-  if (isCurrentlyExpanded) return; // If collapsing, no need to fetch
+    if (isCurrentlyExpanded) return; // If collapsing, no need to fetch
 
-  const patient = transformedPatients.find((p) => p.id === patientId);
-  if (!patient) {
-    toast.error("Patient not found.");
-    return;
-  }
-
-  try {
-    // Use the prescriptionId from the patient's data
-    const prescriptionId = patient.prescriptionId; // Ensure this field is available in transformedPatients
-    if (!prescriptionId) {
-      throw new Error("Prescription ID not found for this patient.");
+    const patient = transformedPatients.find((p) => p.id === patientId);
+    if (!patient) {
+      toast.error("Patient not found.");
+      return;
     }
 
-    const response = await apiGet(
-      `/receptionist/fetchDoctorPatientDetails/${doctorId}/${patient.patientId}/${prescriptionId}`,
-    );
+    try {
+      // Use the prescriptionId from the patient's data
+      const prescriptionId = patient.prescriptionId; // Ensure this field is available in transformedPatients
+      if (!prescriptionId) {
+        throw new Error("Prescription ID not found for this patient.");
+      }
 
-    if (response?.status === 200 && response?.data?.data?.length > 0) {
-      const detailedPatientData = response.data.data[0];
-      //console.log("Fetched detailed patient data:", detailedPatientData);
-
-      // Update the patients state by replacing the specific patient's data
-      setPatients((prevPatients) =>
-        prevPatients.map((p) =>
-          p.patientId === patient.patientId ? detailedPatientData : p
-        )
+      const response = await apiGet(
+        `/receptionist/fetchDoctorPatientDetails/${doctorId}/${patient.patientId}/${prescriptionId}`,
       );
 
-      // Expand the sections for the patient
-      setExpandedSections((prev) => ({
-        ...prev,
-        [`${patientId}-pharmacy`]: true,
-        [`${patientId}-labs`]: true,
-        [`${patientId}-appointments`]: true,
-      }));
-    } else {
-      throw new Error("No detailed patient data found.");
+      if (response?.status === 200 && response?.data?.data?.length > 0) {
+        const detailedPatientData = response.data.data[0];
+        //console.log("Fetched detailed patient data:", detailedPatientData);
+
+        // Update the patients state by replacing the specific patient's data
+        setPatients((prevPatients) =>
+          prevPatients.map((p) =>
+            p.patientId === patient.patientId ? detailedPatientData : p
+          )
+        );
+
+        // Expand the sections for the patient
+        setExpandedSections((prev) => ({
+          ...prev,
+          [`${patientId}-pharmacy`]: true,
+          [`${patientId}-labs`]: true,
+          [`${patientId}-appointments`]: true,
+        }));
+      } else {
+        throw new Error("No detailed patient data found.");
+      }
+    } catch (err) {
+      //console.error("Error fetching detailed patient data:", err);
+      // toast.error("Failed to fetch detailed patient data. Please try again.");
     }
-  } catch (err) {
-    //console.error("Error fetching detailed patient data:", err);
-    // toast.error("Failed to fetch detailed patient data. Please try again.");
-  }
-};
+  };
 
 
   if (loading) {
@@ -1323,7 +1343,7 @@ const handleViewClick = async (patientId) => {
             const grandTotal =
               totals.medicineTotal + totals.testTotal + totals.appointmentTotal;
             const isViewMode = viewModePatientId === patient.id;
-const appointmentPrintDisabled = patient.appointmentDetails.length === 0;
+            const appointmentPrintDisabled = patient.appointmentDetails.length === 0;
             return (
               <div
                 key={patient.id}
@@ -1480,7 +1500,7 @@ const appointmentPrintDisabled = patient.appointmentDetails.length === 0;
                               >
                                 Pharmacy
                               </div>
-                              
+
                             </div>
                           </div>
                           <div
@@ -1495,13 +1515,13 @@ const appointmentPrintDisabled = patient.appointmentDetails.length === 0;
                         {expandedSections[`${patient.id}-pharmacy`] && (
                           <div style={{ padding: "16px" }}>
                             {(() => {
-                            const hasCompletedPharmacyItem =
-  Array.isArray(patient.medicines) &&
-  patient.medicines.some((m) => {
-    const s = String(m.status || "").toLowerCase();
-    return s === "complete" || s === "completed" || s === "paid";
-  });
-const printDisabled = !hasCompletedPharmacyItem;
+                              const hasCompletedPharmacyItem =
+                                Array.isArray(patient.medicines) &&
+                                patient.medicines.some((m) => {
+                                  const s = String(m.status || "").toLowerCase();
+                                  return s === "complete" || s === "completed" || s === "paid";
+                                });
+                              const printDisabled = !hasCompletedPharmacyItem;
 
                               return (
                                 <>
@@ -1614,7 +1634,7 @@ const printDisabled = !hasCompletedPharmacyItem;
                                               borderBottom: "1px solid #f3f4f6",
                                             }}
                                           >
-                                            {medicine.name}
+                                            {medicine.name} {medicine.dosage}
                                           </td>
                                           <td
                                             style={{
@@ -1699,9 +1719,9 @@ const printDisabled = !hasCompletedPharmacyItem;
                                           >
                                             {medicine.price
                                               ? (
-                                                  medicine.quantity *
-                                                  medicine.price
-                                                ).toFixed(2)
+                                                medicine.quantity *
+                                                medicine.price
+                                              ).toFixed(2)
                                               : "N/A"}
                                           </td>
                                         </tr>
@@ -1792,17 +1812,17 @@ const printDisabled = !hasCompletedPharmacyItem;
                                       disabled={
                                         totals.medicineTotal === 0 ||
                                         isPaymentInProgress[
-                                          `${patient.id}-pharmacy`
+                                        `${patient.id}-pharmacy`
                                         ] ||
                                         billingCompleted[patient.id]?.pharmacy
                                       }
                                       style={{
                                         backgroundColor:
                                           totals.medicineTotal === 0 ||
-                                          isPaymentInProgress[
+                                            isPaymentInProgress[
                                             `${patient.id}-pharmacy`
-                                          ] ||
-                                          billingCompleted[patient.id]?.pharmacy
+                                            ] ||
+                                            billingCompleted[patient.id]?.pharmacy
                                             ? "#d1d5db"
                                             : "#28a745",
                                         color: "white",
@@ -1812,10 +1832,10 @@ const printDisabled = !hasCompletedPharmacyItem;
                                         fontSize: "14px",
                                         cursor:
                                           totals.medicineTotal === 0 ||
-                                          isPaymentInProgress[
+                                            isPaymentInProgress[
                                             `${patient.id}-pharmacy`
-                                          ] ||
-                                          billingCompleted[patient.id]?.pharmacy
+                                            ] ||
+                                            billingCompleted[patient.id]?.pharmacy
                                             ? "not-allowed"
                                             : "pointer",
                                       }}
@@ -1886,7 +1906,7 @@ const printDisabled = !hasCompletedPharmacyItem;
                               >
                                 Labs
                               </div>
-                              
+
                             </div>
                           </div>
                           <div style={{ color: "#6b7280", fontSize: "18px" }}>
@@ -1897,14 +1917,14 @@ const printDisabled = !hasCompletedPharmacyItem;
                         {expandedSections[`${patient.id}-labs`] && (
                           <div style={{ padding: "16px" }}>
                             {(() => {
-                             const completedAliases = ["complete", "completed", "paid"];
-const hasCompletedLabItem =
-  Array.isArray(patient.tests) &&
-  patient.tests.some((t) => {
-    const s = String(t.status || "").toLowerCase();
-    return s === "complete" || s === "completed" || s === "paid";
-  });
-const printDisabled = !hasCompletedLabItem;
+                              const completedAliases = ["complete", "completed", "paid"];
+                              const hasCompletedLabItem =
+                                Array.isArray(patient.tests) &&
+                                patient.tests.some((t) => {
+                                  const s = String(t.status || "").toLowerCase();
+                                  return s === "complete" || s === "completed" || s === "paid";
+                                });
+                              const printDisabled = !hasCompletedLabItem;
                               return (
                                 <>
                                   <table
@@ -2002,14 +2022,14 @@ const printDisabled = !hasCompletedLabItem;
                                                   test.status === "Completed"
                                                     ? "#dcfce7"
                                                     : test.status === "Pending"
-                                                    ? "#fef3c7"
-                                                    : "#fee2e2",
+                                                      ? "#fef3c7"
+                                                      : "#fee2e2",
                                                 color:
                                                   test.status === "Completed"
                                                     ? "#166534"
                                                     : test.status === "Pending"
-                                                    ? "#92400e"
-                                                    : "#dc2626",
+                                                      ? "#92400e"
+                                                      : "#dc2626",
                                               }}
                                             >
                                               {test.status}
@@ -2110,17 +2130,17 @@ const printDisabled = !hasCompletedLabItem;
                                       disabled={
                                         totals.testTotal === 0 ||
                                         isPaymentInProgress[
-                                          `${patient.id}-labs`
+                                        `${patient.id}-labs`
                                         ] ||
                                         billingCompleted[patient.id]?.labs
                                       }
                                       style={{
                                         backgroundColor:
                                           totals.testTotal === 0 ||
-                                          isPaymentInProgress[
+                                            isPaymentInProgress[
                                             `${patient.id}-labs`
-                                          ] ||
-                                          billingCompleted[patient.id]?.labs
+                                            ] ||
+                                            billingCompleted[patient.id]?.labs
                                             ? "#d1d5db"
                                             : "#28a745",
                                         color: "white",
@@ -2130,10 +2150,10 @@ const printDisabled = !hasCompletedLabItem;
                                         fontSize: "14px",
                                         cursor:
                                           totals.testTotal === 0 ||
-                                          isPaymentInProgress[
+                                            isPaymentInProgress[
                                             `${patient.id}-labs`
-                                          ] ||
-                                          billingCompleted[patient.id]?.labs
+                                            ] ||
+                                            billingCompleted[patient.id]?.labs
                                             ? "not-allowed"
                                             : "pointer",
                                       }}
@@ -2202,7 +2222,7 @@ const printDisabled = !hasCompletedLabItem;
                               >
                                 Consultation Bill
                               </div>
-                              
+
                             </div>
                           </div>
                           <div style={{ color: "#6b7280", fontSize: "18px" }}>
@@ -2266,7 +2286,7 @@ const printDisabled = !hasCompletedLabItem;
                                   >
                                     Time
                                   </th>
-                                  
+
                                   <th
                                     style={{
                                       padding: "8px",
@@ -2279,7 +2299,7 @@ const printDisabled = !hasCompletedLabItem;
                                     Price (₹)
                                   </th>
                                   <th
-                                                                        style={{
+                                    style={{
                                       padding: "8px",
                                       textAlign: "center",
                                       fontSize: "12px",
@@ -2331,7 +2351,7 @@ const printDisabled = !hasCompletedLabItem;
                                       >
                                         {appointment.appointmentTime}
                                       </td>
-                                      
+
                                       <td
                                         style={{
                                           padding: "8px",
@@ -2341,28 +2361,28 @@ const printDisabled = !hasCompletedLabItem;
                                       >
                                         {appointment.appointmentFees
                                           ? appointment.appointmentFees.toFixed(
-                                              2
-                                            )
+                                            2
+                                          )
                                           : "0.00"}
                                       </td>
-                                     <td
-  style={{
-    padding: "2px 8px",
-    borderRadius: "12px",
-    fontSize: "11px",
-    fontWeight: "600",
-    backgroundColor:
-      ["Completed", "Paid"].includes(appointment.status)
-        ? "#dcfce7"
-        : "#fef3c7",
-    color:
-      ["Completed", "Paid"].includes(appointment.status)
-        ? "#166534"
-        : "#92400e",
-  }}
->
-  {appointment.status}
-</td>
+                                      <td
+                                        style={{
+                                          padding: "2px 8px",
+                                          borderRadius: "12px",
+                                          fontSize: "11px",
+                                          fontWeight: "600",
+                                          backgroundColor:
+                                            ["Completed", "Paid"].includes(appointment.status)
+                                              ? "#dcfce7"
+                                              : "#fef3c7",
+                                          color:
+                                            ["Completed", "Paid"].includes(appointment.status)
+                                              ? "#166534"
+                                              : "#92400e",
+                                        }}
+                                      >
+                                        {appointment.status}
+                                      </td>
                                     </tr>
                                   )
                                 )}
@@ -2566,6 +2586,68 @@ const printDisabled = !hasCompletedLabItem;
           </div>
         </div>
       </div>
+      {/* Modal for missing details */}
+      {modalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: -100,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '24px',
+            borderRadius: '8px',
+            maxWidth: '500px',
+            width: '100%'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '16px', fontWeight: 'bold' }}>
+              {modalType === 'pharmacy' ? 'No Pharmacy Details Are Found' :
+                modalType === 'lab' ? 'No Lab Details Are Found' :
+                  'No Clinic Details Are Found'}
+            </h3>
+            <p style={{ marginBottom: '24px' }}>
+              {modalMessage.replace(/^No (Pharmacy|Lab|Clinic) Details Are Found\.?\s*/i, '')}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                onClick={() => setModalOpen(false)}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '4px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setModalOpen(false);
+                  window.location.href = '/doctor/doctorPages/ClinicManagement';
+                }}
+                style={{
+                  padding: '8px 16px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                Go to Clinic Management
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
