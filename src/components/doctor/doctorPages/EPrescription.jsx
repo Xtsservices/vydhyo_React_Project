@@ -54,8 +54,8 @@ const EPrescription = () => {
       clinicAddress: "",
       contactNumber: "",
       appointmentDate: patientData?.appointmentDate || "",
-    appointmentStartTime: patientData?.appointmentTime || "",
-    appointmentEndTime: patientData?.appointmentEndTime || "",
+      appointmentStartTime: patientData?.appointmentTime || "",
+      appointmentEndTime: patientData?.appointmentEndTime || "",
     },
     patientInfo: {
       patientId: patientData?.patientId || "",
@@ -86,11 +86,11 @@ const EPrescription = () => {
       );
       if (response.data.success && response.data.data && response.data.data.length > 0) {
         const prescription = response.data.data[0];
-        
+
         const bpParts = prescription.vitals?.bp?.split('/') || [];
         const bpSystolic = bpParts[0] || "";
         const bpDiastolic = bpParts[1] || "";
-        
+
         setFormData((prev) => ({
           ...prev,
           doctorInfo: {
@@ -214,12 +214,12 @@ const EPrescription = () => {
     }
   }, [doctorData, formData?.doctorInfo?.selectedClinicId]);
 
-  function transformEprescriptionData(formData,type) {
+  function transformEprescriptionData(formData, type) {
     const { doctorInfo, patientInfo, vitals, diagnosis, advice } = formData;
     const appointmentId = patientData?.appointmentId;
 
     return {
-      type:type,
+      type: type,
       appointmentId: appointmentId,
       userId: patientInfo.patientId,
       doctorId: doctorInfo.doctorId,
@@ -251,21 +251,21 @@ const EPrescription = () => {
         testsNote: diagnosis.testNotes || null,
         selectedTests: Array.isArray(diagnosis.selectedTests)
           ? diagnosis.selectedTests.map((test) => ({
-              testName: test.testName,
-              testInventoryId: test.testInventoryId,
-            }))
+            testName: test.testName,
+            testInventoryId: test.testInventoryId,
+          }))
           : [],
         medications: Array.isArray(diagnosis.medications)
           ? diagnosis.medications.map((med) => ({
-              medInventoryId: med.medInventoryId,
-              medName: med.medName,
-              quantity: med.quantity,
-              medicineType: med.medicineType,
-              dosage: med.dosage,
-              duration: med.duration,
-              timings: med.timings,
-              frequency: med.frequency,
-            }))
+            medInventoryId: med.medInventoryId,
+            medName: med.medName,
+            quantity: med.quantity,
+            medicineType: med.medicineType,
+            dosage: med.dosage,
+            duration: med.duration,
+            timings: med.timings,
+            frequency: med.frequency,
+          }))
           : [],
       },
       advice: {
@@ -280,23 +280,23 @@ const EPrescription = () => {
 
   const handlePrescriptionAction = async (type, selectedClinic) => {
     if (!validateCurrentTab()) return;
-    
+
     try {
-      const formattedData = transformEprescriptionData(formData,type);
+      const formattedData = transformEprescriptionData(formData, type);
       const response = await apiPost("/pharmacy/addPrescription", formattedData);
 
       if (response?.status === 201) {
-          if (response.data.data.warnings && !response.data.data.warnings.length > 0) {
- const successMessage = type === "save" 
-        ? "Prescription saved successfully" 
-        : "Prescription successfully added";
-      
-      toast.success(successMessage);
-      console.log("Prescription Response:", response);
+        if (response.data.data.warnings && !response.data.data.warnings.length > 0) {
+          const successMessage = type === "save"
+            ? "Prescription saved successfully"
+            : "Prescription successfully added";
+
+          toast.success(successMessage);
+          console.log("Prescription Response:", response);
         }
-      // Change this line to show different messages based on action type
-     
-      // Display warnings if present
+        // Change this line to show different messages based on action type
+
+        // Display warnings if present
         if (response.data.data.warnings && response.data.data.warnings.length > 0) {
           response.data.data.warnings.forEach((warning) => {
             toast.warn(warning.message);
@@ -307,9 +307,9 @@ const EPrescription = () => {
         } else if (type === "whatsapp") {
           const prescriptionId = response?.data?.prescriptionId;
           formData.prescriptionId = prescriptionId;
-          formData.patientInfo.mobileNumber = "9052519059"
+          // formData.patientInfo.mobileNumber = "9052519059"
 
-      const uploadResponse = await apiPost("/pharmacy/addattachprescription",{formData,selectedClinic} );
+          const uploadResponse = await apiPost("/pharmacy/addattachprescription", { formData, selectedClinic });
           if (uploadResponse?.status === 200) {
             toast.success("Attachment uploaded successfully");
             const message = `Here's my medical prescription from ${formData.doctorInfo?.clinicName || "Clinic"}\n` +
@@ -323,11 +323,11 @@ const EPrescription = () => {
           }
         } else if (type === "save") {
           // if (!response.data.data.warnings || response.data.data.warnings.length === 0) {
-            setTimeout(() => {
-              navigate("/doctor/doctorPages/Appointments");
-            }, 3000);
+          setTimeout(() => {
+            navigate("/doctor/doctorPages/Appointments");
+          }, 3000);
           // }
-        
+
         }
       } else {
         toast.error(response?.data?.message || "Failed to add prescription");
@@ -390,7 +390,7 @@ const EPrescription = () => {
 
       return !hasInvalidTimings;
     }
-    
+
     // If no medications, validation passes
     return true;
   };
@@ -404,7 +404,7 @@ const EPrescription = () => {
 
   const handleConfirm = async () => {
     if (!validateCurrentTab()) return;
-    
+
     try {
       setActiveTab("preview");
       setShowPreview(true);
@@ -416,7 +416,7 @@ const EPrescription = () => {
 
   const handleNext = () => {
     if (!validateCurrentTab()) return;
-    
+
     const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
     if (currentIndex < tabs.length - 2) {
       setActiveTab(tabs[currentIndex + 1].id);
@@ -425,7 +425,7 @@ const EPrescription = () => {
 
   const handleTabChange = (tabId) => {
     if (!validateCurrentTab()) return;
-    
+
     if (tabId === "preview") {
       setShowPreview(true);
     } else {
@@ -498,11 +498,10 @@ const EPrescription = () => {
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`eprescription-tab ${
-                  activeTab === tab.id
+                className={`eprescription-tab ${activeTab === tab.id
                     ? "eprescription-tab-active"
                     : "eprescription-tab-inactive"
-                }`}
+                  }`}
                 disabled={
                   tab.id === "preview" && activeTab !== "advice" && !showPreview
                 }
