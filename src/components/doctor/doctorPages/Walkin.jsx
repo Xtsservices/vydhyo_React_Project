@@ -339,11 +339,11 @@ const validateAge = useCallback((age) => {
 const createPatient = useCallback(async () => {
   try {
 
-    // if (!patientData.age){
-    //   return {
-    //       message: "Age is required",
-    //     };
-    // }
+    if (!patientData.age){
+      return {
+          message: "Age is required",
+        };
+    }
     // Parse age if it's in format like "6m", "2y", "15d"
     let ageValue 
     if (patientData.age) {
