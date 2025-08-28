@@ -428,9 +428,7 @@ const DoctorProfileView = () => {
           const formDataObj = new FormData();
           formDataObj.append('id', doctorData?.userId || '');
           
-          formDataObj.append('name', Array.isArray(values.specialization) 
-            ? values.specialization.join(',') 
-            : values.specialization || '');
+          formDataObj.append('name',  doctorData.specialization[0].name);
           
           formDataObj.append('experience', values.experience || '');
           
@@ -957,7 +955,7 @@ const DoctorProfileView = () => {
                   />
                 </Form.Item>
                 
-                <Form.Item
+                {/* <Form.Item
                   label="Specializations"
                   name="specialization"
                   rules={[{ required: true, message: 'Please select at least one specialization' }]}
@@ -973,7 +971,7 @@ const DoctorProfileView = () => {
                       value: s,
                     }))}
                   />
-                </Form.Item>
+                </Form.Item> */}
                 
                 <Form.Item
                   label="Experience (Years)"

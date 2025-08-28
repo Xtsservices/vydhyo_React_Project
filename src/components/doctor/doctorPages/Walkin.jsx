@@ -301,20 +301,25 @@ const validateAge = useCallback((age) => {
 }, []);
 
 // Use it in your validation logic
-if (patientData.age && !validateAge(patientData.age)) {
+if (patientData?.age && !validateAge(patientData?.age)) {
+  console.log("123")
   errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
 }
 
 const createPatient = useCallback(async () => {
   try {
+
+    // if (!patientData.age){
+    //   return {
+    //       message: "Age is required",
+    //     };
+    // }
     // Parse age if it's in format like "6m", "2y", "15d"
-    let ageValue = "0";
+    let ageValue 
     if (patientData.age) {
-      if (patientData.age.includes('m') || patientData.age.includes('y') || patientData.age.includes('d')) {
-        ageValue = patientData.age; // Keep as is for formatted age
-      } else {
+     
         ageValue = patientData.age; // Plain number
-      }
+      
     } else if (patientData.dateOfBirth) {
       ageValue = calculateAge(patientData.dateOfBirth);
     }
@@ -1234,7 +1239,7 @@ console.log("first2")
               <Text strong>Subtotal</Text>
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
-              <Text>₹{consultationFee?.toFixed(2) || "0.00"}</Text>
+              <Text>₹{consultationFee?.toFixed(2) || "0.00"} {consultationFee ? consultationFee-discount : consultationFee}</Text>
             </Col>
             <Col span={12}>
               <Text strong>Discount</Text>
@@ -1252,7 +1257,7 @@ console.log("first2")
                 ₹
                 {(consultationFee && discountType === "percentage"
                   ? consultationFee - (consultationFee * discount) / 100
-                  : consultationFee - discount
+                  : (consultationFee ? consultationFee - discount : consultationFee)
                 )?.toFixed(2) || "0.00"}
               </Title>
             </Col>
