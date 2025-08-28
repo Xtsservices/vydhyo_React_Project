@@ -81,7 +81,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
         }
     };
 
-    console.log("formData from patient tab", formData);
+    console.log("formData from patient tab", localData.age);
 
     return (
         <div className="patient-details-container" style={{ padding: "16px" }}>
@@ -125,7 +125,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
                             Age
                         </label>
                         <input
-                            type="number"
+                            type="text"
                             value={localData.age}
                             className="patient-details-input"
                             readOnly
