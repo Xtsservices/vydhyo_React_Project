@@ -119,7 +119,7 @@ const MyPatients = () => {
           ? data.data
           : [data.data];
 
-        console.log(appointments)
+        console.log(formattedAppointments, "12")
 
         const patientsDataUnsorted = formattedAppointments.map((appointment) => ({
           id:
@@ -127,9 +127,7 @@ const MyPatients = () => {
           appointmentId: appointment.appointmentId || "N/A",
           name: appointment.patientName || "N/A",
           gender: appointment.patientDetails?.gender || "N/A",
-          age: appointment.patientDetails?.dob
-            ? calculateAge(appointment.patientDetails.dob)
-            : appointment?.patientDetails?.age,
+          age:  appointment?.patientDetails?.age || calculateAge(appointment?.patientDetails?.dob),
           phone: appointment.patientDetails?.mobile || "N/A",
           lastVisit: appointment.appointmentDate || "N/A",
           appointmentType: appointment.appointmentType || "N/A",
