@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Printer, CheckCircle, Loader2, Calendar, Clock } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import { apiGet } from "../../api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -13,7 +11,6 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
   const formatDate = (dateString) => {
     if (!dateString) return null; // Return null instead of "Date not provided"
     const date = new Date(dateString);
@@ -24,147 +21,11 @@ const Preview = ({ formData, handlePrescriptionAction }) => {
     });
   };
 
-  const generatePDF = async () => {
-    try {
-      const input = document.getElementById("prescription-container");
-      if (!input) {
-        throw new Error("Could not find the prescription container element");
-      }
 
-      // Store original styles
-      const originalStyles = {
-        boxShadow: input.style.boxShadow,
-        padding: input.style.padding,
-        margin: input.style.margin,
-        overflow: input.style.overflow,
-        maxHeight: input.style.maxHeight,
-        height: input.style.height,
-      };
-
-      const printButtonContainer = input.querySelector(".print-button-container");
-      const originalButtonDisplay = printButtonContainer?.style.display;
-      if (printButtonContainer) {
-        printButtonContainer.style.display = "none";
-      }
-
-      // Apply minimal styles for rendering
-      input.style.boxShadow = "none";
-      input.style.overflow = "visible";
-      input.style.maxHeight = "none";
-      input.style.height = "auto";
-
-      // Wait for images to load
-      const images = input.querySelectorAll("img");
-      const loadPromises = Array.from(images).map((img) => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-      });
-      await Promise.all(loadPromises);
-
-      // Ensure rendering is complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // Initialize jsPDF
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      // Capture the entire container
-      const canvas = await html2canvas(input, {
-        scale: 2,
-        useCORS: true,
-        logging: true,
-        backgroundColor: "#ffffff",
-        scrollY: -window.scrollY,
-        windowWidth: document.documentElement.scrollWidth,
-        windowHeight: input.scrollHeight,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-      // Calculate the number of pages
-      const pageContentHeight = pageHeight;
-      const totalPages = Math.ceil(pdfHeight / pageContentHeight);
-
-      // Render each page with clipping
-      for (let page = 0; page < totalPages; page++) {
-        const srcY = page * pageContentHeight * (imgProps.height / pdfHeight);
-        const srcHeight = Math.min(
-          pageContentHeight * (imgProps.height / pdfHeight),
-          imgProps.height - srcY
-        );
-
-        // Create a temporary canvas to clip the image
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = imgProps.width;
-        tempCanvas.height = srcHeight;
-        const ctx = tempCanvas.getContext("2d");
-        ctx.drawImage(
-          canvas,
-          0,
-          srcY,
-          imgProps.width,
-          srcHeight,
-          0,
-          0,
-          imgProps.width,
-          srcHeight
-        );
-
-        const pageImgData = tempCanvas.toDataURL("image/png");
-
-        // Add clipped image to PDF
-        pdf.addImage(
-          pageImgData,
-          "PNG",
-          0,
-          0,
-          pdfWidth,
-          (srcHeight * pdfWidth) / imgProps.width,
-          null,
-          "FAST"
-        );
-
-        // Add new page if more content remains
-        if (page < totalPages - 1) {
-          pdf.addPage();
-        }
-      }
-
-      // Restore original styles
-      Object.assign(input.style, originalStyles);
-      if (printButtonContainer) {
-        printButtonContainer.style.display = originalButtonDisplay;
-      }
-
-      const appointmentId = formData?.patientInfo?.appointmentId || "unknown";
-      const pdfBlob = pdf.output("blob", { filename: `${appointmentId}.pdf` });
-
-      return pdfBlob;
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate prescription PDF");
-      throw error;
-    }
-  };
 
   const handleWhatsAppClick = async () => {
-    try {
-      const pdfBlob = await generatePDF();
-      if (!pdfBlob) {
-        throw new Error("PDF Blob generation failed");
-      }
-      await handlePrescriptionAction("whatsapp", pdfBlob);
+    try {      
+      await handlePrescriptionAction("whatsapp", selectedClinic);
     } catch (error) {
       console.error("Failed to generate PDF for WhatsApp:", error);
       toast.error("Failed to generate prescription for WhatsApp");
