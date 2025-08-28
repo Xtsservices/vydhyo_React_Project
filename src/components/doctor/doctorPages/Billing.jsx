@@ -400,7 +400,7 @@ const [loadingPatients, setLoadingPatients] = useState({});
           pagination.pageSize,
           searchTerm
         );
-        toast.success(
+        alert(
           `Payment processed successfully for ${
             type === "all"
               ? "all items"
@@ -576,7 +576,8 @@ if (completedMedicines.length > 0) {
   (!pharmacyDetails.pharmacyName && !pharmacyDetails.pharmacyAddress); // Relaxed condition
 
 if (isPharmacyDetailsEmptyOrNull) {
-  toast?.error?.("Please fill the pharmacy details (name or address) to generate a bill.");
+  alert("Please fill the pharmacy details to generate a bill.");
+  // toast?.error?.("Please fill the pharmacy details (name or address) to generate a bill.");
   return;
 }
 
@@ -654,7 +655,8 @@ if (isPharmacyDetailsEmptyOrNull) {
     );
 
   if (isLabDetailsEmptyOrNull) {
-    toast?.error?.("Please fill the lab details to generate a bill.");
+    alert("Please fill the lab details to generate a bill.");
+    // toast?.error?.("Please fill the lab details to generate a bill.");
     return;
   }
 
@@ -728,9 +730,10 @@ if (isPharmacyDetailsEmptyOrNull) {
         );
 
       if (isAddressEmptyOrNull) {
-        toast?.error?.(
-          "Please fill the appointment address details to generate a bill."
-        );
+        alert("Please fill the appointment address details (clinic name or address) to generate a bill.");
+        // toast?.error?.(
+        //   "Please fill the appointment address details to generate a bill."
+        // );
         return;
       }
 
@@ -1565,7 +1568,7 @@ const printDisabled = !hasCompletedPharmacyItem;
                                             color: "#6b7280",
                                           }}
                                         >
-                                          Sgst
+                                          SGST
                                         </th>
                                         <th
                                           style={{
@@ -1576,7 +1579,7 @@ const printDisabled = !hasCompletedPharmacyItem;
                                             color: "#6b7280",
                                           }}
                                         >
-                                          Cgst
+                                          CGST
                                         </th>
                                         <th
                                           style={{

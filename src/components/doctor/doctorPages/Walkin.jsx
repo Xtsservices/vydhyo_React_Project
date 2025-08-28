@@ -180,8 +180,28 @@ const calculateAge = useCallback((dob) => {
   return ageText.trim();
 }, [validateDOB]);
 
-  const formatTimeForAPI = useCallback((timeSlot) => {
-    if (!timeSlot) return "";
+const formatTimeForDisplay = useCallback((time24h) => {
+  if (!time24h) return "";
+  
+  const [hours, minutes] = time24h.split(':');
+  const hourInt = parseInt(hours, 10);
+  
+  if (hourInt === 0) {
+    return `12:${minutes} AM`;
+  } else if (hourInt === 12) {
+    return `12:${minutes} PM`;
+  } else if (hourInt > 12) {
+    return `${hourInt - 12}:${minutes} PM`;
+  } else {
+    return `${hourInt}:${minutes} AM`;
+  }
+}, []);
+
+const formatTimeForAPI = useCallback((timeSlot) => {
+  if (!timeSlot) return "";
+  
+  // If it's already in 12-hour format (contains AM/PM), convert to 24-hour
+  if (timeSlot.includes('AM') || timeSlot.includes('PM')) {
     const [time, period] = timeSlot.split(" ");
     let [hours, minutes] = time.split(":");
     hours = parseInt(hours, 10);
@@ -193,11 +213,25 @@ const calculateAge = useCallback((dob) => {
     }
 
     return `${hours.toString().padStart(2, "0")}:${minutes}`;
-  }, []);
+  }
+  
+  // If it's already in 24-hour format, return as is
+  return timeSlot;
+}, []);
+const validateAge = useCallback((age) => {
+  if (!age) return false;
+  // Valid formats: 6m, 2y, 15d, 1y 2m, 3m 15d, etc.
+  return /^(\d+[myd])(\s\d+[myd])*$/i.test(age.replace(/\s+/g, ' ').trim());
+}, []);
 
   const validateAppointmentData = useCallback(() => {
     const errors = {};
     let isValid = true;
+
+    if (patientData.age && !validateAge(patientData.age)) {
+    errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
+    isValid = false;
+  }
 
     if (!patientCreated) {
       errors.patient = "Please create or find a patient first";
@@ -267,6 +301,7 @@ const calculateAge = useCallback((dob) => {
     validateDOB,
     validateName,
     validatePhoneNumber,
+    validateAge
   ]);
 
   const searchUser = useCallback(async (mobile) => {
@@ -293,18 +328,13 @@ const calculateAge = useCallback((dob) => {
     }
   }, []);
 
-// Update the validateAge function
-const validateAge = useCallback((age) => {
-  if (!age) return false;
-  // Valid formats: 6m, 2y, 15d, 1y 2m, 3m 15d, etc.
-  return /^(\d+[myd])(\s\d+[myd])*$/i.test(age.replace(/\s+/g, ' ').trim());
-}, []);
+
 
 // Use it in your validation logic
-if (patientData?.age && !validateAge(patientData?.age)) {
+// if (patientData?.age && !validateAge(patientData?.age)) {
   console.log("123")
-  errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
-}
+//   errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
+// }
 
 const createPatient = useCallback(async () => {
   try {
@@ -577,6 +607,10 @@ const handleInputChange = useCallback((field, value) => {
     ];
     const errors = {};
 
+    if (patientData.age && !validateAge(patientData.age)) {
+    errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
+  }
+
     requiredFields.forEach((field) => {
       if (!patientData[field]) errors[field] = "This field is required";
     });
@@ -609,7 +643,7 @@ const handleInputChange = useCallback((field, value) => {
     } finally {
       setIsCreatingPatient(false);
     }
-  }, [patientData, validatePhoneNumber, validateDOB, createPatient]);
+  }, [patientData, validatePhoneNumber, validateAge, createPatient]);
 
   const handleContinueToPayment = useCallback(async () => {
     if (!validateAppointmentData()) return;
@@ -800,15 +834,17 @@ console.log("first2")
       console.log("response122334",response)
       const data = response.data;
 
-      if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
-        const availableSlots = data.data.slots     
-        .filter((slot) => slot.status === "available")
-  .map((slot) => formatTimeForAPI(slot.time)) 
-  .filter((formattedTime) => {
-    const slotMoment = moment(`${selectedDate} ${formattedTime}`, 'YYYY-MM-DD HH:mm');
-    return slotMoment.isAfter(moment());
-  });
-        setTimeSlots(availableSlots);
+     if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
+    const availableSlots = data.data.slots     
+      .filter((slot) => slot.status === "available")
+      .map((slot) => slot.time)  // Keep as 24-hour format for API
+      .filter((time) => {
+        const slotMoment = moment(`${selectedDate} ${time}`, 'YYYY-MM-DD HH:mm');
+        return slotMoment.isAfter(moment());
+      });
+    
+    setTimeSlots(availableSlots);
+
         if (!availableSlots.includes(patientData.selectedTimeSlot)) {
           setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
         }
@@ -1154,11 +1190,12 @@ console.log("first2")
             allowClear
             style={{ width: "100%", marginTop: 8 }}
           >
-            {timeSlots.map((slot) => (
-              <Option key={slot} value={slot}>
-                {slot}
-              </Option>
-            ))}
+           // In the time slots dropdown options:
+{timeSlots.map((slot) => (
+  <Option key={slot} value={slot}>
+    {formatTimeForDisplay(slot)}  {/* Use the display formatter here */}
+  </Option>
+))}
           </Select>
           {fieldErrors.time && <Text type="danger">{fieldErrors.time}</Text>}
         </Col>

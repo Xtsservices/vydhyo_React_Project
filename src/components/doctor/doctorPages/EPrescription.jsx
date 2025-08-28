@@ -285,13 +285,22 @@ const EPrescription = () => {
       const response = await apiPost("/pharmacy/addPrescription", formattedData);
 
       if (response?.status === 201) {
-      // Change this line to show different messages based on action type
-      const successMessage = type === "save" 
+          if (response.data.data.warnings && !response.data.data.warnings.length > 0) {
+ const successMessage = type === "save" 
         ? "Prescription saved successfully" 
         : "Prescription successfully added";
       
       toast.success(successMessage);
       console.log("Prescription Response:", response);
+        }
+      // Change this line to show different messages based on action type
+     
+      // Display warnings if present
+        if (response.data.data.warnings && response.data.data.warnings.length > 0) {
+          response.data.data.warnings.forEach((warning) => {
+            toast.warn(warning.message);
+          });
+        }
         if (type === "print") {
           window.print();
         } else if (type === "whatsapp") {
@@ -349,9 +358,12 @@ const EPrescription = () => {
             toast.error(uploadResponse?.data?.message || "Failed to upload attachment");
           }
         } else if (type === "save") {
-          setTimeout(() => {
-            navigate("/doctor/doctorPages/Appointments");
-          }, 3000);
+          // if (!response.data.data.warnings || response.data.data.warnings.length === 0) {
+            setTimeout(() => {
+              navigate("/doctor/doctorPages/Appointments");
+            }, 3000);
+          // }
+        
         }
       } else {
         toast.error(response?.data?.message || "Failed to add prescription");
