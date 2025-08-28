@@ -1276,7 +1276,7 @@ console.log("first2")
               <Text strong>Subtotal</Text>
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
-              <Text>₹{consultationFee?.toFixed(2) || "0.00"} {consultationFee ? consultationFee-discount : consultationFee}</Text>
+              <Text>₹{consultationFee?.toFixed(2) || "0.00"} </Text>
             </Col>
             <Col span={12}>
               <Text strong>Discount</Text>
