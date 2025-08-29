@@ -1284,7 +1284,9 @@ export default function ClinicManagement() {
         </div>
 
         <div className="clinic-table-container">
+
   <Spin spinning={loading}>
+
             <table className="clinic-table">
               <thead className="clinic-table-header">
                 <tr>
@@ -1417,7 +1419,9 @@ export default function ClinicManagement() {
                 )}
               </tbody>
             </table>
+
           </Spin>
+
         </div>
 
         {showModal && (
