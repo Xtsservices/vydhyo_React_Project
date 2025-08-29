@@ -619,6 +619,14 @@
   border-color: #2563eb;
 }
 
+.history-row {
+  display: flex;
+  flex-wrap: wrap; /* Allows items to wrap to new lines if content is too wide */
+  gap: 16px; /* Adds space between items */
+  /* If needed, add: */
+  justify-content: flex-start; /* Aligns items to the left */
+}
+
 /* MedicalPrescriptionForm specific styles */
 .prescription-container {
   max-width: 800px;
@@ -720,6 +728,8 @@
 
 .detail-item {
   font-size: 12px;
+  flex: 1 1 45%; /* Allows growth but starts at ~half width; adjust as needed */
+  max-width: 100%; /* Prevents overflow beyond parent */
 }
 
 .detail-label {
@@ -730,6 +740,11 @@
 .detail-value {
   font-weight: 500;
   color: #2c3e50;
+  white-space: pre-wrap; /* Preserves whitespace but allows wrapping */
+  overflow-wrap: break-word; /* Breaks long words at arbitrary points if needed */
+  word-break: break-word; /* Fallback for older browsers; breaks words to prevent overflow */
+  hyphens: auto; /* Optional: Adds hyphenation for better readability */
+  /* Existing styles */
 }
 
 .history-grid {
@@ -887,6 +902,10 @@
   font-size: 11px;
   border: 1px solid #ffeaa7;
   font-weight: 500;
+  white-space: pre-wrap; /* Preserves whitespace but allows wrapping */
+  overflow-wrap: break-word; /* Breaks long words at arbitrary points if needed */
+  word-break: break-word; /* Fallback for older browsers; breaks words to prevent overflow */
+  hyphens: auto; /* Optional: Adds hyphenation for better readability */
 }
 
 .medication-table {
@@ -922,6 +941,10 @@
   align-items: flex-start;
   margin-bottom: 4px;
   color: #2c3e50;
+  white-space: pre-wrap; /* Preserves whitespace but allows wrapping */
+  overflow-wrap: break-word; /* Breaks long words at arbitrary points if needed */
+  word-break: break-word; /* Fallback for older browsers; breaks words to prevent overflow */
+  hyphens: auto; /* Optional: Adds hyphenation for better readability */
 }
 
 .bullet {
@@ -1214,12 +1237,18 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   overflow: hidden;
+  white-space: pre-wrap; /* Preserves whitespace but allows wrapping */
+  overflow-wrap: break-word; /* Breaks long words at arbitrary points if needed */
+  word-break: break-word; /* Fallback for older browsers; breaks words to prevent overflow */
+  hyphens: auto; /* Optional: Adds hyphenation for better readability */
 }
 
 /* Responsive adjustments */
 @media print {
-  .print-button-container {
-    display: none;
+  .detail-value {
+    white-space: pre-wrap !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
   }
 }
 
@@ -1310,7 +1339,6 @@
   min-width: 120px;
 }
 
-/* Print Styles */
 /* Print Styles */
 @media print {
   @page {

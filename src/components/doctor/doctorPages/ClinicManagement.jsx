@@ -21,7 +21,7 @@ export default function ClinicManagement() {
     libraries,
   });
   const hasfetchClinics = useRef(false);
-
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showHeaderModal, setShowHeaderModal] = useState(false);
@@ -1283,138 +1283,145 @@ export default function ClinicManagement() {
         </div>
 
         <div className="clinic-table-container">
-          <table className="clinic-table">
-            <thead className="clinic-table-header">
-              <tr>
-                <th className="clinic-table-th">Clinic Name</th>
-                <th className="clinic-table-th">Type</th>
-                <th className="clinic-table-th">Address</th>
-                <th className="clinic-table-th">Contact</th>
-                <th className="clinic-table-th">Header Image</th>
-                <th className="clinic-table-th">Pharmacy</th>
-                <th className="clinic-table-th">Lab</th>
-                <th className="clinic-table-th">Status</th>
-                <th className="clinic-table-th">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredClinics.length > 0 ? (
-                filteredClinics.map((clinic) => (
-                  <tr key={clinic._id} className="clinic-table-tr">
-                    <td className="clinic-table-td clinic-name">
-                      {clinic.clinicName}
-                    </td>
-                    <td className="clinic-table-td">{clinic.type}</td>
-                    <td className="clinic-table-td">
-                      {clinic.address}, {clinic.city}, {clinic.state},{" "}
-                      {clinic.country} {clinic.pincode}
-                    </td>
-                    <td className="clinic-table-td">{clinic.mobile}</td>
-                    <td className="clinic-table-td">
-                      {clinic.headerImage ? (
-                        <button
-                          className="clinic-view-image-button"
-                          title="View Header Image"
-                          onClick={() =>
-                            handleViewImage(
-                              clinic.headerImage,
-                              clinic.digitalSignature,
-                              clinic.pharmacyHeaderImage, // This is what you're currently passing
-                              clinic.labHeaderImage
-                            )
-                          }
-                        >
-                          <Eye size={16} />
-                        </button>
-                      ) : (
-                        <button
-                          className="clinic-upload-button"
-                          title="Upload Header"
-                          onClick={() => handleUploadHeader(clinic)}
-                        >
-                          <Upload size={16} />
-                        </button>
-                      )}
-                    </td>
-                    <td className="clinic-table-td">
-                      {clinic.pharmacyName ? (
-                        <button
-                          className="clinic-view-image-button"
-                          title="View Pharmacy Details"
-                          onClick={() => handleViewPharmacyDetails(clinic)}
-                        >
-                          <Eye size={16} />
-                        </button>
-                      ) : (
-                        <button
-                          className="clinic-upload-button"
-                          title="Add Pharmacy Details"
-                          onClick={() => handleAddPharmacy(clinic)}
-                        >
-                          <Plus size={16} />
-                        </button>
-                      )}
-                    </td>
-                    <td className="clinic-table-td">
-                      {clinic.labName ? (
-                        <button
-                          className="clinic-view-image-button"
-                          title="View Lab Details"
-                          onClick={() => handleViewLabDetails(clinic)}
-                        >
-                          <Eye size={16} />
-                        </button>
-                      ) : (
-                        <button
-                          className="clinic-upload-button"
-                          title="Add Lab Details"
-                          onClick={() => handleAddLab(clinic)}
-                        >
-                          <Plus size={16} />
-                        </button>
-                      )}
-                    </td>
-                    <td className="clinic-table-td">
-                      <span
-                        className="clinic-status-badge"
-                        style={getStatusStyle(clinic.status)}
-                      >
-                        {clinic.status}
-                      </span>
-                    </td>
-                    <td className="clinic-table-td">
-                      <div className="clinic-action-buttons">
-                        <button
-                          className="clinic-edit-button"
-                          title="Edit"
-                          onClick={() => handleEditClinic(clinic)}
-                        >
-                          <Edit size={16} />
-                        </button>
-                        {user?.role === "doctor" && (
+          {loading ? (
+            <div className="clinic-loading-container">
+              <div className="clinic-loading-spinner"></div>
+              <p>Loading clinics...</p>
+            </div>
+          ) : (
+            <table className="clinic-table">
+              <thead className="clinic-table-header">
+                <tr>
+                  <th className="clinic-table-th">Clinic Name</th>
+                  <th className="clinic-table-th">Type</th>
+                  <th className="clinic-table-th">Address</th>
+                  <th className="clinic-table-th">Contact</th>
+                  <th className="clinic-table-th">Header Image</th>
+                  <th className="clinic-table-th">Pharmacy</th>
+                  <th className="clinic-table-th">Lab</th>
+                  <th className="clinic-table-th">Status</th>
+                  <th className="clinic-table-th">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredClinics.length > 0 ? (
+                  filteredClinics.map((clinic) => (
+                    <tr key={clinic._id} className="clinic-table-tr">
+                      <td className="clinic-table-td clinic-name">
+                        {clinic.clinicName}
+                      </td>
+                      <td className="clinic-table-td">{clinic.type}</td>
+                      <td className="clinic-table-td">
+                        {clinic.address}, {clinic.city}, {clinic.state},{" "}
+                        {clinic.country} {clinic.pincode}
+                      </td>
+                      <td className="clinic-table-td">{clinic.mobile}</td>
+                      <td className="clinic-table-td">
+                        {clinic.headerImage ? (
                           <button
-                            className="clinic-delete-button"
-                            title="Delete"
-                            onClick={() => handleDeleteClinic(clinic.addressId)}
+                            className="clinic-view-image-button"
+                            title="View Header Image"
+                            onClick={() =>
+                              handleViewImage(
+                                clinic.headerImage,
+                                clinic.digitalSignature,
+                                clinic.pharmacyHeaderImage, // This is what you're currently passing
+                                clinic.labHeaderImage
+                              )
+                            }
                           >
-                            <Trash2 size={16} />
+                            <Eye size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            className="clinic-upload-button"
+                            title="Upload Header"
+                            onClick={() => handleUploadHeader(clinic)}
+                          >
+                            <Upload size={16} />
                           </button>
                         )}
-                      </div>
+                      </td>
+                      <td className="clinic-table-td">
+                        {clinic.pharmacyName ? (
+                          <button
+                            className="clinic-view-image-button"
+                            title="View Pharmacy Details"
+                            onClick={() => handleViewPharmacyDetails(clinic)}
+                          >
+                            <Eye size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            className="clinic-upload-button"
+                            title="Add Pharmacy Details"
+                            onClick={() => handleAddPharmacy(clinic)}
+                          >
+                            <Plus size={16} />
+                          </button>
+                        )}
+                      </td>
+                      <td className="clinic-table-td">
+                        {clinic.labName ? (
+                          <button
+                            className="clinic-view-image-button"
+                            title="View Lab Details"
+                            onClick={() => handleViewLabDetails(clinic)}
+                          >
+                            <Eye size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            className="clinic-upload-button"
+                            title="Add Lab Details"
+                            onClick={() => handleAddLab(clinic)}
+                          >
+                            <Plus size={16} />
+                          </button>
+                        )}
+                      </td>
+                      <td className="clinic-table-td">
+                        <span
+                          className="clinic-status-badge"
+                          style={getStatusStyle(clinic.status)}
+                        >
+                          {clinic.status}
+                        </span>
+                      </td>
+                      <td className="clinic-table-td">
+                        <div className="clinic-action-buttons">
+                          <button
+                            className="clinic-edit-button"
+                            title="Edit"
+                            onClick={() => handleEditClinic(clinic)}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          {user?.role === "doctor" && (
+                            <button
+                              className="clinic-delete-button"
+                              title="Delete"
+                              onClick={() => handleDeleteClinic(clinic.addressId)}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="clinic-table-td no-clinics">
+                      {clinics.length === 0
+                        ? "No active clinics found"
+                        : "No matching active clinics found"}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="9" className="clinic-table-td no-clinics">
-                    {clinics.length === 0
-                      ? "No active clinics found"
-                      : "No matching active clinics found"}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {showModal && (
@@ -1446,9 +1453,8 @@ export default function ClinicManagement() {
                     type="text"
                     name="clinicName"
                     placeholder="Enter clinic name"
-                    className={`clinic-form-input ${
-                      errors.clinicName ? "error" : ""
-                    }`}
+                    className={`clinic-form-input ${errors.clinicName ? "error" : ""
+                      }`}
                     value={formData.clinicName}
                     onChange={handleInputChange}
                     aria-invalid={!!errors.clinicName}
@@ -1475,9 +1481,8 @@ export default function ClinicManagement() {
                       type="text"
                       name="address"
                       placeholder="Enter address or select on map"
-                      className={`clinic-form-input ${
-                        errors.address ? "error" : ""
-                      }`}
+                      className={`clinic-form-input ${errors.address ? "error" : ""
+                        }`}
                       value={formData.address}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.address}
@@ -1495,9 +1500,8 @@ export default function ClinicManagement() {
                       type="text"
                       name="city"
                       placeholder="Enter city"
-                      className={`clinic-form-input ${
-                        errors.city ? "error" : ""
-                      }`}
+                      className={`clinic-form-input ${errors.city ? "error" : ""
+                        }`}
                       value={formData.city}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.city}
@@ -1512,9 +1516,8 @@ export default function ClinicManagement() {
                       type="text"
                       name="state"
                       placeholder="Enter state"
-                      className={`clinic-form-input ${
-                        errors.state ? "error" : ""
-                      }`}
+                      className={`clinic-form-input ${errors.state ? "error" : ""
+                        }`}
                       value={formData.state}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.state}
@@ -1532,9 +1535,8 @@ export default function ClinicManagement() {
                       type="text"
                       name="mobile"
                       placeholder="Enter mobile number"
-                      className={`clinic-form-input ${
-                        errors.mobile ? "error" : ""
-                      }`}
+                      className={`clinic-form-input ${errors.mobile ? "error" : ""
+                        }`}
                       value={formData.mobile}
                       maxLength={10}
                       onChange={(e) => {
@@ -1563,19 +1565,19 @@ export default function ClinicManagement() {
                       className="clinic-form-input"
                       value={formData.pincode}
                       maxLength={6}
-                       onChange={(e) => {
-    const value = e.target.value;
-    if (/^\d*$/.test(value)) {
-      setFormData({ ...formData, pincode: value });
-    }
-  }}
-  onBlur={() => {
-    if (formData.pincode.length !== 6) {
-      alert('Pincode must be exactly 6 digits');
-    }
-  }}
-                      // onChange={handleInputChange}
-                      // readOnly
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                          setFormData({ ...formData, pincode: value });
+                        }
+                      }}
+                      onBlur={() => {
+                        if (formData.pincode.length !== 6) {
+                          alert('Pincode must be exactly 6 digits');
+                        }
+                      }}
+                    // onChange={handleInputChange}
+                    // readOnly
                     />
                   </div>
                 </div>
@@ -1587,9 +1589,8 @@ export default function ClinicManagement() {
                       type="number"
                       name="latitude"
                       placeholder="Enter latitude"
-                      className={`clinic-form-input ${
-                        errors.latitude ? "error" : ""
-                      }`}
+                      className={`clinic-form-input ${errors.latitude ? "error" : ""
+                        }`}
                       value={formData.latitude}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.latitude}
@@ -1606,9 +1607,8 @@ export default function ClinicManagement() {
                       type="number"
                       name="longitude"
                       placeholder="Enter longitude"
-                      className={`clinic-form-input ${
-                        errors.longitude ? "error" : ""
-                      }`}
+                      className={`clinic-form-input ${errors.longitude ? "error" : ""
+                        }`}
                       value={formData.longitude}
                       onChange={handleInputChange}
                       aria-invalid={!!errors.longitude}
@@ -2613,7 +2613,7 @@ export default function ClinicManagement() {
                       ) {
                         toast.success(
                           bypassResponse.data?.message ||
-                            `Clinic and ${warningEntity} linked successfully`
+                          `Clinic and ${warningEntity} linked successfully`
                         );
                         setShowModal(false);
                         setShowLabModal(false);
@@ -2624,13 +2624,13 @@ export default function ClinicManagement() {
                       } else {
                         toast.warning(
                           bypassResponse.data?.message ||
-                            `Failed to link ${warningEntity}`
+                          `Failed to link ${warningEntity}`
                         );
                       }
                     } catch (err) {
                       toast.error(
                         err?.response?.data?.message ||
-                          `Failed to link ${warningEntity}`
+                        `Failed to link ${warningEntity}`
                       );
                     }
                   }}

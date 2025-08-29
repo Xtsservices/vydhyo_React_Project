@@ -138,7 +138,7 @@ const Header = () => {
                       background: "linear-gradient(135deg, #667eea, #764ba2)",
                     }}
                   />
-                  <span style={{ fontWeight: 600 }}>Doctor Login</span>
+                  <span style={{ fontWeight: 600 }}>Login</span>
                 </Button>
               </Col>
             </Row>
