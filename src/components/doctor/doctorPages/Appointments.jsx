@@ -194,6 +194,7 @@ const handleEPrescription = (appointment) => {
         );
         setIsCancelModalVisible(false);
         await getAppointments();
+        await getAppointmentsCount();
       } else {
         message.error(response.data?.message || "Failed to cancel appointment");
         toast.error(response.data?.message || "Failed to cancel appointment");
@@ -408,7 +409,7 @@ const handleEPrescription = (appointment) => {
 
   useEffect(() => {
     getAppointments(1, pagination.pageSize);
-  }, [filters, searchText]);
+  }, [filters, searchText, user]);
 
   const timeslots = async (date) => {
     const selectedDate = date;
