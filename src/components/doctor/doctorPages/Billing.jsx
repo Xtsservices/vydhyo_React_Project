@@ -1008,15 +1008,19 @@ const BillingSystem = () => {
 
     if (isCurrentlyExpanded) return; // If collapsing, no need to fetch
 
+    // Set loading state for this specific patient
+    setLoadingPatients(prev => ({ ...prev, [patientId]: true }));
+
     const patient = transformedPatients.find((p) => p.id === patientId);
     if (!patient) {
       toast.error("Patient not found.");
+      setLoadingPatients(prev => ({ ...prev, [patientId]: false }));
       return;
     }
 
     try {
       // Use the prescriptionId from the patient's data
-      const prescriptionId = patient.prescriptionId; // Ensure this field is available in transformedPatients
+      const prescriptionId = patient.prescriptionId;
       if (!prescriptionId) {
         throw new Error("Prescription ID not found for this patient.");
       }
@@ -1027,7 +1031,6 @@ const BillingSystem = () => {
 
       if (response?.status === 200 && response?.data?.data?.length > 0) {
         const detailedPatientData = response.data.data[0];
-        //console.log("Fetched detailed patient data:", detailedPatientData);
 
         // Update the patients state by replacing the specific patient's data
         setPatients((prevPatients) =>
@@ -1047,8 +1050,10 @@ const BillingSystem = () => {
         throw new Error("No detailed patient data found.");
       }
     } catch (err) {
-      //console.error("Error fetching detailed patient data:", err);
-      // toast.error("Failed to fetch detailed patient data. Please try again.");
+      console.error("Error fetching detailed patient data:", err);
+    } finally {
+      // Clear loading state regardless of success/failure
+      setLoadingPatients(prev => ({ ...prev, [patientId]: false }));
     }
   };
 
@@ -1428,19 +1433,39 @@ const BillingSystem = () => {
                     <div>
                       <button
                         onClick={() => handleViewClick(patient.id)}
+                        disabled={loadingPatients[patient.id]}
                         style={{
-                          backgroundColor: "#007bff",
+                          backgroundColor: loadingPatients[patient.id] ? "#9ca3af" : "#007bff",
                           color: "white",
                           border: "none",
                           borderRadius: "4px",
                           padding: "6px 12px",
-                          cursor: "pointer",
+                          cursor: loadingPatients[patient.id] ? "not-allowed" : "pointer",
                           fontSize: "12px",
+                          minWidth: "80px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
                         }}
                       >
-
-                        {viewModePatientId === patient.id ? "view " : "View "}
-
+                        {loadingPatients[patient.id] ? (
+                          <>
+                            <div style={{
+                              width: "12px",
+                              height: "12px",
+                              border: "2px solid transparent",
+                              borderTop: "2px solid white",
+                              borderRadius: "50%",
+                              animation: "spin 1s linear infinite"
+                            }} />
+                            Loading...
+                          </>
+                        ) : viewModePatientId === patient.id ? (
+                          "Hide Details"
+                        ) : (
+                          "View Details"
+                        )}
                       </button>
                     </div>
                   </div>
