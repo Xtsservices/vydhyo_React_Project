@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { debounce } from "../../../utils";
 import "../../stylings/invoice-styles.css";
+import { Spin, Card } from "antd";
 
 // Utility function to calculate age from DOB
 const calculateAge = (dob) => {
@@ -1058,52 +1059,30 @@ const BillingSystem = () => {
   };
 
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          fontFamily: "Arial, sans-serif",
-          padding: "20px",
-          backgroundColor: "#f8f9fa",
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+if (loading) {
+  return (
+    <div
+      style={{
+        fontFamily: "Arial, sans-serif",
+        padding: "20px",
+        backgroundColor: "#f8f9fa",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Spin 
+        size="large" 
+        tip="Loading patients..."
+        style={{ 
+          color: "#007bff",
+          fontSize: "16px"
         }}
-      >
-        <div
-          style={{
-            maxWidth: "1200px",
-            margin: "0 auto",
-            backgroundColor: "white",
-            borderRadius: "8px",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-            padding: "30px",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              border: "4px solid #007bff",
-              borderRadius: "50%",
-              width: "40px",
-              height: "40px",
-              borderTopColor: "transparent",
-              animation: "spin 1s linear infinite",
-              margin: "0 auto 20px",
-            }}
-          />
-          <p style={{ fontSize: "18px", color: "#666" }}>Loading patients...</p>
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
-      </div>
-    );
-  }
+      />
+    </div>
+  );
+}
 
   if (error) {
     return (

@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector } from "react-redux";
 import "../../stylings/ClinicManagement.css";
+import { Spin } from "antd";
 
 const libraries = ["places", "geocoding"];
 const googleAPI = "AIzaSyCrmF3351j82RVuTZbVBJ-X3ufndylJsvo";
@@ -1283,12 +1284,7 @@ export default function ClinicManagement() {
         </div>
 
         <div className="clinic-table-container">
-          {loading ? (
-            <div className="clinic-loading-container">
-              <div className="clinic-loading-spinner"></div>
-              <p>Loading clinics...</p>
-            </div>
-          ) : (
+  <Spin spinning={loading}>
             <table className="clinic-table">
               <thead className="clinic-table-header">
                 <tr>
@@ -1421,7 +1417,7 @@ export default function ClinicManagement() {
                 )}
               </tbody>
             </table>
-          )}
+          </Spin>
         </div>
 
         {showModal && (
