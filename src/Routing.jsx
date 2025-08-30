@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-
+import Unauthorized from "./components/auth/Unauthorized";
 import LayoutWrapper from "./components/LayoutWrapper";
 import DoctorLayoutWrapper from "./components/DoctorLayoutWrapper"; // Import DoctorLayoutWrapper
 import SuperAdminDashboard from "./components/superAdmin/superAdminDashboard/SuperAdminDashboard";
@@ -56,7 +56,7 @@ const AppRoutes = () => {
       {/* landingPage Route */}
       <Route path="/" element={<Header />} />
       <Route path="/landingPage" element={<AdvertisingDoctorsPage />} />    
-      
+      <Route path="/unauthorized" element={<Unauthorized />} /> 
 
       {/* SuperAdmin Routes under LayoutWrapper */}
       <Route element={<LayoutWrapper />}>
