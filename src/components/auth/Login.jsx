@@ -222,6 +222,11 @@ const getToken = () => localStorage.getItem("accessToken");
       const userData = response.data?.data;
       console.log("userDatafrom app.jsx",userData)
       if (userData) {
+         if (userData.role === "patient") {
+        navigate("/unauthorized");
+        return;
+      }
+      
         //fetch current DoctorData
   const doctorId = userData?.role === "doctor" ? userData?.userId : userData?.createdBy;
 
@@ -249,8 +254,14 @@ const getToken = () => localStorage.getItem("accessToken");
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
   const checkAuth = async () => {
+    // Skip auth check if on the unauthorized page
+    if (window.location.pathname === "/unauthorized") {
+      setIsCheckingAuth(false);
+      return;
+    }
+
     if (!getToken()) {
       setIsCheckingAuth(false); // no token → show login form
       navigate("/login");
@@ -259,7 +270,7 @@ const getToken = () => localStorage.getItem("accessToken");
         await getCurrentUserData(); // fetch user details
       } catch (error) {
         console.error("Auth check failed:", error);
-        localStorage.clear();
+        // localStorage.clear();
         setIsCheckingAuth(false); // fallback → show login form
       }
     }
