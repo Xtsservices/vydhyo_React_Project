@@ -610,9 +610,9 @@ function parseAppointment(record) {
   key="e-prescription"
   onClick={() => handleEPrescription(record)}
   disabled={
-    // record.appointmentStatus === "completed" ||
-    // record.appointmentStatus === "cancelled" || 
-    disabledByTime   
+    record.appointmentStatus === "completed" ||
+    record.appointmentStatus === "cancelled" || 
+    disabledByTime   || record.appointmentDepartment=== 'Physiotherapist'
   }
   icon={<EyeOutlined />}
 >
@@ -625,7 +625,7 @@ function parseAppointment(record) {
         key="view-previous-prescriptions"
         onClick={() => handleViewPreviousPrescriptions(record)}
         icon={<FileTextOutlined />}
-        disabled={!(hasPrescriptions[record.appointmentId] ?? false)}
+        disabled={!(hasPrescriptions[record.appointmentId] ?? false) ||record.appointmentDepartment=== 'Physiotherapist'}
       >
         View Previous Prescriptions
       </Menu.Item>
