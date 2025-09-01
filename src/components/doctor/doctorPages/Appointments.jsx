@@ -528,22 +528,40 @@ const handleEPrescription = (appointment) => {
   const [now, setNow] = useState(() => moment());
 
   function parseAppointment(record) {
-  const raw = record.appointmentDateTime
+  let raw = record.appointmentDateTime
     ? String(record.appointmentDateTime).trim()
-    : `${record.appointmentDate} ${record.appointmentTime}`; // e.g., "26-Aug-2025 2:00 PM"
+    : `${record.appointmentDate} ${record.appointmentTime}`.trim();
+
+  // Clean common variants: "Sept" → "Sep", remove ordinals like "1st", strip stray chars like a trailing "v"
+  raw = raw
+    .replace(/\bSept\.?\b/i, 'Sep')     // Sept / Sept. → Sep
+    .replace(/\b(\d{1,2})(st|nd|rd|th)\b/gi, '$1') // 1st → 1, etc.
+    .replace(/[^\w: -]/g, ' ')          // remove odd trailing chars
+    .replace(/\s+/g, ' ')
+    .trim();
 
   return moment(raw, [
-    "DD-MMM-YYYY h:mm A",
-    "DD-MMM-YYYY hh:mm A",
-    "D-MMM-YYYY h:mm A",
-  ], true);
+    'D-MMM-YYYY h:mm A',
+    'DD-MMM-YYYY h:mm A',
+    'D-MMM-YYYY hh:mm A',
+    'DD-MMM-YYYY hh:mm A',
+    'D-MMMM-YYYY h:mm A',   // allow "September"
+    'DD-MMMM-YYYY h:mm A',
+    'D-MMMM-YYYY hh:mm A',
+    'DD-MMMM-YYYY hh:mm A',
+    'YYYY-MM-DD HH:mm',     // common ISO-ish fallback
+    'YYYY-MM-DDTHH:mm'
+  ], true); // keep strict
 }
+
 
   const renderActionMenu = (record) => {
       const appt = parseAppointment(record);
+      console.log(appt, "wer")
     const disabledByTime = !appt.isValid()
       ? true // if we can't parse, keep it disabled
       : now.isBefore(appt.clone().subtract(1, "hour"));
+      console.log(disabledByTime, "123")
     return (
       <Menu>
         {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
@@ -551,8 +569,9 @@ const handleEPrescription = (appointment) => {
   key="e-prescription"
   onClick={() => handleEPrescription(record)}
   disabled={
-    record.appointmentStatus === "completed" ||
-    record.appointmentStatus === "cancelled" || disabledByTime   
+    // record.appointmentStatus === "completed" ||
+    // record.appointmentStatus === "cancelled" || 
+    disabledByTime   
   }
   icon={<EyeOutlined />}
 >
