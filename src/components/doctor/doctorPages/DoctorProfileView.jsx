@@ -68,19 +68,23 @@ const VALIDATION_RULES = {
     { required: true, message: 'Mobile number is required' },
     { pattern: /^[0-9]{10}$/, message: 'Please enter a valid 10-digit mobile number' }
   ],
-experience: [
+  experience: [
     { required: true, message: 'Experience is required' },
     {
-  pattern: /^[0-9]{10}$/,
-  message: 'Mobile number must be exactly 10 digits',
-},
+      pattern: /^[0-9]{10}$/,
+      message: 'Mobile number must be exactly 10 digits',
+    },
     { type: 'number', min: 0, message: 'Experience cannot be negative' },
     { type: 'number', max: 60, message: 'Experience cannot exceed 60 years' }
   ],
   pan: [
     { required: true, message: 'PAN number is required' },
-    { pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, message: 'Invalid PAN format (e.g., ABCDE1234F)' }
+    // {
+    //   pattern: /^[A-Z0-9]{10}$/,
+    //   message: 'PAN must be 10 uppercase letters/numbers only',
+    // }
   ],
+
   ifsc: [
     { required: true, message: 'IFSC code is required' },
     { pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/, message: 'Invalid IFSC format (e.g., HDFC0ABCD12)' }
@@ -275,11 +279,11 @@ const DoctorProfileView = () => {
           maritalStatus: userData.maritalStatus || "N/A",
           workingLocations: Array.isArray(userData.addresses)
             ? userData.addresses.map((addr) => ({
-                name: addr.clinicName || "Clinic",
-                address: `${addr.address}, ${addr.city}, ${addr.state}, ${addr.country} - ${addr.pincode}`,
-                startTime: addr.startTime,
-                endTime: addr.endTime,
-              }))
+              name: addr.clinicName || "Clinic",
+              address: `${addr.address}, ${addr.city}, ${addr.state}, ${addr.country} - ${addr.pincode}`,
+              startTime: addr.startTime,
+              endTime: addr.endTime,
+            }))
             : [],
           bankDetails: decryptedBankDetails || userData.bankDetails || {},
           kycDetails: {
@@ -366,12 +370,12 @@ const DoctorProfileView = () => {
           mobileNumber: doctorData?.mobile,
         };
       case 'professional': {
-        const initialDegreeIds = doctorData?.specialization?.[0]?.degree 
+        const initialDegreeIds = doctorData?.specialization?.[0]?.degree
           ? doctorData.specialization[0].degree.split(',').map(deg => deg.trim())
           : [];
-        
+
         const initialSpecs = doctorData?.specialization?.map(s => s.name) || [];
-        
+
         return {
           degreeId: initialDegreeIds,
           specialization: initialSpecs,
@@ -412,108 +416,105 @@ const DoctorProfileView = () => {
   }
 
   const handleSaveProfile = async (values) => {
-    let response;
-    try {
-      switch (editModalType) {
-        case 'personal':
-          console.log("Updating personal information", values);
-          const { mobileNumber, ...rest } = values;
-          await apiPut("/users/updateUser", {
-            ...rest,
-            spokenLanguage: values.spokenLanguage || []
-          });
-          break;
-        
-        case 'professional': {
-          const formDataObj = new FormData();
-          formDataObj.append('id', doctorData?.userId || '');
-          
-          formDataObj.append('name',  doctorData.specialization[0].name);
-          
-          formDataObj.append('experience', values.experience || '');
-          
-          formDataObj.append('degree', Array.isArray(values.degreeId) 
-            ? values.degreeId.join(',') 
-            : values.degreeId || '');
-          
-          formDataObj.append('bio', values.about || '');
-          
-          if (values.drgreeCertificate) {
-            formDataObj.append('drgreeCertificate', values.drgreeCertificate);
-          }
-          if (values.specializationCertificate) {
-            formDataObj.append('specializationCertificate', values.specializationCertificate);
-          }
+  let response;
+  try {
+    switch (editModalType) {
+      case 'personal':
+        console.log("Updating personal information", values);
+        const { mobileNumber, ...rest } = values;
+        await apiPut("/users/updateUser", {
+          ...rest,
+          spokenLanguage笛: values.spokenLanguage || []
+        });
+        break;
 
-          await apiPost(
-            `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
-            formDataObj
-          );
-          break;
+      case 'professional': {
+        const formDataObj = new FormData();
+        formDataObj.append('id', doctorData?.userId || '');
+        formDataObj.append('name', doctorData.specialization[0].name);
+        formDataObj.append('experience', values.experience || '');
+        formDataObj.append('degree', Array.isArray(values.degreeId)
+          ? values.degreeId.join(',')
+          : values.degreeId || '');
+        formDataObj.append('bio', values.about || '');
+        if (values.drgreeCertificate) {
+          formDataObj.append('drgreeCertificate', values.drgreeCertificate);
         }
-        
-        case 'locations':
-          await apiPut("/users/updateLocations", { addresses: values.workingLocations });
-          break;
-        
-        case "kyc": {
-          const file = extractFileFromAntdValue(values?.panImage);
-          if (!file) {
-            message.error("Please select a PAN image/PDF.");
-            break;
-          }
-
-          const userId = String(doctorData?.userId ?? values?.userId ?? "").trim();
-          const panNumber = String(values?.panNumber ?? "").trim();
-          console.log()
-
-          const resp = await postKYCDetails({ file, userId, panNumber });
-          console.log(resp, "1234")
-          break;
+        if (values.specializationCertificate) {
+          formDataObj.append('specializationCertificate', values.specializationCertificate);
         }
-
-        case 'consultation':
-          const cleanedFees = values.consultationModeFee.map(item => ({
-            type: item.type,
-            fee: Number(item.fee),
-            currency: item.currency,
-          }));
-          console.log(cleanedFees, "consultation values")
-          await apiPost("/users/updateConsultationModes", { consultationModeFee: cleanedFees });
-          break;
-        
-        case 'bank':
-          await apiPost("/users/updateBankDetails", values);
-          break;
+        await apiPost(
+          `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
+          formDataObj
+        );
+        break;
       }
-      console.log(response, "response after update");
-      message.success("Profile updated successfully");
-      handleEditModalClose();
-      fetchDoctorData();
-    } catch (error) {
-      console.error("Error updating profile:", error);
+
+      case 'locations':
+        await apiPut("/users/updateLocations", { addresses: values.workingLocations });
+        break;
+
+      case 'kyc': {
+        const file = extractFileFromAntdValue(values?.panImage);
+        if (!file) {
+          message.error("Please select a PAN image/PDF.");
+          break;
+        }
+
+        const userId = String(doctorData?.userId ?? values?.userId ?? "").trim();
+        const panNumber = String(values?.panNumber ?? "").trim();
+
+        const resp = await postKYCDetails({ file, userId, panNumber });
+        console.log(resp, "1234");
+        break;
+      }
+
+      case 'consultation':
+        const cleanedFees = values.consultationModeFee.map(item => ({
+          type: item.type,
+          fee: Number(item.fee),
+          currency: item.currency,
+        }));
+        console.log(cleanedFees, "consultation values");
+        await apiPost("/users/updateConsultationModes", { consultationModeFee: cleanedFees });
+        break;
+
+      case 'bank':
+        await apiPost("/users/updateBankDetails", values);
+        break;
+    }
+    console.log(response, "response after update");
+    message.success("Profile updated successfully");
+    handleEditModalClose();
+    fetchDoctorData();
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    if (editModalType === 'kyc' && error.response?.data?.message?.message) {
+      toast.error(error.response.data.message.message);
+    } else {
       message.error("Failed to update profile");
     }
-  };
+  }
+};
 
   const UploadImage = ({ onUpload, accept = "image/*,.pdf" }) => {
     return (
       <Upload
         beforeUpload={(file) => {
-          const isValidType = file.type.startsWith("image/") || 
-                            file.type === "application/pdf";
+          const isValidType = file.type.startsWith("image/") ||
+            file.type === "application/pdf";
           const isLt5M = file.size / 1024 / 1024 < 5;
-          
+
           if (!isValidType) {
             message.error("You can only upload JPG, PNG, or PDF files!");
             return Upload.LIST_IGNORE;
           }
-          
+
           if (!isLt5M) {
             message.error("File must be smaller than 5MB!");
             return Upload.LIST_IGNORE;
           }
-          
+
           onUpload(file);
           return false;
         }}
@@ -544,7 +545,7 @@ const DoctorProfileView = () => {
                     Personal Information
                   </div>
                   <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('personal')}>
-                    
+
                   </Button>
                 </div>
               }
@@ -561,11 +562,11 @@ const DoctorProfileView = () => {
                 <Title level={4} className="doctor-name">
                   Dr. {doctorData.firstname} {doctorData.lastname}
                 </Title>
-                
-               
+
+
               </div>
               <div className="info-section">
-                 <div className="info-item">
+                <div className="info-item">
                   <Text className="info-text" style={{ marginLeft: "24px" }}>
                     <strong>Mobile Number:</strong> {doctorData.mobile}
                   </Text>
@@ -614,7 +615,7 @@ const DoctorProfileView = () => {
                     Professional Summary
                   </div>
                   <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('professional')}>
-                    
+
                   </Button>
                 </div>
               }
@@ -632,7 +633,7 @@ const DoctorProfileView = () => {
               </div>
               <div className="info-item">
                 <Text className="info-text">
-                  <strong>Degrees: </strong>  
+                  <strong>Degrees: </strong>
                   {doctorData.specialization[0]?.degree ? (
                     doctorData.specialization[0].degree.split(',').map((degree, index) => (
                       <Tag key={index} className="specialization-tag">
@@ -646,7 +647,7 @@ const DoctorProfileView = () => {
                   )}
                 </Text>
               </div>
-              
+
               <div style={{ marginBottom: "20px" }}>
                 <Text strong style={{ fontSize: "14px", color: "#166534", display: "block", marginBottom: "8px", fontWeight: "600" }}>
                   Specializations
@@ -677,7 +678,7 @@ const DoctorProfileView = () => {
                 </Text>
               </div>
             </Card>
-          </Col>         
+          </Col>
 
           {/* KYC Details */}
           <Col xs={24} lg={12}>
@@ -688,8 +689,8 @@ const DoctorProfileView = () => {
                     <IdcardOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
                     KYC Details
                   </div>
-                  {!kyc?.pan?.number &&  <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('kyc')}>
-                    
+                  {!kyc?.pan?.number && <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('kyc')}>
+
                   </Button>}
                 </div>
               }
@@ -719,7 +720,7 @@ const DoctorProfileView = () => {
                     Consultation Charges
                   </div>
                   <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('consultation')}>
-                    
+
                   </Button>
                 </div>
               }
@@ -756,7 +757,7 @@ const DoctorProfileView = () => {
                     Bank Details
                   </div>
                   <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('bank')}>
-                    
+
                   </Button>
                 </div>
               }
@@ -830,36 +831,36 @@ const DoctorProfileView = () => {
           >
             {editModalType === 'personal' && (
               <>
-                <Form.Item 
-                  label="First Name" 
+                <Form.Item
+                  label="First Name"
                   name="firstname"
                   rules={VALIDATION_RULES.name}
                 >
-                  <Input 
+                  <Input
                     onChange={(e) => {
                       e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, '');
                     }}
                   />
                 </Form.Item>
-                
-                <Form.Item 
-                  label="Last Name" 
+
+                <Form.Item
+                  label="Last Name"
                   name="lastname"
                   rules={VALIDATION_RULES.name}
                 >
-                  <Input 
+                  <Input
                     onChange={(e) => {
                       e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, '');
                     }}
                   />
                 </Form.Item>
-                
-                <Form.Item 
-                  label="Mobile Number" 
+
+                <Form.Item
+                  label="Mobile Number"
                   name="mobileNumber"
                   rules={VALIDATION_RULES.mobile}
                 >
-                  <Input 
+                  <Input
                     disabled
                     maxLength={10}
                     onChange={(e) => {
@@ -867,15 +868,15 @@ const DoctorProfileView = () => {
                     }}
                   />
                 </Form.Item>
-                
-                <Form.Item 
-                  label="Email" 
+
+                <Form.Item
+                  label="Email"
                   name="email"
                   rules={VALIDATION_RULES.email}
                 >
                   <Input type="email" />
                 </Form.Item>
-                
+
                 <Form.List name="spokenLanguage">
                   {(fields, { add, remove }) => (
                     <>
@@ -934,7 +935,7 @@ const DoctorProfileView = () => {
                 </Form.List>
               </>
             )}
-            
+
             {editModalType === 'professional' && (
               <>
                 <Form.Item
@@ -954,7 +955,7 @@ const DoctorProfileView = () => {
                     }))}
                   />
                 </Form.Item>
-                
+
                 {/* <Form.Item
                   label="Specializations"
                   name="specialization"
@@ -972,13 +973,13 @@ const DoctorProfileView = () => {
                     }))}
                   />
                 </Form.Item> */}
-                
+
                 <Form.Item
                   label="Experience (Years)"
                   name="experience"
                   rules={VALIDATION_RULES.experience}
                 >
-                  <Input 
+                  <Input
                     type="number"
                     min={0}
                     max={60}
@@ -995,15 +996,15 @@ const DoctorProfileView = () => {
                     { max: 500, message: 'About cannot exceed 500 characters' }
                   ]}
                 >
-                  <Input.TextArea 
-                    showCount 
+                  <Input.TextArea
+                    showCount
                     maxLength={500}
                     rows={4}
                   />
                 </Form.Item>
               </>
             )}
-            
+
             {editModalType === 'kyc' && (
               <>
                 <Form.Item
@@ -1011,8 +1012,8 @@ const DoctorProfileView = () => {
                   name="panNumber"
                   rules={VALIDATION_RULES.pan}
                 >
-                  <Input 
-                    style={{ textTransform: 'uppercase' }} 
+                  <Input
+                    style={{ textTransform: 'uppercase' }}
                     maxLength={10}
                     onChange={(e) => {
                       e.target.value = e.target.value.replace(/[^A-Z0-9]/g, '').toUpperCase();
@@ -1050,7 +1051,7 @@ const DoctorProfileView = () => {
                           label="Fee (₹)"
                           rules={VALIDATION_RULES.fee}
                         >
-                          <Input 
+                          <Input
                             type="number"
                             min={0}
                             onChange={(e) => {
@@ -1058,7 +1059,7 @@ const DoctorProfileView = () => {
                             }}
                           />
                         </Form.Item>
-                       
+
                       </Space>
                     ))}
 
@@ -1066,134 +1067,134 @@ const DoctorProfileView = () => {
                 )}
               </Form.List>
             )}
-            
-          {editModalType === 'bank' && (
-  <>
-    <Form.Item 
-      label="Bank Name" 
-      name={["bankDetails", "bankName"]}
-      rules={[
-        { required: true, message: 'Please enter bank name' },
-        { min: 2, message: 'Bank name must be at least 2 characters' },
-        { max: 100, message: 'Bank name cannot exceed 100 characters' },
-        {
-          pattern: /^[a-zA-Z\s]+$/,
-          message: 'Bank name should contain only letters and spaces',
-        },
-      ]}
-    >
-      <Input 
-        onKeyPress={(e) => {
-          // Prevent typing numbers and special characters
-          if (!/^[a-zA-Z\s]$/.test(e.key)) {
-            e.preventDefault();
-          }
-        }}
-        onPaste={(e) => {
-          // Get pasted data and validate
-          const pastedData = e.clipboardData.getData('text');
-          if (!/^[a-zA-Z\s]*$/.test(pastedData)) {
-            e.preventDefault();
-            message.error('Only letters and spaces are allowed');
-          }
-        }}
-      />
-    </Form.Item>
-    
-    <Form.Item 
-      label="Account Holder Name" 
-      name={["bankDetails", "accountHolderName"]}
-      rules={[
-        { required: true, message: 'Please enter account holder name' },
-        { min: 2, message: 'Account holder name must be at least 2 characters' },
-        { max: 100, message: 'Account holder name cannot exceed 100 characters' },
-        {
-          pattern: /^[a-zA-Z\s]+$/,
-          message: 'Account holder name should contain only letters and spaces'
-        }
-      ]}
-    >
-      <Input 
-        onKeyPress={(e) => {
-          // Prevent typing numbers and special characters
-          if (!/^[a-zA-Z\s]$/.test(e.key)) {
-            e.preventDefault();
-          }
-        }}
-        onPaste={(e) => {
-          // Get pasted data and validate
-          const pastedData = e.clipboardData.getData('text');
-          if (!/^[a-zA-Z\s]*$/.test(pastedData)) {
-            e.preventDefault();
-            message.error('Only letters and spaces are allowed');
-          }
-        }}
-      />
-    </Form.Item>
-    
-    <Form.Item 
-      label="Account Number" 
-      name={["bankDetails", "accountNumber"]}
-      rules={VALIDATION_RULES.accountNumber}
-    >
-      <Input 
-        maxLength={18}
-        onChange={(e) => {
-          e.target.value = e.target.value.replace(/[^0-9]/g, '');
-        }}
-        onKeyPress={(e) => {
-          // Allow only numbers
-          if (!/^[0-9]$/.test(e.key)) {
-            e.preventDefault();
-          }
-        }}
-      />
-    </Form.Item>
-    
-  <Form.Item
-  label="IFSC Code"
-  name={['bankDetails', 'ifscCode']}
-  rules={[
-    { required: true, message: 'IFSC code is required' },
-    { 
-      pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/, 
-      message: 'Invalid IFSC format (e.g., HDFC0ABCD12)' 
-    }
-  ]}
->
-  <Input
-    placeholder="e.g., HDFC0ABCD12"
-    maxLength={11}
-    onChange={(e) => {
-      // Convert to uppercase and remove invalid characters
-      e.target.value = e.target.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-    }}
-    onKeyPress={(e) => {
-      // Allow only alphanumeric characters
-      if (!/^[A-Z0-9]$/i.test(e.key)) {
-        e.preventDefault();
-      }
-    }}
-    onPaste={(e) => {
-      // Validate pasted content
-      const pastedData = e.clipboardData.getData('text');
-      if (!/^[A-Z0-9]{0,11}$/i.test(pastedData)) {
-        e.preventDefault();
-        message.error('IFSC code can only contain letters and numbers');
-      }
-    }}
-    onBlur={(e) => {
-      // Validate format on blur
-      const value = e.target.value;
-      if (value && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
-        message.error('Invalid IFSC format. Format should be ABCD0EFGHIJ (4 letters, 0, 6 alphanumeric)');
-      }
-    }}
-    style={{ textTransform: 'uppercase' }}
-  />
-</Form.Item>
-  </>
-)}
+
+            {editModalType === 'bank' && (
+              <>
+                <Form.Item
+                  label="Bank Name"
+                  name={["bankDetails", "bankName"]}
+                  rules={[
+                    { required: true, message: 'Please enter bank name' },
+                    { min: 2, message: 'Bank name must be at least 2 characters' },
+                    { max: 100, message: 'Bank name cannot exceed 100 characters' },
+                    {
+                      pattern: /^[a-zA-Z\s]+$/,
+                      message: 'Bank name should contain only letters and spaces',
+                    },
+                  ]}
+                >
+                  <Input
+                    onKeyPress={(e) => {
+                      // Prevent typing numbers and special characters
+                      if (!/^[a-zA-Z\s]$/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      // Get pasted data and validate
+                      const pastedData = e.clipboardData.getData('text');
+                      if (!/^[a-zA-Z\s]*$/.test(pastedData)) {
+                        e.preventDefault();
+                        message.error('Only letters and spaces are allowed');
+                      }
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Account Holder Name"
+                  name={["bankDetails", "accountHolderName"]}
+                  rules={[
+                    { required: true, message: 'Please enter account holder name' },
+                    { min: 2, message: 'Account holder name must be at least 2 characters' },
+                    { max: 100, message: 'Account holder name cannot exceed 100 characters' },
+                    {
+                      pattern: /^[a-zA-Z\s]+$/,
+                      message: 'Account holder name should contain only letters and spaces'
+                    }
+                  ]}
+                >
+                  <Input
+                    onKeyPress={(e) => {
+                      // Prevent typing numbers and special characters
+                      if (!/^[a-zA-Z\s]$/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      // Get pasted data and validate
+                      const pastedData = e.clipboardData.getData('text');
+                      if (!/^[a-zA-Z\s]*$/.test(pastedData)) {
+                        e.preventDefault();
+                        message.error('Only letters and spaces are allowed');
+                      }
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Account Number"
+                  name={["bankDetails", "accountNumber"]}
+                  rules={VALIDATION_RULES.accountNumber}
+                >
+                  <Input
+                    maxLength={18}
+                    onChange={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    }}
+                    onKeyPress={(e) => {
+                      // Allow only numbers
+                      if (!/^[0-9]$/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="IFSC Code"
+                  name={['bankDetails', 'ifscCode']}
+                  rules={[
+                    { required: true, message: 'IFSC code is required' },
+                    {
+                      pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/,
+                      message: 'Invalid IFSC format (e.g., HDFC0ABCD12)'
+                    }
+                  ]}
+                >
+                  <Input
+                    placeholder="e.g., HDFC0ABCD12"
+                    maxLength={11}
+                    onChange={(e) => {
+                      // Convert to uppercase and remove invalid characters
+                      e.target.value = e.target.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                    }}
+                    onKeyPress={(e) => {
+                      // Allow only alphanumeric characters
+                      if (!/^[A-Z0-9]$/i.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      // Validate pasted content
+                      const pastedData = e.clipboardData.getData('text');
+                      if (!/^[A-Z0-9]{0,11}$/i.test(pastedData)) {
+                        e.preventDefault();
+                        message.error('IFSC code can only contain letters and numbers');
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // Validate format on blur
+                      const value = e.target.value;
+                      if (value && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
+                        message.error('Invalid IFSC format. Format should be ABCD0EFGHIJ (4 letters, 0, 6 alphanumeric)');
+                      }
+                    }}
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                </Form.Item>
+              </>
+            )}
           </Form>
         </Modal>
       </Spin>

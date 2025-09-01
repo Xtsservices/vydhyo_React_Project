@@ -22,7 +22,7 @@ export default function ClinicManagement() {
     libraries,
   });
   const hasfetchClinics = useRef(false);
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showHeaderModal, setShowHeaderModal] = useState(false);
@@ -95,6 +95,7 @@ export default function ClinicManagement() {
   const [isEditing, setIsEditing] = useState(false);
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+  console.log("userrrrrrrrrrrr", user)
 
   const autocompleteRef = useRef(null);
   const mapRef = useRef(null);
@@ -1260,13 +1261,15 @@ export default function ClinicManagement() {
               Manage your clinic information, address, and operating status.
             </p>
           </div>
-          <button
-            className="clinic-management-add-button"
-            onClick={handleAddClinic}
-          >
-            <Plus size={16} />
-            Add Clinic
-          </button>
+          {user?.specialization?.name !== "Physiotherapist" && (
+            <button
+              className="clinic-management-add-button"
+              onClick={handleAddClinic}
+            >
+              <Plus size={16} />
+              Add Clinic
+            </button>
+          )}
         </div>
 
         <div className="clinic-search-container">
@@ -1285,7 +1288,7 @@ export default function ClinicManagement() {
 
         <div className="clinic-table-container">
 
-  <Spin spinning={loading}>
+          <Spin spinning={loading}>
 
             <table className="clinic-table">
               <thead className="clinic-table-header">
@@ -1323,7 +1326,7 @@ export default function ClinicManagement() {
                               handleViewImage(
                                 clinic.headerImage,
                                 clinic.digitalSignature,
-                                clinic.pharmacyHeaderImage, // This is what you're currently passing
+                                clinic.pharmacyHeaderImage,
                                 clinic.labHeaderImage
                               )
                             }
@@ -1331,13 +1334,15 @@ export default function ClinicManagement() {
                             <Eye size={16} />
                           </button>
                         ) : (
-                          <button
-                            className="clinic-upload-button"
-                            title="Upload Header"
-                            onClick={() => handleUploadHeader(clinic)}
-                          >
-                            <Upload size={16} />
-                          </button>
+                          user?.specialization?.name !== "Physiotherapist" && (
+                            <button
+                              className="clinic-upload-button"
+                              title="Upload Header"
+                              onClick={() => handleUploadHeader(clinic)}
+                            >
+                              <Upload size={16} />
+                            </button>
+                          )
                         )}
                       </td>
                       <td className="clinic-table-td">
@@ -1350,13 +1355,15 @@ export default function ClinicManagement() {
                             <Eye size={16} />
                           </button>
                         ) : (
-                          <button
-                            className="clinic-upload-button"
-                            title="Add Pharmacy Details"
-                            onClick={() => handleAddPharmacy(clinic)}
-                          >
-                            <Plus size={16} />
-                          </button>
+                          user?.specialization?.name !== "Physiotherapist" && (
+                            <button
+                              className="clinic-upload-button"
+                              title="Add Pharmacy Details"
+                              onClick={() => handleAddPharmacy(clinic)}
+                            >
+                              <Plus size={16} />
+                            </button>
+                          )
                         )}
                       </td>
                       <td className="clinic-table-td">
@@ -1369,13 +1376,15 @@ export default function ClinicManagement() {
                             <Eye size={16} />
                           </button>
                         ) : (
-                          <button
-                            className="clinic-upload-button"
-                            title="Add Lab Details"
-                            onClick={() => handleAddLab(clinic)}
-                          >
-                            <Plus size={16} />
-                          </button>
+                          user?.specialization?.name !== "Physiotherapist" && (
+                            <button
+                              className="clinic-upload-button"
+                              title="Add Lab Details"
+                              onClick={() => handleAddLab(clinic)}
+                            >
+                              <Plus size={16} />
+                            </button>
+                          )
                         )}
                       </td>
                       <td className="clinic-table-td">
@@ -1392,10 +1401,12 @@ export default function ClinicManagement() {
                             className="clinic-edit-button"
                             title="Edit"
                             onClick={() => handleEditClinic(clinic)}
+                            disabled={user?.specialization?.name === "Physiotherapist"}
+                            style={user?.specialization?.name === "Physiotherapist" ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                           >
                             <Edit size={16} />
                           </button>
-                          {user?.role === "doctor" && (
+                          {user?.role === "doctor" && user?.specialization?.name !== "Physiotherapist" && (
                             <button
                               className="clinic-delete-button"
                               title="Delete"
