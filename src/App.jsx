@@ -15,6 +15,8 @@ const getRouteFromUserType = (role) => {
     if (role === "superadmin") return "/SuperAdmin/dashboard";
     if (role === "doctor") return "/Doctor/dashboard";
     if (role === "reception") return "/Doctor/dashboard";
+    if (role === "patient") return "/unauthorized";
+
     return "/Doctor/dashboard";
     return "/SuperAdmin/dashboard";
     return "/Admin/app/dashboard"; // Default route if role is unknown
