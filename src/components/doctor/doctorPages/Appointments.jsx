@@ -527,23 +527,82 @@ const handleEPrescription = (appointment) => {
 
   const [now, setNow] = useState(() => moment());
 
-  function parseAppointment(record) {
-  const raw = record.appointmentDateTime
-    ? String(record.appointmentDateTime).trim()
-    : `${record.appointmentDate} ${record.appointmentTime}`; // e.g., "26-Aug-2025 2:00 PM"
 
-  return moment(raw, [
-    "DD-MMM-YYYY h:mm A",
-    "DD-MMM-YYYY hh:mm A",
-    "D-MMM-YYYY h:mm A",
-  ], true);
+function normalizeDateString(raw) {
+  let s = String(raw || '').trim();
+
+  // Clean up common nuisances
+  s = s
+    .replace(/\b(\d{1,2})(st|nd|rd|th)\b/gi, '$1')   // 1st → 1
+    .replace(/(\d)(am|pm)\b/gi, '$1 $2')            // 11:00am → 11:00 am
+    .replace(/\b(am|pm)\b/gi, m => m.toUpperCase()) // am/pm → AM/PM
+    .replace(/[^\w: /-]/g, ' ')                     // strip stray chars
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Normalize month names/abbrevs (incl. dots) → canonical MMM
+  const monthFixes = [
+    [/(\b)january\.?\b/gi,  '$1Jan'], [/(\b)jan\.?\b/gi,  '$1Jan'],
+    [/(\b)february\.?\b/gi, '$1Feb'], [/(\b)feb\.?\b/gi,  '$1Feb'],
+    [/(\b)march\.?\b/gi,    '$1Mar'], [/(\b)mar\.?\b/gi,  '$1Mar'],
+    [/(\b)april\.?\b/gi,    '$1Apr'], [/(\b)apr\.?\b/gi,  '$1Apr'],
+    [/(\b)may\.?\b/gi,      '$1May'],
+    [/(\b)june\.?\b/gi,     '$1Jun'], [/(\b)jun\.?\b/gi,  '$1Jun'],
+    [/(\b)july\.?\b/gi,     '$1Jul'], [/(\b)jul\.?\b/gi,  '$1Jul'],
+    [/(\b)august\.?\b/gi,   '$1Aug'], [/(\b)aug\.?\b/gi,  '$1Aug'],
+    [/(\b)september\.?\b/gi,'$1Sep'], [/(\b)sept\.?\b/gi, '$1Sep'], [/(\b)sep\.?\b/gi, '$1Sep'],
+    [/(\b)october\.?\b/gi,  '$1Oct'], [/(\b)oct\.?\b/gi,  '$1Oct'],
+    [/(\b)november\.?\b/gi, '$1Nov'], [/(\b)nov\.?\b/gi,  '$1Nov'],
+    [/(\b)december\.?\b/gi, '$1Dec'], [/(\b)dec\.?\b/gi,  '$1Dec'],
+  ];
+  for (const [re, rep] of monthFixes) s = s.replace(re, rep);
+
+  // Unify separators around date parts
+  s = s.replace(/\s*-\s*/g, '-').replace(/\s{2,}/g, ' ').trim();
+
+  return s;
 }
 
+function parseAppointment(record) {
+  const raw = record?.appointmentDateTime
+    ? String(record.appointmentDateTime)
+    : `${record?.appointmentDate ?? ''} ${record?.appointmentTime ?? ''}`;
+
+  const norm = normalizeDateString(raw);
+
+  // Support hyphen/space/slash dates, with or without minutes
+  const fmts = [
+    // Hyphen
+    'D-MMM-YYYY h:mm A',  'DD-MMM-YYYY h:mm A',
+    'D-MMM-YYYY hh:mm A', 'DD-MMM-YYYY hh:mm A',
+    'D-MMM-YYYY h A',     'DD-MMM-YYYY h A',
+    'D-MMM-YYYY hh A',    'DD-MMM-YYYY hh A',
+    // Space
+    'D MMM YYYY h:mm A',  'DD MMM YYYY h:mm A',
+    'D MMM YYYY hh:mm A', 'DD MMM YYYY hh:mm A',
+    'D MMM YYYY h A',     'DD MMM YYYY h A',
+    'D MMM YYYY hh A',    'DD MMM YYYY hh A',
+    // Slash
+    'D/MMM/YYYY h:mm A',  'DD/MMM/YYYY h:mm A',
+    'D/MMM/YYYY h A',     'DD/MMM/YYYY h A',
+    // ISO-ish fallbacks
+    'YYYY-MM-DD HH:mm', 'YYYY-MM-DDTHH:mm',
+  ];
+
+  return moment(norm, fmts, true); // strict
+}
+
+
+
   const renderActionMenu = (record) => {
+    console.log(record)
+    
       const appt = parseAppointment(record);
+      console.log(appt, "wer")
     const disabledByTime = !appt.isValid()
       ? true // if we can't parse, keep it disabled
       : now.isBefore(appt.clone().subtract(1, "hour"));
+      console.log(disabledByTime, "123")
     return (
       <Menu>
         {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
@@ -552,7 +611,8 @@ const handleEPrescription = (appointment) => {
   onClick={() => handleEPrescription(record)}
   disabled={
     record.appointmentStatus === "completed" ||
-    record.appointmentStatus === "cancelled" || disabledByTime   
+    record.appointmentStatus === "cancelled" || 
+    disabledByTime   || record.appointmentDepartment=== 'Physiotherapist'
   }
   icon={<EyeOutlined />}
 >
@@ -565,7 +625,7 @@ const handleEPrescription = (appointment) => {
         key="view-previous-prescriptions"
         onClick={() => handleViewPreviousPrescriptions(record)}
         icon={<FileTextOutlined />}
-        disabled={!(hasPrescriptions[record.appointmentId] ?? false)}
+        disabled={!(hasPrescriptions[record.appointmentId] ?? false) ||record.appointmentDepartment=== 'Physiotherapist'}
       >
         View Previous Prescriptions
       </Menu.Item>
