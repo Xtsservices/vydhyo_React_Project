@@ -7,16 +7,16 @@ import Login from "./components/auth/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // doctor components
-import Appointments from "./components/doctor/doctorPages/Appointments"; 
-import Patients from "./components/doctor/doctorPages/Patients"; 
+import Appointments from "./components/doctor/doctorPages/Appointments";
+import Patients from "./components/doctor/doctorPages/Patients";
 import DoctorDashboard from "./components/doctor/doctorDashboard/DoctorDashboard";
-import Walkin from "./components/doctor/doctorPages/Walkin"; 
-import StaffManagement from "./components/doctor/doctorPages/staffManagement"; 
+import Walkin from "./components/doctor/doctorPages/Walkin";
+import StaffManagement from "./components/doctor/doctorPages/staffManagement";
 import Availability from "./components/doctor/doctorPages/Availability";
-import Accounts from "./components/doctor/doctorPages/Accounts"; 
+import Accounts from "./components/doctor/doctorPages/Accounts";
 import Reviews from "./components/doctor/doctorPages/Reviews";
-import Invoices from "./components/doctor/doctorPages/Invoices"; 
-import Messages from "./components/doctor/doctorPages/Messages"; 
+import Invoices from "./components/doctor/doctorPages/Invoices";
+import Messages from "./components/doctor/doctorPages/Messages";
 import Pharmacy from "./components/doctor/doctorPages/Pharmacy";
 import Labs from "./components/doctor/doctorPages/Labs";
 import ClinicManagement from "./components/doctor/doctorPages/ClinicManagement"
@@ -29,7 +29,7 @@ import TotalExpenditureScreen from "./components/doctor/doctorPages/TotalExpendi
 import PendingTransactionsScreen from "./components/doctor/doctorPages/PendingTransactions";
 import PreviousPrescriptions from "./components/doctor/doctorPages/PreviousPrescriptions"
 // import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingDoctorsPage";
-import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage"; 
+import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage";
 import EPrescriptionList from "./components/doctor/doctorPages/EPrescriptionList";
 
 
@@ -45,6 +45,7 @@ import SuperAdminReviews from "./components/superAdmin/superAdminPages/SuperAdmi
 import SuperAdminReports from "./components/superAdmin/superAdminPages/SuperAdminReports";
 import SuperAdminProfile from "./components/superAdmin/superAdminPages/SuperAdminProfile";
 import SuperAdminProfileView from "./components/superAdmin/superAdminPages/SuperAdminProfileView";
+import PaymentResponse from "./components/Payment/PaymentResponse";
 
 
 const AppRoutes = () => {
@@ -52,11 +53,11 @@ const AppRoutes = () => {
     <Routes>
       {/* Login Route */}
       <Route path="/login" element={<Login />} />
-
+      <Route path="/paymentResponse" element={<PaymentResponse />} />
       {/* landingPage Route */}
       <Route path="/" element={<Header />} />
-      <Route path="/landingPage" element={<AdvertisingDoctorsPage />} />    
-      <Route path="/unauthorized" element={<Unauthorized />} /> 
+      <Route path="/landingPage" element={<AdvertisingDoctorsPage />} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* SuperAdmin Routes under LayoutWrapper */}
       <Route element={<LayoutWrapper />}>
@@ -183,7 +184,7 @@ const AppRoutes = () => {
           path="/doctor/doctorPages/PreviousPrescriptions"
           element={
             <ProtectedRoute>
-              <PreviousPrescriptions/>
+              <PreviousPrescriptions />
             </ProtectedRoute>
           }
         />
@@ -210,7 +211,7 @@ const AppRoutes = () => {
           path="/doctor/doctorPages/EPrescription"
           element={
             <ProtectedRoute>
-              <EPrescription/>
+              <EPrescription />
             </ProtectedRoute>
           }
         />
@@ -219,7 +220,7 @@ const AppRoutes = () => {
           path="/doctor/doctorPages/EPrescriptionList"
           element={
             <ProtectedRoute>
-              <EPrescriptionList/>
+              <EPrescriptionList />
             </ProtectedRoute>
           }
         />
@@ -264,12 +265,12 @@ const AppRoutes = () => {
           path="/doctor/doctorPages/Walkin"
           element={
             <ProtectedRoute>
-              <Walkin/>
+              <Walkin />
             </ProtectedRoute>
           }
         />
 
-        
+
 
         <Route
           path="/doctor/doctorPages/staffManagement"
@@ -354,7 +355,7 @@ const AppRoutes = () => {
 
       </Route>
 
-      
+
 
       {/* Catch all unmatched routes */}
       <Route path="*" element={<NotFound />} />

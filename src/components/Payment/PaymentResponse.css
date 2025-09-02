@@ -1,0 +1,377 @@
+/* PaymentResponse.css - Main Component Styles */
+
+/* Container and Layout */
+.payment-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 1rem;
+}
+
+.payment-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 28rem;
+  width: 100%;
+  text-align: center;
+  border: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+}
+
+.payment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.35);
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0;
+}
+
+.loading-spinner {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.spinner-base {
+  width: 4rem;
+  height: 4rem;
+  border: 4px solid #e5e7eb;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
+}
+
+.spinner-accent {
+  width: 4rem;
+  height: 4rem;
+  border: 4px solid transparent;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.loading-subtitle {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+/* Icon Containers */
+.icon-container {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  transition: all 0.3s ease;
+}
+
+.success-icon-container {
+  background-color: #dcfce7;
+  animation: successPulse 2s ease-in-out infinite;
+}
+
+.failure-icon-container {
+  background-color: #fee2e2;
+}
+
+.error-icon-container {
+  background-color: #fee2e2;
+}
+
+@keyframes successPulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+}
+
+/* Icons */
+.success-icon {
+  width: 3rem;
+  height: 3rem;
+  color: #22c55e;
+  stroke-width: 3;
+}
+
+.failure-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #ef4444;
+  stroke-width: 2;
+}
+
+.error-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #ef4444;
+  stroke-width: 2;
+}
+
+/* Progress Bar */
+.progress-bar {
+  height: 0.5rem;
+  background-color: #22c55e;
+  border-radius: 9999px;
+  width: 100%;
+  animation: progressPulse 1.5s ease-in-out infinite;
+  margin-bottom: 1.5rem;
+}
+
+@keyframes progressPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Typography */
+.main-heading {
+  font-size: 1.875rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.success-heading {
+  color: #059669;
+}
+
+.failure-heading {
+  color: #dc2626;
+}
+
+.error-heading {
+  color: #374151;
+}
+
+/* Message Boxes */
+.message-box {
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid;
+}
+
+.success-message {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.success-message .message-title {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.success-message .message-subtitle {
+  font-size: 0.875rem;
+  color: #15803d;
+}
+
+.failure-message {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.failure-message .message-title {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.failure-message .message-subtitle {
+  font-size: 0.875rem;
+  color: #b91c1c;
+}
+
+.error-message {
+  color: #dc2626;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+/* Transaction Info */
+.transaction-info {
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.transaction-label {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.25rem;
+}
+
+.transaction-id {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  color: #1f2937;
+  word-break: break-all;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-success {
+  background-color: #22c55e;
+  color: white;
+  width: 100%;
+}
+
+.btn-success:hover {
+  background-color: #16a34a;
+}
+
+.btn-primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+}
+
+.btn-secondary {
+  background-color: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #4b5563;
+}
+
+.btn-danger {
+  background-color: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+/* Button Groups */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Content Sections */
+.content-section {
+  padding: 1.5rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .payment-container {
+    padding: 0.5rem;
+  }
+  
+  .payment-card {
+    padding: 1.5rem;
+  }
+  
+  .main-heading {
+    font-size: 1.5rem;
+  }
+  
+  .icon-container {
+    width: 4rem;
+    height: 4rem;
+  }
+  
+  .success-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  
+  .btn {
+    padding: 0.875rem 1.5rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .spinner-base,
+  .spinner-accent,
+  .success-icon-container,
+  .progress-bar,
+  .payment-card {
+    animation: none;
+  }
+  
+  .btn:hover,
+  .payment-card:hover {
+    transform: none;
+  }
+}
+
+/* Focus States */
+.btn:focus {
+  outline: 2px solid;
+  outline-offset: 2px;
+}
+
+.btn-success:focus {
+  outline-color: #22c55e;
+}
+
+.btn-primary:focus {
+  outline-color: #3b82f6;
+}
+
+.btn-secondary:focus {
+  outline-color: #6b7280;
+}
+
+.btn-danger:focus {
+  outline-color: #ef4444;
+}
