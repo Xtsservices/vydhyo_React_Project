@@ -6,8 +6,7 @@ import "./PaymentResponse.css";
 const PaymentResponse = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  // const linkId = params.get("link_id");
-  const linkId = "live_02092025_VYDAPMT900";
+  const linkId = params.get("link_id");
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
