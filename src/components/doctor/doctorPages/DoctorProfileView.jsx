@@ -416,86 +416,88 @@ const DoctorProfileView = () => {
   }
 
   const handleSaveProfile = async (values) => {
-  let response;
-  try {
-    switch (editModalType) {
-      case 'personal':
-        console.log("Updating personal information", values);
-        const { mobileNumber, ...rest } = values;
-        await apiPut("/users/updateUser", {
-          ...rest,
-          spokenLanguage笛: values.spokenLanguage || []
-        });
-        break;
+    let response;
+    try {
+      switch (editModalType) {
+        case 'personal':
+          console.log("Updating personal information", values);
+          const { mobileNumber, ...rest } = values;
+          await apiPut("/users/updateUser", {
+            ...rest,
+            spokenLanguage笛: values.spokenLanguage || []
+          });
+          break;
 
-      case 'professional': {
-        const formDataObj = new FormData();
-        formDataObj.append('id', doctorData?.userId || '');
-        formDataObj.append('name', doctorData.specialization[0].name);
-        formDataObj.append('experience', values.experience || '');
-        formDataObj.append('degree', Array.isArray(values.degreeId)
-          ? values.degreeId.join(',')
-          : values.degreeId || '');
-        formDataObj.append('bio', values.about || '');
-        if (values.drgreeCertificate) {
-          formDataObj.append('drgreeCertificate', values.drgreeCertificate);
-        }
-        if (values.specializationCertificate) {
-          formDataObj.append('specializationCertificate', values.specializationCertificate);
-        }
-        await apiPost(
-          `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
-          formDataObj
-        );
-        break;
-      }
-
-      case 'locations':
-        await apiPut("/users/updateLocations", { addresses: values.workingLocations });
-        break;
-
-      case 'kyc': {
-        const file = extractFileFromAntdValue(values?.panImage);
-        if (!file) {
-          message.error("Please select a PAN image/PDF.");
+        case 'professional': {
+          const formDataObj = new FormData();
+          formDataObj.append('id', doctorData?.userId || '');
+          formDataObj.append('name', doctorData.specialization[0].name);
+          formDataObj.append('experience', values.experience || '');
+          formDataObj.append('degree', Array.isArray(values.degreeId)
+            ? values.degreeId.join(',')
+            : values.degreeId || '');
+          formDataObj.append('bio', values.about || '');
+          if (values.drgreeCertificate) {
+            formDataObj.append('drgreeCertificate', values.drgreeCertificate);
+          }
+          if (values.specializationCertificate) {
+            formDataObj.append('specializationCertificate', values.specializationCertificate);
+          }
+          await apiPost(
+            `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
+            formDataObj
+          );
           break;
         }
 
-        const userId = String(doctorData?.userId ?? values?.userId ?? "").trim();
-        const panNumber = String(values?.panNumber ?? "").trim();
+        case 'locations':
+          await apiPut("/users/updateLocations", { addresses: values.workingLocations });
+          break;
 
-        const resp = await postKYCDetails({ file, userId, panNumber });
-        console.log(resp, "1234");
-        break;
-      }
+        case 'kyc': {
+          const file = extractFileFromAntdValue(values?.panImage);
+          if (!file) {
+            message.error("Please select a PAN image/PDF.");
+            break;
+          }
 
-      case 'consultation':
-        const cleanedFees = values.consultationModeFee.map(item => ({
-          type: item.type,
-          fee: Number(item.fee),
-          currency: item.currency,
-        }));
-        console.log(cleanedFees, "consultation values");
-        await apiPost("/users/updateConsultationModes", { consultationModeFee: cleanedFees });
-        break;
+          const userId = String(doctorData?.userId ?? values?.userId ?? "").trim();
+          const panNumber = String(values?.panNumber ?? "").trim();
 
-      case 'bank':
-        await apiPost("/users/updateBankDetails", values);
-        break;
-    }
-    console.log(response, "response after update");
-    message.success("Profile updated successfully");
-    handleEditModalClose();
-    fetchDoctorData();
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    if (editModalType === 'kyc' && error.response?.data?.message?.message) {
-      toast.error(error.response.data.message.message);
-    } else {
-      message.error("Failed to update profile");
-    }
+          const resp = await postKYCDetails({ file, userId, panNumber });
+          console.log(resp, "1234");
+          break;
+        }
+
+        case 'consultation':
+          const cleanedFees = values.consultationModeFee.map(item => ({
+            type: item.type,
+            fee: Number(item.fee),
+            currency: item.currency,
+          }));
+          console.log(cleanedFees, "consultation values");
+          await apiPost("/users/updateConsultationModes", { consultationModeFee: cleanedFees });
+          break;
+
+            case 'bank':
+      await apiPost("/users/updateBankDetails", values);
+      break;
   }
-};
+  
+  message.success("Profile updated successfully");
+  handleEditModalClose();
+  fetchDoctorData();
+} catch (error) {
+  console.error("Error updating profile:", error);
+  
+  // Handle backend validation errors
+  if (error.response?.data?.message?.message) {
+    toast.error(error.response.data.message.message);
+  } else {
+    message.error("Failed to update profile");
+  }
+}
+  };
 
   const UploadImage = ({ onUpload, accept = "image/*,.pdf" }) => {
     return (
@@ -756,9 +758,10 @@ const DoctorProfileView = () => {
                     <BankOutlined style={{ marginRight: "8px", color: "#3b82f6" }} />
                     Bank Details
                   </div>
-                  <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('bank')}>
-
-                  </Button>
+                  {!doctorData.bankDetails.accountNumber && (
+                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditModalOpen('bank')}>
+                    </Button>
+                  )}
                 </div>
               }
               className="profile-card"
@@ -1152,47 +1155,42 @@ const DoctorProfileView = () => {
                 </Form.Item>
 
                 <Form.Item
-                  label="IFSC Code"
-                  name={['bankDetails', 'ifscCode']}
-                  rules={[
-                    { required: true, message: 'IFSC code is required' },
-                    {
-                      pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/,
-                      message: 'Invalid IFSC format (e.g., HDFC0ABCD12)'
-                    }
-                  ]}
-                >
-                  <Input
-                    placeholder="e.g., HDFC0ABCD12"
-                    maxLength={11}
-                    onChange={(e) => {
-                      // Convert to uppercase and remove invalid characters
-                      e.target.value = e.target.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-                    }}
-                    onKeyPress={(e) => {
-                      // Allow only alphanumeric characters
-                      if (!/^[A-Z0-9]$/i.test(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
-                    onPaste={(e) => {
-                      // Validate pasted content
-                      const pastedData = e.clipboardData.getData('text');
-                      if (!/^[A-Z0-9]{0,11}$/i.test(pastedData)) {
-                        e.preventDefault();
-                        message.error('IFSC code can only contain letters and numbers');
-                      }
-                    }}
-                    onBlur={(e) => {
-                      // Validate format on blur
-                      const value = e.target.value;
-                      if (value && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
-                        message.error('Invalid IFSC format. Format should be ABCD0EFGHIJ (4 letters, 0, 6 alphanumeric)');
-                      }
-                    }}
-                    style={{ textTransform: 'uppercase' }}
-                  />
-                </Form.Item>
+  label="IFSC Code"
+  name={['bankDetails', 'ifscCode']}
+  rules={[
+    { required: true, message: 'IFSC code is required' },
+    () => ({
+      validator(_, value) {
+        if (!value) return Promise.resolve();
+        
+        if (value.length !== 11) {
+          return Promise.reject(new Error('IFSC code must be exactly 11 characters'));
+        }
+        
+        if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
+          return Promise.reject(new Error('Format: 4 letters + 0 + 6 characters (e.g., HDFC0000123)'));
+        }
+        
+        return Promise.resolve();
+      },
+    }),
+  ]}
+>
+  <Input
+    placeholder="e.g., HDFC0000123"
+    maxLength={11}
+    onChange={(e) => {
+      const upperValue = e.target.value.toUpperCase();
+      form.setFieldsValue({
+        bankDetails: {
+          ...form.getFieldValue('bankDetails'),
+          ifscCode: upperValue
+        }
+      });
+    }}
+    style={{ textTransform: 'uppercase' }}
+  />
+</Form.Item>
               </>
             )}
           </Form>
