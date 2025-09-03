@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, } from "react";
 import { useNavigate } from "react-router-dom";
 import { message ,Spin } from "antd";
 import { toast } from "react-toastify";
@@ -56,8 +56,6 @@ const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     if (role === "reception") return "/Doctor/dashboard";
     if (role === "patient") return "/unauthorized";
     return "/Doctor/dashboard";
-    return "/SuperAdmin/dashboard";
-    return "/Admin/app/dashboard"; // Default route if role is unknown
   };
 
   const handleSendOTP = async () => {
