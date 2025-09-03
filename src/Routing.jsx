@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Unauthorized from "./components/auth/Unauthorized";
 import LayoutWrapper from "./components/LayoutWrapper";
-import DoctorLayoutWrapper from "./components/DoctorLayoutWrapper"; // Import DoctorLayoutWrapper
+import DoctorLayoutWrapper from "./components/DoctorLayoutWrapper"; 
 import SuperAdminDashboard from "./components/superAdmin/superAdminDashboard/SuperAdminDashboard";
 import Login from "./components/auth/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -28,11 +28,13 @@ import EPrescription from "./components/doctor/doctorPages/EPrescription";
 import TotalExpenditureScreen from "./components/doctor/doctorPages/TotalExpenditure";
 import PendingTransactionsScreen from "./components/doctor/doctorPages/PendingTransactions";
 import PreviousPrescriptions from "./components/doctor/doctorPages/PreviousPrescriptions"
-// import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingDoctorsPage";
 import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage";
 import EPrescriptionList from "./components/doctor/doctorPages/EPrescriptionList";
 
-
+//main landing Page
+import TermsAndConditions from "./components/landingPage/TermsAndConditions";
+import RefundPolicy from "./components/landingPage/RefundPolicy";
+import PrivacyPolicyFooter from "./components/landingPage/PrivacyPolicyFooter";
 
 import SuperAdminAppointments from "./components/superAdmin/superAdminPages/SuperAdminAppointments";
 import SuperAdminPatients from "./components/superAdmin/superAdminPages/SuperAdminPatients";
@@ -58,6 +60,13 @@ const AppRoutes = () => {
       <Route path="/" element={<Header />} />
       <Route path="/landingPage" element={<AdvertisingDoctorsPage />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+
+  {/* Footer Policy Pages */}
+ 
+  <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+  
+  <Route path="/refund-policy" element={<RefundPolicy />} />
+  <Route path="/privacy-policy-footer" element={<PrivacyPolicyFooter />} />
 
       {/* SuperAdmin Routes under LayoutWrapper */}
       <Route element={<LayoutWrapper />}>
