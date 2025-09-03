@@ -362,7 +362,9 @@ const createPatient = useCallback(async () => {
       DOB: patientData.dateOfBirth
         ? moment(patientData.dateOfBirth, "DD-MM-YYYY").format("DD-MM-YYYY")
         : "",
-      age: ageValue
+      age: ageValue,
+      userFrom: "walkin"
+
     });
       console.log("Creating patient with body:", body);
 
