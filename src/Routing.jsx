@@ -22,7 +22,7 @@ import Labs from "./components/doctor/doctorPages/Labs";
 import ClinicManagement from "./components/doctor/doctorPages/ClinicManagement"
 import NotFound from "./components/NotFound ";
 import Billing from "./components/doctor/doctorPages/Billing";
-import Header from "./components/landingPage/Header";
+import Header from "./components/landingPage/LandingPage1";
 import DoctorProfileView from "./components/doctor/doctorPages/DoctorProfileView";
 import EPrescription from "./components/doctor/doctorPages/EPrescription";
 import TotalExpenditureScreen from "./components/doctor/doctorPages/TotalExpenditure";

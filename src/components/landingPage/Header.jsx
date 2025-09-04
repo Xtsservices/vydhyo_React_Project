@@ -15,7 +15,7 @@ import {
   DownloadOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
-import LandingPage1 from "./LandingPage1";
+// import LandingPage1 from "./LandingPage1";
 
 const { Header: AntHeader } = Layout;
 const { useBreakpoint } = Grid;
@@ -146,7 +146,7 @@ const Header = () => {
         </Row>
       </AntHeader>
 
-      <LandingPage1 />
+      {/* <LandingPage1 /> */}
     </>
   );
 };

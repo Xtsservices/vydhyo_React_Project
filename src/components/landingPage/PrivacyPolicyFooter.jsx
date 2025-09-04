@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
+import Header from "./Header";
+import Footer from "./Footer";
 
 const sectionStyle = {
     marginBottom: "2rem",
@@ -24,27 +26,33 @@ const listStyle = {
     paddingLeft: "1.5rem",
 };
 
-const PrivacyPolicyFooter = () => (
-    <div style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "flex-start",
-        minHeight: "100vh",
-        background: "#f8f9fa"
-    }}>
-        <div style={{
-            background: "#fff",
-            borderRadius: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-            padding: 40,
-            maxWidth: 900,
-            width: "100%",
-            margin: "2rem 0"
-        }}>
-            <h1 style={headingStyle}>Privacy Policy</h1>
-            <p style={{ ...paragraphStyle, textAlign: "center", color: "#888", fontSize: 14 }}>
-                Last updated on August 30th, 2025
-            </p>
+const PrivacyPolicyFooter = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+    return (
+        <>
+            <Header />
+            <div style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                minHeight: "100vh",
+                background: "#f8f9fa"
+            }}>
+                <div style={{
+                    background: "#fff",
+                    borderRadius: 8,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                    padding: 40,
+                    maxWidth: 900,
+                    width: "100%",
+                    margin: "2rem 0"
+                }}>
+                    <h1 style={headingStyle}>Privacy Policy</h1>
+                    <p style={{ ...paragraphStyle, textAlign: "center", color: "#888", fontSize: 14 }}>
+                        Last updated on August 30th, 2025
+                    </p>
 
             {/* Section 1 */}
             <section style={sectionStyle}>
@@ -230,7 +238,10 @@ const PrivacyPolicyFooter = () => (
             </section>
         </div>
     </div>
+    <Footer />
+    </>
 );
+};
 
 
 export default PrivacyPolicyFooter;

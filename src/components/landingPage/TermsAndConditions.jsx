@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
+import Header from "./Header";
+import Footer from "./Footer";
 
 const sectionStyle = {
     marginBottom: "2rem",
@@ -27,8 +29,16 @@ const listStyle = {
     paddingLeft: "1.5rem",
 };
 
-const TermsAndConditions = () => (
-    <div style={{
+                     
+
+const TermsAndConditions = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+    return (
+        <>
+            <Header />
+            <div style={{
         display: "flex",
         justifyContent: "center",
         alignItems: "flex-start",
@@ -276,6 +286,9 @@ const TermsAndConditions = () => (
             </section>
         </div>
     </div>
+    <Footer />
+    </>
 );
+}
 
 export default TermsAndConditions;
