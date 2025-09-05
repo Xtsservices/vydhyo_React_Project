@@ -2,33 +2,6 @@ import React, { useEffect } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 
-const sectionStyle = {
-    marginBottom: "2rem",
-};
-
-const headingStyle = {
-    color: "#00203f",
-    marginBottom: "1rem",
-    textAlign: "center",
-};
-
-const subHeadingStyle = {
-    marginBottom: "0.5rem",
-    textAlign: "center",
-};
-
-const paragraphStyle = {
-    color: "#555",
-    fontSize: 15,
-    marginBottom: "1rem",
-    lineHeight: 1.7,
-};
-
-const listStyle = {
-    marginBottom: "1rem",
-    paddingLeft: "1.5rem",
-};
-
 const sections = [
     {
         title: "1. Introduction",
@@ -126,18 +99,36 @@ const sections = [
     },
 ];
 
-function renderList(list, style) {
+function renderList(list) {
     return (
-        <ul style={style}>
+        <ul style={{
+            marginBottom: "1rem",
+            paddingLeft: "1.5rem",
+            listStyleType: "disc",
+            color: "#555",
+            fontSize: "1rem",
+            lineHeight: "1.75",
+        }}>
             {list.map((item, idx) => {
                 if (typeof item === "string" || React.isValidElement(item.text)) {
-                    return <li key={idx}>{item.text || item}</li>;
+                    return <li key={idx} style={{ color: "#555", fontSize: "1rem", lineHeight: "1.75" }}>{item.text || item}</li>;
                 }
                 if (item.sublist) {
                     return (
-                        <li key={idx}>
+                        <li key={idx} style={{ color: "#555", fontSize: "1rem", lineHeight: "1.75" }}>
                             {item.text}
-                            {renderList(item.sublist, { listStyleType: "circle", paddingLeft: 24 })}
+                            <ul style={{
+                                listStyleType: "circle",
+                                paddingLeft: "1.5rem",
+                                marginTop: "0.5rem",
+                                color: "#555",
+                                fontSize: "1rem",
+                                lineHeight: "1.75",
+                            }}>
+                                {item.sublist.map((subItem, subIdx) => (
+                                    <li key={subIdx} style={{ color: "#555", fontSize: "1rem", lineHeight: "1.75" }}>{subItem}</li>
+                                ))}
+                            </ul>
                         </li>
                     );
                 }
@@ -151,6 +142,7 @@ const RefundPolicy = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
     return (
         <>
             <Header />
@@ -159,31 +151,60 @@ const RefundPolicy = () => {
                 justifyContent: "center",
                 alignItems: "flex-start",
                 minHeight: "100vh",
-                background: "#f8f9fa"
+                backgroundColor: "#f8f9fa",
+                padding: "2rem 1rem",
+                fontFamily: "'Inter', sans-serif",
             }}>
                 <div style={{
-                    background: "#fff",
-                    borderRadius: 8,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-                    padding: 40,
-                    maxWidth: 900,
+                    backgroundColor: "#fff",
+                    borderRadius: "0.5rem",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    padding: "2rem",
+                    maxWidth: "56rem",
                     width: "100%",
-                    margin: "2rem 0"
+                    margin: "2rem 0",
+                    transition: "box-shadow 0.3s ease",
                 }}>
-                    <h1 style={headingStyle}>Payment Terms and Refund Policy</h1>
-                    <h2 style={subHeadingStyle}>Vydhyo Healthcare Platform</h2>
-                    <p style={{ ...paragraphStyle, textAlign: "center", color: "#888", fontSize: 14 }}>
+                    <h1 style={{
+                        fontSize: "2rem",
+                        fontWeight: "700",
+                        color: "#00203f",
+                        textAlign: "center",
+                        marginBottom: "1rem",
+                    }}>Payment Terms and Refund Policy</h1>
+                    <h2 style={{
+                        fontSize: "1.75rem",
+                        fontWeight: "600",
+                        color: "#00203f",
+                        textAlign: "center",
+                        marginBottom: "0.5rem",
+                    }}>Vydhyo Healthcare Platform</h2>
+                    <p style={{
+                        textAlign: "center",
+                        color: "#888",
+                        fontSize: "0.875rem",
+                        marginBottom: "2rem",
+                    }}>
                         Last updated on August 30th, 2025
                     </p>
                     {sections.map((section, idx) => (
-                        <section key={idx} style={sectionStyle}>
-                            <h3>{section.title}</h3>
+                        <section key={idx} style={{ marginBottom: "2.5rem" }}>
+                            <h3 style={{
+                                fontSize: "1.5rem",
+                                fontWeight: "600",
+                                color: "#00203f",
+                                marginBottom: "1rem",
+                            }}>{section.title}</h3>
                             {section.content &&
                                 section.content.map((c, i) => (
-                                    <p key={i} style={paragraphStyle}>{c}</p>
+                                    <p key={i} style={{
+                                        color: "#555",
+                                        fontSize: "1rem",
+                                        lineHeight: "1.75",
+                                        marginBottom: "1rem",
+                                    }}>{c}</p>
                                 ))}
-                            {section.list &&
-                                renderList(section.list, listStyle)}
+                            {section.list && renderList(section.list)}
                         </section>
                     ))}
                 </div>
