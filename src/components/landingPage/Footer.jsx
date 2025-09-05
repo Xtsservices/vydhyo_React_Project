@@ -50,14 +50,14 @@ const Footer = () => {
                 <ContactInfo 
                   icon={<CustomerServiceOutlined style={{ fontSize: 24 }} />}
                   title="Customer Support"
-                  value="+91 9985288579"
+                  value="+91 9666955501"
                 />
               </Col>
               <Col xs={24} sm={12} lg={12}>
                 <ContactInfo 
                   icon={<MessageOutlined style={{ fontSize: 24 }} />}
                   title="Drop Us an Email"
-                  value="vydhyo@gmail.com"
+                  value="Vydhyo@gmail.com"
                 />
               </Col>
             </Row>
@@ -199,7 +199,7 @@ const Footer = () => {
         </Link>
       </Space>
     </Col>
-          <Col xs={24} sm={8} lg={8}>
+          {/* <Col xs={24} sm={8} lg={8}>
             <div style={{ textAlign: "right" }}>
               <Space size={8}>
                 <img 
@@ -229,7 +229,7 @@ const Footer = () => {
                 />
               </Space>
             </div>
-          </Col>
+          </Col> */}
         </Row>
       </div>
     </footer>
