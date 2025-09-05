@@ -50,14 +50,14 @@ const Footer = () => {
                 <ContactInfo 
                   icon={<CustomerServiceOutlined style={{ fontSize: 24 }} />}
                   title="Customer Support"
-                  value="+91 97612 34789"
+                  value="+91 9985288579"
                 />
               </Col>
               <Col xs={24} sm={12} lg={12}>
                 <ContactInfo 
                   icon={<MessageOutlined style={{ fontSize: 24 }} />}
                   title="Drop Us an Email"
-                  value="support@gmail.com"
+                  value="vydhyo@gmail.com"
                 />
               </Col>
             </Row>
@@ -66,9 +66,19 @@ const Footer = () => {
       </Card>
 
       {/* Main Footer Content */}
-      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "64px 32px 32px" }}>
-        <Row gutter={[32, 32]} justify="space-between">
-          {/* Left side - Navigation columns */}
+      <div
+  style={{
+    maxWidth: 1320,
+    margin: '0 auto',
+    padding: '64px 32px 32px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+      {/* <div style={{ maxWidth: 1320, margin: "0 auto", padding: "64px 32px 32px", justifyContent:'center', alignItems:'center'}}> */}
+        {/* <Row gutter={[32, 32]} justify="space-between">
           <Col xs={24} lg={16}>
             <Row gutter={[32, 32]}>
               <Col xs={12} sm={6} md={6} lg={6}>
@@ -98,7 +108,6 @@ const Footer = () => {
             </Row>
           </Col>
 
-          {/* Right side - Newsletter */}
           <Col xs={24} lg={8}>
             <div style={{ minWidth: 320 }}>
               <Title level={5} style={{ marginBottom: 16, fontSize: "1.1rem", fontWeight: 600 }}>
@@ -136,7 +145,11 @@ const Footer = () => {
                 </Button>
               </Space.Compact>
               
-              <div>
+
+            </div>
+          </Col>
+        </Row> */}
+                      
                 <Title level={5} style={{ marginBottom: 16, fontSize: "1rem", fontWeight: 600 }}>
                   Connect With Us
                 </Title>
@@ -153,13 +166,10 @@ const Footer = () => {
                   <a href="https://www.instagram.com/vydhyo_healthcare/profilecard/?igsh=ZGFzM25temd4bWZ4" target="_blank" rel="noopener noreferrer">              
                     <SocialIcon icon={<InstagramOutlined />} />
                   </a>
-                  <SocialIcon icon={<LinkedinOutlined />} />
-                  <SocialIcon icon={<GithubOutlined />} />
+                  {/* <SocialIcon icon={<LinkedinOutlined />} />
+                  <SocialIcon icon={<GithubOutlined />} /> */}
                 </Space>
-              </div>
-            </div>
-          </Col>
-        </Row>
+              
       </div>
 
       {/* Footer Bottom */}
@@ -176,13 +186,19 @@ const Footer = () => {
               Copyright © 2025 Vydhyo. All Rights Reserved<br />VYDHYO HEALTHCARE PRIVATE LIMITED
             </Text>
           </Col>
-          <Col xs={24} sm={8} lg={8}>
-            <Space split={<Divider type="vertical" />} style={{ justifyContent: "center", width: "100%" }}>
-              <Link to="/terms-and-conditions" style={{ color: "inherit", fontSize: "0.9rem" }}><Text type="secondary">Terms of Conditions</Text></Link>
-              <Link to="/privacy-policy-footer" style={{ color: "inherit", fontSize: "0.9rem" }}><Text type="secondary">Privacy Policy</Text></Link>
-              <Link to="/refund-policy" style={{ color: "inherit", fontSize: "0.9rem" }}><Text type="secondary">Refund Policy</Text></Link>
-            </Space>
-          </Col>
+           <Col xs={24} sm={8} lg={8}>
+      <Space split={<Divider type="vertical" />} style={{ justifyContent: 'center', width: '100%' }}>
+        <Link to="/terms-and-conditions" style={{ color: '#1890ff', fontSize: '0.9rem' }}>
+          <Text >Terms of Conditions</Text>
+        </Link>
+        <Link to="/privacy-policy-footer" style={{ color: '#1890ff', fontSize: '0.9rem' }}>
+          <Text >Privacy Policy</Text>
+        </Link>
+        <Link to="/refund-policy" style={{ color: '#1890ff', fontSize: '0.9rem' }}>
+          <Text >Refund Policy</Text>
+        </Link>
+      </Space>
+    </Col>
           <Col xs={24} sm={8} lg={8}>
             <div style={{ textAlign: "right" }}>
               <Space size={8}>
