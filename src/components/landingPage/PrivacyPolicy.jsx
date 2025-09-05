@@ -43,7 +43,8 @@ C. Device & Usage Information
 • App usage data and interaction logs
 
 D. Location Information
-• Real-time location (for ambulance services, nearest providers, etc.)`,
+• Real-time location (for ambulance services, nearest providers, etc.)
+`,
   },
   {
     question: "2. How We Use Your Information",
@@ -71,7 +72,8 @@ D. Location Information
 • Withdraw consent and deactivate your account
 • Download your data in portable format
 
-To exercise these rights, email us at privacy@vydyo.in`,
+To exercise these rights, email us at Vydhyo@gmail.com
+`,
   },
   {
     question: "5. Data Retention",
@@ -79,7 +81,8 @@ To exercise these rights, email us at privacy@vydyo.in`,
 • Legal, regulatory, or operational reasons
 • Providing uninterrupted healthcare continuity
 
-Inactive user data is securely deleted after [X years] or upon formal request.`,
+Inactive user data is securely deleted after 5 Years or upon formal request.
+`,
   },
 //   {
 //     question: "6. Security Measures",
