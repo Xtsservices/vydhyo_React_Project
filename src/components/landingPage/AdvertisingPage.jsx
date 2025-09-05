@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Row, Col, Button, Card, Divider, Grid, Dropdown, Space, Layout } from "antd";
 import {
   AndroidFilled,
@@ -12,6 +12,9 @@ import {
   FundOutlined,
   UserOutlined,
   FormOutlined,
+  FacebookOutlined,
+  TwitterOutlined,
+  InstagramOutlined,
 } from "@ant-design/icons";
 
 const { Header } = Layout;
@@ -126,6 +129,13 @@ const AdvertisingDoctorsPage = () => {
       </div>
     </Card>
   );
+
+  const scrollToSection = (sectionId) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div style={{ backgroundColor: "#F8FCFA", minHeight: "100vh" }}>
@@ -831,7 +841,6 @@ const AdvertisingDoctorsPage = () => {
               <p style={{ color: "#4B5C58", fontSize: 16, lineHeight: 1.5 }}>
                 Once we verify online you are onboarded on Vydhyo
               </p>
-
             </Col>
           </Row>
 
@@ -1038,7 +1047,7 @@ const AdvertisingDoctorsPage = () => {
               marginTop: screens.md ? 0 : 32,
             }}
           >
-            <div>
+            {/* <div>
               <div style={{ 
                 fontWeight: 600, 
                 fontSize: 18, 
@@ -1048,7 +1057,7 @@ const AdvertisingDoctorsPage = () => {
                 Quick Links
               </div>
               <div style={{ marginBottom: 12 }}>
-                <a href="/landingPage" style={{ 
+                <a href="#top" style={{ 
                   color: "#F8FCFA", 
                   textDecoration: "none",
                   fontSize: 16,
@@ -1059,22 +1068,14 @@ const AdvertisingDoctorsPage = () => {
                 }}>Home</a>
               </div>
               <div style={{ marginBottom: 12 }}>
-                <a href="/landingPage" style={{ 
+                <a href="#about" onClick={(e) => { e.preventDefault(); scrollToSection('about'); }} style={{ 
                   color: "#F8FCFA", 
                   textDecoration: "none",
                   fontSize: 16,
                   opacity: 0.8
                 }}>About</a>
               </div>
-              <div>
-                <a href="/landingPage" style={{ 
-                  color: "#F8FCFA", 
-                  textDecoration: "none",
-                  fontSize: 16,
-                  opacity: 0.8
-                }}>Contact</a>
-              </div>
-            </div>
+            </div> */}
             <div>
               <div style={{ 
                 fontWeight: 600, 
@@ -1085,28 +1086,34 @@ const AdvertisingDoctorsPage = () => {
                 Support
               </div>
               <div style={{ marginBottom: 12 }}>
-                <a href="/landingPage" style={{ 
+                <Link to="/terms-and-conditions" style={{ 
                   color: "#F8FCFA", 
                   textDecoration: "none",
                   fontSize: 16,
                   opacity: 0.8
-                }}>Help Center</a>
+                }}>
+                  Terms of Conditions
+                </Link>
               </div>
               <div style={{ marginBottom: 12 }}>
-                <a href="/landingPage" style={{ 
+                <Link to="/privacy-policy-footer" style={{ 
                   color: "#F8FCFA", 
                   textDecoration: "none",
                   fontSize: 16,
                   opacity: 0.8
-                }}>Privacy Policy</a>
+                }}>
+                  Privacy Policy
+                </Link>
               </div>
               <div>
-                <a href="/landingPage" style={{ 
+                <Link to="/refund-policy" style={{ 
                   color: "#F8FCFA", 
                   textDecoration: "none",
                   fontSize: 16,
                   opacity: 0.8
-                }}>Terms</a>
+                }}>
+                  Refund Policy
+                </Link>
               </div>
             </div>
             <div>
@@ -1119,13 +1126,13 @@ const AdvertisingDoctorsPage = () => {
                 Contact
               </div>
               <div style={{ marginBottom: 12 }}>
-                <a href="mailto:support@vydhyo.com" style={{ 
+                <a href="mailto:Vydhyo@gmail.com" style={{ 
                   color: "#F8FCFA", 
                   textDecoration: "none",
                   fontSize: 16,
                   opacity: 0.8
                 }}>
-                  support@vydhyo.com
+                  Vydhyo@gmail.com
                 </a>
               </div>
               <div>
@@ -1133,14 +1140,35 @@ const AdvertisingDoctorsPage = () => {
                   color: "#F8FCFA", 
                   fontSize: 16,
                   opacity: 0.8
-                }}>+1 234 567 890</span>
+                }}>+91 9666955501</span>
               </div>
+            </div>
+            <div>
+              <div style={{ 
+                fontWeight: 600, 
+                fontSize: 18, 
+                marginBottom: 16,
+                color: "#fff"
+              }}>
+                Connect With Us
+              </div>
+              <Space size={12}>
+                <a href="https://www.facebook.com/profile.php?id=61577351085015" target="_blank" rel="noopener noreferrer">
+                  <SocialIcon icon={<FacebookOutlined />} />
+                </a>
+                <a href="https://x.com/vydhyo" target="_blank" rel="noopener noreferrer">
+                  <SocialIcon icon={<TwitterOutlined />} />
+                </a>  
+                <a href="https://www.instagram.com/vydhyo_healthcare/profilecard/?igsh=ZGFzM25temd4bWZ4" target="_blank" rel="noopener noreferrer">              
+                  <SocialIcon icon={<InstagramOutlined />} />
+                </a>
+              </Space>
             </div>
           </div>
         </div>
         
         {/* Copyright */}
-        {/* <div style={{
+        <div style={{
           textAlign: "center",
           marginTop: 48,
           paddingTop: 24,
@@ -1148,10 +1176,31 @@ const AdvertisingDoctorsPage = () => {
           color: "rgba(255,255,255,0.6)",
           fontSize: 14
         }}>
-          © {new Date().getFullYear()} Vydhyo. All rights reserved.
-        </div> */}
+          Copyright © 2025 Vydhyo. All Rights Reserved<br />VYDHYO HEALTHCARE PRIVATE LIMITED
+        </div>
       </footer>
     </div>
+  );
+};
+
+const SocialIcon = ({ icon }) => {
+  return (
+    <Button 
+      shape="circle" 
+      icon={icon} 
+      size="large"
+      style={{ 
+        background: "#F8FCFA", 
+        color: "#1A3B34",
+        border: "1px solid #e8e8e8",
+        width: 44,
+        height: 44,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+      className="social-icon-btn"
+    />
   );
 };
 
