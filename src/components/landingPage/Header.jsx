@@ -93,7 +93,7 @@ const Header = () => {
               align="middle"
             >
               <Col>
-                <Button
+                {/* <Button
                   type="primary"
                   shape="round"
                   style={{
@@ -102,17 +102,17 @@ const Header = () => {
                   }}
                 >
                   ABHA
-                </Button>
+                </Button> */}
               </Col>
 
               <Col>
-                <Button shape="round" icon={<TeamOutlined />}>
+                {/* <Button shape="round" icon={<TeamOutlined />}>
                   For Partners
-                </Button>
+                </Button> */}
               </Col>
 
               <Col>
-                <Button shape="round" icon={<DownloadOutlined />}>
+                <Button shape="round" icon={<DownloadOutlined />} disabled>
                   Download the App
                 </Button>
               </Col>
@@ -138,7 +138,7 @@ const Header = () => {
                       background: "linear-gradient(135deg, #667eea, #764ba2)",
                     }}
                   />
-                  <span style={{ fontWeight: 600 }}>Login</span>
+                  <span style={{ fontWeight: 600 }}>Partners Login</span>
                 </Button>
               </Col>
             </Row>

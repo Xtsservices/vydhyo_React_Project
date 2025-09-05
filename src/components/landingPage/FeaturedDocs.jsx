@@ -151,8 +151,7 @@ const FeaturedDocs = () => {
 
     return (
         <>
-        <div style={{ background: "#f8fafd", minHeight: "100vh", padding: 24 }}>
-            {/* Header */}
+        {/* <div style={{ background: "#f8fafd", minHeight: "100vh", padding: 24 }}>
             <Row justify="center" style={{ marginBottom: 24 }}>
                 <Col>
                     <Tag color="#00203f" style={{ fontWeight: 600, fontSize: 14, borderRadius: 20, padding: "8px 20px" }}>
@@ -164,9 +163,8 @@ const FeaturedDocs = () => {
                 </Col>
             </Row>
 
-            {/* Carousel Controls and Cards */}
             <Row justify="center" align="middle" style={{ marginBottom: 24 }}>
-                {/* <Button
+                <Button
                     shape="circle"
                     icon={<LeftOutlined />}
                     onClick={handlePrev}
@@ -178,7 +176,7 @@ const FeaturedDocs = () => {
                         color: currentIndex === 0 ? "#64748b" : "#fff",
                         border: "none",
                     }}
-                /> */}
+                />
                 <Row gutter={[24, 24]} style={{ width: "100%", maxWidth: 1200 }} justify="center">
                     {visibleDoctors.map((doc, idx) => (
                         <Col
@@ -273,7 +271,7 @@ const FeaturedDocs = () => {
                                             {doc.available && (
                                                 <Tag
                                                     color="success"
-                                                    // icon={<CheckCircleFilled />}
+                                                    icon={<CheckCircleFilled />}
                                                     style={{
                                                         fontWeight: 600,
                                                         fontSize: 12,
@@ -362,7 +360,6 @@ const FeaturedDocs = () => {
                 />
             </Row>
 
-            {/* Progress Indicators */}
             <Row justify="center" style={{ marginBottom: 20 }}>
                 <Space>
                     {Array.from({ length: maxIndex + 1 }, (_, i) => (
@@ -384,7 +381,7 @@ const FeaturedDocs = () => {
                     ))}
                 </Space>
             </Row>
-        </div>
+        </div> */}
 
         <WhyChooseUs />
 

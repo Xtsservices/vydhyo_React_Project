@@ -97,7 +97,7 @@ const GetApp = () => {
             other Indian languages.
           </Text>
 
-          <Space size={16}>
+          {/* <Space size={16}>
             <Button
               href="https://play.google.com/store/apps/details?id=com.vydhyo.patient"
               target="_blank"
@@ -132,17 +132,17 @@ const GetApp = () => {
             >
               App Store
             </Button>
-          </Space>
+          </Space> */}
 
           <Space size={16} style={{ marginTop: 24 }}>
             <Text style={{ color: "#fff", display: "flex", alignItems: "center" }}>
               <ClockCircleOutlined style={{ marginRight: 8 }} />
               24x7 Doctor Support
             </Text>
-            <Text style={{ color: "#fff", display: "flex", alignItems: "center" }}>
+            {/* <Text style={{ color: "#fff", display: "flex", alignItems: "center" }}>
               <ThunderboltOutlined style={{ marginRight: 8 }} />
               ₹0 Consultation Fee*
-            </Text>
+            </Text> */}
           </Space>
         </Col>
 

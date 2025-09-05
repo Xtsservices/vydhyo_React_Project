@@ -8,7 +8,7 @@ const { Title, Text } = Typography;
 const blogs = [
   {
     id: 1,
-    date: { day: "15", month: "May" },
+    // date: { day: "15", month: "May" },
     category: "Home Care",
     title: "Essential Home Care Services for Elderly Patients",
     desc: "Comprehensive guide to providing quality home care for seniors, including medication management and daily living assistance...",
@@ -16,7 +16,7 @@ const blogs = [
   },
   {
     id: 2,
-    date: { day: "21", month: "Apr" },
+    // date: { day: "21", month: "Apr" },
     category: "Blood Bank",
     title: "Blood Donation: Safety Guidelines and Health Benefits",
     desc: "Understanding the importance of blood donation, safety protocols, and how it benefits both donors and recipients...",
@@ -24,7 +24,7 @@ const blogs = [
   },
   {
     id: 3,
-    date: { day: "22", month: "Jan" },
+    // date: { day: "22", month: "Jan" },
     category: "Elder Care",
     title: "Managing Chronic Conditions in Senior Citizens",
     desc: "Professional strategies for managing diabetes, hypertension, and other chronic conditions in elderly patients...",
@@ -32,7 +32,7 @@ const blogs = [
   },
   {
     id: 4,
-    date: { day: "10", month: "Mar" },
+    // date: { day: "10", month: "Mar" },
     category: "Skilled Nursing",
     title: "Advanced Wound Care Techniques for Home Patients",
     desc: "Professional wound care management, infection prevention, and healing protocols for home healthcare settings...",
@@ -40,7 +40,7 @@ const blogs = [
   },
   {
     id: 5,
-    date: { day: "05", month: "Feb" },
+    // date: { day: "05", month: "Feb" },
     category: "Post-Surgery Care",
     title: "Home Recovery After Major Surgery: A Complete Guide",
     desc: "Essential post-operative care tips, pain management, and recovery milestones for patients recovering at home...",
@@ -48,7 +48,7 @@ const blogs = [
   },
   {
     id: 6,
-    date: { day: "18", month: "May" },
+    // date: { day: "18", month: "May" },
     category: "Physiotherapy",
     title: "Post-Surgery Rehabilitation: Key Exercises for Recovery",
     desc: "Expert physiotherapy techniques and exercises to help patients recover faster from surgical procedures...",
@@ -125,7 +125,7 @@ const Blogs = () => {
 
         <Row justify="center" style={{ marginTop: 48 }}>
           <Col>
-            <Button 
+            {/* <Button 
               type="primary" 
               size="large"
               style={{ 
@@ -138,7 +138,7 @@ const Blogs = () => {
             >
               View All Articles
               <RightOutlined style={{ marginLeft: 8 }} />
-            </Button>
+            </Button> */}
           </Col>
         </Row>
       </div>
@@ -171,7 +171,7 @@ const BlogCard = ({ blog }) => {
                 objectFit: "cover"
               }}
             />
-            <div
+            {/* <div
               style={{
                 position: "absolute",
                 top: 16,
@@ -189,7 +189,7 @@ const BlogCard = ({ blog }) => {
             >
               <Text strong style={{ fontSize: 18, lineHeight: 1 }}>{blog.date.day}</Text>
               <Text style={{ fontSize: 12, textTransform: "uppercase" }}>{blog.date.month}</Text>
-            </div>
+            </div> */}
           </div>
         </Col>
         <Col xs={24} sm={14}>

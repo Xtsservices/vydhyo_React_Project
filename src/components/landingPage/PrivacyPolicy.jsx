@@ -81,44 +81,44 @@ To exercise these rights, email us at privacy@vydyo.in`,
 
 Inactive user data is securely deleted after [X years] or upon formal request.`,
   },
-  {
-    question: "6. Security Measures",
-    answer: `We use bank-grade encryption, secure cloud infrastructure, and industry-standard protocols:
-• End-to-end encryption (TLS 1.3)
-• Role-based access control and audit logs
-• ISO/IEC 27001 certified systems
-• HIPAA-compliant data handling`,
-  },
-  {
-    question: "7. Cookies and Tracking",
-    answer: `We use minimal cookies for:
-• Analytics and performance improvement
-• Remembering user preferences
+//   {
+//     question: "6. Security Measures",
+//     answer: `We use bank-grade encryption, secure cloud infrastructure, and industry-standard protocols:
+// • End-to-end encryption (TLS 1.3)
+// • Role-based access control and audit logs
+// • ISO/IEC 27001 certified systems
+// • HIPAA-compliant data handling`,
+//   },
+//   {
+//     question: "7. Cookies and Tracking",
+//     answer: `We use minimal cookies for:
+// • Analytics and performance improvement
+// • Remembering user preferences
 
-You can disable cookies via your browser without affecting core functionality.`,
-  },
-  {
-    question: "8. Third-Party Services",
-    answer:
-      "Some services may be integrated via trusted third parties (e.g., payment gateways). We ensure these partners meet equivalent data privacy and security standards.",
-  },
-  {
-    question: "9. Children's Privacy",
-    answer:
-      "VYDYO is not intended for users under the age of 18 without parental/guardian consent. We do not knowingly collect data from minors.",
-  },
-  {
-    question: "10. Grievance Officer",
-    answer: `Name: 
-Email: grievance@vydyo.in
-Contact: +91-XXXXXXXXXX
-Address: VYDYO HealthTech Pvt Ltd, Hall Mark Sunny Side, Manchirevula, Hyderabad, Telangana, India`,
-  },
-  {
-    question: "11. Policy Updates",
-    answer:
-      "We may revise this Privacy Policy to reflect legal or business changes. Users will be notified via app/website or email. Continued use of VYDYO implies consent to the updated policy.",
-  },
+// You can disable cookies via your browser without affecting core functionality.`,
+//   },
+//   {
+//     question: "8. Third-Party Services",
+//     answer:
+//       "Some services may be integrated via trusted third parties (e.g., payment gateways). We ensure these partners meet equivalent data privacy and security standards.",
+//   },
+//   {
+//     question: "9. Children's Privacy",
+//     answer:
+//       "VYDYO is not intended for users under the age of 18 without parental/guardian consent. We do not knowingly collect data from minors.",
+//   },
+//   {
+//     question: "10. Grievance Officer",
+//     answer: `Name: 
+// Email: grievance@vydyo.in
+// Contact: +91-XXXXXXXXXX
+// Address: VYDYO HealthTech Pvt Ltd, Hall Mark Sunny Side, Manchirevula, Hyderabad, Telangana, India`,
+//   },
+//   {
+//     question: "11. Policy Updates",
+//     answer:
+//       "We may revise this Privacy Policy to reflect legal or business changes. Users will be notified via app/website or email. Continued use of VYDYO implies consent to the updated policy.",
+//   },
 ];
 
 const PrivacyPolicy = () => {
