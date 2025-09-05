@@ -173,7 +173,7 @@ const Footer = () => {
         >
           <Col xs={24} sm={8} lg={8}>
             <Text style={{ fontSize: "0.95rem" }}>
-              Copyright © 2025 Vydhyo. All Rights Reserved
+              Copyright © 2025 Vydhyo. All Rights Reserved<br />VYDHYO HEALTHCARE PRIVATE LIMITED
             </Text>
           </Col>
           <Col xs={24} sm={8} lg={8}>
