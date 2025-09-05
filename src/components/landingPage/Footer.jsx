@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Row, Col, Card, Typography, Button, Input, Space, Divider } from "antd";
+import { Link } from "react-router-dom";
 import { 
   CustomerServiceOutlined, 
   MessageOutlined, 
@@ -177,9 +178,9 @@ const Footer = () => {
           </Col>
           <Col xs={24} sm={8} lg={8}>
             <Space split={<Divider type="vertical" />} style={{ justifyContent: "center", width: "100%" }}>
-              <Text type="secondary" style={{ fontSize: "0.9rem" }}>Legal Notice</Text>
-              <Text type="secondary" style={{ fontSize: "0.9rem" }}>Privacy Policy</Text>
-              <Text type="secondary" style={{ fontSize: "0.9rem" }}>Refund Policy</Text>
+              <Link to="/terms-and-conditions" style={{ color: "inherit", fontSize: "0.9rem" }}><Text type="secondary">Terms of Conditions</Text></Link>
+              <Link to="/privacy-policy-footer" style={{ color: "inherit", fontSize: "0.9rem" }}><Text type="secondary">Privacy Policy</Text></Link>
+              <Link to="/refund-policy" style={{ color: "inherit", fontSize: "0.9rem" }}><Text type="secondary">Refund Policy</Text></Link>
             </Space>
           </Col>
           <Col xs={24} sm={8} lg={8}>
