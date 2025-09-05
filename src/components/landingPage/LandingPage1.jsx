@@ -13,6 +13,8 @@ import {
 } from "@ant-design/icons";
 import { Row, Col, Card, Button, Image, Space, Typography, Grid } from "antd";
 import TopSpecialities from "./TopSpecialities";
+import Header from "./Header";
+
 
 
 const { useBreakpoint } = Grid;
@@ -155,7 +157,7 @@ const LandingPage1 = ({ scrollToSection }) => {
 
   return (
     <>
-
+<Header/>
     <section id="home" style={{
       position: 'relative',
       minHeight: '100vh',
@@ -284,6 +286,7 @@ const LandingPage1 = ({ scrollToSection }) => {
     </section>
 
     <TopSpecialities />
+  
 
     </>
   );

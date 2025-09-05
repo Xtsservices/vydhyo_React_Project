@@ -5,21 +5,21 @@ import { apiGet } from "./components/api";
 import { useDispatch, useSelector } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 const App = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.currentUserData);
   const hasFetchedUser = useRef(false);
-const getToken = () => localStorage.getItem("accessToken");
+  const getToken = () => localStorage.getItem("accessToken");
+  const navigate = useNavigate();
 
-const getRouteFromUserType = (role) => {
+  const getRouteFromUserType = (role) => {
     if (role === "superadmin") return "/SuperAdmin/dashboard";
     if (role === "doctor") return "/Doctor/dashboard";
     if (role === "reception") return "/Doctor/dashboard";
     if (role === "patient") return "/unauthorized";
 
     return "/Doctor/dashboard";
-    return "/SuperAdmin/dashboard";
-    return "/Admin/app/dashboard"; // Default route if role is unknown
   };
 
 
@@ -29,19 +29,19 @@ const getRouteFromUserType = (role) => {
       console.log("Fetching user data from API");
       const response = await apiGet("/users/getUser");
       const userData = response.data?.data;
-      console.log("userDatafrom app.jsx",userData)
+      console.log("userDatafrom app.jsx", userData)
       if (userData) {
         //fetch current DoctorData
-  const doctorId = userData?.role === "doctor" ? userData?.userId : userData?.createdBy;
+        const doctorId = userData?.role === "doctor" ? userData?.userId : userData?.createdBy;
 
-         const response = await apiGet(`/users/getUser?userId=${doctorId}`);
-                const docData = response.data?.data;
-          console.log(docData, "userdetais")
-           const redirectRoute = getRouteFromUserType(
-          userData?.role 
+        const response = await apiGet(`/users/getUser?userId=${doctorId}`);
+        const docData = response.data?.data;
+        console.log(docData, "userdetais")
+        const redirectRoute = getRouteFromUserType(
+          userData?.role
         );
 
-           dispatch({
+        dispatch({
           type: "doctorData",
           payload: docData,
         });
@@ -51,7 +51,7 @@ const getRouteFromUserType = (role) => {
           payload: userData,
         });
         navigate(redirectRoute)
-    
+
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -67,28 +67,28 @@ const getRouteFromUserType = (role) => {
 
   const getDoctorDa = async () => {
     try {
-const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+      const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-         const response = await apiGet(`/users/getUser?userId=${doctorId}`);
-                const docData = response.data?.data;
-          console.log(docData, "docData")
-          
+      const response = await apiGet(`/users/getUser?userId=${doctorId}`);
+      const docData = response.data?.data;
+      console.log(docData, "docData")
 
-           dispatch({
-          type: "doctorData",
-          payload: docData,
-        });
-    }catch (error) {
+
+      dispatch({
+        type: "doctorData",
+        payload: docData,
+      });
+    } catch (error) {
       console.error("Error fetching doctor data:", error);
     }
-    
+
   }
 
   useEffect(() => {
-if(user){
-  getDoctorDa()
-}
-  },[user])
+    if (user) {
+      getDoctorDa()
+    }
+  }, [user])
 
   return (
     <>
