@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState,useCallback } from "react";
 import { Card, Typography, Button } from "antd";
 import { DatePicker as AntDatePicker } from "antd";
 import {
@@ -781,7 +781,8 @@ const PatientAppointments = ({
   );
 };
 
-const PatientFeedback = () => (
+
+const PatientFeedback = ({ reviews = [] }) => (
   <Card
     style={{
       borderRadius: "16px",
@@ -812,94 +813,125 @@ const PatientFeedback = () => (
         Patient Feedback
       </Title>
       <div style={{ display: "flex", gap: "8px" }}>
-        <LeftOutlined
-          style={{ fontSize: "16px", color: "#bfbfbf", cursor: "pointer" }}
-        />
-        <RightOutlined
-          style={{ fontSize: "16px", color: "#bfbfbf", cursor: "pointer" }}
-        />
+        <LeftOutlined style={{ fontSize: "16px", color: "#bfbfbf", cursor: "pointer" }} />
+        <RightOutlined style={{ fontSize: "16px", color: "#bfbfbf", cursor: "pointer" }} />
       </div>
     </div>
 
-    <div
-      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}
-    >
-      {feedbacks.map((feedback, index) => (
-        <div key={index}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              marginBottom: "12px",
-            }}
-          >
-            <img
-              src={feedback.avatar}
-              alt={feedback.name}
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                backgroundColor: "#f3f4f6",
-              }}
-            />
-            <div style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontWeight: 600,
-                  color: "#1a1a1a",
-                  fontSize: "16px",
-                  display: "block",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                {feedback.name}
-              </Text>
+    {reviews.length === 0 ? (
+      <div style={{ textAlign: "center", padding: "24px 0" }}>
+        <Text style={{ color: "#8c8c8c", fontFamily: "Poppins, sans-serif" }}>
+          No reviews yet.
+        </Text>
+      </div>
+    ) : (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
+        {reviews.slice(0, 6).map((feedback, index) => {
+          const stars = Math.max(0, Math.min(5, Number(feedback.rating || 0)));
+          const when = feedback.date ? moment(feedback.date).fromNow() : "";
+
+          return (
+            <div key={feedback.id || index}>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "4px",
-                  marginTop: "4px",
+                  gap: "12px",
+                  marginBottom: "12px",
                 }}
               >
-                {[...Array(feedback.rating)].map((_, i) => (
-                  <StarFilled
-                    key={i}
-                    style={{ color: "#fbbf24", fontSize: "14px" }}
+                {feedback.avatar ? (
+                  <img
+                    src={feedback.avatar}
+                    alt={feedback.name}
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      backgroundColor: "#f3f4f6",
+                      objectFit: "cover",
+                    }}
                   />
-                ))}
+                ) : (
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      backgroundColor: "#f3f4f6",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#9ca3af",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {(feedback.name || "U").charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <div style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontWeight: 600,
+                      color: "#1a1a1a",
+                      fontSize: "16px",
+                      display: "block",
+                      fontFamily: "Poppins, sans-serif",
+                    }}
+                  >
+                    {feedback.name}
+                  </Text>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {[...Array(stars)].map((_, i) => (
+                      <StarFilled key={i} style={{ color: "#fbbf24", fontSize: "14px" }} />
+                    ))}
+                  </div>
+                </div>
               </div>
+
+              {feedback.comment && (
+                <Text
+                  style={{
+                    color: "#6c757d",
+                    fontSize: "14px",
+                    lineHeight: "1.5",
+                    display: "block",
+                    marginBottom: "8px",
+                    fontStyle: "italic",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
+                  "{feedback.comment}"
+                </Text>
+              )}
+
+              {!!when && (
+                <Text
+                  style={{
+                    color: "#9ca3af",
+                    fontSize: "12px",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
+                  {when}
+                </Text>
+              )}
             </div>
-          </div>
-          <Text
-            style={{
-              color: "#6c757d",
-              fontSize: "14px",
-              lineHeight: "1.5",
-              display: "block",
-              marginBottom: "8px",
-              fontStyle: "italic",
-              fontFamily: "Poppins, sans-serif",
-            }}
-          >
-            "{feedback.comment}"
-          </Text>
-          <Text
-            style={{
-              color: "#9ca3af",
-              fontSize: "12px",
-              fontFamily: "Poppins, sans-serif",
-            }}
-          >
-            {feedback.daysAgo} days ago
-          </Text>
-        </div>
-      ))}
-    </div>
+          );
+        })}
+      </div>
+    )}
   </Card>
 );
+
 
 const ClinicAvailability = ({
   currentClinicIndex,
@@ -1382,6 +1414,7 @@ const [revenueEndDate, setRevenueEndDate] = useState(formattedDate);
 
   const [newAppointments, setNewAppointments] = useState(false);
   const [newFollowups, setNewFollowups] = useState(false);
+  const [reviews, setReviews] = useState()
 
   const isReceptionist = user?.role === "receptionist";
 
@@ -1399,6 +1432,43 @@ const [revenueEndDate, setRevenueEndDate] = useState(formattedDate);
     };
     return statusConfig[status] || "#d9d9d9";
   };
+
+ // Reviews state
+
+// Fetch reviews from API (normalized)
+const fetchReviews = useCallback(async () => {
+  if (!doctorId) return;
+  try {
+    const res = await apiGet(`/users/getFeedbackByDoctorId/${doctorId}`);
+    console.log(res, "123")
+    const ok = res?.status === 200;
+
+    // API may return doctor at `data.doctor` or `doctor`
+    const doctorData = ok
+      ? res?.data?.doctor || res?.data?.data?.doctor
+      : null;
+
+    const fbArr = (doctorData?.feedback || []).map((f, idx) => ({
+      id: f.feedbackId || f.id || String(idx),
+      name: f.patientName || "Unknown User",
+      avatar: f.avatar || "",
+      rating: Number(f.rating || 0),
+      comment: f.comment || f.review || "",
+      date: f.date || f.createdAt,
+    }));
+
+    setReviews(fbArr);
+  } catch (e) {
+    console.error("Error fetching reviews:", e);
+    setReviews([]);
+  }
+}, [doctorId]);
+
+// Load on mount / doctor change
+useEffect(() => {
+  fetchReviews();
+}, [fetchReviews]);
+
 
   const getTypeColor = (type) => {
     return type === "New-Walkin" || type === "home-visit"
@@ -1658,7 +1728,10 @@ useEffect(() => {
               newAppointments={newAppointments}
               newFollowups={newFollowups}
             />
-            <PatientFeedback />
+            <PatientFeedback
+            reviews={reviews}
+            
+            />
           </div>
 
           {user?.role === "doctor" && (
