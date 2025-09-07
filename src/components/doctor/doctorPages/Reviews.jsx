@@ -195,11 +195,11 @@ const ReviewsComponent = () => {
                   fontWeight: 600,
                   fontSize: 12
                 }}>
-                  {message.sender === 'doctor' ? 'Dr. Response' : 'Patient'}
+                  {message.sender === 'doctor' ? 'Dr. Response ' : 'Patient '}
                 </Text>
               </div>
-              <Text type="secondary" style={{ fontSize: 11 }}>
-                {formatDate(message.createdAt)}
+              <Text type="secondary" style={{ fontSize: 11 ,paddingLeft: 8}}>
+                { formatDate(message.createdAt)}
               </Text>
             </div>
             <Paragraph className="message-text">
@@ -224,13 +224,8 @@ const ReviewsComponent = () => {
     <div className="reviews-container">
       {/* Header */}
       <div className="reviews-header">
-        <Button type="text" icon={<ArrowLeftOutlined />} className="back-button" />
         <Title level={3} className="header-title">Patient Reviews</Title>
-        <Avatar 
-          size={36} 
-          src={user?.avatar || 'https://randomuser.me/api/portraits/men/10.jpg'} 
-          className="profile-avatar"
-        />
+        
       </div>
 
       {/* Overall Rating Card */}
