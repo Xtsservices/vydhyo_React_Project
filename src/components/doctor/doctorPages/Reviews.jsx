@@ -1,27 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Rate, Avatar, Button, Typography, Space, Divider, Input, message } from 'antd';
-import { MessageOutlined, CalendarOutlined, SendOutlined } from '@ant-design/icons';
+import { Card, Rate, Avatar, Button, Typography, Space, Divider, Input, message, Spin } from 'antd';
+import { MessageOutlined, CalendarOutlined, SendOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
-import { apiGet, apiPost } from '../../api'; // Adjust the import path to your api.js file
+import { apiGet, apiPost } from '../../api';
+import '../../stylings/ReviewsComponent.css'; // We'll create this CSS file
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const ReviewsComponent = () => {
-  const user = useSelector((state) => state.currentUserData); // Updated to match Labs.jsx
+  const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === 'doctor' ? user?.userId : user?.createdBy;
   const [reviews, setReviews] = useState([]);
-  const [replyStates, setReplyStates] = useState({});
+  const [replyTexts, setReplyTexts] = useState({});
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [overallRating, setOverallRating] = useState(0);
+  const [submitting, setSubmitting] = useState({});
+  const [expandedReview, setExpandedReview] = useState(null);
 
   // Fetch token from localStorage
   useEffect(() => {
     const fetchToken = async () => {
       try {
         const storedToken = localStorage.getItem('accessToken');
-        console.log('Fetched Token:', storedToken); // Debug token
         setToken(storedToken);
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -31,11 +33,10 @@ const ReviewsComponent = () => {
     fetchToken();
   }, []);
 
-  // Fetch reviews from API
+  // Fetch reviews and conversations from API
   useEffect(() => {
     const fetchReviews = async () => {
       if (!token || !doctorId) {
-        console.log('Missing token or doctorId:', { token, doctorId }); // Debug missing data
         setLoading(false);
         return;
       }
@@ -43,50 +44,41 @@ const ReviewsComponent = () => {
       setLoading(true);
       try {
         const response = await apiGet(`users/getFeedbackByDoctorId/${doctorId}`);
-        console.log('API Response:', response); // Debug API response
-
+        
         if (response.status === 200 && response.data?.doctor) {
           const doctorData = response.data.doctor;
-          console.log('Doctor Data:', doctorData); // Debug doctor data
           setOverallRating(doctorData.overallRating || 0);
 
-          const formattedReviews = (doctorData.feedback || []).map((feedback) => {
-            const formattedReview = {
-              id: feedback.feedbackId || feedback.id || `feedback-${Math.random()}`, // Fallback ID
-              name: feedback.patientName || 'Unknown User',
-              date: feedback.createdAt
-                ? new Date(feedback.createdAt).toLocaleDateString('en-US', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                  })
-                : 'N/A',
-              rating: feedback.rating || 0,
-              // avatar: feedback.avatar || 'https://randomuser.me/api/portraits/men/32.jpg',
-              avatarColor: '#1890ff',
-              review: feedback.comment || 'No review provided',
-              hasReply: true, // Allow replies
-              replies: feedback.reply
-                ? [
-                    {
-                      id: `reply-${feedback.feedbackId || feedback.id}-${Date.now()}`,
-                      name: user?.name || 'Dr Lakshmi Raman',
-                      date: feedback.reply.timeAgo || 'Just now',
-                      isDoctor: true,
-                      review: feedback.reply.message || '',
-                    },
-                  ]
-                : [],
-            };
-            console.log('Formatted Review:', formattedReview); // Debug each review
-            return formattedReview;
-          });
+          // Map the feedback array to reviews and fetch conversations for each
+          const feedbackArray = doctorData.feedback || [];
+          const formattedReviews = await Promise.all(
+            feedbackArray.map(async (feedback) => {
+              // Fetch conversation for this feedback
+              let conversation = [];
+              try {
+                const convResponse = await apiGet(`users/getFeedbackById/${feedback.feedbackId || feedback.id}`);
+                
+                if (convResponse.status === 200 && convResponse.data?.feedback) {
+                  conversation = convResponse.data.feedback.conversation || [];
+                }
+              } catch (error) {
+                console.error('Error fetching conversation:', error);
+              }
 
-          console.log('Formatted Reviews:', formattedReviews); // Debug final reviews array
+              return {
+                id: feedback.feedbackId || feedback.id,
+                name: feedback.patientName || 'Anonymous Patient',
+                date: feedback.createdAt || 'N/A',
+                rating: feedback.rating || 0,
+                review: feedback.comment || 'No review provided',
+                conversation: conversation,
+              };
+            })
+          );
+          
           setReviews(formattedReviews);
         } else {
-          console.error('Invalid response structure:', response.data);
-          message.error(response.data.message || 'Failed to fetch reviews');
+          message.error(response.data?.message || 'Failed to fetch reviews');
         }
       } catch (error) {
         console.error('Error fetching reviews:', error);
@@ -95,164 +87,132 @@ const ReviewsComponent = () => {
       setLoading(false);
     };
 
-    fetchReviews();
-  }, [token, doctorId, user]);
+    if (token && doctorId) {
+      fetchReviews();
+    }
+  }, [token, doctorId]);
 
-  // Debug reviews state after update
-  useEffect(() => {
-    console.log('Reviews State:', reviews); // Debug reviews state
-  }, [reviews]);
-
-  const toggleReplyBox = (reviewId) => {
-    setReplyStates((prev) => ({
-      ...prev,
-      [reviewId]: {
-        ...prev[reviewId],
-        showReplyBox: !prev[reviewId]?.showReplyBox,
-        replyText: prev[reviewId]?.replyText || '',
-      },
-    }));
+  // Format date to a more readable format
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
+  // Toggle expanded view for reviews
+  const toggleExpandedReview = (reviewId) => {
+    setExpandedReview(expandedReview === reviewId ? null : reviewId);
+  };
+
+  // Handle reply text change
   const handleReplyChange = (reviewId, value) => {
-    setReplyStates((prev) => ({
+    setReplyTexts(prev => ({
       ...prev,
-      [reviewId]: {
-        ...prev[reviewId],
-        replyText: value,
-      },
+      [reviewId]: value
     }));
   };
 
-  const submitReply = async (reviewId) => {
-    const replyText = replyStates[reviewId]?.replyText;
-    if (!replyText || replyText.trim() === '') {
+  // Handle submitting a doctor's reply
+  const handleSubmitReply = async (reviewId) => {
+    if (!replyTexts[reviewId] || replyTexts[reviewId].trim() === '') {
       message.warning('Please enter a reply message');
       return;
     }
 
     const payload = {
       feedbackId: reviewId,
-      message: replyText.trim(),
+      message: replyTexts[reviewId].trim(),
     };
+
+    setSubmitting(prev => ({ ...prev, [reviewId]: true }));
 
     try {
       const response = await apiPost('users/submitDoctorReply', payload);
-      console.log('Reply submission response:', response.data); // Debug reply response
 
       if (response.data.status === 'success') {
-      const newReply = {
-        id: `reply-${reviewId}-${Date.now()}`,
-        name: user?.name || 'Dr Lakshmi Raman',
-        date: 'Just now',
-        avatar:
-        user?.avatar ||
-        'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=40&h=40&fit=crop&crop=face',
-        isDoctor: true,
-        review: replyText.trim(),
-      };
-
-      setReviews((prev) =>
-        prev.map((review) =>
-        review.id === reviewId
-          ? {
-            ...review,
-            replies: [...(review.replies || []), newReply],
+        // Refresh the conversation for this specific review
+        try {
+          const convResponse = await apiGet(`users/getFeedbackById/${reviewId}`);
+          
+          if (convResponse.status === 200 && convResponse.data?.feedback) {
+            setReviews(prevReviews => 
+              prevReviews.map(review => 
+                review.id === reviewId 
+                  ? { ...review, conversation: convResponse.data.feedback.conversation || [] }
+                  : review
+              )
+            );
           }
-          : review
-        )
-      );
-
-      setReplyStates((prev) => ({
-        ...prev,
-        [reviewId]: {
-        showReplyBox: false,
-        replyText: '',
-        },
-      }));
-
-      message.success('Reply posted successfully!');
-      alert('Reply posted successfully!');
+        } catch (error) {
+          console.error('Error fetching updated conversation:', error);
+        }
+        
+        setReplyTexts(prev => ({ ...prev, [reviewId]: '' }));
+        setExpandedReview(null);
+        message.success('Reply posted successfully!');
       } else {
-      message.error(response.data.message || 'Failed to submit reply');
-      alert(response.data.message || 'Failed to submit reply');
+        message.error(response.message?.message || 'Failed to submit reply');
       }
     } catch (error) {
-      console.error('Error submitting reply:', error.response?.data?.message?.message );
-      message.error(error.response?.data?.message?.message || 'An unexpected error occurred while submitting the reply');
-      alert(error.response?.data?.message?.message || 'An unexpected error occurred while submitting the reply');
+      console.error('Error submitting reply:',error.response.data.message.message);
+      alert(error.response.data.message.message || 'An unexpected error occurred');
+    } finally {
+      setSubmitting(prev => ({ ...prev, [reviewId]: false }));
     }
   };
 
-  const cancelReply = (reviewId) => {
-    setReplyStates((prev) => ({
-      ...prev,
-      [reviewId]: {
-        showReplyBox: false,
-        replyText: '',
-      },
-    }));
+  // Sort conversation chronologically
+  const getSortedConversation = (conversation) => {
+    return [...conversation].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   };
 
-  const renderReply = (reply) => (
-    <div
-      key={reply.id}
-      style={{
-        marginLeft: 52,
-        marginTop: 16,
-        padding: 16,
-        backgroundColor: '#f8fafc',
-        borderRadius: 8,
-        border: '1px solid #e2e8f0',
-      }}
-    >
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        <Avatar
-          size={32}
-          style={{
-            backgroundColor: '#1890ff',
-            flexShrink: 0,
-          }}
-          src={reply.avatar}
-        />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ marginBottom: 8 }}>
-            <Text
-              strong
-              style={{
-                fontSize: 14,
-                color: '#1890ff',
-              }}
-            >
-              {reply.name}
-            </Text>
-            <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
-              {reply.date}
-            </Text>
-          </div>
-          <Paragraph
-            style={{
-              margin: 0,
-              color: '#4b5563',
-              lineHeight: 1.5,
-              fontSize: 14,
-            }}
-          >
-            {reply.review}
-          </Paragraph>
+  // Render conversation messages
+  const renderConversation = (conversation) => {
+    const sortedConversation = getSortedConversation(conversation || []);
+    
+    return (
+      <div className="conversation-container">
+        <div className="conversation-header">
+          <div className="timeline-indicator"></div>
+          <Text strong>Conversation</Text>
         </div>
+        {sortedConversation.map((message, index) => (
+          <div key={message._id || index} className="message-container">
+            <div className="message-header">
+              <div className="message-sender-info">
+                {message.sender === 'doctor' ? (
+                  <UserOutlined style={{ color: '#3B82F6', marginRight: 6 }} />
+                ) : (
+                  <UserOutlined style={{ color: '#10B981', marginRight: 6 }} />
+                )}
+                <Text style={{ 
+                  color: message.sender === 'doctor' ? '#3B82F6' : '#10B981',
+                  fontWeight: 600,
+                  fontSize: 12
+                }}>
+                  {message.sender === 'doctor' ? 'Dr. Response' : 'Patient'}
+                </Text>
+              </div>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {formatDate(message.createdAt)}
+              </Text>
+            </div>
+            <Paragraph className="message-text">
+              {message.message}
+            </Paragraph>
+          </div>
+        ))}
       </div>
-    </div>
-  );
-
-  // Simplified avatar rendering
-  const getAvatarContent = (review) => {
-    return review.avatar || review.name[0];
+    );
   };
 
   // Handle case when user is not logged in or data is not loaded
   if (!user || !token) {
-    console.log('User or Token Missing:', { user, token }); // Debug user/token issue
     return (
       <div style={{ textAlign: 'center', padding: 24 }}>
         <Title level={3}>Please log in to view reviews</Title>
@@ -261,222 +221,135 @@ const ReviewsComponent = () => {
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '0px' }}>
-      <Title level={3} style={{ marginBottom: 24, color: '#1f2937' }}>
-        Reviews
-      </Title>
-      <Divider />
+    <div className="reviews-container">
+      {/* Header */}
+      <div className="reviews-header">
+        <Button type="text" icon={<ArrowLeftOutlined />} className="back-button" />
+        <Title level={3} className="header-title">Patient Reviews</Title>
+        <Avatar 
+          size={36} 
+          src={user?.avatar || 'https://randomuser.me/api/portraits/men/10.jpg'} 
+          className="profile-avatar"
+        />
+      </div>
 
       {/* Overall Rating Card */}
-      <Card
-        style={{
-          borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          marginBottom: 10,
-        }}
-      >
-        <Title level={3} style={{ marginBottom: 16, color: '#1f2937' }}>
-          Overall Rating
-        </Title>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '16px',
-          }}
-        >
+      <Card className="overall-rating-card">
+        <div className="rating-header">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 0 }}>
-              <Text style={{ fontSize: 32, fontWeight: 600, color: '#1f2937' }}>
-                {loading ? 'Loading...' : overallRating.toFixed(1)}
-              </Text>
-              <Rate disabled value={Math.round(overallRating)} style={{ fontSize: 18 }} />
-            </div>
-            <Text type="secondary" style={{ fontSize: 14 }}>
-              Based on {reviews.length} reviews
-            </Text>
+            <Title level={4} className="overall-rating-title">Overall Rating</Title>
+            <Text type="secondary">{reviews.length} reviews</Text>
           </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              color: '#6b7280',
-              fontSize: 14,
-            }}
-          >
-            <CalendarOutlined />
-            <Text type="secondary">06/28/2025 - 07/01/2025</Text>
+          <div className="rating-display">
+            <Text className="rating-number">{loading ? '0.0' : overallRating.toFixed(1)}</Text>
+            <Rate 
+              disabled 
+              value={Math.round(overallRating)} 
+              className="rating-stars" 
+            />
           </div>
         </div>
       </Card>
 
-      {/* Reviews Card */}
-      <Card
-        style={{
-          borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        }}
-      >
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          {loading ? (
-            <Text>Loading reviews...</Text>
-          ) : reviews.length === 0 ? (
-            <Text>No reviews available</Text>
-          ) : (
-            reviews.map((review, index) => {
-              console.log('Rendering Review:', review); // Debug each review being rendered
-              return (
-                <div key={review.id}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <Avatar
-                      size={40}
-                      style={{
-                        backgroundColor: review.avatarColor || '#1890ff',
-                        flexShrink: 0,
-                      }}
-                      src={review.avatar}
+      {/* Reviews List */}
+      {loading ? (
+        <div className="loading-container">
+          <Spin size="large" />
+          <Text>Loading reviews...</Text>
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="empty-container">
+          <MessageOutlined style={{ fontSize: 60, color: '#9CA3AF' }} />
+          <Title level={4} className="empty-title">No Reviews Yet</Title>
+          <Text type="secondary" className="empty-text">
+            Patient reviews will appear here once they start leaving feedback.
+          </Text>
+        </div>
+      ) : (
+        <div className="reviews-list">
+          {reviews.map((review) => {
+            const isExpanded = expandedReview === review.id;
+            
+            return (
+              <Card key={review.id} className="review-card">
+                {/* Review Header */}
+                <div className="review-header">
+                  <div className="patient-info">
+                    <Avatar 
+                      size={40} 
+                      icon={<UserOutlined />} 
+                      className="patient-avatar"
                     />
-                    <div style={{ flex: 1, minWidth: 0, backgroundColor: '#F3FFFD' }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: 15,
-                          flexWrap: 'wrap',
-                          gap: '8px',
-                        }}
-                      >
-                        <div>
-                          <Text
-                            strong
-                            style={{
-                              fontSize: 16,
-                              color: review.isDoctor ? '#1890ff' : '#1f2937',
-                            }}
-                          >
-                            {review.name}
-                          </Text>
-                          <Text type="secondary" style={{ marginLeft: 8, fontSize: 14 }}>
-                            {review.date}
-                          </Text>
-                        </div>
-                        {review.rating && (
-                          <Rate disabled value={review.rating} style={{ fontSize: 14 }} />
-                        )}
-                      </div>
-                      <Paragraph
-                        style={{
-                          margin: 0,
-                          marginBottom: 12,
-                          color: '#4b5563',
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {review.review}
-                      </Paragraph>
-                      {review.hasReply && !review.isDoctor && (
-                        <Button
-                          type="text"
-                          icon={
-                            <img
-                              src="https://cdn-icons-png.flaticon.com/128/1933/1933011.png"
-                              alt="Doctors Reply"
-                              style={{ width: 16, height: 16, marginRight: 4 }}
-                            />
-                          }
-                          size="small"
-                          onClick={() => toggleReplyBox(review.id)}
-                          style={{
-                            height: 'auto',
-                            color: '#6b7280',
-                            fontSize: 13,
-                          }}
-                        >
-                          {replyStates[review.id]?.showReplyBox ? 'Cancel Reply' : 'Doctors Reply'}
-                        </Button>
-                      )}
+                    <div className="patient-details">
+                      <Text strong className="patient-name">{review.name}</Text>
+                      <Text type="secondary" className="review-date">{formatDate(review.date)}</Text>
                     </div>
                   </div>
-                  {review.replies && review.replies.length > 0 && (
-                    <div style={{ marginTop: 16 }}>{review.replies.map((reply) => renderReply(reply))}</div>
-                  )}
-                  {replyStates[review.id]?.showReplyBox && (
-                    <div
-                      style={{
-                        marginLeft: 52,
-                        marginTop: 5,
-                        padding: 15,
-                        borderRadius: 10,
-                      }}
-                    >
-                      <div style={{ marginBottom: 12 }}>
-                        <Text strong style={{ color: '#1890ff', fontSize: 14 }}>
-                          Doctors Reply
-                        </Text>
-                      </div>
+                  <div className="rating-container">
+                    <Rate disabled value={review.rating} className="review-stars" />
+                    <Text className="rating-text">{review.rating}.0</Text>
+                  </div>
+                </div>
+
+                {/* Initial Patient Review */}
+                <div className="initial-review-container">
+                  <div className="message-header">
+                    <MessageOutlined style={{ color: '#6B7280', marginRight: 6 }} />
+                    <Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>Patient Review</Text>
+                  </div>
+                  <Paragraph className="review-text">{review.review}</Paragraph>
+                </div>
+
+                {/* Conversation */}
+                {review.conversation && review.conversation.length > 0 && renderConversation(review.conversation)}
+
+                {/* Reply Section */}
+                <div className="reply-section">
+                  <Button 
+                    type="text" 
+                    icon={<MessageOutlined />} 
+                    onClick={() => toggleExpandedReview(review.id)}
+                    className="reply-toggle-button"
+                  >
+                    {isExpanded ? 'Cancel Reply' : 'Add Reply'}
+                  </Button>
+
+                  {isExpanded && (
+                    <div className="reply-form">
                       <TextArea
-                        placeholder="Write your reply here..."
-                        value={replyStates[review.id]?.replyText || ''}
+                        placeholder="Write your professional response..."
+                        value={replyTexts[review.id] || ''}
                         onChange={(e) => handleReplyChange(review.id, e.target.value)}
-                        rows={3}
-                        style={{ marginBottom: 10 }}
+                        rows={4}
+                        className="reply-input"
                       />
-                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                        <Button size="small" onClick={() => cancelReply(review.id)}>
+                      <div className="reply-actions">
+                        <Button 
+                          onClick={() => setExpandedReview(null)}
+                          className="cancel-button"
+                        >
                           Cancel
                         </Button>
-                        <Button
-                          type="primary"
-                          size="small"
-                          icon={<SendOutlined />}
-                          onClick={() => submitReply(review.id)}
+                        <Button 
+                          type="primary" 
+                          icon={<SendOutlined />} 
+                          loading={submitting[review.id]}
+                          onClick={() => handleSubmitReply(review.id)}
+                          className="submit-reply-button"
                         >
-                          Post Reply
+                          Send Reply
                         </Button>
                       </div>
                     </div>
                   )}
-                  {index < reviews.length - 1 && <Divider style={{ margin: '20px 0' }} />}
                 </div>
-              );
-            })
-          )}
-        </Space>
-      </Card>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
 
-// Error Boundary Component
-class ErrorBoundary extends React.Component {
-  state = { hasError: false, error: null };
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{ padding: 24, textAlign: 'center' }}>
-          <Title level={3}>Something went wrong</Title>
-          <Paragraph>{this.state.error?.message || 'An unexpected error occurred'}</Paragraph>
-          <Button type="primary" onClick={() => window.location.reload()}>
-            Reload Page
-          </Button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-export default () => (
-  <ErrorBoundary>
-    <ReviewsComponent />
-  </ErrorBoundary>
-);
+export default ReviewsComponent;

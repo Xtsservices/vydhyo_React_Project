@@ -1,0 +1,269 @@
+.reviews-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.reviews-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.back-button {
+  padding: 4px;
+}
+
+.header-title {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.profile-avatar {
+  border: 2px solid #e6f7ff;
+}
+
+.overall-rating-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.rating-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.overall-rating-title {
+  margin: 0;
+  color: #1f2937;
+}
+
+.rating-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.rating-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.rating-stars {
+  font-size: 18px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-title {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  color: #4B5563;
+}
+
+.empty-text {
+  color: #6B7280;
+  line-height: 1.5;
+  max-width: 400px;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.patient-info {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.patient-avatar {
+  margin-right: 12px;
+  background-color: #1890ff;
+}
+
+.patient-details {
+  flex: 1;
+}
+
+.patient-name {
+  display: block;
+  font-size: 16px;
+  color: #1f2937;
+  margin-bottom: 2px;
+}
+
+.review-date {
+  font-size: 12px;
+}
+
+.rating-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.review-stars {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.rating-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4B5563;
+}
+
+.initial-review-container {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.review-text {
+  margin: 0;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.conversation-container {
+  margin: 16px 0;
+  padding: 16px;
+  background-color: #fafbfc;
+  border-radius: 8px;
+}
+
+.conversation-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.timeline-indicator {
+  width: 3px;
+  height: 16px;
+  background-color: #1890ff;
+  border-radius: 2px;
+  margin-right: 8px;
+}
+
+.message-container {
+  margin-bottom: 16px;
+  padding-left: 16px;
+  border-left: 2px solid #f0f0f0;
+}
+
+.message-sender-info {
+  display: flex;
+  align-items: center;
+}
+
+.message-text {
+  margin: 8px 0 0 0;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.reply-section {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 16px;
+}
+
+.reply-toggle-button {
+  width: 100%;
+  text-align: center;
+  color: #1890ff;
+}
+
+.reply-form {
+  margin-top: 16px;
+}
+
+.reply-input {
+  margin-bottom: 12px;
+}
+
+.reply-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancel-button {
+  margin-right: 8px;
+}
+
+.submit-reply-button {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .reviews-container {
+    padding: 16px;
+  }
+  
+  .rating-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .rating-display {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .review-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .rating-container {
+    align-items: flex-start;
+  }
+}
