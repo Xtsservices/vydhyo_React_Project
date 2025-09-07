@@ -24,66 +24,66 @@ const { Panel } = Collapse;
 const { useBreakpoint } = Grid;
 
 const privacyPolicySections = [
-  {
-    question: "1. Information We Collect",
-    answer: `We collect the following types of information:
+//   {
+//     question: "1. Information We Collect",
+//     answer: `We collect the following types of information:
 
-A. Personal Information
-• Name, gender, date of birth
-• Phone number, email address, postal address
-• Government-issued IDs (as required for verification)
+// A. Personal Information
+// • Name, gender, date of birth
+// • Phone number, email address, postal address
+// • Government-issued IDs (as required for verification)
 
-B. Health Information
-• Medical history, reports, prescriptions
-• Appointment records
-• Diagnostic and consultation data
+// B. Health Information
+// • Medical history, reports, prescriptions
+// • Appointment records
+// • Diagnostic and consultation data
 
-C. Device & Usage Information
-• IP address, browser type, device identifiers
-• App usage data and interaction logs
+// C. Device & Usage Information
+// • IP address, browser type, device identifiers
+// • App usage data and interaction logs
 
-D. Location Information
-• Real-time location (for ambulance services, nearest providers, etc.)
-`,
-  },
-  {
-    question: "2. How We Use Your Information",
-    answer: `We use your data to:
-• Enable doctor and diagnostic bookings
-• Provide ambulance and blood bank access
-• Coordinate home healthcare services
-• Maintain medical history for continuity of care
-• Improve user experience and offer personalized services
-• Process payments and issue invoices
-• Ensure regulatory compliance and audit readiness`,
-  },
-  {
-    question: "3. Data Sharing and Disclosure",
-    answer: `We do not sell or rent your personal data. Your information may only be shared with:
-• Verified hospitals, doctors, diagnostic labs, and ambulances for service fulfillment
-• Our internal support and tech teams (bound by strict confidentiality)
-• Government authorities if mandated by law or in emergency situations`,
-  },
-  {
-    question: "4. Your Rights",
-    answer: `You have full control over your data. You can:
-• Access and review your data anytime
-• Request corrections or deletions
-• Withdraw consent and deactivate your account
-• Download your data in portable format
+// D. Location Information
+// • Real-time location (for ambulance services, nearest providers, etc.)
+// `,
+//   },
+//   {
+//     question: "2. How We Use Your Information",
+//     answer: `We use your data to:
+// • Enable doctor and diagnostic bookings
+// • Provide ambulance and blood bank access
+// • Coordinate home healthcare services
+// • Maintain medical history for continuity of care
+// • Improve user experience and offer personalized services
+// • Process payments and issue invoices
+// • Ensure regulatory compliance and audit readiness`,
+//   },
+//   {
+//     question: "3. Data Sharing and Disclosure",
+//     answer: `We do not sell or rent your personal data. Your information may only be shared with:
+// • Verified hospitals, doctors, diagnostic labs, and ambulances for service fulfillment
+// • Our internal support and tech teams (bound by strict confidentiality)
+// • Government authorities if mandated by law or in emergency situations`,
+//   },
+//   {
+//     question: "4. Your Rights",
+//     answer: `You have full control over your data. You can:
+// • Access and review your data anytime
+// • Request corrections or deletions
+// • Withdraw consent and deactivate your account
+// • Download your data in portable format
 
-To exercise these rights, email us at Vydhyo@gmail.com
-`,
-  },
-  {
-    question: "5. Data Retention",
-    answer: `We retain your information only as long as necessary for:
-• Legal, regulatory, or operational reasons
-• Providing uninterrupted healthcare continuity
+// To exercise these rights, email us at Vydhyo@gmail.com
+// `,
+//   },
+//   {
+//     question: "5. Data Retention",
+//     answer: `We retain your information only as long as necessary for:
+// • Legal, regulatory, or operational reasons
+// • Providing uninterrupted healthcare continuity
 
-Inactive user data is securely deleted after 5 Years or upon formal request.
-`,
-  },
+// Inactive user data is securely deleted after 5 Years or upon formal request.
+// `,
+//   },
 //   {
 //     question: "6. Security Measures",
 //     answer: `We use bank-grade encryption, secure cloud infrastructure, and industry-standard protocols:
