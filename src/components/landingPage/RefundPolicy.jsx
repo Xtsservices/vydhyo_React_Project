@@ -55,7 +55,7 @@ const sections = [
         title: "6. Billing Disputes",
         list: [
             "Disputes must be raised within 30 days of the transaction.",
-            "Contact our customer support team at Vydhyo@gmail.com or 9666955501 for resolution.",
+            "Contact our customer support team at vydhyo@gmail.com or 9666955501 for resolution.",
             "Disputes are investigated and resolved within 60 days, with escalation to the healthcare provider or payment gateway if necessary.",
         ],
     },
@@ -84,7 +84,7 @@ const sections = [
             "For refund-related inquiries, contact:",
         ],
         list: [
-            { text: <><b>Email</b>: Vydhyo@gmail.com</> },
+            { text: <><b>Email</b>: vydhyo@gmail.com</> },
             { text: <><b>Phone</b>: 9666955501</> },
             { text: <><b>Address</b>: E 602, Hallmark Sunnyside, Manchirevula, Hyderabad, Telangana, India</> },
         ],

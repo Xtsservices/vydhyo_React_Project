@@ -614,7 +614,7 @@ const TermsAndConditions = () => {
                             fontSize: "1rem",
                             lineHeight: "1.75",
                             marginBottom: "1rem",
-                        }}><b>Contact</b>: Vydhyo@gmail.com, 9666955501, E 602, Hallmark Sunnyside, Manchirevula, Hyderabad.</p>
+                        }}><b>Contact</b>: vydhyo@gmail.com, 9666955501, E 602, Hallmark Sunnyside, Manchirevula, Hyderabad.</p>
                     </section>
                 </div>
             </div>

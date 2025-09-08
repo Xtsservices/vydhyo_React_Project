@@ -313,7 +313,7 @@ const PrivacyPolicyFooter = () => {
                             fontSize: "1rem",
                             lineHeight: "1.75",
                             marginBottom: "1rem",
-                        }}>To exercise these rights, contact our Data Protection Officer at dpo@vydhyo.com.</p>
+                        }}>To exercise these rights, contact our Data Protection Officer at vydhyo@gmail.com.</p>
                     </section>
 
                     <section style={{ marginBottom: "2.5rem" }}>
@@ -379,25 +379,7 @@ const PrivacyPolicyFooter = () => {
                         </ul>
                     </section>
 
-                    <section style={{ marginBottom: "2.5rem" }}>
-                        <h3 style={{
-                            fontSize: "1.5rem",
-                            fontWeight: "600",
-                            color: "#00203f",
-                            marginBottom: "1rem",
-                        }}>14. Data Protection Officer</h3>
-                        <ul style={{
-                            marginBottom: "1rem",
-                            paddingLeft: "1.5rem",
-                            listStyleType: "disc",
-                            color: "#555",
-                            fontSize: "1rem",
-                            lineHeight: "1.75",
-                        }}>
-                            <li><b>Contact</b>: dpo@vydhyo.com</li>
-                            <li>Our Data Protection Officer oversees privacy compliance and conducts regular data protection impact assessments.</li>
-                        </ul>
-                    </section>
+                    
 
                     <section style={{ marginBottom: "2.5rem" }}>
                         <h3 style={{
@@ -405,7 +387,7 @@ const PrivacyPolicyFooter = () => {
                             fontWeight: "600",
                             color: "#00203f",
                             marginBottom: "1rem",
-                        }}>15. Changes to Privacy Policy</h3>
+                        }}>14. Changes to Privacy Policy</h3>
                         <ul style={{
                             marginBottom: "1rem",
                             paddingLeft: "1.5rem",
@@ -426,7 +408,7 @@ const PrivacyPolicyFooter = () => {
                             fontWeight: "600",
                             color: "#00203f",
                             marginBottom: "1rem",
-                        }}>16. Contact Information</h3>
+                        }}>15. Contact Information</h3>
                         <p style={{
                             color: "#555",
                             fontSize: "1rem",
@@ -441,7 +423,7 @@ const PrivacyPolicyFooter = () => {
                             fontSize: "1rem",
                             lineHeight: "1.75",
                         }}>
-                            <li><b>Email</b>: dpo@vydhyo.com</li>
+                            <li><b>Email</b>: vydhyo@gmail.com</li>
                             <li><b>Phone</b>: 9666955501</li>
                             <li><b>Address</b>: E 602, Hallmark Sunnyside, Manchirevula, Hyderabad, Telangana, India</li>
                         </ul>

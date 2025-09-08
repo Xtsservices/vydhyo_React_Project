@@ -2,9 +2,9 @@
 import axios from "axios";
 
 // Base API URL
-// const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "http://localhost:3000";
 
-const API_BASE_URL = "https://server.vydhyo.com";
+// const API_BASE_URL = "https://server.vydhyo.com";
 
 // Helper to get token from localStorage (or any storage)
 const getToken = () => localStorage.getItem("accessToken");
