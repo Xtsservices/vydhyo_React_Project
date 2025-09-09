@@ -57,7 +57,7 @@ const Footer = () => {
                 <ContactInfo 
                   icon={<MessageOutlined style={{ fontSize: 24 }} />}
                   title="Drop Us an Email"
-                  value="Vydhyo@gmail.com"
+                  value="vydhyo@gmail.com"
                 />
               </Col>
             </Row>
