@@ -62,9 +62,9 @@ const LoginForm = ({
               name="phone"
             />
           </div>
-          <div className="form-actions">
+          {/* <div className="form-actions">
             <button className="text-button">Login with OTP</button>
-          </div>
+          </div> */}
           <button
             onClick={onSendOTP}
             disabled={!phone || phone.length !== 10 || isLoading}
@@ -125,11 +125,11 @@ const LoginForm = ({
       )}
       <div className="form-footer">
         By continuing, you agree to our{" "}
-        <a href="#" className="link">
+        <a href="/terms-and-conditions" className="link">
           Terms of Service
         </a>{" "}
         and{" "}
-        <a href="#" className="link">
+        <a href="/privacy-policy-footer" className="link">
           Privacy Policy
         </a>
       </div>
