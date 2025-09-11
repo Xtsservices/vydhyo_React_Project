@@ -1126,13 +1126,13 @@ const AdvertisingDoctorsPage = () => {
                 Contact
               </div>
               <div style={{ marginBottom: 12 }}>
-                <a href="mailto:Vydhyo@gmail.com" style={{ 
+                <a href="mailto:vydhyo@gmail.com" style={{ 
                   color: "#F8FCFA", 
                   textDecoration: "none",
                   fontSize: 16,
                   opacity: 0.8
                 }}>
-                  Vydhyo@gmail.com
+                  vydhyo@gmail.com
                 </a>
               </div>
               <div>
