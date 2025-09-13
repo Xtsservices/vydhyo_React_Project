@@ -78,9 +78,8 @@ const DoctorProfileView = () => {
       const doctorResponse = await apiGet(
         `users/AllUsers?type=doctor&id=${doctorId}&status=${statusFilter || "all"}`
       );
-
+    
       const doctorDataResponse = doctorResponse.data;
-
       let doctor = null;
       if (doctorDataResponse.status === "success" && doctorDataResponse.data) {
         if (Array.isArray(doctorDataResponse.data)) {
@@ -94,7 +93,6 @@ const DoctorProfileView = () => {
       }
 
       if (!doctor) {
-        console.error("No doctor found with the provided ID.");
         message.warning("Doctor not found. Displaying available data if any.");
         doctor = {};
       }
@@ -117,33 +115,6 @@ const DoctorProfileView = () => {
             kycVerified: false,
           };
 
-      // Fetch clinic addresses
-      const clinicResponse = await apiGet(
-        `/users/getClinicAddress?doctorId=${doctorId}`
-      );
-      const clinicData = clinicResponse.data;
-
-      let activeClinics = [];
-      if (clinicData.status === "success") {
-        activeClinics = clinicData.data
-          .filter(
-            (address) =>
-              address.type === "Clinic" &&
-              address.status?.toLowerCase() === "active"
-          )
-          .map((address) => ({
-            label: address.clinicName,
-            value: address.addressId,
-            address: address.location,
-            startTime: address.startTime,
-            endTime: address.endTime,
-          }));
-      } else {
-        toast.warning("No clinics found for the doctor.");
-      }
-      setClinics(activeClinics);
-
-      // Normalize doctor data with KYC details
       setDoctorData({
         ...doctor,
         key: doctor._id,
@@ -176,8 +147,8 @@ const DoctorProfileView = () => {
         profilepic: doctor.profilepic || null,
         isVerified: doctor.isVerified || false,
       });
-    } catch (error) {
-      console.error("Error fetching doctor, KYC, or clinic details:", error);
+    } 
+    catch (error) {
       message.error(
         "Failed to fetch doctor, KYC, or clinic details. Please try again."
       );
@@ -285,7 +256,6 @@ const DoctorProfileView = () => {
         message.warning("Failed to update doctor status.");
       }
     } catch (error) {
-      console.error("Error updating doctor status:", error);
       toast.error("An error occurred while updating the status.");
       message.error("An error occurred while updating the status.");
     } finally {
@@ -296,7 +266,6 @@ const DoctorProfileView = () => {
   if (loading) {
     return <Spin spinning={loading} />;
   }
-
   return (
     <div
       style={{
@@ -397,9 +366,7 @@ const DoctorProfileView = () => {
                   <CalendarOutlined
                     style={{ marginRight: 8, color: "#6b7280" }}
                   />
-                  <Text style={{ fontSize: "14px", color: "#374151" }}>
-                    <strong>Date of Birth:</strong> {doctorData?.DOB}
-                  </Text>
+                 
                 </div>
                 <div
                   style={{
@@ -420,15 +387,7 @@ const DoctorProfileView = () => {
                     marginBottom: "8px",
                   }}
                 >
-                  <Text
-                    style={{
-                      fontSize: "14px",
-                      color: "#374151",
-                      marginLeft: "24px",
-                    }}
-                  >
-                    <strong>Blood Group:</strong> {doctorData?.bloodgroup}
-                  </Text>
+            
                 </div>
                 <div
                   style={{
@@ -654,15 +613,18 @@ const DoctorProfileView = () => {
                     display: "flex",
                     alignItems: "center",
                     padding: "8px 0",
-                    fontSize: "16px",
+                    fontSize: "18px",
                     fontWeight: "600",
+                    fontFamily: "Inter",
+                    lineHeight: "100%",
+                    letterSpacing: "0%",
                     color: "#1f2937",
                   }}
                 >
-                  <EnvironmentOutlined
+                  <DollarOutlined
                     style={{ marginRight: "8px", color: "#3b82f6" }}
                   />
-                  Clinics
+                  Consultation Charges
                 </div>
               }
               style={{
@@ -676,62 +638,81 @@ const DoctorProfileView = () => {
               }}
               bodyStyle={{ padding: "20px" }}
             >
-              {clinics.length > 0 ? (
-                clinics.map((clinic, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      marginBottom:
-                        index < clinics.length - 1 ? "16px" : "0",
-                      padding: "16px",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      backgroundColor: "#ffffff",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "flex-start" }}>
-                      <EnvironmentOutlined
+              {doctorData?.consultationModeFee.map((mode, index) => (
+                <div
+                  key={index}
+                  style={{
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                    padding: "16px",
+                    backgroundColor:
+                      index === 0
+                        ? "#f0f9ff"
+                        : index === 1
+                        ? "#f0fdf4"
+                        : "#faf5ff",
+                    marginBottom: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    {mode.type === "In-Person Consultation" && (
+                      <UserOutlined
                         style={{
+                          fontSize: "20px",
                           color: "#3b82f6",
-                          fontSize: "16px",
                           marginRight: "12px",
-                          marginTop: "2px",
                         }}
                       />
-                      <div style={{ flex: 1 }}>
-                        <Text
-                          strong
-                          style={{
-                            fontSize: "14px",
-                            color: "#374151",
-                            display: "block",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          {clinic.label || "N/A"}
-                        </Text>
-                        <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                          {clinic.address || "N/A"}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: "12px",
-                            color: "#6b7280",
-                            display: "block",
-                            marginTop: "4px",
-                          }}
-                        >
-                          Operating Hours: {clinic.startTime} - {clinic.endTime}
-                        </Text>
-                      </div>
+                    )}
+                    {mode.type === "Video Call" && (
+                      <VideoCameraOutlined
+                        style={{
+                          fontSize: "20px",
+                          color: "#16a34a",
+                          marginRight: "12px",
+                        }}
+                      />
+                    )}
+                    {mode.type === "Home Visit" && (
+                      <CarOutlined
+                        style={{
+                          fontSize: "20px",
+                          color: "#9333ea",
+                          marginRight: "12px",
+                        }}
+                      />
+                    )}
+                    <div>
+                      <Text
+                        strong
+                        style={{
+                          display: "block",
+                          fontSize: "14px",
+                          color: "#374151",
+                        }}
+                      >
+                        {mode.type}
+                      </Text>
+                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>
+                        {mode.description || "N/A"}
+                      </Text>
                     </div>
                   </div>
-                ))
-              ) : (
-                <Text style={{ fontSize: "14px", color: "#6b7280" }}>
-                  No active clinics found for this doctor.
-                </Text>
-              )}
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: "bold",
+                      color: "#1f2937",
+                    }}
+                  >
+                    {mode.currency}
+                    {mode.fee}
+                  </div>
+                </div>
+              ))}
             </Card>
           </Col>
 
@@ -837,119 +818,7 @@ const DoctorProfileView = () => {
               </div>
             </Card>
           </Col>
-
-          {/* Consultation Charges */}
-          <Col xs={24} lg={12}>
-            <Card
-              title={
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "8px 0",
-                    fontSize: "18px",
-                    fontWeight: "600",
-                    fontFamily: "Inter",
-                    lineHeight: "100%",
-                    letterSpacing: "0%",
-                    color: "#1f2937",
-                  }}
-                >
-                  <DollarOutlined
-                    style={{ marginRight: "8px", color: "#3b82f6" }}
-                  />
-                  Consultation Charges
-                </div>
-              }
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-              }}
-              headStyle={{
-                backgroundColor: "#ffffff",
-                border: "none",
-                borderBottom: "1px solid #e5e7eb",
-              }}
-              bodyStyle={{ padding: "20px" }}
-            >
-              {doctorData?.consultationModeFee.map((mode, index) => (
-                <div
-                  key={index}
-                  style={{
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    padding: "16px",
-                    backgroundColor:
-                      index === 0
-                        ? "#f0f9ff"
-                        : index === 1
-                        ? "#f0fdf4"
-                        : "#faf5ff",
-                    marginBottom: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    {mode.type === "In-Person Consultation" && (
-                      <UserOutlined
-                        style={{
-                          fontSize: "20px",
-                          color: "#3b82f6",
-                          marginRight: "12px",
-                        }}
-                      />
-                    )}
-                    {mode.type === "Video Call" && (
-                      <VideoCameraOutlined
-                        style={{
-                          fontSize: "20px",
-                          color: "#16a34a",
-                          marginRight: "12px",
-                        }}
-                      />
-                    )}
-                    {mode.type === "Home Visit" && (
-                      <CarOutlined
-                        style={{
-                          fontSize: "20px",
-                          color: "#9333ea",
-                          marginRight: "12px",
-                        }}
-                      />
-                    )}
-                    <div>
-                      <Text
-                        strong
-                        style={{
-                          display: "block",
-                          fontSize: "14px",
-                          color: "#374151",
-                        }}
-                      >
-                        {mode.type}
-                      </Text>
-                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                        {mode.description || "N/A"}
-                      </Text>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "24px",
-                      fontWeight: "bold",
-                      color: "#1f2937",
-                    }}
-                  >
-                    {mode.currency}
-                    {mode.fee}
-                  </div>
-                </div>
-              ))}
-            </Card>
-          </Col>
-
+          
           {/* Bank & KYC Details */}
           <Col xs={24} lg={12}>
             <Card
@@ -967,7 +836,7 @@ const DoctorProfileView = () => {
                   <BankOutlined
                     style={{ marginRight: "8px", color: "#3b82f6" }}
                   />
-                  Bank & KYC Details
+                  Bank Details
                 </div>
               }
               style={{
