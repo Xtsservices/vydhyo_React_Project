@@ -34,9 +34,6 @@ import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import "../../stylings/AvailabilityScreen.css";
 
-
-
-
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
@@ -80,20 +77,18 @@ const AvailabilityScreen = () => {
   const [clinicSlots, setClinicSlots] = useState({});
 
   // Available slots time controls
-  // const [availableStartTime, setAvailableStartTime] = useState(9);
   const [availableStartTime, setAvailableStartTime] = useState(() => {
-  const now = moment();
-  const isToday = selectedDate && moment(selectedDate).isSame(now, "day");
-  return isToday ? (now.hour() % 12 || 12) : 9;  // convert 24h to 12h clock
-});
+    const now = moment();
+    const isToday = selectedDate && moment(selectedDate).isSame(now, "day");
+    return isToday ? (now.hour() % 12 || 12) : 9;  // convert 24h to 12h clock
+  });
 
-const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
-  const now = moment();
-  const isToday = selectedDate && moment(selectedDate).isSame(now, "day");
-  return isToday ? (now.hour() >= 12 ? "PM" : "AM") : "AM";
-});
+  const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
+    const now = moment();
+    const isToday = selectedDate && moment(selectedDate).isSame(now, "day");
+    return isToday ? (now.hour() >= 12 ? "PM" : "AM") : "AM";
+  });
 
-  // const [availableStartPeriod, setAvailableStartPeriod] = useState("AM");
   const [availableEndTime, setAvailableEndTime] = useState(11);
   const [availableEndPeriod, setAvailableEndPeriod] = useState("PM");
   const [availableDuration, setAvailableDuration] = useState(30);
@@ -122,21 +117,20 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
-
   useEffect(() => {
-  if (!selectedDate) return;
+    if (!selectedDate) return;
 
-  const now = moment();
-  const isToday = moment(selectedDate).isSame(now, "day");
+    const now = moment();
+    const isToday = moment(selectedDate).isSame(now, "day");
 
-  if (isToday) {
-    setAvailableStartTime(now.hour() % 12 || 12);
-    setAvailableStartPeriod(now.hour() >= 12 ? "PM" : "AM");
-  } else {
-    setAvailableStartTime(9);
-    setAvailableStartPeriod("AM");
-  }
-}, [selectedDate]);
+    if (isToday) {
+      setAvailableStartTime(now.hour() % 12 || 12);
+      setAvailableStartPeriod(now.hour() >= 12 ? "PM" : "AM");
+    } else {
+      setAvailableStartTime(9);
+      setAvailableStartPeriod("AM");
+    }
+  }, [selectedDate]);
 
   // Helper function to get current clinic's slots
   const getCurrentClinicSlots = () => {
@@ -321,7 +315,6 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
     }
   };
 
-
   const [slotPopup, setSlotPopup] = useState({
     open: false,
     title: "",
@@ -334,66 +327,89 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
   const closeSlotPopup = () =>
     setSlotPopup((p) => ({ ...p, open: false }));
 
+  // Function to check if end time is after start time
+  const isEndTimeValid = () => {
+    const start24 = moment(`${availableStartTime}:00 ${availableStartPeriod}`, "hh:mm A").format("HH:mm");
+    const end24 = moment(`${availableEndTime}:00 ${availableEndPeriod}`, "hh:mm A").format("HH:mm");
+    
+    const startMinutes = moment(start24, "HH:mm").minutes() + moment(start24, "HH:mm").hours() * 60;
+    const endMinutes = moment(end24, "HH:mm").minutes() + moment(end24, "HH:mm").hours() * 60;
+    
+    return endMinutes > startMinutes;
+  };
 
- const handleAddAvailableSlots = async () => {
-  if (loading) return; // ✅ Prevents multiple triggers
-  setLoading(true);
-
-  try {
-    const getDateRangeArray = (fromDate, endDate) => {
-      const dates = [];
-      let currentDate = moment(fromDate, "YYYY-MM-DD");
-      const end = moment(endDate, "YYYY-MM-DD");
-      while (currentDate.isSameOrBefore(end)) {
-        dates.push(currentDate.format("YYYY-MM-DD"));
-        currentDate.add(1, "days");
+  const handleAddAvailableSlots = async () => {
+    if (loading) return; // ✅ Prevents multiple triggers
+    
+    // Check if end time is after start time
+    if (!isEndTimeValid()) {
+      toast.error("End time must be after start time");
+      return;
+    }
+    
+    // Check if date range is more than 1 week
+    if (selectedEndDate) {
+      const daysDifference = selectedEndDate.diff(selectedDate, 'days');
+      if (daysDifference > 6) { // 0-6 days = 1 week max (inclusive)
+        toast.error("Cannot add slots for more than 1 week at a time");
+        return;
       }
-      return dates;
-    };
-
-    const fromDate = selectedDate?.format("YYYY-MM-DD");
-    const endDate = selectedEndDate?.format("YYYY-MM-DD");
-    const selectedDates =
-      fromDate && endDate ? getDateRangeArray(fromDate, endDate) : [fromDate];
-
-    const response = await apiPost("/appointment/createSlotsForDoctor", {
-      doctorId,
-      dates: selectedDates,
-      startTime: moment(`${availableStartTime}:00 ${availableStartPeriod}`, "hh:mm A").format("HH:mm"),
-      endTime: moment(`${availableEndTime}:00 ${availableEndPeriod}`, "hh:mm A").format("HH:mm"),
-      interval: availableDuration,
-      isAvailable: true,
-      addressId: selectedClinic,
-    });
-
-    const reasons = Array.isArray(response?.data?.results)
-      ? response.data.results.map((r) => r?.reason).filter(Boolean)
-      : [];
-
-    const popupMsg =
-      (reasons.length ? reasons.join("\n") : response?.data?.message) ||
-      "Available slots created successfully.";
-
-    openSlotPopup("Slot creation result", popupMsg);
-
-    if (reasons.length) {
-      alert(popupMsg)
-    } else {
-      toast.success(response?.data?.message || "Available slots created successfully")
     }
 
-    fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
-  } catch (error) {
-    const errMsg = error?.response?.data?.message || "Failed to create available slots";
-    openSlotPopup("Error", errMsg);
-    message.error(errMsg);
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
 
+    try {
+      const getDateRangeArray = (fromDate, endDate) => {
+        const dates = [];
+        let currentDate = moment(fromDate, "YYYY-MM-DD");
+        const end = moment(endDate, "YYYY-MM-DD");
+        while (currentDate.isSameOrBefore(end)) {
+          dates.push(currentDate.format("YYYY-MM-DD"));
+          currentDate.add(1, "days");
+        }
+        return dates;
+      };
 
+      const fromDate = selectedDate?.format("YYYY-MM-DD");
+      const endDate = selectedEndDate?.format("YYYY-MM-DD");
+      const selectedDates =
+        fromDate && endDate ? getDateRangeArray(fromDate, endDate) : [fromDate];
 
+      const response = await apiPost("/appointment/createSlotsForDoctor", {
+        doctorId,
+        dates: selectedDates,
+        startTime: moment(`${availableStartTime}:00 ${availableStartPeriod}`, "hh:mm A").format("HH:mm"),
+        endTime: moment(`${availableEndTime}:00 ${availableEndPeriod}`, "hh:mm A").format("HH:mm"),
+        interval: availableDuration,
+        isAvailable: true,
+        addressId: selectedClinic,
+      });
+
+      const reasons = Array.isArray(response?.data?.results)
+        ? response.data.results.map((r) => r?.reason).filter(Boolean)
+        : [];
+
+      const popupMsg =
+        (reasons.length ? reasons.join("\n") : response?.data?.message) ||
+        "Available slots created successfully.";
+
+      openSlotPopup("Slot creation result", popupMsg);
+
+      if (reasons.length) {
+        alert(popupMsg)
+      } else {
+        toast.success(response?.data?.message || "Available slots created successfully")
+      }
+
+      fetchSlotsForDate(selectedDate.format("YYYY-MM-DD"));
+    } catch (error) {
+      const errMsg = error?.response?.data?.message || "Failed to create available slots";
+      openSlotPopup("Error", errMsg);
+      message.error(errMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDeleteAllAvailable = async () => {
     try {
@@ -445,11 +461,6 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
       );
 
       // Filter available slots that fall within the unavailable time range
-      // const slotsToMarkUnavailable = availableSlots.filter((slot) => {
-      //   const slotTime = moment(slot.originalTime, "HH:mm");
-      //   return slotTime.isSameOrAfter(startTime) && slotTime.isSameOrBefore(endTime);
-      // });
-
       const slotsToMarkUnavailable = availableSlots.filter((slot) => {
         const slotTime = moment(slot.originalTime, "HH:mm");
         return slotTime.isSameOrAfter(startTime) && slotTime.isBefore(endTime);
@@ -519,8 +530,6 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
       setLoading(false);
     }
   };
-
-
 
   const handleDeleteAllUnavailable = async () => {
     try {
@@ -679,8 +688,6 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
     console.log("Payload for deleting slots:", payload);
 
     try {
-
-
       const res = await apiDelete(
         `/appointment/deleteDoctorSlots`,
         payload
@@ -694,21 +701,11 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
         toast.error(res.data.message)
       }
 
-      // Update UI: remove deleted slots
-      // if (selectedSlotTime) {
-      //   setUnavailableSlots((prev) =>
-      //     prev.filter((slot) => slot.time !== selectedSlotTime)
-      //   );
-      // } else {
-      //   setUnavailableSlots([]);
-      // }
-
       setIsModalVisible(false);
     } catch (error) {
       console.error("Error deleting slot:", error);
     }
   };
-
 
   const handleCancel = () => {
     setIsModalVisible(false);
@@ -895,18 +892,17 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
           {/* Action Buttons */}
           <Col xs={12} sm={6}>
            <Space>
-  <Button
-    type="primary"
-    onClick={handleAddAvailableSlots}
-    icon={<PlusOutlined />}
-    style={{ fontWeight: "bold" }}
-    disabled={loading}   // ✅ Prevent multiple clicks
-    loading={loading}    // ✅ Shows spinner while processing
-  >
-    Add Available Slots
-  </Button>
-</Space>
-
+              <Button
+                type="primary"
+                onClick={handleAddAvailableSlots}
+                icon={<PlusOutlined />}
+                style={{ fontWeight: "bold" }}
+                disabled={loading || !isEndTimeValid()}   // ✅ Prevent multiple clicks and invalid times
+                loading={loading}    // ✅ Shows spinner while processing
+              >
+                Add Available Slots
+              </Button>
+            </Space>
           </Col>
 
           <Col xs={12} sm={6}>
@@ -920,10 +916,16 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
               >
                 Delete Slots
               </Button>
-
             </Space>
           </Col>
         </Row>
+
+        {/* Show error message if end time is before start time */}
+        {!isEndTimeValid() && (
+          <div style={{ marginBottom: 16, color: "red" }}>
+            <Text>End time must be after start time</Text>
+          </div>
+        )}
 
         {/* Slots Display */}
         <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
@@ -963,7 +965,6 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
               </Col>
             );
           })}
-
         </Row>
 
         <Modal
@@ -1109,7 +1110,6 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
 
           {/* Duration */}
 
-
           {/* Action Buttons */}
           <Col xs={12} sm={6}>
             <Space>
@@ -1122,7 +1122,6 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
               >
                 Add Unavailable Slots
               </Button>
-
             </Space>
           </Col>
 
@@ -1137,7 +1136,6 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
               >
                 Delete Slots
               </Button>
-
             </Space>
           </Col>
         </Row>
@@ -1203,23 +1201,10 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
     if (diff < 0) {
       diff += 7;
     }
-    // if (diff <= 0) {
-    //   diff += 7; // Move to the *next* occurrence if same day or past day
-    // }
 
     const date = moment().add(diff, "days");
     setSelectedDate(date);
   };
-
-
-  // const handleDayClick = (day) => {
-  //   setSelectedDay(day);
-  //   const todayIndex = moment().isoWeekday(); // Monday=1, Sunday=7
-  //   const selectedIndex = fullWeek.indexOf(day) + 1; // Make it 1-based like isoWeekday
-  //   const diff = selectedIndex - todayIndex;
-  //   const date = moment().add(diff, "days");
-  //   setSelectedDate(date);
-  // };
 
   return (
     <div
@@ -1236,25 +1221,25 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
             Select Clinic:
           </Text>
           <Select
-  value={selectedClinic}
-  onChange={setSelectedClinic}
-  style={{ width: 250 }}
-  loading={loading}
-  showSearch
-  optionFilterProp="children"
-  filterOption={(input, option) =>
-    option.children.toLowerCase().includes(input.toLowerCase())
-  }
-  placeholder="Search and select clinic"
-  dropdownStyle={{ minWidth: 250 }}
-  allowClear
->
-  {clinics.map((clinic) => (
-    <Option key={clinic.value} value={clinic.value}>
-      {clinic.label}
-    </Option>
-  ))}
-</Select>
+            value={selectedClinic}
+            onChange={setSelectedClinic}
+            style={{ width: 250 }}
+            loading={loading}
+            showSearch
+            optionFilterProp="children"
+            filterOption={(input, option) =>
+              option.children.toLowerCase().includes(input.toLowerCase())
+            }
+            placeholder="Search and select clinic"
+            dropdownStyle={{ minWidth: 250 }}
+            allowClear
+          >
+            {clinics.map((clinic) => (
+              <Option key={clinic.value} value={clinic.value}>
+                {clinic.label}
+              </Option>
+            ))}
+          </Select>
         </Card>
 
         <Spin spinning={loading}>
@@ -1272,28 +1257,28 @@ const [availableStartPeriod, setAvailableStartPeriod] = useState(() => {
                   <Text strong>Manage Availability for:</Text>
                   <Text strong>Start Date:</Text>
                  <input
-  type="date"
-  className="date-input"
-  max={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ''}
-  min={moment().format("YYYY-MM-DD")}
-  value={selectedDate ? selectedDate.format("YYYY-MM-DD") : ""}
-  onChange={(e) => {
-    const dateValue = e.target.value;
-    setSelectedDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
-  }}
-/>
+                    type="date"
+                    className="date-input"
+                    max={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ''}
+                    min={moment().format("YYYY-MM-DD")}
+                    value={selectedDate ? selectedDate.format("YYYY-MM-DD") : ""}
+                    onChange={(e) => {
+                      const dateValue = e.target.value;
+                      setSelectedDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
+                    }}
+                  />
 
                   <Text strong>End Date:</Text>
                  <input
-  type="date"
-  className="date-input"
-  min={selectedDate ? selectedDate.format("YYYY-MM-DD") : moment().format("YYYY-MM-DD")}
-  value={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ""}
-  onChange={(e) => {
-    const dateValue = e.target.value;
-    setSelectedEndDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
-  }}
-/>
+                    type="date"
+                    className="date-input"
+                    min={selectedDate ? selectedDate.format("YYYY-MM-DD") : moment().format("YYYY-MM-DD")}
+                    value={selectedEndDate ? selectedEndDate.format("YYYY-MM-DD") : ""}
+                    onChange={(e) => {
+                      const dateValue = e.target.value;
+                      setSelectedEndDate(dateValue ? moment(dateValue, "YYYY-MM-DD") : null);
+                    }}
+                  />
                 </Space>
               </div>
             }
