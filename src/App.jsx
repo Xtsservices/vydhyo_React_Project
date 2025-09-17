@@ -54,6 +54,13 @@ const App = () => {
 
       }
     } catch (error) {
+      const errormessage = error?.response?.data?.message?.message || "Failed to fetch user data";
+      if(errormessage === "User not found" || errormessage === "jwt expired" || errormessage === "invalid token"){
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userID");
+        localStorage.removeItem("role");
+        navigate("/login");
+      }
       console.error("Error fetching user data:", error);
     }
   };
