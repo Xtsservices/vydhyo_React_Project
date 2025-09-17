@@ -1318,16 +1318,16 @@ export default function ClinicManagement() {
                       </td>
                       <td className="clinic-table-td">{clinic.mobile}</td>
                       <td className="clinic-table-td">
-                        {clinic.headerImage ? (
+                        {clinic?.headerImage ? (
                           <button
                             className="clinic-view-image-button"
                             title="View Header Image"
                             onClick={() =>
                               handleViewImage(
-                                clinic.headerImage,
-                                clinic.digitalSignature,
-                                clinic.pharmacyHeaderImage,
-                                clinic.labHeaderImage
+                                clinic?.headerImage,
+                                clinic?.digitalSignature,
+                                clinic?.pharmacyHeaderImage,
+                                clinic?.labHeaderImage
                               )
                             }
                           >
@@ -1346,7 +1346,7 @@ export default function ClinicManagement() {
                         )}
                       </td>
                       <td className="clinic-table-td">
-                        {clinic.pharmacyName ? (
+                        {clinic?.pharmacyName ? (
                           <button
                             className="clinic-view-image-button"
                             title="View Pharmacy Details"
@@ -1367,7 +1367,7 @@ export default function ClinicManagement() {
                         )}
                       </td>
                       <td className="clinic-table-td">
-                        {clinic.labName ? (
+                        {clinic?.labName ? (
                           <button
                             className="clinic-view-image-button"
                             title="View Lab Details"
@@ -2464,10 +2464,63 @@ export default function ClinicManagement() {
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Updated At:</span>
                   <span className="pharmacy-details-value">
-                    {new Date(pharmacyDetails.updatedAt).toLocaleString()}
+                    {new Date(pharmacyDetails.updatedAt)
+                      .toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                      .replace(/ /g, "-")} {","}
+                    {new Date(pharmacyDetails.updatedAt).toLocaleString("en-US", {
+                      
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
-                {pharmacyDetails.pharmacyHeaderImage && ( // ← Change this line
+                {pharmacyDetails?.pharmacyHeaderImage && ( // ← Change this line
+                  <div className="pharmacy-details-row">
+                    <span className="pharmacy-details-label">
+                      Header Image:
+                    </span>
+                    <div className="pharmacy-header-preview">
+                      <img
+                        src={pharmacyDetails?.pharmacyHeaderImage}
+                        alt="Pharmacy Header"
+                        className="pharmacy-header-image"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="clinic-button-group">
+                <button
+                  type="button"
+                  className="clinic-cancel-button"
+                  onClick={handleClosePharmacyDetails}
+                >
+                  <X size={16} />
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showLabDetailsModal && labDetails && (
+          <div className="clinic-modal-overlay" onClick={handleCloseLabDetails}>
+            <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 className="clinic-modal-header">Lab Details</h2>
+
+              <div className="pharmacy-details-container">
+                <div className="pharmacy-details-row">
+                  <span className="pharmacy-details-label">Lab Name:</span>
+                  <span className="pharmacy-details-value">
+                    {labDetails.labName}
+                  </span>
+                </div>
+                {pharmacyDetails?.pharmacyHeaderImage && ( // ← Change this line
                   <div className="pharmacy-details-row">
                     <span className="pharmacy-details-label">
                       Header Image:
@@ -2506,7 +2559,7 @@ export default function ClinicManagement() {
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Lab Name:</span>
                   <span className="pharmacy-details-value">
-                    {labDetails.labName}
+                    {labDetails?.labName}
                   </span>
                 </div>
                 <div className="pharmacy-details-row">
@@ -2514,41 +2567,52 @@ export default function ClinicManagement() {
                     Registration Number:
                   </span>
                   <span className="pharmacy-details-value">
-                    {labDetails.labRegistrationNo}
+                    {labDetails?.labRegistrationNo}
                   </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">GST Number:</span>
                   <span className="pharmacy-details-value">
-                    {labDetails.labGst}
+                    {labDetails?.labGst}
                   </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">PAN Number:</span>
                   <span className="pharmacy-details-value">
-                    {labDetails.labPan}
+                    {labDetails?.labPan}
                   </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Address:</span>
                   <span className="pharmacy-details-value">
-                    {labDetails.labAddress}
+                    {labDetails?.labAddress}
                   </span>
                 </div>
                 <div className="pharmacy-details-row">
                   <span className="pharmacy-details-label">Updated At:</span>
                   <span className="pharmacy-details-value">
-                    {new Date(labDetails.updatedAt).toLocaleString()}
+                     {new Date(labDetails.updatedAt)
+                      .toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                      .replace(/ /g, "-")} {","}
+                    {new Date(labDetails.updatedAt).toLocaleString("en-US", {
+                      
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
-                {labDetails.labHeader && (
+                {labDetails?.labHeader && (
                   <div className="pharmacy-details-row">
                     <span className="pharmacy-details-label">
                       Header Image:
                     </span>
                     <div className="pharmacy-header-preview">
                       <img
-                        src={labDetails.labHeader}
+                        src={labDetails?.labHeader}
                         alt="Lab Header"
                         className="pharmacy-header-image"
                       />

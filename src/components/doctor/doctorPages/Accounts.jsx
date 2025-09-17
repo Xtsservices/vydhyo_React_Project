@@ -482,8 +482,8 @@ const AccountsPage = () => {
                 {txn.currency || "INR"}
               </Descriptions.Item>
               <Descriptions.Item label="Paid At">
-                {txn.paidAt
-                  ? dayjs(txn.paidAt).format("DD-MMM-YYYY HH:mm")
+                {txn?.paidAt
+                  ? dayjs(txn.paidAt).format("DD-MMM-YYYY hh:mm A")
                   : "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Status">
