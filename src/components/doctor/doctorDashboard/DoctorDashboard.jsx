@@ -522,6 +522,15 @@ const RevenueCard = ({ dashboardData }) => (
   </Card>
 );
 
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    const [hours, minutes] = timeString.split(":");
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
 const PatientAppointments = ({
   appointments,
   selectedDate,
@@ -703,7 +712,7 @@ const PatientAppointments = ({
                   textAlign: "center",
                 }}
               >
-                {appointment.appointmentTime || "N/A"}
+                {formatTime(appointment?.appointmentTime )|| "N/A"}
               </Text>
               <div
                 style={{
@@ -1028,14 +1037,7 @@ const ClinicAvailability = ({
     );
   };
 
-  const formatTime = (timeString) => {
-    if (!timeString) return "";
-    const [hours, minutes] = timeString.split(":");
-    const hour = parseInt(hours, 10);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const hour12 = hour % 12 || 12;
-    return `${hour12}:${minutes} ${ampm}`;
-  };
+
 
   if (clinics.length === 0) {
     return (
@@ -1498,10 +1500,10 @@ useEffect(() => {
       );
 
       if (response.data.status === "success") {
-        const appointmentsList = response.data.data.appointments;
+        const appointmentsList = response?.data?.data?.appointments;
         setAppointments(appointmentsList);
       } else {
-        console.warn("Unexpected API response structure:", response.data);
+        console.warn("Unexpected API response structure:", response?.data);
         setAppointments([]);
         if (formattedDate === moment().format("YYYY-MM-DD")) {
           updatePatientAppointmentsData([], formattedDate);
