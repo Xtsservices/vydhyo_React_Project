@@ -605,7 +605,7 @@ function parseAppointment(record) {
       console.log(disabledByTime, "123")
     return (
       <Menu>
-        {(user?.role === "doctor" || user?.access?.includes("eprescription")) && (
+        {(user?.role === "doctor" ||user?.role === 'receptionist' || user?.access?.includes("eprescription")) && (
 <Menu.Item
   key="e-prescription"
   onClick={() => handleEPrescription(record)}
