@@ -54,8 +54,7 @@ const DoctorProfileView = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { doctorId, statusFilter } = location.state || {};
-  const userId = "VYDUSER1320"; // Hardcoded userId as per request
+  const { doctorId, userId ,statusFilter } = location.state || {};
 
   // Function to generate a color for clinic icons (matching React Native's getLocationColor)
   const getLocationColor = (name) => {
@@ -75,7 +74,6 @@ const DoctorProfileView = () => {
       const hours12 = hours % 12 || 12;
       return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
     } catch (error) {
-      console.error("Error converting time format:", error);
       return time24; // Return original if conversion fails
     }
   };
@@ -99,7 +97,6 @@ const DoctorProfileView = () => {
 
       // Fetch doctor details using /users/getUser
       const doctorResponse = await apiGet(`/users/getUser?userId=${userId}`);
-      console.log("Doctor Response:", doctorResponse);
       const userData = doctorResponse.data?.data;
 
       let doctor = null;
@@ -111,7 +108,6 @@ const DoctorProfileView = () => {
       }
 
       if (!doctor) {
-        console.error("No doctor found with the provided ID.");
         message.warning("Doctor not found. Displaying available data if any.");
         doctor = {};
       }
@@ -144,7 +140,6 @@ const DoctorProfileView = () => {
 
       // Fetch KYC details
       const kycResponse = await apiGet(`users/getKycByUserId?userId=${userId}`);
-      console.log("KYC Response:", kycResponse.data.data?.pan?.attachmentUrl);
       const kycData = kycResponse.data;
       const kycDetails = kycData.status === "success" && kycData.data
         ? {
@@ -165,7 +160,7 @@ const DoctorProfileView = () => {
         `/users/getClinicAddress?doctorId=${userId}`
       );
       let clinicData = [];
-      if (clinicResponse.status === 200 && clinicResponse.data?.status === "success") {
+      if (clinicResponse?.status === "success") {
         const allClinics = clinicResponse.data.data || [];
         // Filter active clinics and sort by createdAt (descending), as in ClinicManagement
         const activeClinics = allClinics.filter(
@@ -200,8 +195,7 @@ const DoctorProfileView = () => {
           }))
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       } else {
-        console.error("Failed to fetch clinic details:", clinicResponse);
-        message.warning("Failed to fetch clinic details.");
+        message.warning(clinicResponse?.message?.message || "Failed to fetch clinic details.");
       }
 
       setClinics(clinicData);
@@ -235,38 +229,9 @@ const DoctorProfileView = () => {
         isVerified: doctor.isVerified || false,
       });
     } catch (error) {
-      console.error("Error fetching doctor, KYC, or clinic details:", error);
       message.error(
         "Failed to fetch doctor, KYC, or clinic details. Please try again."
       );
-      setDoctorData({
-        key: "",
-        firstname: "N/A",
-        lastname: "",
-        specialization: [{}],
-        email: "N/A",
-        mobile: "N/A",
-        status: "pending",
-        medicalRegistrationNumber: "N/A",
-        userId: "N/A",
-        createdAt: null,
-        consultationModeFee: [],
-        spokenLanguage: [],
-        gender: "N/A",
-        DOB: "N/A",
-        bloodgroup: "N/A",
-        maritalStatus: "N/A",
-        bankDetails: {},
-        kycDetails: {
-          panNumber: "N/A",
-          panImage: null,
-          panStatus: "pending",
-          kycVerified: false,
-        },
-        certifications: [],
-        profilepic: null,
-        isVerified: false,
-      });
       setClinics([]);
     } finally {
       setLoading(false);
@@ -300,7 +265,6 @@ const DoctorProfileView = () => {
       if (image.startsWith("http") || image.startsWith("data:")) {
         return image;
       }
-      return `https://your-api-base-url/${image}`;
     }
     return null;
   };
@@ -349,7 +313,6 @@ const DoctorProfileView = () => {
         message.warning("Failed to update doctor status.");
       }
     } catch (error) {
-      console.error("Error updating doctor status:", error);
       toast.error("An error occurred while updating the status.");
       message.error("An error occurred while updating the status.");
     } finally {
@@ -407,17 +370,23 @@ const DoctorProfileView = () => {
               bodyStyle={{ padding: "20px" }}
             >
               <div style={{ textAlign: "center", marginBottom: "24px" }}>
-                <Avatar
-                  size={64}
-                  src={getImageSrc(doctorData?.profilepic)}
-                  style={{
+                
+                  <div  style={{
                     backgroundColor: "#6366f1",
                     fontSize: "24px",
                     fontWeight: "500",
-                  }}
-                >
+                    borderRadius: "50%",
+                    width: "80px",
+                    height: "80px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginLeft: "auto",
+                    marginRight: "auto",
+                  }}>
                   {`${doctorData?.firstname?.[0] ?? ""}${doctorData?.lastname?.[0] ?? ""}`}
-                </Avatar>
+
+                  </div>
                 <Title
                   level={4}
                   style={{

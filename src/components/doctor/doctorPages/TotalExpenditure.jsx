@@ -69,7 +69,7 @@ const TotalExpenditureScreen = () => {
         endDate = moment().endOf('month').format('YYYY-MM-DD');
       }
       
-      const response = await apiGet(`/finance/getExpense?startDate=${startDate}&endDate=${endDate}`);
+      const response = await apiGet(`/finance/getExpense/${user?.userId}?startDate=${startDate}&endDate=${endDate}`);
       
       if (response.data.success) {
         setExpenses(response.data.data);
