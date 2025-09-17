@@ -208,10 +208,8 @@ const DoctorProfileView = () => {
       setLoadingDegrees(true);
       const response = await apiGet('/catalogue/degree/getAllDegrees');
       const data = response?.data?.data || [];
-      console.log(data, "1234")
       setDegrees(data);
     } catch (error) {
-      console.error('Error fetching degrees:', error);
       toast.error('Failed to fetch degrees.');
     } finally {
       setLoadingDegrees(false);
@@ -223,10 +221,6 @@ const DoctorProfileView = () => {
     try {
       const response = await apiGet("/users/getUser");
       const userData = response.data?.data;
-      console.log(userData.specialization.degreeCertificateUrl, "doctor dataaaaa");
-      console.log(userData.specialization.specializationCertificateUrl, "doctor dataaaaa");
-      console.log(userData, "doctor dataaaaa");
-
       if (userData) {
         const specializations = userData.specialization
           ? Array.isArray(userData.specialization)
@@ -291,7 +285,6 @@ const DoctorProfileView = () => {
         });
       }
     } catch (error) {
-      console.error("Error fetching doctor data:", error);
       message.error("Failed to load doctor data.");
     } finally {
       setLoading(false);
@@ -302,12 +295,9 @@ const DoctorProfileView = () => {
     setLoading(true);
     try {
       const response = await apiGet("/users/getKycByUserId");
-      console.log(response, "kyc data");
       const userData = response.data?.data;
-      console.log(userData.pan.attachmentUrl, "kyc datasssss");
       setKyc(userData)
     } catch (error) {
-      console.error("Error fetching doctor data:", error);
       message.error("Failed to load doctor data.");
     } finally {
       setLoading(false);
@@ -417,7 +407,6 @@ const DoctorProfileView = () => {
     try {
       switch (editModalType) {
         case 'personal':
-          console.log("Updating personal information", values);
           const { mobileNumber, ...rest } = values;
           await apiPut("/users/updateUser", {
             ...rest,
@@ -462,7 +451,6 @@ const DoctorProfileView = () => {
           const panNumber = String(values?.panNumber ?? "").trim();
 
           const resp = await postKYCDetails({ file, userId, panNumber });
-          console.log(resp, "1234");
           break;
         }
 
@@ -472,7 +460,6 @@ const DoctorProfileView = () => {
             fee: Number(item.fee),
             currency: item.currency,
           }));
-          console.log(cleanedFees, "consultation values");
           await apiPost("/users/updateConsultationModes", { consultationModeFee: cleanedFees });
           break;
 
@@ -485,7 +472,6 @@ const DoctorProfileView = () => {
       handleEditModalClose();
       fetchDoctorData();
     } catch (error) {
-      console.error("Error updating profile:", error);
 
       // Handle backend validation errors
       if (error.response?.data?.message?.message) {

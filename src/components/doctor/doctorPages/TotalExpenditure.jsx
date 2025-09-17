@@ -76,7 +76,6 @@ const TotalExpenditureScreen = () => {
         setTotalExpenses(response.data.data.length);
       }
     } catch (error) {
-      console.error('Error fetching expenses:', error);
       message.error('Failed to fetch expenses. Please try again.');
     } finally {
       setFetching(false);
@@ -125,10 +124,6 @@ const TotalExpenditureScreen = () => {
       render: (text) => text || 'N/A'
     }
   ];
-
-  const handleExport = () => {
-    console.log('Export functionality');
-  };
 
   const handleSearch = (value) => {
     setSearchText(value);
@@ -189,7 +184,6 @@ const TotalExpenditureScreen = () => {
       form.resetFields();
 
     } catch (error) {
-      console.error('Error creating expense:', error);
       message.error('Failed to create expense. Please try again.');
     } finally {
       setLoading(false);
