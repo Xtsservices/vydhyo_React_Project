@@ -30,7 +30,6 @@ const LayoutWrapper = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const user = useSelector((state) => state.currentUserData);
-  console.log("User Data:", user);
 
   useEffect(() => {
     const handleResize = () => {
@@ -270,7 +269,6 @@ const LayoutWrapper = () => {
   };
 
   const handleLogout = async () => {
-    console.log("Logout successful:", 10);
 
     try {
       const response = await apiPost("/auth/logout");
@@ -279,7 +277,6 @@ const LayoutWrapper = () => {
       localStorage.removeItem("role");
       localStorage.removeItem("appointments");
 
-      console.log("Logout successful:", response.data.message);
     } catch (error) {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userID");
@@ -287,10 +284,6 @@ const LayoutWrapper = () => {
       localStorage.removeItem("appointments");
 
       navigate("/login");
-      console.error(
-        "Logout API failed:",
-        error.response?.statusText || error.message
-      );
     } finally {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userID");
@@ -366,73 +359,9 @@ const LayoutWrapper = () => {
           </div>
 
           <div className="header-right">
-            <Badge count={5} size="small">
-              <FontAwesomeIcon icon={faBell} className="notification-btn" />
-            </Badge>
+        
 
-            {/* <div className="user-info" onClick={() => {
-              localStorage.removeItem("accessToken");
-              window.location.href = "/"; 
-            }}>
-              <div className="user-details">
-                <span className="user-name">Dr. Arvind Sharma</span>
-                <span className="user-role">Super Admin</span>
-              </div>
-              <Avatar
-                size={40}
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                style={{ 
-                  border: '2px solid #e8e8e8',
-                  cursor: 'pointer'
-                }}
-              />
-            </div> */}
-
-            {/* <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "8px 12px",
-                borderRadius: "8px",
-                background: "#f8fafc",
-                cursor: "pointer",
-                marginLeft: "8px",
-              }}
-            >
-              <Avatar
-                size={32}
-                src={profileImageSrc}
-                icon={!profileImageSrc && <FontAwesomeIcon icon={faUser} />}
-                style={{
-                  backgroundColor: "#e2e8f0",
-                  color: "#64748b",
-                }}
-              />
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <div
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    color: "#1e293b",
-                    lineHeight: "1.2",
-                  }}
-                >
-                  Dr. {user?.firstname || "Arvind"} {user?.lastname || "Sharma"}
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#64748b",
-                    lineHeight: "1.2",
-                  }}
-                >
-                  {user?.role || "Doctor"}
-                </div>
-              </div>
-            </div>             */}
-
-            {/* User Profile Section with Dropdown */}
+      
             <Dropdown overlay={profileMenu} trigger={["click"]}>
               <div
                 style={{
@@ -512,10 +441,23 @@ const LayoutWrapper = () => {
               {!collapsed && (
                 <div className="sidebar-profile">
                   <div className="profile-avatar">
-                    <img
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                      alt="Profile"
-                    />
+                    {profileImageSrc ? (
+                      <img src={profileImageSrc} alt="Profile" />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#1890ff',
+                        color: '#ffffff',
+                        fontSize: '20px',
+                        fontWeight: 'bold'
+                      }}>
+                        {`${user?.firstname?.[0] || ''}${user?.lastname?.[0] || ''}`}
+                      </div>
+                    )}
                   </div>
                   <h3 className="profile-name">
                     {user?.firstname || ""} {user?.lastname || ""}

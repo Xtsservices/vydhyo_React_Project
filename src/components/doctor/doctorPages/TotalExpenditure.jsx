@@ -69,14 +69,13 @@ const TotalExpenditureScreen = () => {
         endDate = moment().endOf('month').format('YYYY-MM-DD');
       }
       
-      const response = await apiGet(`/finance/getExpense?startDate=${startDate}&endDate=${endDate}`);
+      const response = await apiGet(`/finance/getExpense/${user?.userId}?startDate=${startDate}&endDate=${endDate}`);
       
       if (response.data.success) {
         setExpenses(response.data.data);
         setTotalExpenses(response.data.data.length);
       }
     } catch (error) {
-      console.error('Error fetching expenses:', error);
       message.error('Failed to fetch expenses. Please try again.');
     } finally {
       setFetching(false);
@@ -125,10 +124,6 @@ const TotalExpenditureScreen = () => {
       render: (text) => text || 'N/A'
     }
   ];
-
-  const handleExport = () => {
-    console.log('Export functionality');
-  };
 
   const handleSearch = (value) => {
     setSearchText(value);
@@ -189,7 +184,6 @@ const TotalExpenditureScreen = () => {
       form.resetFields();
 
     } catch (error) {
-      console.error('Error creating expense:', error);
       message.error('Failed to create expense. Please try again.');
     } finally {
       setLoading(false);

@@ -31,7 +31,7 @@ import {
   EyeOutlined,
   ManOutlined,
 } from "@ant-design/icons";
-import { apiGet, apiPut } from "../../api";
+import { apiGet, apiPut } from "../../api"; // Ensure this is the same API utility as used in ClinicManagement
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 const { Title, Text } = Typography;
@@ -49,18 +49,39 @@ const DoctorProfileView = () => {
   const [doctorData, setDoctorData] = useState(null);
   const [approveModalVisible, setApproveModalVisible] = useState(false);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [reason, setReason] = useState("");
-  const [clinics, setClinics] = useState([]); // New state for clinics
+  const [clinics, setClinics] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { userId, doctorId, statusFilter } = location.state || {};
+  const { doctorId, userId ,statusFilter } = location.state || {};
+
+  // Function to generate a color for clinic icons (matching React Native's getLocationColor)
+  const getLocationColor = (name) => {
+    const colors = ['#FF6F61', '#6B5B95', '#88B04B', '#F7CAC9', '#92A8D1', '#955251', '#B565A7'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    const index = Math.abs(hash % colors.length);
+    return colors[index];
+  };
+  // Helper function to convert 24-hour format to 12-hour format
+  const convertTo12HourFormat = (time24) => {
+    if (!time24 || time24 === "N/A") return "N/A";
+
+    try {
+      const [hours, minutes] = time24.split(':').map(Number);
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const hours12 = hours % 12 || 12;
+      return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+    } catch (error) {
+      return time24; // Return original if conversion fails
+    }
+  };
 
   // Fetch doctor details and clinics from API
   const fetchDoctorDetails = async () => {
     if (!doctorId || !userId) {
-      message.error("No doctor ID provided.");
+      message.error("No doctor ID or user ID provided.");
       navigate("/SuperAdmin/doctor-onboarding");
       return;
     }
@@ -74,21 +95,15 @@ const DoctorProfileView = () => {
         return;
       }
 
-      // Fetch doctor details
-      const doctorResponse = await apiGet(
-        `users/AllUsers?type=doctor&id=${doctorId}&status=${statusFilter || "all"}`
-      );
-    
-      const doctorDataResponse = doctorResponse.data;
+      // Fetch doctor details using /users/getUser
+      const doctorResponse = await apiGet(`/users/getUser?userId=${userId}`);
+      const userData = doctorResponse.data?.data;
+
       let doctor = null;
-      if (doctorDataResponse.status === "success" && doctorDataResponse.data) {
-        if (Array.isArray(doctorDataResponse.data)) {
-          doctor = doctorDataResponse.data.find((doc) => doc._id === doctorId);
-        } else {
-          doctor = doctorDataResponse.data;
-          if (doctor._id !== doctorId) {
-            doctor = null;
-          }
+      if (userData) {
+        doctor = userData;
+        if (doctor._id !== doctorId) {
+          doctor = null;
         }
       }
 
@@ -97,38 +112,106 @@ const DoctorProfileView = () => {
         doctor = {};
       }
 
+      // Normalize specializations
+      const specializations = doctor.specialization
+        ? Array.isArray(doctor.specialization)
+          ? doctor.specialization
+          : [doctor.specialization]
+        : [];
+
+      // Map certifications
+      const certifications = specializations.map((spec) => ({
+        name: spec.name || "Specialization",
+        registrationNo: spec.id || "N/A",
+        image: spec.specializationCertificateUrl || spec.specializationCertificate || null,
+        degreeCertificate: spec.degreeCertificateUrl || spec.drgreeCertificate || null,
+      }));
+
+      // Normalize bank details
+      const bankDetails = doctor.bankDetails || {};
+
+      const decryptedBankDetails = {
+        accountNumber: bankDetails.accountNumber || "N/A",
+        accountHolderName: bankDetails.accountHolderName || "N/A",
+        ifscCode: bankDetails.ifscCode || "N/A",
+        bankName: bankDetails.bankName || "N/A",
+        accountProof: bankDetails.accountProof || null,
+      };
+
       // Fetch KYC details
       const kycResponse = await apiGet(`users/getKycByUserId?userId=${userId}`);
       const kycData = kycResponse.data;
-
       const kycDetails = kycData.status === "success" && kycData.data
         ? {
-            panNumber: kycData.data.pan?.number || "N/A",
-            panImage: kycData.data.pan?.attachmentUrl?.data || null,
-            panStatus: kycData.data.pan?.status || "pending",
-            kycVerified: kycData.data.kycVerified || false,
-          }
+          panNumber: kycData.data.pan?.number || "N/A",
+          panImage: kycData.data.pan?.attachmentUrl || null,
+          panStatus: kycData.data.pan?.status || "pending",
+          kycVerified: kycData.data.kycVerified || false,
+        }
         : {
-            panNumber: "N/A",
-            panImage: null,
-            panStatus: "pending",
-            kycVerified: false,
-          };
+          panNumber: "N/A",
+          panImage: null,
+          panStatus: "pending",
+          kycVerified: false,
+        };
+
+      // Fetch clinic details using the same endpoint as ClinicManagement
+      const clinicResponse = await apiGet(
+        `/users/getClinicAddress?doctorId=${userId}`
+      );
+      let clinicData = [];
+      if (clinicResponse?.status === "success") {
+        const allClinics = clinicResponse.data.data || [];
+        // Filter active clinics and sort by createdAt (descending), as in ClinicManagement
+        const activeClinics = allClinics.filter(
+          (clinic) => clinic.status === "Active"
+        );
+        clinicData = activeClinics
+          .map((addr) => ({
+            _id: addr._id,
+            addressId: addr.addressId,
+            label: addr.clinicName || "Clinic",
+            address: `${addr.address || ""}, ${addr.city || ""}, ${addr.state || ""}, ${addr.country || ""} - ${addr.pincode || ""}`,
+            startTime: addr.startTime || "N/A",
+            endTime: addr.endTime || "N/A",
+            mobile: addr.mobile || "N/A",
+            latitude: addr.latitude || "",
+            longitude: addr.longitude || "",
+            headerImage: addr.headerImage || null,
+            digitalSignature: addr.digitalSignature || null,
+            pharmacyName: addr.pharmacyName || "N/A",
+            pharmacyRegNum: addr.pharmacyRegNum || addr.pharmacyRegistrationNo || "N/A",
+            pharmacyGST: addr.pharmacyGST || addr.pharmacyGst || "N/A",
+            pharmacyPAN: addr.pharmacyPAN || addr.pharmacyPan || "N/A",
+            pharmacyAddress: addr.pharmacyAddress || "N/A",
+            pharmacyHeaderImage: addr.pharmacyHeaderImage || null,
+            labName: addr.labName || "N/A",
+            labRegNum: addr.labRegNum || addr.labRegistrationNo || "N/A",
+            labGST: addr.labGST || addr.labGst || "N/A",
+            labPAN: addr.labPAN || addr.labPan || "N/A",
+            labAddress: addr.labAddress || "N/A",
+            labHeaderImage: addr.labHeaderImage || null,
+            status: addr.status || "pending",
+          }))
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } else {
+        message.warning(clinicResponse?.message?.message || "Failed to fetch clinic details.");
+      }
+
+      setClinics(clinicData);
 
       setDoctorData({
         ...doctor,
-        key: doctor._id,
+        key: doctor._id || "",
         firstname: doctor.firstname || "N/A",
         lastname: doctor.lastname || "",
-        specialization: Array.isArray(doctor.specialization)
-          ? doctor.specialization
-          : [doctor.specialization || {}],
+        specialization: specializations,
         email: doctor.email || "N/A",
         mobile: doctor.mobile || "N/A",
         status: doctor.status || "pending",
         medicalRegistrationNumber: doctor.medicalRegistrationNumber || "N/A",
         userId: doctor.userId || "N/A",
-        createdAt: doctor.createdAt,
+        createdAt: doctor.createdAt || null,
         consultationModeFee: Array.isArray(doctor.consultationModeFee)
           ? doctor.consultationModeFee
           : [],
@@ -139,48 +222,16 @@ const DoctorProfileView = () => {
         DOB: doctor.DOB || "N/A",
         bloodgroup: doctor.bloodgroup || "N/A",
         maritalStatus: doctor.maritalStatus || "N/A",
-        bankDetails: doctor.bankDetails || {},
+        bankDetails: decryptedBankDetails,
         kycDetails: kycDetails,
-        certifications: Array.isArray(doctor.certifications)
-          ? doctor.certifications
-          : [],
+        certifications: certifications,
         profilepic: doctor.profilepic || null,
         isVerified: doctor.isVerified || false,
       });
-    } 
-    catch (error) {
+    } catch (error) {
       message.error(
         "Failed to fetch doctor, KYC, or clinic details. Please try again."
       );
-      // Set default doctorData to prevent blank page
-      setDoctorData({
-        key: "",
-        firstname: "N/A",
-        lastname: "",
-        specialization: [{}],
-        email: "N/A",
-        mobile: "N/A",
-        status: "pending",
-        medicalRegistrationNumber: "N/A",
-        userId: "N/A",
-        createdAt: null,
-        consultationModeFee: [],
-        spokenLanguage: [],
-        gender: "N/A",
-        DOB: "N/A",
-        bloodgroup: "N/A",
-        maritalStatus: "N/A",
-        bankDetails: {},
-        kycDetails: {
-          panNumber: "N/A",
-          panImage: null,
-          panStatus: "pending",
-          kycVerified: false,
-        },
-        certifications: [],
-        profilepic: null,
-        isVerified: false,
-      });
       setClinics([]);
     } finally {
       setLoading(false);
@@ -190,7 +241,7 @@ const DoctorProfileView = () => {
   // Fetch doctor details and clinics on component mount
   useEffect(() => {
     fetchDoctorDetails();
-  }, []);
+  }, [doctorId, statusFilter]);
 
   const showModal = (doc) => {
     setSelectedDocument(doc);
@@ -210,12 +261,17 @@ const DoctorProfileView = () => {
   const getImageSrc = (image) => {
     if (image?.data && image?.mimeType) {
       return `data:${image.mimeType};base64,${image.data}`;
+    } else if (typeof image === "string") {
+      if (image.startsWith("http") || image.startsWith("data:")) {
+        return image;
+      }
     }
     return null;
   };
 
   const updateDoctorStatus = async (newStatus) => {
     try {
+      setActionLoading(newStatus);
       const token = localStorage.getItem("accessToken");
       if (!token) {
         message.error("No authentication token found");
@@ -249,6 +305,7 @@ const DoctorProfileView = () => {
           toast.error("Doctor has been rejected.");
           message.error("Doctor has been rejected.");
           setRejectModalVisible(false);
+          setReason("");
         }
         navigate("/SuperAdmin/doctors");
       } else {
@@ -266,6 +323,7 @@ const DoctorProfileView = () => {
   if (loading) {
     return <Spin spinning={loading} />;
   }
+
   return (
     <div
       style={{
@@ -312,19 +370,23 @@ const DoctorProfileView = () => {
               bodyStyle={{ padding: "20px" }}
             >
               <div style={{ textAlign: "center", marginBottom: "24px" }}>
-                <Avatar
-                  size={64}
-                  src={getImageSrc(doctorData?.profilepic)}
-                  style={{
+                
+                  <div  style={{
                     backgroundColor: "#6366f1",
                     fontSize: "24px",
                     fontWeight: "500",
-                  }}
-                >
-                  {`${doctorData?.firstname?.[0] ?? ""}${
-                    doctorData?.lastname?.[0] ?? ""
-                  }`}
-                </Avatar>
+                    borderRadius: "50%",
+                    width: "80px",
+                    height: "80px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginLeft: "auto",
+                    marginRight: "auto",
+                  }}>
+                  {`${doctorData?.firstname?.[0] ?? ""}${doctorData?.lastname?.[0] ?? ""}`}
+
+                  </div>
                 <Title
                   level={4}
                   style={{
@@ -363,47 +425,9 @@ const DoctorProfileView = () => {
                     marginBottom: "8px",
                   }}
                 >
-                  <CalendarOutlined
-                    style={{ marginRight: 8, color: "#6b7280" }}
-                  />
-                 
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: "8px",
-                  }}
-                >
                   <ManOutlined style={{ marginRight: 8, color: "#6b7280" }} />
                   <Text style={{ fontSize: "14px", color: "#374151" }}>
                     <strong>Gender:</strong> {doctorData?.gender}
-                  </Text>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: "8px",
-                  }}
-                >
-            
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: "14px",
-                      color: "#374151",
-                      marginLeft: "24px",
-                    }}
-                  >
-                    <strong>Marital Status:</strong> {doctorData?.maritalStatus}
                   </Text>
                 </div>
               </div>
@@ -428,21 +452,27 @@ const DoctorProfileView = () => {
                   Languages:
                 </Text>
                 <div style={{ marginTop: "8px" }}>
-                  {doctorData?.spokenLanguage.map((lang, index) => (
-                    <Tag
-                      key={index}
-                      style={{
-                        marginBottom: "4px",
-                        marginRight: "8px",
-                        backgroundColor: "#DBEAFE",
-                        color: "#1E40AF",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "10px",
-                      }}
-                    >
-                      {lang}
-                    </Tag>
-                  ))}
+                  {doctorData?.spokenLanguage.length > 0 ? (
+                    doctorData.spokenLanguage.map((lang, index) => (
+                      <Tag
+                        key={index}
+                        style={{
+                          marginBottom: "4px",
+                          marginRight: "8px",
+                          backgroundColor: "#DBEAFE",
+                          color: "#1E40AF",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "10px",
+                        }}
+                      >
+                        {lang}
+                      </Tag>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: "14px", color: "#6b7280" }}>
+                      No languages added
+                    </Text>
+                  )}
                 </div>
               </div>
             </Card>
@@ -456,8 +486,8 @@ const DoctorProfileView = () => {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    padding: "8px 0",
-                    fontSize: "16px",
+                    padding: "4px 0",
+                    fontSize: "14px",
                     fontWeight: "600",
                     color: "#1f2937",
                   }}
@@ -476,10 +506,45 @@ const DoctorProfileView = () => {
               headStyle={{
                 backgroundColor: "#ffffff",
                 border: "none",
+                 padding: "0 12px",
                 borderBottom: "1px solid #e5e7eb",
               }}
               bodyStyle={{ padding: "20px" }}
             >
+              <div style={{ marginBottom: "20px" }}>
+                <Text
+                  strong
+                  style={{
+                    fontSize: "14px",
+                    color: "#166534",
+                    display: "block",
+                    marginBottom: "8px",
+                    fontSize: "18px",
+                    fontWeight: "600",
+                  }}
+                >
+                  Bio
+                </Text>
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                  {doctorData?.specialization[0]?.name ? (
+                    doctorData.specialization[0].name.split(',').map((spec, index) => (
+                      <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
+                        <Tag
+                          style={{
+                            marginRight: "8px",
+                            color: "#000000",
+                            padding: "4px 8px",
+                          }}
+                        >
+                          {doctorData?.specialization[0]?.bio}
+                        </Tag>
+                      </div>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: "14px", color: "#6b7280" }}>No specializations added</Text>
+                  )}
+                </div>
+              </div>
               <div style={{ marginBottom: "20px" }}>
                 <Text
                   strong
@@ -493,23 +558,88 @@ const DoctorProfileView = () => {
                 >
                   Specializations
                 </Text>
-                <div>
-                  {doctorData?.specialization.map((spec, index) => (
-                    <Tag
-                      key={index}
-                      style={{
-                        marginBottom: "6px",
-                        marginRight: "8px",
-                        backgroundColor: "#dcfce7",
-                        color: "#166534",
-                        border: "1px solid #bbf7d0",
-                        borderRadius: "6px",
-                        padding: "4px 8px",
-                      }}
-                    >
-                      {spec.name || "Not specified"}
-                    </Tag>
-                  ))}
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                  {doctorData?.specialization[0]?.name ? (
+                    doctorData.specialization[0].name.split(',').map((spec, index) => (
+                      <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
+                        <Tag
+                          style={{
+                            marginRight: "8px",
+                            backgroundColor: "#dcfce7",
+                            color: "#166534",
+                            border: "1px solid #bbf7d0",
+                            borderRadius: "6px",
+                            padding: "4px 8px",
+                          }}
+                        >
+                          {spec.trim() || "Not specified"}
+                        </Tag>
+                        {/* {doctorData?.specialization[0]?.specializationCertificateUrl && index === 0 && (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
+                            onClick={() =>
+                              showModal({ type: "specialization", data: doctorData.specialization[0].specializationCertificateUrl })
+                            }
+                            style={{ padding: "4px 8px" }}
+                          >
+                            View Specialization
+                          </Button>
+                        )} */}
+                      </div>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: "14px", color: "#6b7280" }}>No specializations added</Text>
+                  )}
+                </div>
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <Text
+                  strong
+                  style={{
+                    fontSize: "14px",
+                    color: "#374151",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Degrees
+                </Text>
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                  {doctorData?.specialization[0]?.degree ? (
+                    doctorData.specialization[0].degree.split(',').map((degree, index) => (
+                      <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
+                        <Tag
+                          style={{
+                            marginRight: "8px",
+                            backgroundColor: "#e0f2fe",
+                            color: "#0369a1",
+                            border: "1px solid #bae6fd",
+                            borderRadius: "6px",
+                            padding: "4px 8px",
+                          }}
+                        >
+                          {degree.trim()}
+                        </Tag>
+                        {/* {doctorData?.specialization[0]?.degreeCertificateUrl && index === 0 && (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
+                            onClick={() =>
+                              showModal({ type: "degree", data: doctorData.specialization[0].degreeCertificateUrl })
+                            }
+                            style={{ padding: "4px 8px" }}
+                          >
+                            View Degree
+                          </Button>
+                        )} */}
+                      </div>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: "14px", color: "#6b7280" }}>No degrees added</Text>
+                  )}
                 </div>
               </div>
 
@@ -560,51 +690,67 @@ const DoctorProfileView = () => {
                 >
                   Certifications
                 </Text>
-                {doctorData?.certifications.map((cert, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "12px 0",
-                      borderBottom:
-                        index < doctorData.certifications.length - 1
-                          ? "1px solid #3f4f6"
-                          : "none",
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          fontWeight: "500",
-                          fontSize: "14px",
-                          color: "#374151",
-                          marginBottom: "2px",
-                        }}
-                      >
-                        {cert.name || "N/A"}
-                      </div>
-                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                        {cert.registrationNo || cert.type || "N/A"}
-                      </Text>
+                {doctorData?.certifications.length > 0 ? (
+                  doctorData.certifications.map((cert, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "12px 0",
+                        borderBottom:
+                          index < doctorData.certifications.length - 1
+                            ? "1px solid #e5e7eb"
+                            : "none",
+                      }}
+                    >
+                      <Space>
+                        {cert.image && (
+                          <Button
+                            size="small"
+                            onClick={() =>
+                              showModal({ type: "certificate", data: cert.image })
+                            }
+                            style={{
+                              padding: "4px 8px",
+                              border: "1px solid #3b82f6",
+                              color: "#3b82f6",
+                              borderRadius: "6px"
+                            }}
+                          >
+                            View Certificate
+                          </Button>
+                        )}
+                        {cert.degreeCertificate && (
+                          <Button
+                            size="small"
+                            onClick={() =>
+                              showModal({ type: "degree", data: cert.degreeCertificate })
+                            }
+                            style={{
+                              padding: "4px 8px",
+                              border: "1px solid #3b82f6",
+                              color: "#3b82f6",
+                              borderRadius: "6px"
+                            }}
+                          >
+                            View Degree
+                          </Button>
+                        )}
+                      </Space>
                     </div>
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
-                      onClick={() =>
-                        showModal({ type: "certificate", data: cert })
-                      }
-                      style={{ padding: "4px 8px" }}
-                    />
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <Text style={{ fontSize: "14px", color: "#6b7280" }}>
+                    No certifications added
+                  </Text>
+                )}
               </div>
             </Card>
           </Col>
 
-          {/* Clinics */}
+          {/* Working Locations (Clinics) */}
           <Col xs={24} lg={12}>
             <Card
               title={
@@ -613,18 +759,15 @@ const DoctorProfileView = () => {
                     display: "flex",
                     alignItems: "center",
                     padding: "8px 0",
-                    fontSize: "18px",
+                    fontSize: "16px",
                     fontWeight: "600",
-                    fontFamily: "Inter",
-                    lineHeight: "100%",
-                    letterSpacing: "0%",
                     color: "#1f2937",
                   }}
                 >
-                  <DollarOutlined
+                  <EnvironmentOutlined
                     style={{ marginRight: "8px", color: "#3b82f6" }}
                   />
-                  Consultation Charges
+                  Working Locations
                 </div>
               }
               style={{
@@ -638,81 +781,271 @@ const DoctorProfileView = () => {
               }}
               bodyStyle={{ padding: "20px" }}
             >
-              {doctorData?.consultationModeFee.map((mode, index) => (
-                <div
-                  key={index}
-                  style={{
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    padding: "16px",
-                    backgroundColor:
-                      index === 0
-                        ? "#f0f9ff"
-                        : index === 1
-                        ? "#f0fdf4"
-                        : "#faf5ff",
-                    marginBottom: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    {mode.type === "In-Person Consultation" && (
-                      <UserOutlined
-                        style={{
-                          fontSize: "20px",
-                          color: "#3b82f6",
-                          marginRight: "12px",
-                        }}
-                      />
-                    )}
-                    {mode.type === "Video Call" && (
-                      <VideoCameraOutlined
-                        style={{
-                          fontSize: "20px",
-                          color: "#16a34a",
-                          marginRight: "12px",
-                        }}
-                      />
-                    )}
-                    {mode.type === "Home Visit" && (
-                      <CarOutlined
-                        style={{
-                          fontSize: "20px",
-                          color: "#9333ea",
-                          marginRight: "12px",
-                        }}
-                      />
-                    )}
-                    <div>
-                      <Text
-                        strong
-                        style={{
-                          display: "block",
-                          fontSize: "14px",
-                          color: "#374151",
-                        }}
-                      >
-                        {mode.type}
-                      </Text>
-                      <Text style={{ fontSize: "12px", color: "#6b7280" }}>
-                        {mode.description || "N/A"}
-                      </Text>
-                    </div>
-                  </div>
+              {clinics.length > 0 ? (
+                clinics.map((clinic, index) => (
                   <div
+                    key={clinic._id}
                     style={{
-                      fontSize: "24px",
-                      fontWeight: "bold",
-                      color: "#1f2937",
+                      marginBottom: index < clinics.length - 1 ? "16px" : "0",
+                      padding: "16px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      backgroundColor: "#f0f9ff",
                     }}
                   >
-                    {mode.currency}
-                    {mode.fee}
+                    <div style={{ display: "flex", alignItems: "flex-start" }}>
+                      <div
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          borderRadius: "8px",
+                          backgroundColor: getLocationColor(clinic.label),
+                          marginRight: "12px",
+                          marginTop: "2px",
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <Text
+                          strong
+                          style={{
+                            fontSize: "14px",
+                            color: "#374151",
+                            display: "block",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          {clinic.label}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                          }}
+                        >
+                          {clinic.address}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>Contact:</strong> {clinic.mobile}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>Timings:</strong> {convertTo12HourFormat(clinic.startTime)} - {convertTo12HourFormat(clinic.endTime)}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>Status:</strong> {clinic.status}
+                        </Text>
+                        {clinic.headerImage && (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
+                            onClick={() =>
+                              showModal({ type: "headerImage", data: clinic.headerImage })
+                            }
+                            style={{ padding: "4px 8px", marginTop: "8px" }}
+                          >
+                            View Header Image
+                          </Button>
+                        )}
+                        {clinic.digitalSignature && (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
+                            onClick={() =>
+                              showModal({ type: "digitalSignature", data: clinic.digitalSignature })
+                            }
+                            style={{ padding: "4px 8px", marginTop: "8px" }}
+                          >
+                            View Digital Signature
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {/* Pharmacy Details */}
+                    {clinic.pharmacyName !== "N/A" && (
+                      <div style={{ marginTop: "12px", paddingLeft: "28px" }}>
+                        <Text
+                          strong
+                          style={{
+                            fontSize: "14px",
+                            color: "#374151",
+                            display: "block",
+                            marginBottom: "8px",
+                          }}
+                        >
+                          Pharmacy Details
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                          }}
+                        >
+                          <strong>Name:</strong> {clinic.pharmacyName}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>Registration Number:</strong> {clinic.pharmacyRegNum}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>GST Number:</strong> {clinic.pharmacyGST}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>PAN:</strong> {clinic.pharmacyPAN}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>Address:</strong> {clinic.pharmacyAddress}
+                        </Text>
+                        {clinic.pharmacyHeaderImage && (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
+                            onClick={() =>
+                              showModal({ type: "pharmacyHeader", data: clinic.pharmacyHeaderImage })
+                            }
+                            style={{ padding: "4px 8px", marginTop: "8px" }}
+                          >
+                            View Pharmacy Header
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    {/* Lab Details */}
+                    {clinic.labName !== "N/A" && (
+                      <div style={{ marginTop: "12px", paddingLeft: "28px" }}>
+                        <Text
+                          strong
+                          style={{
+                            fontSize: "14px",
+                            color: "#374151",
+                            display: "block",
+                            marginBottom: "8px",
+                          }}
+                        >
+                          Lab Details
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                          }}
+                        >
+                          <strong>Name:</strong> {clinic.labName}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>Registration Number:</strong> {clinic.labRegNum}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>GST Number:</strong> {clinic.labGST}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>PAN:</strong> {clinic.labPAN}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            display: "block",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <strong>Address:</strong> {clinic.labAddress}
+                        </Text>
+                        {clinic.labHeaderImage && (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
+                            onClick={() =>
+                              showModal({ type: "labHeader", data: clinic.labHeaderImage })
+                            }
+                            style={{ padding: "4px 8px", marginTop: "8px" }}
+                          >
+                            View Lab Header
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <Text style={{ fontSize: "14px", color: "#6b7280" }}>
+                  No working locations found for this doctor.
+                </Text>
+              )}
             </Card>
           </Col>
 
@@ -756,9 +1089,7 @@ const DoctorProfileView = () => {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center" }}>
-                  <IdcardOutlined
-                    style={{ marginRight: 8, color: "#6b7280" }}
-                  />
+                  <IdcardOutlined style={{ marginRight: 8, color: "#6b7280" }} />
                   <div>
                     <Text strong style={{ fontSize: "14px", color: "#374151" }}>
                       PAN Number:
@@ -786,17 +1117,22 @@ const DoctorProfileView = () => {
                 </div>
                 {doctorData?.kycDetails.panImage && (
                   <Button
-                    type="link"
                     size="small"
-                    icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
                     onClick={() =>
                       showModal({
-                        type: "pan",
+                        type: "PAN",
                         data: doctorData.kycDetails.panImage,
                       })
                     }
-                    style={{ padding: "4px 8px" }}
-                  />
+                    style={{
+                      padding: "4px 8px",
+                      border: "1px solid #3b82f6",
+                      color: "#3b82f6",
+                      borderRadius: "6px"
+                    }}
+                  >
+                    View PAN
+                  </Button>
                 )}
               </div>
 
@@ -818,8 +1154,122 @@ const DoctorProfileView = () => {
               </div>
             </Card>
           </Col>
-          
-          {/* Bank & KYC Details */}
+
+          {/* Consultation Charges */}
+          <Col xs={24} lg={12}>
+            <Card
+              title={
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "8px 0",
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    fontFamily: "Inter",
+                    lineHeight: "100%",
+                    letterSpacing: "0%",
+                    color: "#1f2937",
+                  }}
+                >
+                  <DollarOutlined
+                    style={{ marginRight: "8px", color: "#3b82f6" }}
+                  />
+                  Consultation Charges
+                </div>
+              }
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+              }}
+              headStyle={{
+                backgroundColor: "#ffffff",
+                border: "none",
+                borderBottom: "1px solid #e5e7eb",
+              }}
+              bodyStyle={{ padding: "20px" }}
+            >
+              {doctorData?.consultationModeFee.length > 0 ? (
+                doctorData.consultationModeFee.map((mode, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      padding: "16px",
+                      backgroundColor:
+                        index === 0
+                          ? "#f0f9ff"
+                          : index === 1
+                            ? "#f0fdf4"
+                            : "#faf5ff",
+                      marginBottom: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      {mode.type.toLowerCase() === "in-person" && (
+                        <UserOutlined
+                          style={{
+                            fontSize: "20px",
+                            color: "#3b82f6",
+                            marginRight: "12px",
+                          }}
+                        />
+                      )}
+                      {mode.type.toLowerCase() === "video" && (
+                        <VideoCameraOutlined
+                          style={{
+                            fontSize: "20px",
+                            color: "#16a34a",
+                            marginRight: "12px",
+                          }}
+                        />
+                      )}
+                      {mode.type.toLowerCase() === "home visit" && (
+                        <CarOutlined
+                          style={{
+                            fontSize: "20px",
+                            color: "#9333ea",
+                            marginRight: "12px",
+                          }}
+                        />
+                      )}
+                      <div>
+                        <Text
+                          strong
+                          style={{
+                            display: "block",
+                            fontSize: "14px",
+                            color: "#374151",
+                          }}
+                        >
+                          {mode.type}
+                        </Text>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "24px",
+                        fontWeight: "bold",
+                        color: "#1f2937",
+                      }}
+                    >
+                      {mode.currency || "₹"} {mode.fee}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <Text style={{ fontSize: "14px", color: "#6b7280" }}>
+                  No consultation charges added
+                </Text>
+              )}
+            </Card>
+          </Col>
+
+          {/* Bank Details */}
           <Col xs={24} lg={12}>
             <Card
               title={
@@ -935,7 +1385,9 @@ const DoctorProfileView = () => {
                             })
                           }
                           style={{ padding: "4px 8px" }}
-                        />
+                        >
+                          View Proof
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -1030,8 +1482,24 @@ const DoctorProfileView = () => {
         <Modal
           title={
             selectedDocument?.type === "certificate"
-              ? selectedDocument.data.name
-              : selectedDocument?.type || "Document"
+              ? "Certificate"
+              : selectedDocument?.type === "degree"
+                ? "Degree Certificate"
+                : selectedDocument?.type === "specialization"
+                  ? "Specialization Certificate"
+                  : selectedDocument?.type === "PAN"
+                    ? "PAN Card"
+                    : selectedDocument?.type === "accountProof"
+                      ? "Account Proof"
+                      : selectedDocument?.type === "headerImage"
+                        ? "Clinic Header Image"
+                        : selectedDocument?.type === "digitalSignature"
+                          ? "Digital Signature"
+                          : selectedDocument?.type === "pharmacyHeader"
+                            ? "Pharmacy Header Image"
+                            : selectedDocument?.type === "labHeader"
+                              ? "Lab Header Image"
+                              : "Document"
           }
           open={isModalVisible}
           onOk={handleOk}
@@ -1041,73 +1509,26 @@ const DoctorProfileView = () => {
               Close
             </Button>,
           ]}
-          width={600}
+          width={400}
         >
           {selectedDocument && (
             <div style={{ textAlign: "center" }}>
-              {selectedDocument.data?.image ? (
+              {selectedDocument.data ? (
                 <img
-                  src={getImageSrc(selectedDocument.data.image)}
+                  src={getImageSrc(selectedDocument.data)}
                   alt={selectedDocument.type}
                   style={{
                     width: "100%",
-                    maxWidth: "500px",
+                    maxWidth: "300px",
                     height: "auto",
                     border: "1px solid #e5e7eb",
                     borderRadius: "8px",
                   }}
                 />
               ) : (
-                <div>
-                  {selectedDocument.type === "certificate" ? (
-                    <>
-                      <Text style={{ fontSize: "14px", color: "#374151" }}>
-                        <strong>Name:</strong>{" "}
-                        {selectedDocument.data.name || "N/A"}
-                      </Text>
-                      <br />
-                      <Text style={{ fontSize: "14px", color: "#374151" }}>
-                        <strong>Registration/Type:</strong>{" "}
-                        {selectedDocument.data.registrationNo ||
-                          selectedDocument.data.type ||
-                          "N/A"}
-                      </Text>
-                      {selectedDocument.data.details && (
-                        <>
-                          <br />
-                          <Text style={{ fontSize: "14px", color: "#374151" }}>
-                            <strong>Date:</strong>{" "}
-                            {selectedDocument.data.details.date || "N/A"}
-                          </Text>
-                          <br />
-                          <Text style={{ fontSize: "14px", color: "#374151" }}>
-                            <strong>Location:</strong>{" "}
-                            {selectedDocument.data.details.location || "N/A"}
-                          </Text>
-                          <br />
-                          <Text style={{ fontSize: "14px", color: "#374151" }}>
-                            <strong>Patient:</strong>{" "}
-                            {selectedDocument.data.details.patient || "N/A"}
-                          </Text>
-                          <br />
-                          <Text style={{ fontSize: "14px", color: "#374151" }}>
-                            <strong>Condition:</strong>{" "}
-                            {selectedDocument.data.details.condition || "N/A"}
-                          </Text>
-                          <br />
-                          <Text style={{ fontSize: "14px", color: "#374151" }}>
-                            <strong>Duration:</strong>{" "}
-                            {selectedDocument.data.details.duration || "N/A"}
-                          </Text>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <Text style={{ fontSize: "14px", color: "#374151" }}>
-                      No image available for this document.
-                    </Text>
-                  )}
-                </div>
+                <Text style={{ fontSize: "14px", color: "#374151" }}>
+                  No image available for this document.
+                </Text>
               )}
             </div>
           )}
