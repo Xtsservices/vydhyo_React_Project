@@ -53,7 +53,6 @@ const languageOptions = [
 
 // Validation Constants
 const VALIDATION_RULES = {
-
   name: [
     { required: true, message: 'This field is required' },
     { pattern: /^[A-Za-z\s]+$/, message: 'Only letters and spaces allowed' },
@@ -79,12 +78,7 @@ const VALIDATION_RULES = {
   ],
   pan: [
     { required: true, message: 'PAN number is required' },
-    // {
-    //   pattern: /^[A-Z0-9]{10}$/,
-    //   message: 'PAN must be 10 uppercase letters/numbers only',
-    // }
   ],
-
   ifsc: [
     { required: true, message: 'IFSC code is required' },
     { pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/, message: 'Invalid IFSC format (e.g., HDFC0ABCD12)' }
@@ -228,8 +222,10 @@ const DoctorProfileView = () => {
     setLoading(true);
     try {
       const response = await apiGet("/users/getUser");
-      console.log(response, "doctor data");
       const userData = response.data?.data;
+      console.log(userData.specialization.degreeCertificateUrl, "doctor dataaaaa");
+      console.log(userData.specialization.specializationCertificateUrl, "doctor dataaaaa");
+      console.log(userData, "doctor dataaaaa");
 
       if (userData) {
         const specializations = userData.specialization
@@ -308,6 +304,7 @@ const DoctorProfileView = () => {
       const response = await apiGet("/users/getKycByUserId");
       console.log(response, "kyc data");
       const userData = response.data?.data;
+      console.log(userData.pan.attachmentUrl, "kyc datasssss");
       setKyc(userData)
     } catch (error) {
       console.error("Error fetching doctor data:", error);
@@ -479,24 +476,24 @@ const DoctorProfileView = () => {
           await apiPost("/users/updateConsultationModes", { consultationModeFee: cleanedFees });
           break;
 
-            case 'bank':
-      await apiPost("/users/updateBankDetails", values);
-      break;
-  }
-  
-  message.success("Profile updated successfully");
-  handleEditModalClose();
-  fetchDoctorData();
-} catch (error) {
-  console.error("Error updating profile:", error);
-  
-  // Handle backend validation errors
-  if (error.response?.data?.message?.message) {
-    toast.error(error.response.data.message.message);
-  } else {
-    message.error("Failed to update profile");
-  }
-}
+        case 'bank':
+          await apiPost("/users/updateBankDetails", values);
+          break;
+      }
+
+      message.success("Profile updated successfully");
+      handleEditModalClose();
+      fetchDoctorData();
+    } catch (error) {
+      console.error("Error updating profile:", error);
+
+      // Handle backend validation errors
+      if (error.response?.data?.message?.message) {
+        toast.error(error.response.data.message.message);
+      } else {
+        message.error("Failed to update profile");
+      }
+    }
   };
 
   const UploadImage = ({ onUpload, accept = "image/*,.pdf" }) => {
@@ -679,6 +676,34 @@ const DoctorProfileView = () => {
                   <strong>About:</strong>{doctorData.specialization[0]?.bio || "N/A"}
                 </Text>
               </div>
+
+              {/* Add View buttons for degree and specialization certificates */}
+              <div style={{ marginTop: "16px", display: "flex", gap: "8px" }}>
+                {doctorData.specialization[0]?.degreeCertificateUrl && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => showModal({
+                      type: "Degree Certificate",
+                      data: doctorData.specialization[0].degreeCertificateUrl
+                    })}
+                  >
+                    View Degree Certificate
+                  </Button>
+                )}
+                {doctorData.specialization[0]?.specializationCertificateUrl && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => showModal({
+                      type: "Specialization Certificate",
+                      data: doctorData.specialization[0].specializationCertificateUrl
+                    })}
+                  >
+                    View Specialization Certificate
+                  </Button>
+                )}
+              </div>
             </Card>
           </Col>
 
@@ -708,6 +733,20 @@ const DoctorProfileView = () => {
                     </Text>
                   </div>
                 </div>
+
+                {/* Updated View button for PAN document */}
+                {kyc?.pan?.attachmentUrl && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => showModal({
+                      type: "PAN Document",
+                      data: kyc.pan.attachmentUrl
+                    })}
+                  >
+                    View PAN
+                  </Button>
+                )}
               </div>
             </Card>
           </Col>
@@ -806,9 +845,10 @@ const DoctorProfileView = () => {
             <div style={{ textAlign: "center" }}>
               {selectedDocument.data ? (
                 <img
-                  src={getImageSrc(selectedDocument.data)}
+                  src={selectedDocument.data}
                   alt={selectedDocument.type}
                   className="document-modal-image"
+                  style={{ maxWidth: '100%' }}
                 />
               ) : (
                 <Text className="info-text">No image available for this document.</Text>
@@ -958,24 +998,6 @@ const DoctorProfileView = () => {
                     }))}
                   />
                 </Form.Item>
-
-                {/* <Form.Item
-                  label="Specializations"
-                  name="specialization"
-                  rules={[{ required: true, message: 'Please select at least one specialization' }]}
-                >
-                  <Select
-                    mode="multiple"
-                    placeholder="Select specializations"
-                    loading={loadingSpecs}
-                    showSearch
-                    optionFilterProp="label"
-                    options={specializationOptions.map(s => ({
-                      label: s,
-                      value: s,
-                    }))}
-                  />
-                </Form.Item> */}
 
                 <Form.Item
                   label="Experience (Years)"
@@ -1155,42 +1177,42 @@ const DoctorProfileView = () => {
                 </Form.Item>
 
                 <Form.Item
-  label="IFSC Code"
-  name={['bankDetails', 'ifscCode']}
-  rules={[
-    { required: true, message: 'IFSC code is required' },
-    () => ({
-      validator(_, value) {
-        if (!value) return Promise.resolve();
-        
-        if (value.length !== 11) {
-          return Promise.reject(new Error('IFSC code must be exactly 11 characters'));
-        }
-        
-        if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
-          return Promise.reject(new Error('Format: 4 letters + 0 + 6 characters (e.g., HDFC0000123)'));
-        }
-        
-        return Promise.resolve();
-      },
-    }),
-  ]}
->
-  <Input
-    placeholder="e.g., HDFC0000123"
-    maxLength={11}
-    onChange={(e) => {
-      const upperValue = e.target.value.toUpperCase();
-      form.setFieldsValue({
-        bankDetails: {
-          ...form.getFieldValue('bankDetails'),
-          ifscCode: upperValue
-        }
-      });
-    }}
-    style={{ textTransform: 'uppercase' }}
-  />
-</Form.Item>
+                  label="IFSC Code"
+                  name={['bankDetails', 'ifscCode']}
+                  rules={[
+                    { required: true, message: 'IFSC code is required' },
+                    () => ({
+                      validator(_, value) {
+                        if (!value) return Promise.resolve();
+
+                        if (value.length !== 11) {
+                          return Promise.reject(new Error('IFSC code must be exactly 11 characters'));
+                        }
+
+                        if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
+                          return Promise.reject(new Error('Format: 4 letters + 0 + 6 characters (e.g., HDFC0000123)'));
+                        }
+
+                        return Promise.resolve();
+                      },
+                    }),
+                  ]}
+                >
+                  <Input
+                    placeholder="e.g., HDFC0000123"
+                    maxLength={11}
+                    onChange={(e) => {
+                      const upperValue = e.target.value.toUpperCase();
+                      form.setFieldsValue({
+                        bankDetails: {
+                          ...form.getFieldValue('bankDetails'),
+                          ifscCode: upperValue
+                        }
+                      });
+                    }}
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                </Form.Item>
               </>
             )}
           </Form>

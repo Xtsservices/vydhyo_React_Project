@@ -366,9 +366,9 @@ const LayoutWrapper = () => {
           </div>
 
           <div className="header-right">
-            <Badge count={5} size="small">
+            {/* <Badge count={5} size="small">
               <FontAwesomeIcon icon={faBell} className="notification-btn" />
-            </Badge>
+            </Badge> */}
 
             {/* <div className="user-info" onClick={() => {
               localStorage.removeItem("accessToken");
@@ -512,10 +512,23 @@ const LayoutWrapper = () => {
               {!collapsed && (
                 <div className="sidebar-profile">
                   <div className="profile-avatar">
-                    <img
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                      alt="Profile"
-                    />
+                    {profileImageSrc ? (
+                      <img src={profileImageSrc} alt="Profile" />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#1890ff',
+                        color: '#ffffff',
+                        fontSize: '20px',
+                        fontWeight: 'bold'
+                      }}>
+                        {`${user?.firstname?.[0] || ''}${user?.lastname?.[0] || ''}`}
+                      </div>
+                    )}
                   </div>
                   <h3 className="profile-name">
                     {user?.firstname || ""} {user?.lastname || ""}
