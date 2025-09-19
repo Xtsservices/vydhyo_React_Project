@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { debounce } from "../../../utils";
 import "../../stylings/invoice-styles.css";
-import { Spin, Card } from "antd";
+import { Spin, Card, Radio } from "antd";
 
 // Utility function to calculate age from DOB
 const calculateAge = (dob) => {
@@ -199,6 +199,12 @@ const BillingSystem = () => {
   const [viewModePatientId, setViewModePatientId] = useState(null);
   const [loadingPatients, setLoadingPatients] = useState({});
 
+  const [paymentChoice, setPaymentChoice] = useState({}); // key: `${patientId}-pharmacy|labs` -> "cash"|"upi"
+ const [isUPIModalVisible, setIsUPIModalVisible] = useState(false);
+ const [upiPatientId, setUpiPatientId] = useState(null);
+ const [upiType, setUpiType] = useState(null); // "pharmacy" | "labs"
+ const [qrCodeUrl, setQrCodeUrl] = useState(null);
+
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
   const [isPaymentInProgress, setIsPaymentInProgress] = useState({});
@@ -318,7 +324,9 @@ const BillingSystem = () => {
     return { medicineTotal, testTotal, appointmentTotal };
   };
 
-  const handleMarkAsPaid = async (patientId, type) => {
+  const handleMarkAsPaid = async (patientId, type, methodOverride) => {
+   const paymentMethod =
+    methodOverride || paymentChoice[`${patientId}-${type}`] || "cash";
     if (isPaymentInProgress[`${patientId}-${type}`]) return;
 
     const isPending = (s) => String(s || "").toLowerCase() === "pending";
@@ -365,6 +373,7 @@ const BillingSystem = () => {
     const payload = {
       patientId: patient.patientId,
       doctorId: doctorId,
+      paymentMethod,
       tests: pendingTests
         .filter((test) => Number(test.price) > 0)
         .map((test) => ({
@@ -1001,6 +1010,25 @@ const BillingSystem = () => {
     }));
     fetchPatients(page, pagination.pageSize, searchTerm);
   };
+
+  const getQrCodeUrl = async (record) => {
+   try {
+     const res = await apiGet(`/users/getClinicsQRCode/${record?.addressId}?userId=${doctorId}`);
+     if (res.status === 200 && res.data?.status === "success") {
+       const d = res?.data?.data || {};
+       const url =
+         record?.type === "pharmacy" ? (d.pharmacyQrCode || d.pharmacyQR || null)
+       : record?.type === "labs"     ? (d.labQrCode      || d.labQR      || null)
+                                     : (d.clinicQrCode   || d.clinicQR   || null);
+       setQrCodeUrl(url);
+     } else {
+       toast.error("No clinic QR found for this clinic.");
+     }
+   } catch (err) {
+     toast.error(err?.response?.data?.message || "Failed to load clinic QR.");
+   }
+ };
+
 
 
   const handleViewClick = async (patientId) => {
@@ -1767,6 +1795,44 @@ if (loading) {
                                     </div>
                                   </div>
 
+
+                                   {(() => {
+   const key = `${patient.id}-pharmacy`;
+   const payEnabled =
+     totals.medicineTotal !== 0 &&
+     !isPaymentInProgress[`${patient.id}-pharmacy`] &&
+     !billingCompleted[patient.id]?.pharmacy;
+   const paymentMethod = paymentChoice[key] || "cash";
+   const addrId = patient?.appointmentDetails?.[0]?.addressId;
+   const record = { addressId: addrId, patientId: patient.id, type: "pharmacy" };
+
+ return (
+     <>
+       <div styles={{marginBottom:10, marginTop:10}}>Payment Method</div>
+       
+         <Radio.Group
+           disabled={!payEnabled}
+           value={paymentMethod || "cash"}
+           onChange={async (e) => {
+             const method = e.target.value;
+             setPaymentChoice(method);
+             if (method === "upi") {
+               setUpiPatientId(patient.id);
+            setUpiType("pharmacy");
+              await getQrCodeUrl(record);
+          setIsUPIModalVisible(true);
+             }
+           }}
+         >
+           <Radio value="cash">Cash</Radio>
+           <Radio value="upi" disable={qrCodeUrl}>UPI</Radio>
+         </Radio.Group>
+       
+     </>
+   );
+ })()}
+
+
                                   <div
                                     style={{
                                       display: "flex",
@@ -1810,9 +1876,20 @@ if (loading) {
                                     </button>
 
                                     <button
-                                      onClick={() =>
-                                        handlePayClick(patient.id, "pharmacy")
-                                      }
+                                     onClick={async () => {
+   const key = `${patient.id}-pharmacy`;
+   const method = paymentChoice[key] || "cash";
+   if (method === "upi") {
+     const addrId = patient?.appointmentDetails?.[0]?.addressId;
+     const record = { addressId: addrId, patientId: patient.id, type: "pharmacy" };
+     setUpiPatientId(patient.id);
+     setUpiType("pharmacy");
+     await getQrCodeUrl(record);
+     setIsUPIModalVisible(true);
+   } else {
+     handleMarkAsPaid(patient.id, "pharmacy", "cash");
+   }
+ }}
                                       disabled={
                                         totals.medicineTotal === 0 ||
                                         isPaymentInProgress[
@@ -2088,6 +2165,43 @@ if (loading) {
                                     </div>
                                   </div>
 
+
+                                   {(() => {
+   const key = `${patient.id}-labs`;
+   const payEnabled =
+     totals.testTotal !== 0 &&
+     !isPaymentInProgress[`${patient.id}-labs`] &&
+     !billingCompleted[patient.id]?.labs;
+   const paymentMethod = paymentChoice[key] || "cash";
+   const addrId = patient?.appointmentDetails?.[0]?.addressId;
+   const record = { addressId: addrId, patientId: patient.id, type: "labs" };
+
+   return (
+    <>
+    <div style={{marginTop:10, marginBottom:10}}>Payment Method</div>
+      <Radio.Group
+       disabled={!payEnabled}
+       value={paymentMethod || "cash"}
+       onChange={async (e) => {
+         const method = e.target.value;
+         setPaymentChoice( method);
+         if (method === "upi") {
+           setUpiPatientId(patient.id);
+           setUpiType("labs");
+           await getQrCodeUrl(record);
+           setIsUPIModalVisible(true);
+         }
+       }}
+     >
+       <Radio value="cash">Cash</Radio>
+       <Radio value="upi" disable={qrCodeUrl}>UPI</Radio>
+     </Radio.Group>
+    </>
+   
+   );
+ })()}
+
+
                                   <div
                                     style={{
                                       display: "flex",
@@ -2128,9 +2242,20 @@ if (loading) {
                                     </button>
 
                                     <button
-                                      onClick={() =>
-                                        handlePayClick(patient.id, "labs")
-                                      }
+                                       onClick={async () => {
+   const key = `${patient.id}-labs`;
+   const method = paymentChoice[key] || "cash";
+   if (method === "upi") {
+     const addrId = patient?.appointmentDetails?.[0]?.addressId;
+     const record = { addressId: addrId, patientId: patient.id, type: "labs" };
+     setUpiPatientId(patient.id);
+     setUpiType("labs");
+     await getQrCodeUrl(record);
+     setIsUPIModalVisible(true);
+   } else {
+     handleMarkAsPaid(patient.id, "labs", "cash");
+   }
+}}
                                       disabled={
                                         totals.testTotal === 0 ||
                                         isPaymentInProgress[
@@ -2652,6 +2777,52 @@ if (loading) {
           </div>
         </div>
       )}
+
+      {isUPIModalVisible && (
+   <div style={{
+     position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+     display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100
+   }}>
+     <div style={{ background: 'white', padding: 24, borderRadius: 8, width: 380, textAlign: 'center' }}>
+       <h3 style={{ marginTop: 0 }}>{upiType === "pharmacy" ? "Pharmacy UPI" : "Lab UPI"}</h3>
+       {qrCodeUrl ? (
+         <img src={qrCodeUrl} alt="UPI QR" style={{ width: 280, height: 'auto', margin: '8px auto 16px' }} />
+       ) : (
+         <p style={{ margin: '16px 0' }}>Loading QR...</p>
+       )}
+       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+         <button
+          onClick={() => {
+            // revert selection to cash on cancel
+             const key = `${upiPatientId}-${upiType}`;
+             setPaymentChoice(prev => ({ ...prev, [key]: "cash" }));
+             setIsUPIModalVisible(false);
+             setQrCodeUrl(null);
+             setUpiPatientId(null);
+             setUpiType(null);
+           }}
+           style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 4, background: '#fff', cursor: 'pointer' }}
+         >
+           Cancel
+         </button>
+         <button
+           onClick={() => {
+             if (!upiPatientId || !upiType) return;
+             setIsUPIModalVisible(false);
+             handleMarkAsPaid(upiPatientId, upiType, "upi");
+             setQrCodeUrl(null);
+             setUpiPatientId(null);
+             setUpiType(null);
+           }}
+           style={{ padding: '8px 12px', border: 'none', borderRadius: 4, background: '#007bff', color: '#fff', cursor: 'pointer' }}
+         >
+           Confirm UPI Payment
+         </button>
+       </div>
+     </div>
+   </div>
+)}
+
     </div>
   );
 };

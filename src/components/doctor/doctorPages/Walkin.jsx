@@ -12,7 +12,9 @@ import {
   Card,
   Grid,
   DatePicker,
-  Modal
+  Modal,
+  Radio,
+
 } from "antd";
 import {
   SearchOutlined,
@@ -81,6 +83,8 @@ const AddWalkInPatient = () => {
   const [isClinicModalVisible, setIsClinicModalVisible] = useState(false);
   const [slotAvailability, setSlotAvailability] = useState(true);
 const [doctorData, setDoctorData] = useState(null);
+const [paymentMethod, setPaymentMethod] = useState("cash"); 
+const [isUPIModalVisible, setIsUPIModalVisible] = useState(false);
 
   const getAuthToken = () => localStorage.getItem("accessToken") || "";
   const currentUserID = localStorage.getItem("userID");
@@ -371,7 +375,7 @@ const createPatient = useCallback(async () => {
       const response = await apiPost("/doctor/createPatient", body);
       console.log("response", response);
       if (response.status !== 200)
-        throw new Error(data.message || "Failed to create patient");
+        throw new Error(response?.data?.message || "Failed to create patient");
 
       if (response.status === 200) {
         const data = response.data;
@@ -646,12 +650,13 @@ const handleInputChange = useCallback((field, value) => {
       setIsCreatingPatient(false);
     }
   }, [patientData, validatePhoneNumber, validateAge, createPatient]);
-
+const [upi, setUpi] = useState(false);
+console.log(paymentMethod, "method")
   const handleContinueToPayment = useCallback(async () => {
     if (!validateAppointmentData()) return;
     setIsCreatingAppointment(true);
     setApiError("");
-
+    console.log("handleContinueToPayment called", paymentMethod);
     try {
       if (!patientCreated && !userFound) {
         setIsCreatingPatient(true);
@@ -662,11 +667,11 @@ const handleInputChange = useCallback((field, value) => {
         setIsCreatingPatient(false);
       }
 
-      console.log(patientData.role)
+      console.log(paymentMethod, "123456", currentUserID, user?.createdBy)
 
       const appointmentRequest = {
         userId: createdPatientId,
-        doctorId: patientData.role === "doctor" ? currentUserID : user?.createdBy || "",
+        doctorId: user?.role === "doctor" ? currentUserID : user?.createdBy || "",
         patientName: `${patientData.firstName} ${patientData.lastName}`,
         doctorName: `${user.firstname} ${user.lastname}`,
         appointmentType: patientData.appointmentType,
@@ -680,9 +685,10 @@ const handleInputChange = useCallback((field, value) => {
         discount,
         discountType,
         paymentStatus,
+        paymentMethod,
          appSource:"walkIn"
       };
-
+console.log("Appointment Request:", appointmentRequest, paymentMethod);
       const { success, message: msg } = await createAppointment(
         appointmentRequest
       );
@@ -723,6 +729,7 @@ const handleInputChange = useCallback((field, value) => {
     createAppointment,
     validateAppointmentData,
     formatTimeForAPI,
+    paymentMethod
   ]);
 
   const resetForm = useCallback(() => {
@@ -876,11 +883,36 @@ console.log("first2")
       setIsFetchingSlots(false);
     }
   };
+const [qrCode, setQrCode] = useState(null);
+   const fetchQrCode = async (clinicId) => {
+
+console.log("first12345")
+    
+    try {
+      const response = await apiGet(
+        `/users/getClinicsQRCode/${clinicId}?userId=${doctorId}`
+      );
+      console.log("responseQRCode",response)
+      const data = response?.data;
+
+     if (response?.status === 200 ) {
+       setQrCode(data?.data?.clinicQrCode);
+     } else {
+       console.error("No QR code found for the clinic.");
+     }
+    } catch (error) {
+      console.error("Error fetching QR code:", error);
+    } finally {
+      setIsFetchingSlots(false);
+    }
+  };
+
 
      useEffect(() => {
     if (date && patientData.clinic && doctorId) {
       console.log("patient", date , patientData.clinic , doctorId)
       fetchTimeSlots(date, patientData.clinic);
+      fetchQrCode(patientData.clinic)
     } else {
       setTimeSlots([]);
       setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
@@ -1222,6 +1254,15 @@ console.log("first2")
     </Card>
   );
 
+
+
+ const handlePaymentChange = (e) => {
+  const val = e.target.value;
+  console.log("Selected payment method:", val); // Debug log
+  setPaymentMethod(val);
+  setIsUPIModalVisible(val === "upi");
+};
+
   const renderPaymentSummaryCard = () => (
     <Card
       title={
@@ -1300,13 +1341,33 @@ console.log("first2")
                 )?.toFixed(2) || "0.00"}
               </Title>
             </Col>
+
           </Row>
         </Col>
+              <Col span={24}>
+  <Row align="middle" justify="space-between">
+    <Col>
+      <Text strong>Payment Method</Text>
+    </Col>
+    <Col>
+      <Radio.Group
+        value={paymentMethod}
+        onChange={handlePaymentChange}
+        disabled={!patientCreated || !userFound}
+      >
+        <Radio value="cash">Cash</Radio>
+        <Radio value="upi" disabled={!qrCode}>UPI</Radio>
+      </Radio.Group>
+    </Col>
+  </Row>
+</Col>
+
       </Row>
     </Card>
   );
 
-  console.log("patientData===",patientData)
+  console.log(paymentMethod, "selectedoption upi")
+
   return (
     <div
       style={{
@@ -1371,7 +1432,7 @@ console.log("first2")
               type="primary"
               onClick={handleContinueToPayment}
               loading={isCreatingAppointment}
-              disabled={isCreatingAppointment || !patientCreated || isClinicModalVisible}
+              disabled={isCreatingAppointment || !patientCreated || isClinicModalVisible || (paymentMethod === "upi" && !qrCode)}
               style={{ width: "100%" }}
             >
               Continue to Payment
@@ -1400,6 +1461,44 @@ console.log("first2")
         ) : (
           <p>No active clinic and availability found. Please add a clinic and add Availability to continue creating appointments.</p>
         )}
+      </Modal>
+
+        <Modal
+        open={isUPIModalVisible}
+        title="Pay via UPI"
+        footer={[
+          <Button key="close" onClick={() => setIsUPIModalVisible(false)}>
+            Close
+          </Button>,
+          <Button
+            key="confirm"
+            type="primary"
+            loading={isCreatingAppointment}
+            onClick={() => {
+        setIsUPIModalVisible(false);
+       
+        
+          handleContinueToPayment();
+       
+      }}
+          >
+            Confirm
+          </Button>,
+        ]}
+        onCancel={() =>  setIsUPIModalVisible(false)}
+      >
+        <div style={{ textAlign: "center" }}>
+          {qrCode &&(
+            <img
+              src={qrCode}
+              alt="UPI QR"
+              width={240}
+            />
+          )} 
+          <div style={{ marginTop: 12 }}>
+            <Text type="secondary">Scan the QR code to pay via UPI.</Text>
+          </div>
+        </div>
       </Modal>
     </div>
   );

@@ -15,6 +15,7 @@ import {
   Pagination,
   Modal,
   Descriptions,
+  Radio
 } from "antd";
 import { CheckOutlined, CreditCardOutlined, PrinterOutlined, EyeOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
@@ -41,8 +42,14 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
   const [isPharmacyModalVisible, setIsPharmacyModalVisible] = useState(false);
   const [loadingPharmacyDetails, setLoadingPharmacyDetails] = useState(false);
 
+   const [paymentMethod, setPaymentMethod] = useState('cash'); 
+  const [isUPIModalVisible, setIsUPIModalVisible] = useState(false);
+  const [upiPatientId, setUpiPatientId] = useState(null);
+
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
+
+
 
   async function filterPatientsData(data) {
     const isPending = status === "pending";
@@ -268,6 +275,7 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
         patientId,
         doctorId,
         amount: totalAmount,
+        paymentMethod,
         medicines: patient.medicines.map((med) => ({
           medicineId: med._id,
           price: med.price,
@@ -730,14 +738,7 @@ const handlePrint = (patient) => {
               ? "Hide Medicines"
               : "View Medicines"}
           </Button>
-          {record.addressId && (
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={() => showPharmacyDetails(record.addressId)}
-              title="View Pharmacy Details"
-            />
-          )}
+          
         </div>
       ),
     },
@@ -757,6 +758,36 @@ const handlePrint = (patient) => {
 
   const startIndex = totalPatients > 0 ? (currentPage - 1) * pageSize + 1 : 0;
   const endIndex = Math.min(currentPage * pageSize, totalPatients);
+
+   const selectedUPIPatient = patientData.find((p) => p.patientId === upiPatientId);
+ const selectedUPITotal = selectedUPIPatient
+   ? selectedUPIPatient.medicines.reduce(
+       (sum, med) => sum + (Number(med.price) || 0) * (Number(med.quantity) || 1),
+       0
+     )
+   : 0;
+
+   const [qrCodeUrl, setQrCodeUrl] = useState(null);
+      const getQrCodeUrl = async (record) => {
+       console.log(record, "record for qr");
+         try {
+           const res = await apiGet(
+             `/users/getClinicsQRCode/${record?.addressId}?userId=${doctorId}`
+           );
+           console.log(res, "clinic qr res");
+      
+           if (res.status === 200 && res.data?.status === "success" ) {
+   
+            const url = res?.data?.data?.pharmacyQrCode || null;
+            setQrCodeUrl(url);
+            console.log(url, "clinic qr url");
+           } else {
+             toast.error("No clinic QR found for this clinic.");
+           }
+         } catch (err) {
+           toast.error(err?.response?.data?.message || "Failed to load clinic QR.");
+         }
+       };
 
   return (
     <div>
@@ -806,66 +837,102 @@ const handlePrint = (patient) => {
                         pagination={false}
                         style={{ marginBottom: "16px" }}
                       />
-                      <Row justify="end" style={{ padding: "12px", background: "#f1f5f9", borderRadius: "6px" }}>
-                        <Col>
-                          <Text strong style={{ marginRight: "16px" }}>
-                            Total Amount: ₹ {totalAmount.toFixed(2)}
-                          </Text>
-                          {status === "completed" ? (
-                            <Button
-                              type="primary"
-                              icon={<PrinterOutlined />}
-                              onClick={() => handlePrint(record)}
-                              style={{
-                                background: "#1A3C6A",
-                                borderColor: "#1A3C6A",
-                                color: "white",
-                                marginTop: 8,
-                              }}
-                            >
-                              Print Invoice
-                            </Button>
-                          ) : (
-                            <Popconfirm
-                              title="Confirm Payment"
-                              description={
-                                <div style={{ textAlign: "center" }}>
-                                  <Typography.Text>
-                                    Cash ₹{totalAmount.toFixed(2)}
-                                  </Typography.Text>
-                                </div>
-                              }
-                              onConfirm={() => handlePayment(record.patientId)}
-                              okText="Payment Done"
-                              cancelText="Cancel"
-                              disabled={isPaymentDone[record.patientId] || status === "completed"}
-                            >
-                              <Button
-                                type="primary"
-                                icon={<CreditCardOutlined />}
-                                loading={paying[record.patientId]}
-                                disabled={
-                                  totalAmount <= 0 ||
-                                  paying[record.patientId] ||
-                                  !hasPending ||
-                                  isPaymentDone[record.patientId] ||
-                                  status === "completed"
-                                }
-                                style={{
-                                  background: "#1A3C6A",
-                                  borderColor: "#1A3C6A",
-                                  color: "white",
-                                  marginTop: 8,
-                                }}
-                              >
-                                {hasPending && !isPaymentDone[record.patientId] && status !== "completed"
-                                  ? "Process Payment"
-                                  : "Paid"}
-                              </Button>
-                            </Popconfirm>
-                          )}
-                        </Col>
-                      </Row>
+                      <Row
+   justify="space-between"
+   align="middle"
+   style={{ padding: "12px", background: "#f1f5f9", borderRadius: "6px", gap: 12, flexWrap: "wrap" }}
+ >
+   <Col>
+     <Text strong style={{ marginRight: 16 }}>
+       Total Amount: ₹ {totalAmount.toFixed(2)}
+     </Text>
+     {status !== "completed" && (
+       <Radio.Group
+         value={paymentMethod || "cash"}
+         onChange={(e) => {
+           const method = e.target.value;
+           setPaymentMethod ( method )
+          if (method === "upi") {
+             setUpiPatientId(record?.patientId);
+             getQrCodeUrl(record)
+             // setIsUPIModalVisible(true); // (optional) auto-open
+           }
+         }}
+       >
+         <Radio value="cash">Cash</Radio>
+         <Radio value="upi">UPI</Radio>
+       </Radio.Group>
+     )}
+   </Col>
+
+   <Col>
+     {status === "completed" ? (
+       <Button
+         type="primary"
+         icon={<PrinterOutlined />}
+         onClick={() => handlePrint(record)}
+         style={{ background: "#1A3C6A", borderColor: "#1A3C6A", color: "white", marginTop: 8 }}
+       >
+         Print Invoice
+       </Button>
+     ) : (paymentMethod|| "cash") === "cash" ? (
+      <Popconfirm
+         title="Confirm Payment"
+         description={
+           <div style={{ textAlign: "center" }}>
+             <Typography.Text>Cash ₹{totalAmount.toFixed(2)}</Typography.Text>
+           </div>
+         }
+         onConfirm={() => handlePayment(record.patientId)}
+         okText="Payment Done"
+         cancelText="Cancel"
+         disabled={isPaymentDone[record.patientId]}
+       >
+         <Button
+           type="primary"
+           icon={<CreditCardOutlined />}
+           loading={paying[record.patientId]}
+           disabled={
+             totalAmount <= 0 ||
+             paying[record.patientId] ||
+             !hasPending ||
+             isPaymentDone[record.patientId]
+           }
+           style={{ background: "#1A3C6A", borderColor: "#1A3C6A", color: "white", marginTop: 8 }}
+         >
+           {hasPending && !isPaymentDone[record.patientId] ? "Process Payment" : "Paid"}
+         </Button>
+       </Popconfirm>
+     ) : (
+       <>
+         <Button
+           type="primary"
+           icon={<CreditCardOutlined />}
+           disabled
+           style={{
+             background: "#1A3C6A",
+             borderColor: "#1A3C6A",
+             color: "white",
+             marginTop: 8,
+             marginRight: 8,
+           }}
+         >
+           UPI Selected
+         </Button>
+         <Button
+           onClick={() => {
+             setUpiPatientId(record.patientId);
+             setIsUPIModalVisible(true);
+           }}
+           style={{ marginTop: 8 }}
+           disabled={!qrCodeUrl}
+         >
+           Show QR
+         </Button>
+       </>
+     )}
+   </Col>
+ </Row>
                     </Panel>
                   </Collapse>
                 );
@@ -944,6 +1011,44 @@ const handlePrint = (patient) => {
           )}
         </Spin>
       </Modal>
+
+   <Modal
+      open={isUPIModalVisible}
+      title="Pay via UPI"
+     footer={[
+    <Button
+      key="confirm"
+      type="primary"
+      loading={!!paying[upiPatientId]}
+     disabled={!upiPatientId || !!paying[upiPatientId]}
+      onClick={async () => {
+        await handlePayment(upiPatientId);
+        setIsUPIModalVisible(false);
+      }}
+    >
+      Confirm
+    </Button>,
+    <Button
+      key="close"
+      onClick={() => setIsUPIModalVisible(false)}
+    >
+      Close
+    </Button>,
+  ]}
+      onCancel={() => setIsUPIModalVisible(false)}
+    >
+       
+    <div style={{ textAlign: "center" }}>
+      <img src={qrCodeUrl} alt="UPI QR" style={{ maxWidth: 260, width: "100%", borderRadius: 8 }} />
+      <div style={{ marginTop: 12 }}>
+      <Text type="secondary">
+            {selectedUPITotal > 0
+            ? `Scan the QR to pay ₹${selectedUPITotal.toFixed(2)}`
+            : "Scan the QR to pay"}
+        </Text>
+      </div>
+    </div>
+  </Modal>
     </div>
   );
 };
