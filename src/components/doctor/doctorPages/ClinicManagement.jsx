@@ -49,6 +49,9 @@ export default function ClinicManagement() {
   const [error, setError] = useState(null);
   const [pharmacyDetails, setPharmacyDetails] = useState(null);
   const [labDetails, setLabDetails] = useState(null);
+ const [showEditImagesModal, setShowEditImagesModal] = useState(false);
+ const [selectedClinicForImages, setSelectedClinicForImages] = useState(null);
+
 
   const [selectedClinicQr, setSelectedClinicQr] = useState(null);
  const [selectedPharmacyQr, setSelectedPharmacyQr] = useState(null);
@@ -143,7 +146,6 @@ export default function ClinicManagement() {
   useEffect(() => {
     const fetchClinics = async () => {
       if (!doctorId) {
-        console.error("No doctorId available. User:", user);
         setError("No doctor ID available");
         setLoading(false);
         return;
@@ -163,14 +165,12 @@ export default function ClinicManagement() {
           const sortedClinics = [...activeClinics].sort((a, b) => {
             return new Date(b.createdAt) - new Date(a.createdAt);
           });
-          console.log(sortedClinics, "5678");
           setClinics(sortedClinics);
         } else {
           setError("Failed to fetch clinics");
         }
       } catch (err) {
-        console.error("Fetch error:", err);
-        setError(err.message);
+        setError(err?.message);
       } finally {
         setLoading(false);
       }
@@ -196,11 +196,10 @@ export default function ClinicManagement() {
         const sortedClinics = [...activeClinics].sort((a, b) => {
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
-        console.log(sortedClinics, "123456");
         setClinics(sortedClinics);
       }
     } catch (err) {
-      console.error("Error refreshing clinics:", err);
+      toast.error(err?.message)
     }
   };
 
@@ -465,30 +464,13 @@ export default function ClinicManagement() {
   };
 
   const handleEditClinic = (clinic) => {
-    console.groupCollapsed("%c[EDIT] clicked clinic", "color:#0aa");
-    console.log("incoming clinic row:", clinic);
-    console.table({
-      pharmacyRegNum: clinic.pharmacyRegNum,
-      pharmacyRegistrationNo: clinic.pharmacyRegistrationNo,
-      pharmacyGST: clinic.pharmacyGST,
-      pharmacyGst: clinic.pharmacyGst,
-      pharmacyPAN: clinic.pharmacyPAN,
-      pharmacyPan: clinic.pharmacyPan,
-      labRegNum: clinic.labRegNum,
-      labRegistrationNo: clinic.labRegistrationNo,
-      labGST: clinic.labGST,
-      labGst: clinic.labGst,
-      labPAN: clinic.labPAN,
-      labPan: clinic.labPan,
-    });
-    console.groupEnd();
+    
 
     setShowModal(true);
     setIsEditing(true);
     setErrors({});
 
     const nextForm = normalizeClinicForForm(clinic);
-    console.log("[EDIT] normalized formData:", nextForm);
     setFormData(nextForm);
 
     setHeaderFile(null);
@@ -553,7 +535,7 @@ export default function ClinicManagement() {
     setHeaderPreview(null);
     setSignatureFile(null);
     setSignaturePreview(null);
-  };
+  };  
 
   const handleAddLab = (clinic) => {
     setSelectedClinicForLab(clinic);
@@ -592,7 +574,6 @@ export default function ClinicManagement() {
       const response = await apiGet(
         `/users/getPharmacyByClinicId/${clinic.addressId}`
       );
-      console.log(response, "getapiresponse");
       if (response?.status === 200) {
         let pharmacyDetails = response?.data?.data;
         if (pharmacyDetails) {
@@ -607,7 +588,6 @@ export default function ClinicManagement() {
           };
         }
       }
-      console.log(pharmacyDetails, "complete details")
         setPharmacyDetails(pharmacyDetails);
 
         setShowPharmacyDetailsModal(true);
@@ -615,7 +595,6 @@ export default function ClinicManagement() {
         toast.error("Failed to fetch pharmacy details");
       }
     } catch (err) {
-      console.error("Error fetching pharmacy details:", err);
       toast.error("Failed to fetch pharmacy details");
     }
   };
@@ -645,29 +624,22 @@ export default function ClinicManagement() {
         toast.error("Failed to fetch lab details");
       }
     } catch (err) {
-      console.error("Error fetching lab details:", err);
-      toast.error("Failed to fetch lab details");
+      toast.error(err?.message || "Failed to fetch lab details");
     }
   };
-  // replace your handleFileChange with this
+
   const handleFileChange = (e, type) => {
     const input = e.target;
     const file = input.files?.[0];
 
-    // allow picking the same file twice
-    // (reset the value so onChange triggers again)
     input.value = "";
 
     if (!file) {
-      console.warn(`[${type}] no file selected`);
+      toast.warn(`[${type}] no file selected`);
       return;
     }
 
-    console.log(`[${type}] picked`, {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-    });
+   
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -698,28 +670,86 @@ setPharmacyQrFile(file);
     reader.readAsDataURL(file);
   };
 
-  // const handleFileChange = (e, type) => {
-  //   const file = e.target.files[0];
-  //   if (file) {
-  //     const reader = new FileReader();
-  //     reader.onloadend = () => {
-  //       if (type === "header") {
-  //         setHeaderFile(file);
-  //         setHeaderPreview(reader.result);
-  //       } else if (type === "signature") {
-  //         setSignatureFile(file);
-  //         setSignaturePreview(reader.result);
-  //       } else if (type === "pharmacyHeader") {
-  //         setPharmacyHeaderFile(file);
-  //         setPharmacyHeaderPreview(reader.result);
-  //       } else if (type === "labHeader") {
-  //         setLabHeaderFile(file);
-  //         setLabHeaderPreview(reader.result);
-  //       }
-  //     };
-  //     reader.readAsDataURL(file);
-  //   }
-  // };
+ 
+
+
+
+   const handleOpenEditImages = (clinic) => {
+   setSelectedClinicForImages(clinic);
+   setHeaderFile(null);
+   setSignatureFile(null);
+   setQrCodeFile(null);
+   setLabQrFile(null);
+   setPharmacyQrFile(null);
+
+   setHeaderPreview(clinic?.headerImage || null);
+   setSignaturePreview(clinic?.digitalSignature || null);
+   setQrCodePreview(clinic?.clinicQrCode || clinic?.clinicQR || clinic?.clinicQr || null);
+   setLabQrPreview(clinic?.labQrCode || clinic?.labQR || clinic?.labQr || null);
+   setPharmacyQrPreview(clinic?.pharmacyQrCode || clinic?.pharmacyQR || clinic?.pharmacyQr || null);
+
+   setShowEditImagesModal(true);
+ };
+
+ const handleCancelEditImages = () => {
+   setShowEditImagesModal(false);
+   setSelectedClinicForImages(null);
+   // optional: clear temp files
+   setHeaderFile(null);
+   setSignatureFile(null);
+   setQrCodeFile(null);
+   setLabQrFile(null);
+   setPharmacyQrFile(null);
+ };
+
+
+  const handleSubmitEditImages = async () => {
+   if (!selectedClinicForImages || !doctorId) {
+     toast.error("Missing clinic or user.");
+     return;
+   }
+
+   if ((pharmacyHeaderFile || pharmacyQrFile) && !selectedClinicForImages.pharmacyName) {
+    toast.error("Add Pharmacy details first before uploading the Pharmacy Header or QR.");
+    return;
+  }
+  
+  if ((labHeaderFile || labQrFile)&& !selectedClinicForImages.labName) {
+    toast.error("Add Lab details first before uploading the Lab Header or QR.");
+    return;
+  }
+  
+   try {
+     const fd = new FormData();
+     fd.append("userId", doctorId);
+    fd.append("addressId", selectedClinicForImages.addressId);
+     fd.append("type", "Clinic");
+     if (headerFile)     fd.append("file", headerFile);                 
+     if (qrCodeFile)     fd.append("clinicQR", qrCodeFile);             
+     if (labQrFile)      fd.append("labQR", labQrFile);                 
+     if (pharmacyQrFile) fd.append("pharmacyQR", pharmacyQrFile);    
+     if (pharmacyQrFile) fd.append("pharmacyHeader", pharmacyHeaderFile);      
+
+     if (pharmacyQrFile) fd.append("labHeader", labHeaderFile);      
+
+     if (signatureFile)  fd.append("signature", signatureFile);     
+
+     const res = await apiPut("/users/updateImagesAddress", fd, {
+       headers: { "Content-Type": "multipart/form-data" },
+     });
+     if (res.status === 200 || res.status === 201) {
+       toast.success(res?.data?.message || "Images updated successfully");
+       setShowEditImagesModal(false);
+       setSelectedClinicForImages(null);
+       await refreshClinics();
+     } else {
+       toast.error(res?.data?.message || "Failed to update images");
+     }
+   } catch (err) {
+     toast.error(err?.response?.data?.message || err?.message || "Failed to update images");
+   }
+ };
+
 
   const handleHeaderSubmit = async () => {
     if (!headerFile || !selectedClinicForHeader) return;
@@ -733,16 +763,15 @@ setPharmacyQrFile(file);
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (response.status === 200 || response.status === 201) {
+      if (response?.status === 200 || response?.status === 201) {
         toast.success("Header uploaded successfully");
         setShowHeaderModal(false);
         await refreshClinics();
       } else {
-        toast.error(response.data?.message || "Failed to upload header");
+        toast.error(response?.data?.message || "Failed to upload header");
       }
     } catch (err) {
-      console.error("Header upload error:", err);
-      toast.error(err.message || "Failed to upload header");
+      toast.error(err?.message || "Failed to upload header");
     }
   };
 
@@ -805,7 +834,6 @@ setPharmacyQrFile(file);
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       const firstErrMsg = Object.values(newErrors)[0];
-      console.log(firstErrMsg, "error message");
       toast.error(firstErrMsg);
       return;
     }
@@ -848,9 +876,7 @@ setPharmacyQrFile(file);
         formDataToSend.append("pharmacyPan", formData.pharmacyPAN);
       if (formData.pharmacyAddress)
         formDataToSend.append("pharmacyAddress", formData.pharmacyAddress);
-      // if (pharmacyHeaderPreview) {
-      //   formDataToSend.append("pharmacyHeader", pharmacyHeaderPreview); // send string
-      // }
+      
 
 
       if (qrCodeFile)        formDataToSend.append("clinicQR", qrCodeFile);
@@ -863,8 +889,6 @@ setPharmacyQrFile(file);
 
       if (isEditing) {
         formDataToSend.append("addressId", formData.addressId);
-
-        // ✅ Send location as bracketed keys (text only)
         formDataToSend.append("location[type]", "Point");
         formDataToSend.append(
           "location[coordinates][0]",
@@ -874,39 +898,12 @@ setPharmacyQrFile(file);
           "location[coordinates][1]",
           String(Number(formData.latitude))
         );
-
-        // ❌ Do NOT send binary fields to updateAddress
-        // In case they were appended earlier by shared code, force-remove them:
-        formDataToSend.delete("file");
-        formDataToSend.delete("signature");
-        formDataToSend.delete("labHeader");
-        formDataToSend.delete("pharmacyHeader");
-        // formDataToSend.append("addressId", formData.addressId);
-        // formDataToSend.append("location", JSON.stringify({
-        //   type: "Point",
-        //   coordinates: [Number(formData.longitude), Number(formData.latitude)],
-        // }));
-
-        if (qrCodeFile)       formDataToSend.set("clinicQR", qrCodeFile);
-       if (labQrFile)        formDataToSend.set("labQR", labQrFile);
-       if (pharmacyQrFile)   formDataToSend.set("pharmacyQR", pharmacyQrFile);
-
         formDataToSend.delete("endTime");
         formDataToSend.delete("startTime");
 
-        // (formDataToSend.append("location[type]", "Point"), formDataToSend.append("location[coordinates][]", Number(formData.longitude)), formDataToSend.append("location[coordinates][]", Number(formData.latitude)))
-        const getMultipartHeaders = (fd) => {
-          // In Node (server/SSR) FormData from 'form-data' has getHeaders() -> includes boundary
-          if (typeof fd?.getHeaders === "function") return fd.getHeaders();
-          // In the browser, let Axios/fetch set Content-Type with boundary automatically
-          return {};
-        };
-
-        const headers = getMultipartHeaders(formDataToSend);
+  
         response = await apiPut("/users/updateAddress", formDataToSend,
-          {
-         headers: { "Content-Type": "multipart/form-data" },
-       }
+     
       );
 
         if (response.status === 200 && response.data?.status === "warning") {
@@ -931,8 +928,6 @@ setPharmacyQrFile(file);
           // bypassData.append("endTime", formData.endTime || "17:00");
           bypassData.append("latitude", formData.latitude);
           bypassData.append("longitude", formData.longitude);
-          if (headerFile) bypassData.append("file", headerFile);
-          if (signatureFile) bypassData.append("signature", signatureFile);
           if (formData.labName) bypassData.append("labName", formData.labName);
           if (formData.labRegNum)
             bypassData.append("labRegistrationNo", formData.labRegNum);
@@ -940,7 +935,6 @@ setPharmacyQrFile(file);
           if (formData.labPAN) bypassData.append("labPan", formData.labPAN);
           if (formData.labAddress)
             bypassData.append("labAddress", formData.labAddress);
-          if (labHeaderFile) bypassData.append("labHeader", labHeaderFile);
           if (formData.pharmacyName)
             bypassData.append("pharmacyName", formData.pharmacyName);
           if (formData.pharmacyRegNum)
@@ -954,12 +948,7 @@ setPharmacyQrFile(file);
             bypassData.append("pharmacyPan", formData.pharmacyPAN);
           if (formData.pharmacyAddress)
             bypassData.append("pharmacyAddress", formData.pharmacyAddress);
-          if (pharmacyHeaderPreview) {
-            bypassData.append("pharmacyHeader", pharmacyHeaderPreview); // send string
-          }
-
-          // if (pharmacyHeaderFile) bypassData.append("pharmacyHeader", pharmacyHeaderFile);
-
+          
           setBypassFormData(bypassData);
           setBypassEndpoint("/users/updateAddress?bypassCheck=true");
           setShowWarningModal(true);
@@ -971,14 +960,6 @@ setPharmacyQrFile(file);
           toast.warning(response.data?.message || "Failed to add clinic");
           throw new Error(response.data?.message || "Failed to add clinic");
         }
-
-        // if (response.status === 200 && response.data?.status === "success") {
-        //   toast.success(response.data?.message || "Clinic updated successfully");
-        //   setShowModal(false);
-        // } else {
-        //   toast.warning(response.data?.message || "Failed to update clinic");
-        //   throw new Error(response.data?.message || "Failed to update clinic");
-        // }
       } else {
         formDataToSend.append("userId", doctorId);
         response = await apiPost("/users/addAddressFromWeb", formDataToSend, {
@@ -1029,9 +1010,7 @@ setPharmacyQrFile(file);
             bypassData.append("pharmacyPan", formData.pharmacyPAN);
           if (formData.pharmacyAddress)
             bypassData.append("pharmacyAddress", formData.pharmacyAddress);
-          // if (pharmacyHeaderPreview) {
-          //   formDataToSend.append("pharmacyHeader", pharmacyHeaderPreview); // send string
-          // }
+         
 
 if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
          if (labQrFile)              bypassData.append("labQR", labQrFile);
@@ -1067,7 +1046,6 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
     }
   };
 
-  // Lab / Pharmacy submits remain unchanged (your existing handlers) …
   const handleLabSubmit = async (e) => {
     e.preventDefault();
     if (!selectedClinicForLab || !doctorId) return;
@@ -1100,7 +1078,7 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
         bypassData.append("labPan", formData.labPAN);
         bypassData.append("labAddress", formData.labAddress);
         if (labHeaderFile) bypassData.append("labHeader", labHeaderFile);
-        if (labQrFile) bypassData.append("labQR", labHeaderFile);
+        if (labQrFile) bypassData.append("labQR", labQrFile);
         bypassData.append("bypassCheck", "true");
         setBypassFormData(bypassData);
         setBypassEndpoint("/users/addLabToClinic?bypassCheck=true");
@@ -1128,6 +1106,8 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
         bypassData.append("labPan", formData.labPAN);
         bypassData.append("labAddress", formData.labAddress);
         if (labHeaderFile) bypassData.append("labHeader", labHeaderFile);
+        if (labQrFile) bypassData.append("labQR", labQrFile);
+
         bypassData.append("bypassCheck", "true");
         setBypassFormData(bypassData);
         setBypassEndpoint("/users/addLabToClinic?bypassCheck=true");
@@ -1179,8 +1159,9 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
         if (pharmacyHeaderFile) {
           bypassData.append("pharmacyHeader", pharmacyHeaderFile); // send string
         }
-
-        // if (pharmacyHeaderFile) bypassData.append("pharmacyHeader", pharmacyHeaderFile);
+ if(pharmacyQrFile){
+        formDataToSend.append("pharmacyQR", pharmacyQrFile)
+      }
         bypassData.append("bypassCheck", "true");
         setBypassFormData(bypassData);
         setBypassEndpoint("/users/addPharmacyToClinic?bypassCheck=true");
@@ -1209,13 +1190,15 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
         bypassData.append("pharmacyAddress", formData.pharmacyAddress);
         if (pharmacyHeaderFile)
           bypassData.append("pharmacyHeader", pharmacyHeaderFile);
+         if(pharmacyQrFile){
+        formDataToSend.append("pharmacyQR", pharmacyQrFile)
+      }
         bypassData.append("bypassCheck", "true");
         setBypassFormData(bypassData);
         setBypassEndpoint("/users/addPharmacyToClinic?bypassCheck=true");
         setShowWarningModal(true);
       } else {
-        console.error("Pharmacy submit error:", err);
-        toast.error(err.message || "Failed to add pharmacy details");
+        toast.error(err?.message || "Failed to add pharmacy details");
       }
     }
   };
@@ -1235,8 +1218,7 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
         toast.error(response.data?.message || "Failed to delete clinic");
       }
     } catch (err) {
-      console.error("Delete error:", err);
-      toast.error(err.message || "Failed to delete clinic. Please try again.");
+      toast.error(err?.message || "Failed to delete clinic. Please try again.");
     }
   };
 
@@ -1299,19 +1281,10 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
   const handleViewImage = (
     headerImage,
     digitalSignature,
-    pharmacyHeaderImage,
-    labHeaderImage,
-    clinicQr,
-    pharmacyQr,
-    labQr
+   
   ) => {
     setSelectedHeaderImage(headerImage);
     setSelectedDigitalSignature(digitalSignature);
-    setSelectedPharmacyHeader(pharmacyHeaderImage);
-    setSelectedLabHeader(labHeaderImage);
-    setSelectedClinicQr(clinicQr);
-    setSelectedPharmacyQr(pharmacyQr);
-    setSelectedLabQr(labQr);
     setShowImagePreviewModal(true);
   };
 
@@ -1343,7 +1316,6 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
      const res = await apiGet(
        `/users/getClinicsQRCode/${clinic?.addressId}?userId=${doctorId}`
      );
-     console.log(res, "clinic qr res");
 
      if (res.status === 200 && res.data?.status === "success" ) {
       
@@ -1418,6 +1390,8 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                   <th className="clinic-table-th">Lab</th>
                   <th className="clinic-table-th">Status</th>
                   <th className="clinic-table-th">Action</th>
+                  <th className="clinic-table-th">Edit Images</th>
+                  
                 </tr>
               </thead>
               <tbody>
@@ -1442,11 +1416,6 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                               handleViewImage(
                                 clinic?.headerImage,
                                 clinic?.digitalSignature,
-                                clinic?.pharmacyHeaderImage,
-                                clinic?.labHeaderImage,
-                                clinic?.clinicQr,
-                                clinic?.pharmacyQr,
-                                clinic?.labQr
                               )
                             }
                           >
@@ -1478,15 +1447,7 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                             <Eye size={16} />
                           </button>
                         ) : (
-                          user?.specialization?.name !== "Physiotherapist" && (
-                            <button
-                              className="clinic-upload-button"
-                              title="Upload Header"
-                              onClick={() => handleUploadHeader(clinic)}
-                            >
-                              <Upload size={16} />
-                            </button>
-                          )
+                          "No QR"
                         )}
                       </td>
                       <td className="clinic-table-td">
@@ -1561,12 +1522,21 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                           )}
                         </div>
                       </td>
+                       <td className="clinic-table-td">
+   <button
+     className="clinic-edit-button"
+     title="Edit Images"
+     onClick={() => handleOpenEditImages(clinic)}
+   >
+     <Edit size={16} />
+   </button>
+ </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td colSpan="9" className="clinic-table-td no-clinics">
-                      {clinics.length === 0
+                      {clinics?.length === 0
                         ? "No active clinics found"
                         : "No matching active clinics found"}
                     </td>
@@ -1775,8 +1745,8 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                     )}
                   </div>
                 </div>
-
-                <div className="clinic-form-group">
+                {!isEditing&&
+                  <div className="clinic-form-group">
                   <label className="clinic-form-label">
                     Clinic Header Image
                   </label>
@@ -1816,9 +1786,10 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                     Note: This image will be used as the header for
                     prescriptions from this clinic.
                   </p>
-                </div>
+                </div>}
 
-                <div className="clinic-form-group">
+               {!isEditing && (
+<div className="clinic-form-group">
                   <label className="clinic-form-label">
                     Digital Signature (Optional)
                   </label>
@@ -1859,9 +1830,12 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                     (optional).
                   </p>
                 </div>
+               )}
 
+                
 
-                 <div className="clinic-form-group">
+{!isEditing && (
+<div className="clinic-form-group">
                   <label className="clinic-form-label">
                     QR Code Image (Optional)
                   </label>
@@ -1899,6 +1873,8 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                     Note: This QR code will be used for payment.
                   </p>
                 </div>
+)}
+                 
 
                 <h3 className="clinic-modal-subheader">
                   Lab Details (Optional)
@@ -1966,7 +1942,9 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                     />
                   </div>
                 </div>
-
+{!isEditing && (
+  <>
+  
                 <div className="clinic-form-group">
                   <label className="clinic-form-label">
                     Lab Header Image (Optional)
@@ -2046,6 +2024,9 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                     Note: This QR code will be used for payment.
                   </p>
                 </div>
+                </>
+)}
+
 
                 <h3 className="clinic-modal-subheader">
                   Pharmacy Details (Optional)
@@ -2117,8 +2098,9 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                     />
                   </div>
                 </div>
-
-                <div className="clinic-form-group">
+                {!isEditing && (
+                  <>
+                  <div className="clinic-form-group">
                   <label className="clinic-form-label">
                     Pharmacy Header Image (Optional)
                   </label>
@@ -2191,6 +2173,10 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                   </p>
                 </div>
 
+                  </>
+                )}
+
+                
                 <div className="clinic-button-group">
                   <button
                     type="button"
@@ -2212,9 +2198,6 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
             </div>
           </div>
         )}
-
-        {/* Remaining modals unchanged (header, lab, pharmacy, image preview, details, warning) */}
-        {/* ... your existing modal JSX (unchanged) ... */}
 
         {showHeaderModal && (
           <div className="clinic-modal-overlay" onClick={handleHeaderCancel}>
@@ -2326,7 +2309,6 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
             </div>
           </div>
         )}
-
         {showLabModal && (
           <div className="clinic-modal-overlay" onClick={handleLabCancel}>
             <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
@@ -3044,7 +3026,6 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
                         bypassEndpoint ===
                         "/users/updateAddress?bypassCheck=true"
                       ) {
-                        console.log("1234");
                         bypassResponse = await apiPut(
                           bypassEndpoint,
                           bypassFormData,
@@ -3095,6 +3076,216 @@ if (qrCodeFile)            bypassData.append("clinicQR", qrCodeFile);
             </div>
           </div>
         )}
+
+
+         {showEditImagesModal && selectedClinicForImages && (
+   <div className="clinic-modal-overlay" onClick={handleCancelEditImages}>
+     <div className="clinic-modal" onClick={(e) => e.stopPropagation()}>
+       <h2 className="clinic-modal-header">
+         Edit Images — {selectedClinicForImages?.clinicName}
+       </h2>
+
+       {/* Clinic Header */}
+       <div className="clinic-form-group">
+         <label className="clinic-form-label">Clinic Header</label>
+         <div className="header-upload-container">
+           {headerPreview ? (
+             <div className="header-preview-container">
+               <img src={headerPreview} alt="Header preview" className="header-preview-image" />
+               <button className="header-change-button" onClick={() => fileInputRef.current.click()}>
+                 Change Image
+               </button>
+             </div>
+           ) : (
+             <div className="header-upload-placeholder" onClick={() => fileInputRef.current.click()}>
+               <Upload size={24} />
+               <p>Click to upload header image</p>
+             </div>
+           )}
+           <input
+             type="file"
+             ref={fileInputRef}
+             onChange={(e) => handleFileChange(e, "header")}
+             accept="image/*"
+             style={{ display: "none" }}
+           />
+         </div>
+       </div>
+
+       {/* Digital Signature */}
+       <div className="clinic-form-group">
+         <label className="clinic-form-label">Digital Signature</label>
+         <div className="header-upload-container">
+           {signaturePreview ? (
+             <div className="header-preview-container">
+               <img src={signaturePreview} alt="Signature preview" className="header-preview-image" />
+               <button className="header-change-button" onClick={() => signatureFileInputRef.current.click()}>
+                 Change Image
+               </button>
+             </div>
+           ) : (
+             <div className="header-upload-placeholder" onClick={() => signatureFileInputRef.current.click()}>
+               <Upload size={24} />
+               <p>Click to upload signature</p>
+             </div>
+           )}
+           <input
+            type="file"
+             ref={signatureFileInputRef}
+             onChange={(e) => handleFileChange(e, "signature")}
+             accept="image/*"
+             style={{ display: "none" }}
+           />
+         </div>
+       </div>
+
+       {/* Clinic QR */}
+       <div className="clinic-form-group">
+         <label className="clinic-form-label">Clinic QR</label>
+        <div className="header-upload-container">
+           {qrCodePreview ? (
+             <div className="header-preview-container">
+               <img src={qrCodePreview} alt="Clinic QR preview" className="header-preview-image" />
+               <button className="header-change-button" onClick={() => qrFileInputRef.current.click()}>
+                 Change Image
+               </button>
+             </div>
+           ) : (
+             <div className="header-upload-placeholder" onClick={() => qrFileInputRef.current.click()}>
+               <Upload size={24} />
+               <p>Click to upload clinic QR</p>
+             </div>
+           )}
+           <input
+             type="file"
+             ref={qrFileInputRef}
+             onChange={(e) => handleFileChange(e, "qrCode")}
+             accept="image/*"
+             style={{ display: "none" }}
+           />
+         </div>
+       </div>
+
+       {/* Lab QR */}
+       <div className="clinic-form-group">
+         <label className="clinic-form-label">Lab QR</label>
+         <div className="header-upload-container">
+           {labQrPreview ? (
+             <div className="header-preview-container">
+               <img src={labQrPreview} alt="Lab QR preview" className="header-preview-image" />
+               <button className="header-change-button" onClick={() => labQrFileInputRef.current.click()}>
+                 Change Image
+               </button>
+             </div>
+           ) : (
+             <div className="header-upload-placeholder" onClick={() => labQrFileInputRef.current.click()}>
+               <Upload size={24} />
+               <p>Click to upload lab QR</p>
+            </div>
+           )}
+           <input
+             type="file"
+             ref={labQrFileInputRef}
+             onChange={(e) => handleFileChange(e, "labQr")}
+             accept="image/*"
+             style={{ display: "none" }}
+           />
+         </div>
+       </div>
+
+       <div className="clinic-form-group">
+         <label className="clinic-form-label">Lab Header</label>
+         <div className="header-upload-container">
+           {labHeaderPreview ? (
+             <div className="header-preview-container">
+               <img src={labHeaderPreview} alt="Lab Header preview" className="header-preview-image" />
+               <button className="header-change-button" onClick={() => labFileInputRef.current.click()}>
+                 Change Image
+               </button>
+             </div>
+           ) : (
+             <div className="header-upload-placeholder" onClick={() => labFileInputRef.current.click()}>
+               <Upload size={24} />
+               <p>Click to upload lab Header</p>
+            </div>
+           )}
+           <input
+             type="file"
+             ref={labFileInputRef}
+             onChange={(e) => handleFileChange(e, "labHeader")}
+             accept="image/*"
+             style={{ display: "none" }}
+           />
+         </div>
+       </div>
+
+       {/* Pharmacy QR */}
+       <div className="clinic-form-group">
+         <label className="clinic-form-label">Pharmacy QR</label>
+         <div className="header-upload-container">
+           {pharmacyQrPreview ? (
+             <div className="header-preview-container">
+               <img src={pharmacyQrPreview} alt="Pharmacy QR preview" className="header-preview-image" />
+               <button className="header-change-button" onClick={() => pharmacyQrFileInputRef.current.click()}>
+                 Change Image
+               </button>
+             </div>
+           ) : (
+             <div className="header-upload-placeholder" onClick={() => pharmacyQrFileInputRef.current.click()}>
+               <Upload size={24} />
+               <p>Click to upload pharmacy QR</p>
+             </div>
+           )}
+           <input
+             type="file"
+             ref={pharmacyQrFileInputRef}
+             onChange={(e) => handleFileChange(e, "pharmacyQr")}
+             accept="image/*"
+             style={{ display: "none" }}
+           />
+         </div>
+       </div>
+
+
+       <div className="clinic-form-group">
+         <label className="clinic-form-label">Pharmacy Header</label>
+         <div className="header-upload-container">
+           {pharmacyHeaderPreview ? (
+             <div className="header-preview-container">
+               <img src={pharmacyHeaderPreview} alt="Pharmacy Header preview" className="header-preview-image" />
+               <button className="header-change-button" onClick={() => pharmacyFileInputRef.current.click()}>
+                 Change Image
+               </button>
+             </div>
+           ) : (
+            
+             <div className="header-upload-placeholder" onClick={() => pharmacyFileInputRef.current.click()}>
+               <Upload size={24} />
+               <p>Click to upload pharmacy Header</p>
+             </div>
+           )}
+           <input
+             type="file"
+             ref={pharmacyFileInputRef}
+             onChange={(e) => handleFileChange(e, "pharmacyHeader")}
+             accept="image/*"
+             style={{ display: "none" }}
+           />
+         </div>
+       </div>
+
+       <div className="clinic-button-group">
+         <button type="button" className="clinic-cancel-button" onClick={handleCancelEditImages}>
+           <X size={16} /> Cancel
+        </button>
+         <button type="button" className="clinic-confirm-button" onClick={handleSubmitEditImages}>
+           Save Images
+         </button>
+       </div>
+     </div>
+   </div>
+ )}
+
       </div>
     </div>
   );

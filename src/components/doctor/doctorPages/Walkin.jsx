@@ -38,7 +38,6 @@ const AddWalkInPatient = () => {
   const screens = useBreakpoint();
   const navigate = useNavigate()
   const user = useSelector((state) => state.currentUserData);
-  console.log("user=====",user)
   const [patientData, setPatientData] = useState({
     firstName: "",
     lastName: "",
@@ -310,11 +309,9 @@ const validateAge = useCallback((age) => {
 
   const searchUser = useCallback(async (mobile) => {
 
-    console.log("Searching user with mobile:", mobile);
     try {
       const response = await apiGet(`/doctor/searchUser?mobile=${mobile}`);
       const data = response.data;
-      console.log("userres", data);
       if (data.status !== "success")
         throw new Error(data.message || "Search failed");
 
@@ -324,21 +321,15 @@ const validateAge = useCallback((age) => {
         data: Array.isArray(data.data) ? data.data : [data.data],
       };
     } catch (error) {
-      console.log(error, 'error======');
       return {
         success: false,
-        message: error.message || "Failed to search user",
+        message: error?.message || "Failed to search user",
       };
     }
   }, []);
 
 
 
-// Use it in your validation logic
-// if (patientData?.age && !validateAge(patientData?.age)) {
-  console.log("123")
-//   errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
-// }
 
 const createPatient = useCallback(async () => {
   try {
@@ -370,10 +361,8 @@ const createPatient = useCallback(async () => {
       userFrom: "walkin"
 
     });
-      console.log("Creating patient with body:", body);
 
       const response = await apiPost("/doctor/createPatient", body);
-      console.log("response", response);
       if (response.status !== 200)
         throw new Error(response?.data?.message || "Failed to create patient");
 
@@ -388,9 +377,10 @@ const createPatient = useCallback(async () => {
        
       }
     } catch (error) {
+      
       return {
         success: false,
-        message: error.message || "Failed to create patient",
+        message: error?.response?.data?.message?.message || "Failed to create patient",
       };
     }
   }, [patientData]);
@@ -399,11 +389,9 @@ const createPatient = useCallback(async () => {
     try {
       
       const body = JSON.stringify(appointmentRequest);
-            console.log("Creating appointment with body:", body);
       const response = await apiPost("/appointment/createAppointment", body);
 
       const data = response.data;
-      console.log("appointmentResponse", data);
 
       if (data?.status !== "success") {
         toast.error(data.message || "Failed to create appointment");
@@ -519,7 +507,6 @@ const createPatient = useCallback(async () => {
   );
 
 const handleInputChange = useCallback((field, value) => {
-  console.log("Input Change:", field, value);
   setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
   let validatedValue = value;
   
@@ -633,7 +620,6 @@ const handleInputChange = useCallback((field, value) => {
 
     try {
       const { success, data, message: msg } = await createPatient();
-      console.log("newp", data);
       if (success) {
         setPatientCreated(true);
         setCreatedPatientId(data.userId || "");
@@ -650,13 +636,10 @@ const handleInputChange = useCallback((field, value) => {
       setIsCreatingPatient(false);
     }
   }, [patientData, validatePhoneNumber, validateAge, createPatient]);
-const [upi, setUpi] = useState(false);
-console.log(paymentMethod, "method")
   const handleContinueToPayment = useCallback(async () => {
     if (!validateAppointmentData()) return;
     setIsCreatingAppointment(true);
     setApiError("");
-    console.log("handleContinueToPayment called", paymentMethod);
     try {
       if (!patientCreated && !userFound) {
         setIsCreatingPatient(true);
@@ -667,7 +650,6 @@ console.log(paymentMethod, "method")
         setIsCreatingPatient(false);
       }
 
-      console.log(paymentMethod, "123456", currentUserID, user?.createdBy)
 
       const appointmentRequest = {
         userId: createdPatientId,
@@ -688,13 +670,10 @@ console.log(paymentMethod, "method")
         paymentMethod,
          appSource:"walkIn"
       };
-console.log("Appointment Request:", appointmentRequest, paymentMethod);
       const { success, message: msg } = await createAppointment(
         appointmentRequest
       );
-      console.log(success, message, "message success")
       if (success) {
-      console.log(success, message, "message====== success")
        toast.success(`Appointment created successfully!`);
         message.success(`Appointment created successfully! ${msg}`);
 
@@ -764,19 +743,16 @@ console.log("Appointment Request:", appointmentRequest, paymentMethod);
    const getCurrentUserData = async () => {
   try {
     const response = await apiGet("/users/getUser");
-    console.log("Current User Data:", response.data);
     const userData = response.data?.data;
     let addresses = []
 
 if (userData.role !== "doctor") {
   const doctorId = userData.createdBy || ""
  const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
- console.log("Clinic Addresses:", response?.data);
  if (response?.data.status ==="success") {
 addresses = response?.data?.data || [];
 
 const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
- console.log("Doctor Details:", doctorDetails?.data?.data);
  const doctorData = doctorDetails?.data?.data;
  if (doctorDetails?.data?.status === "success") {
   setDoctorData(doctorData);
@@ -817,7 +793,7 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
       }
    
   } catch (error) {
-    console.error("Error fetching user data:", error);
+    toast.error(error?.message, "Please retry")
   }
 };
 
@@ -831,16 +807,13 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
 
     const fetchTimeSlots = async (selectedDate, clinicId) => {
 
-console.log("first")
       if (!selectedDate || !clinicId || !doctorId) return;
     setIsFetchingSlots(true);
-console.log("first2")
     
     try {
       const response = await apiGet(
         `/appointment/getSlotsByDoctorIdAndDate?doctorId=${doctorId}&date=${selectedDate}&addressId=${clinicId}`
       );
-      console.log("response122334",response)
       const data = response.data;
 
      if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
@@ -873,7 +846,6 @@ console.log("first2")
         setApiError("No available time slots found for the selected date and clinic.");
       }
     } catch (error) {
-      console.error("Error fetching time slots:", error);
       setTimeSlots([]);
       setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
        setIsClinicModalVisible(true);
@@ -886,22 +858,20 @@ console.log("first2")
 const [qrCode, setQrCode] = useState(null);
    const fetchQrCode = async (clinicId) => {
 
-console.log("first12345")
     
     try {
       const response = await apiGet(
         `/users/getClinicsQRCode/${clinicId}?userId=${doctorId}`
       );
-      console.log("responseQRCode",response)
       const data = response?.data;
 
      if (response?.status === 200 ) {
        setQrCode(data?.data?.clinicQrCode);
      } else {
-       console.error("No QR code found for the clinic.");
+      toast.error(response?.data?.message || "No QR code ")
      }
     } catch (error) {
-      console.error("Error fetching QR code:", error);
+      toast.error(error?.message || "Failed to fetch QR code")
     } finally {
       setIsFetchingSlots(false);
     }
@@ -910,7 +880,6 @@ console.log("first12345")
 
      useEffect(() => {
     if (date && patientData.clinic && doctorId) {
-      console.log("patient", date , patientData.clinic , doctorId)
       fetchTimeSlots(date, patientData.clinic);
       fetchQrCode(patientData.clinic)
     } else {
@@ -1258,7 +1227,6 @@ console.log("first12345")
 
  const handlePaymentChange = (e) => {
   const val = e.target.value;
-  console.log("Selected payment method:", val); // Debug log
   setPaymentMethod(val);
   setIsUPIModalVisible(val === "upi");
 };
@@ -1366,7 +1334,6 @@ console.log("first12345")
     </Card>
   );
 
-  console.log(paymentMethod, "selectedoption upi")
 
   return (
     <div
