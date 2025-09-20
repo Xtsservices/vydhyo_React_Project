@@ -12,7 +12,9 @@ import {
   Card,
   Grid,
   DatePicker,
-  Modal
+  Modal,
+  Radio,
+
 } from "antd";
 import {
   SearchOutlined,
@@ -36,7 +38,6 @@ const AddWalkInPatient = () => {
   const screens = useBreakpoint();
   const navigate = useNavigate()
   const user = useSelector((state) => state.currentUserData);
-  console.log("user=====",user)
   const [patientData, setPatientData] = useState({
     firstName: "",
     lastName: "",
@@ -81,6 +82,8 @@ const AddWalkInPatient = () => {
   const [isClinicModalVisible, setIsClinicModalVisible] = useState(false);
   const [slotAvailability, setSlotAvailability] = useState(true);
 const [doctorData, setDoctorData] = useState(null);
+const [paymentMethod, setPaymentMethod] = useState("cash"); 
+const [isUPIModalVisible, setIsUPIModalVisible] = useState(false);
 
   const getAuthToken = () => localStorage.getItem("accessToken") || "";
   const currentUserID = localStorage.getItem("userID");
@@ -306,11 +309,9 @@ const validateAge = useCallback((age) => {
 
   const searchUser = useCallback(async (mobile) => {
 
-    console.log("Searching user with mobile:", mobile);
     try {
       const response = await apiGet(`/doctor/searchUser?mobile=${mobile}`);
       const data = response.data;
-      console.log("userres", data);
       if (data.status !== "success")
         throw new Error(data.message || "Search failed");
 
@@ -320,21 +321,15 @@ const validateAge = useCallback((age) => {
         data: Array.isArray(data.data) ? data.data : [data.data],
       };
     } catch (error) {
-      console.log(error, 'error======');
       return {
         success: false,
-        message: error.message || "Failed to search user",
+        message: error?.message || "Failed to search user",
       };
     }
   }, []);
 
 
 
-// Use it in your validation logic
-// if (patientData?.age && !validateAge(patientData?.age)) {
-  console.log("123")
-//   errors.age = "Invalid age format. Use format like 6m, 2y, or 15d";
-// }
 
 const createPatient = useCallback(async () => {
   try {
@@ -366,12 +361,10 @@ const createPatient = useCallback(async () => {
       userFrom: "walkin"
 
     });
-      console.log("Creating patient with body:", body);
 
       const response = await apiPost("/doctor/createPatient", body);
-      console.log("response", response);
       if (response.status !== 200)
-        throw new Error(data.message || "Failed to create patient");
+        throw new Error(response?.data?.message || "Failed to create patient");
 
       if (response.status === 200) {
         const data = response.data;
@@ -384,9 +377,10 @@ const createPatient = useCallback(async () => {
        
       }
     } catch (error) {
+      
       return {
         success: false,
-        message: error.message || "Failed to create patient",
+        message: error?.response?.data?.message?.message || "Failed to create patient",
       };
     }
   }, [patientData]);
@@ -395,11 +389,9 @@ const createPatient = useCallback(async () => {
     try {
       
       const body = JSON.stringify(appointmentRequest);
-            console.log("Creating appointment with body:", body);
       const response = await apiPost("/appointment/createAppointment", body);
 
       const data = response.data;
-      console.log("appointmentResponse", data);
 
       if (data?.status !== "success") {
         toast.error(data.message || "Failed to create appointment");
@@ -515,7 +507,6 @@ const createPatient = useCallback(async () => {
   );
 
 const handleInputChange = useCallback((field, value) => {
-  console.log("Input Change:", field, value);
   setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
   let validatedValue = value;
   
@@ -629,7 +620,6 @@ const handleInputChange = useCallback((field, value) => {
 
     try {
       const { success, data, message: msg } = await createPatient();
-      console.log("newp", data);
       if (success) {
         setPatientCreated(true);
         setCreatedPatientId(data.userId || "");
@@ -646,12 +636,10 @@ const handleInputChange = useCallback((field, value) => {
       setIsCreatingPatient(false);
     }
   }, [patientData, validatePhoneNumber, validateAge, createPatient]);
-
   const handleContinueToPayment = useCallback(async () => {
     if (!validateAppointmentData()) return;
     setIsCreatingAppointment(true);
     setApiError("");
-
     try {
       if (!patientCreated && !userFound) {
         setIsCreatingPatient(true);
@@ -662,11 +650,10 @@ const handleInputChange = useCallback((field, value) => {
         setIsCreatingPatient(false);
       }
 
-      console.log(patientData.role)
 
       const appointmentRequest = {
         userId: createdPatientId,
-        doctorId: patientData.role === "doctor" ? currentUserID : user?.createdBy || "",
+        doctorId: user?.role === "doctor" ? currentUserID : user?.createdBy || "",
         patientName: `${patientData.firstName} ${patientData.lastName}`,
         doctorName: `${user.firstname} ${user.lastname}`,
         appointmentType: patientData.appointmentType,
@@ -680,15 +667,13 @@ const handleInputChange = useCallback((field, value) => {
         discount,
         discountType,
         paymentStatus,
+        paymentMethod,
          appSource:"walkIn"
       };
-
       const { success, message: msg } = await createAppointment(
         appointmentRequest
       );
-      console.log(success, message, "message success")
       if (success) {
-      console.log(success, message, "message====== success")
        toast.success(`Appointment created successfully!`);
         message.success(`Appointment created successfully! ${msg}`);
 
@@ -723,6 +708,7 @@ const handleInputChange = useCallback((field, value) => {
     createAppointment,
     validateAppointmentData,
     formatTimeForAPI,
+    paymentMethod
   ]);
 
   const resetForm = useCallback(() => {
@@ -757,19 +743,16 @@ const handleInputChange = useCallback((field, value) => {
    const getCurrentUserData = async () => {
   try {
     const response = await apiGet("/users/getUser");
-    console.log("Current User Data:", response.data);
     const userData = response.data?.data;
     let addresses = []
 
 if (userData.role !== "doctor") {
   const doctorId = userData.createdBy || ""
  const response = await apiGet(`/users/getClinicAddress?doctorId=${doctorId}`, {});
- console.log("Clinic Addresses:", response?.data);
  if (response?.data.status ==="success") {
 addresses = response?.data?.data || [];
 
 const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
- console.log("Doctor Details:", doctorDetails?.data?.data);
  const doctorData = doctorDetails?.data?.data;
  if (doctorDetails?.data?.status === "success") {
   setDoctorData(doctorData);
@@ -810,7 +793,7 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
       }
    
   } catch (error) {
-    console.error("Error fetching user data:", error);
+    toast.error(error?.message, "Please retry")
   }
 };
 
@@ -824,16 +807,13 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
 
     const fetchTimeSlots = async (selectedDate, clinicId) => {
 
-console.log("first")
       if (!selectedDate || !clinicId || !doctorId) return;
     setIsFetchingSlots(true);
-console.log("first2")
     
     try {
       const response = await apiGet(
         `/appointment/getSlotsByDoctorIdAndDate?doctorId=${doctorId}&date=${selectedDate}&addressId=${clinicId}`
       );
-      console.log("response122334",response)
       const data = response.data;
 
      if (data.status === "success" && data.data?.slots && data.data.addressId === clinicId) {
@@ -866,7 +846,6 @@ console.log("first2")
         setApiError("No available time slots found for the selected date and clinic.");
       }
     } catch (error) {
-      console.error("Error fetching time slots:", error);
       setTimeSlots([]);
       setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
        setIsClinicModalVisible(true);
@@ -876,11 +855,33 @@ console.log("first2")
       setIsFetchingSlots(false);
     }
   };
+const [qrCode, setQrCode] = useState(null);
+   const fetchQrCode = async (clinicId) => {
+
+    
+    try {
+      const response = await apiGet(
+        `/users/getClinicsQRCode/${clinicId}?userId=${doctorId}`
+      );
+      const data = response?.data;
+
+     if (response?.status === 200 ) {
+       setQrCode(data?.data?.clinicQrCode);
+     } else {
+      toast.error(response?.data?.message || "No QR code ")
+     }
+    } catch (error) {
+      toast.error(error?.message || "Failed to fetch QR code")
+    } finally {
+      setIsFetchingSlots(false);
+    }
+  };
+
 
      useEffect(() => {
     if (date && patientData.clinic && doctorId) {
-      console.log("patient", date , patientData.clinic , doctorId)
       fetchTimeSlots(date, patientData.clinic);
+      fetchQrCode(patientData.clinic)
     } else {
       setTimeSlots([]);
       setPatientData((prev) => ({ ...prev, selectedTimeSlot: "" }));
@@ -1222,6 +1223,14 @@ console.log("first2")
     </Card>
   );
 
+
+
+ const handlePaymentChange = (e) => {
+  const val = e.target.value;
+  setPaymentMethod(val);
+  setIsUPIModalVisible(val === "upi");
+};
+
   const renderPaymentSummaryCard = () => (
     <Card
       title={
@@ -1300,13 +1309,32 @@ console.log("first2")
                 )?.toFixed(2) || "0.00"}
               </Title>
             </Col>
+
           </Row>
         </Col>
+              <Col span={24}>
+  <Row align="middle" justify="space-between">
+    <Col>
+      <Text strong>Payment Method</Text>
+    </Col>
+    <Col>
+      <Radio.Group
+        value={paymentMethod}
+        onChange={handlePaymentChange}
+        disabled={!patientCreated || !userFound}
+      >
+        <Radio value="cash">Cash</Radio>
+        <Radio value="upi" disabled={!qrCode}>UPI</Radio>
+      </Radio.Group>
+    </Col>
+  </Row>
+</Col>
+
       </Row>
     </Card>
   );
 
-  console.log("patientData===",patientData)
+
   return (
     <div
       style={{
@@ -1371,7 +1399,7 @@ console.log("first2")
               type="primary"
               onClick={handleContinueToPayment}
               loading={isCreatingAppointment}
-              disabled={isCreatingAppointment || !patientCreated || isClinicModalVisible}
+              disabled={isCreatingAppointment || !patientCreated || isClinicModalVisible || (paymentMethod === "upi" && !qrCode)}
               style={{ width: "100%" }}
             >
               Continue to Payment
@@ -1400,6 +1428,44 @@ console.log("first2")
         ) : (
           <p>No active clinic and availability found. Please add a clinic and add Availability to continue creating appointments.</p>
         )}
+      </Modal>
+
+        <Modal
+        open={isUPIModalVisible}
+        title="Pay via UPI"
+        footer={[
+          <Button key="close" onClick={() => setIsUPIModalVisible(false)}>
+            Close
+          </Button>,
+          <Button
+            key="confirm"
+            type="primary"
+            loading={isCreatingAppointment}
+            onClick={() => {
+        setIsUPIModalVisible(false);
+       
+        
+          handleContinueToPayment();
+       
+      }}
+          >
+            Confirm
+          </Button>,
+        ]}
+        onCancel={() =>  setIsUPIModalVisible(false)}
+      >
+        <div style={{ textAlign: "center" }}>
+          {qrCode &&(
+            <img
+              src={qrCode}
+              alt="UPI QR"
+              width={240}
+            />
+          )} 
+          <div style={{ marginTop: 12 }}>
+            <Text type="secondary">Scan the QR code to pay via UPI.</Text>
+          </div>
+        </div>
       </Modal>
     </div>
   );
