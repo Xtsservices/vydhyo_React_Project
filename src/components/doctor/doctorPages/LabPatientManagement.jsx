@@ -62,8 +62,7 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
       }
       return age >= 0 ? age : "N/A";
     } catch (err) {
-      console.error("Error calculating age:", err);
-      return "N/A";
+      return err?.message;
     }
   };
 
@@ -75,7 +74,6 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
         `/lab/getAllTestsPatientsByDoctorID/${doctorId}?searchValue=${searchValue}&status=${status}&page=${page}&limit=${pageSize}`
       );
 
-      console.log("getAllTestsPatientsByDoctorID", response);
       if (response.status === 200 && response?.data?.data) {
         let filteredData = response.data.data.patients;
 
@@ -106,7 +104,6 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
         setIsPaymentDone(paymentDoneState);
       }
     } catch (error) {
-      console.error("Error fetching patient tests:", error);
       toast.error(
         error.response?.data?.message || "Failed to load patient data",
         {
@@ -182,7 +179,6 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
       });
 
       if (response?.success || response?.status === 200) {
-        console.log(response, "test price update");
         toast.success("Price updated successfully", {
           position: "top-right",
           autoClose: 3000,
@@ -193,7 +189,6 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
 
       setEditablePrices((prev) => prev.filter((id) => id !== testId));
     } catch (error) {
-      console.error("Error updating test price:", error);
       const errorMessage =
         error?.response?.data?.message ||
         error?.message ||
@@ -265,7 +260,6 @@ const LabPatientManagement = ({ status, updateCount, searchValue }) => {
         await getAllTestsPatientsByDoctorID(pagination.current, pagination.pageSize);
       }
     } catch (error) {
-      console.error("Error processing payment:", error);
       toast.error(
         error.response?.data?.message || "Failed to process payment",
         {
@@ -717,18 +711,15 @@ const printInvoice = (patient) => {
 
 const [qrCodeUrl, setQrCodeUrl] = useState(null);
    const getQrCodeUrl = async (record) => {
-    console.log(record, "record for qr");
       try {
         const res = await apiGet(
           `/users/getClinicsQRCode/${record?.addressId}?userId=${doctorId}`
         );
-        console.log(res, "clinic qr res");
    
         if (res.status === 200 && res.data?.status === "success" ) {
 
          const url = res?.data?.data?.labQrCode || null;
          setQrCodeUrl(url);
-         console.log(url, "clinic qr url");
         } else {
           toast.error("No clinic QR found for this clinic.");
         }

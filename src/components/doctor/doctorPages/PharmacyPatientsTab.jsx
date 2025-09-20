@@ -75,7 +75,6 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
       }
       return null;
     } catch (error) {
-      console.error("Error fetching pharmacy details:", error);
       toast.error(
         error.response?.data?.message || "Error fetching pharmacy details",
         { position: "top-right", autoClose: 5000 }
@@ -163,7 +162,6 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
         setTotalPages(1);
       }
     } catch (error) {
-      console.error("Error fetching pharmacy patients:", error);
       toast.error(
         error.response?.data?.message || "Error fetching pharmacy patients",
         { position: "top-right", autoClose: 5000 }
@@ -231,7 +229,6 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
       });
       setEditablePrices((prev) => prev.filter((id) => id !== medicineId));
     } catch (error) {
-      console.error("Error updating medicine price:", error);
       toast.error(
         error.response?.data?.message || "Failed to update price",
         { position: "top-right", autoClose: 5000 }
@@ -295,7 +292,6 @@ const PatientsTab = ({ status, updateCount, searchQuery, onTabChange, refreshTri
         await fetchPharmacyPatients(currentPage, pageSize);
       }
     } catch (error) {
-      console.error("Error processing payment:", error);
       setIsPaymentDone((prev) => ({ ...prev, [patientId]: false }));
       toast.error(
         error.response?.data?.message || "Failed to process payment",
@@ -604,8 +600,7 @@ const handlePrint = (patient) => {
       }
       return age >= 0 ? age : "N/A";
     } catch (err) {
-      console.error("Error calculating age:", err);
-      return "N/A";
+      return err?.message;
     }
   };
 
@@ -769,18 +764,15 @@ const handlePrint = (patient) => {
 
    const [qrCodeUrl, setQrCodeUrl] = useState(null);
       const getQrCodeUrl = async (record) => {
-       console.log(record, "record for qr");
          try {
            const res = await apiGet(
              `/users/getClinicsQRCode/${record?.addressId}?userId=${doctorId}`
            );
-           console.log(res, "clinic qr res");
       
            if (res.status === 200 && res.data?.status === "success" ) {
    
             const url = res?.data?.data?.pharmacyQrCode || null;
             setQrCodeUrl(url);
-            console.log(url, "clinic qr url");
            } else {
              toast.error("No clinic QR found for this clinic.");
            }
