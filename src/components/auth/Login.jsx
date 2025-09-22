@@ -120,9 +120,7 @@ const [isCheckingAuth, setIsCheckingAuth] = useState(true);
         OTP: otp,
         mobile: phone,
       });
-      console.log("OTP Verification Response:=============", data);
       if (data?.data?.userData?.role === "doctor") {
-        console.log("Doctor:", data);
 
         const isValidUser =
           !data.data?.userData?.isDeleted &&
@@ -134,11 +132,8 @@ const [isCheckingAuth, setIsCheckingAuth] = useState(true);
         }
       }
       
-      console.log("User Data:otp", data.data);
-
       if (data.data.accessToken) {
         const userData = data.data.userData;
-        console.log("User Data:", userData);
 
         if (userData) {
           dispatch({
@@ -170,7 +165,6 @@ const [isCheckingAuth, setIsCheckingAuth] = useState(true);
         setTimeout(() => navigate(redirectRoute), 1500);
       }
     } catch (error) {
-      console.log("loginerror",error)
       const errorMsg =
         error.response?.status === 401
           ? "Invalid OTP."
@@ -216,10 +210,8 @@ const getToken = () => localStorage.getItem("accessToken");
   const getCurrentUserData = async () => {
     try {
 
-      console.log("Fetching user data from API");
       const response = await apiGet("/users/getUser");
       const userData = response.data?.data;
-      console.log("userDatafrom app.jsx",userData)
       if (userData) {
          if (userData.role === "patient") {
         navigate("/unauthorized");
@@ -231,7 +223,6 @@ const getToken = () => localStorage.getItem("accessToken");
 
          const response = await apiGet(`/users/getUser?userId=${doctorId}`);
                 const docData = response.data?.data;
-          console.log(docData, "userdetais")
            const redirectRoute = getRouteFromUserType(
           userData?.role 
         );
@@ -249,7 +240,8 @@ const getToken = () => localStorage.getItem("accessToken");
          
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      toast.error("Error fetching user data:", error?.message);
+
     }
   };
 
@@ -268,7 +260,6 @@ useEffect(() => {
       try {
         await getCurrentUserData(); // fetch user details
       } catch (error) {
-        console.error("Auth check failed:", error);
         // localStorage.clear();
         setIsCheckingAuth(false); // fallback → show login form
       }
@@ -296,7 +287,6 @@ const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
          const response = await apiGet(`/users/getUser?userId=${doctorId}`);
                 const docData = response.data?.data;
-          console.log(docData, "docData")
           
 
            dispatch({
@@ -304,7 +294,7 @@ const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
           payload: docData,
         });
     }catch (error) {
-      console.error("Error fetching doctor data:", error);
+      toast.error("Error fetching doctor data:", error?.message);
     }
     
   }

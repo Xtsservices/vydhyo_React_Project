@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect,useRef } from "react";
 import { useSelector } from "react-redux";
 import {
   Input,
@@ -84,6 +84,21 @@ const AddWalkInPatient = () => {
 const [doctorData, setDoctorData] = useState(null);
 const [paymentMethod, setPaymentMethod] = useState("cash"); 
 const [isUPIModalVisible, setIsUPIModalVisible] = useState(false);
+
+
+const topRef = useRef(null);
+
+const scrollToErrorBanner = useCallback(() => {
+  setIsUPIModalVisible(false);
+
+  try {
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch {
+    
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}, []);
+
 
   const getAuthToken = () => localStorage.getItem("accessToken") || "";
   const currentUserID = localStorage.getItem("userID");
@@ -328,7 +343,8 @@ const validateAge = useCallback((age) => {
     }
   }, []);
 
-
+ const [existingPatientModalVisible, setExistingPatientModalVisible] = useState(false);
+ const [existingPatientData, setExistingPatientData] = useState(null);
 
 
 const createPatient = useCallback(async () => {
@@ -377,13 +393,58 @@ const createPatient = useCallback(async () => {
        
       }
     } catch (error) {
-      
+       const errorMessage = error?.response?.data?.message?.message
+     if (errorMessage === "Patient already exists with same details") {
+      setExistingPatientModalVisible(true);
+      setExistingPatientData(error?.response?.data?.message?.data);
+      setExistingPatientModalVisible(true);
+     }
+     
       return {
         success: false,
-        message: error?.response?.data?.message?.message || "Failed to create patient",
+        message: errorMessage || "Failed to create patient",
       };
     }
   }, [patientData]);
+
+
+ const useExistingPatient = useCallback(() => {
+   const patientData =
+     existingPatientData
+   if (patientData) {
+     setPatientData((prev) => ({
+       ...prev,
+       phoneNumber: patientData.mobile || prev.phoneNumber,
+       firstName: patientData.firstname || "",
+       lastName: patientData.lastname || "",
+       gender: patientData.gender || "",
+       dateOfBirth: patientData?.DOB,
+       age: patientData?.age || prev.age,
+     }));
+     setUserFound(true);
+     setPatientCreated(true);
+     setCreatedPatientId(patientData.userId || "");
+   }
+   setExistingPatientModalVisible(false);
+   setApiError("");
+ }, [existingPatientData, searchResults, setPatientData]);
+
+ const clearPatientInputs = useCallback(() => {
+   setPatientData((prev) => ({
+     ...prev,
+     firstName: "",
+     lastName: "",
+     phoneNumber: "",
+     dateOfBirth: "",
+     age: "",
+     gender: "",
+   }));
+   setUserFound(false);
+   setPatientCreated(false);
+   setCreatedPatientId("");
+   setExistingPatientModalVisible(false);
+ }, []);
+
 
   const createAppointment = useCallback(async (appointmentRequest) => {
     try {
@@ -408,12 +469,11 @@ const createPatient = useCallback(async () => {
 
      
     } catch (error) {
-      
       const errorMessage = error?.response?.data
       toast.error(errorMessage?.message?.message || "Failed to create appointment");
       return {
         success: false,
-        message: error.message || "Failed to create appointment",
+        message: errorMessage?.message?.message || "Failed to create appointment",
       };
     }
   }, []);
@@ -796,6 +856,19 @@ const doctorDetails = await apiGet(`/users/getUser?userId=${doctorId}`);
     toast.error(error?.message, "Please retry")
   }
 };
+// Scroll when a top-level API error message is set
+useEffect(() => {
+  if (apiError) {
+    scrollToErrorBanner();
+  }
+}, [apiError, scrollToErrorBanner]);
+
+// Scroll when field-level validation errors appear
+useEffect(() => {
+  if (fieldErrors && Object.values(fieldErrors).some(Boolean)) {
+    scrollToErrorBanner();
+  }
+}, [fieldErrors, scrollToErrorBanner]);
 
 
     useEffect(() => {
@@ -1344,6 +1417,7 @@ const [qrCode, setQrCode] = useState(null);
       }}
     >
       <div style={{ marginLeft: 64, padding: "0 24px" }}>
+         <div ref={topRef} />
         <Row gutter={[16, 16]}>
           <Col span={24}>
             <Title level={2}>Add Walk-in Patient</Title>
@@ -1399,7 +1473,7 @@ const [qrCode, setQrCode] = useState(null);
               type="primary"
               onClick={handleContinueToPayment}
               loading={isCreatingAppointment}
-              disabled={isCreatingAppointment || !patientCreated || isClinicModalVisible || (paymentMethod === "upi" && !qrCode)}
+              disabled={isCreatingAppointment || !patientCreated || isClinicModalVisible || (paymentMethod === "upi")}
               style={{ width: "100%" }}
             >
               Continue to Payment
@@ -1467,6 +1541,22 @@ const [qrCode, setQrCode] = useState(null);
           </div>
         </div>
       </Modal>
+
+
+      <Modal
+   open={existingPatientModalVisible}
+   title="Existing patient found"
+   okText="Yes, use existing"
+   cancelText="Cancel"
+   onOk={useExistingPatient}
+   onCancel={clearPatientInputs}
+ >
+   <Text type="secondary">
+     A patient with the same details already exists. Do you want to use the existing
+     patient record and prefill the details?
+   </Text>
+ </Modal>
+
     </div>
   );
 };

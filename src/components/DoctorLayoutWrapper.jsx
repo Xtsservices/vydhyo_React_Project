@@ -28,6 +28,7 @@ import { useSelector } from "react-redux";
 import logo from "./../../public/images/pic1.png";
 import { apiPost } from "./api";
 import { useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const { Header, Sider, Content, Footer } = Layout;
 
@@ -79,12 +80,9 @@ const DoctorLayoutWrapper = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userID");
         localStorage.removeItem("role");
-        localStorage.removeItem("appointmwents");
+        localStorage.removeItem("appointments");
       } catch (error) {
-        console.error(
-          "Logout API failed:",
-          error.response?.statusText || error.message
-        );
+        toast.error("Logout failed", error.response?.statusText || error.message);
       }
     } finally {
       localStorage.removeItem("accessToken");
@@ -263,7 +261,6 @@ const DoctorLayoutWrapper = () => {
     if (user.role === "doctor" || user.role === "Doctor") {
       return allMenuItems;
     } 
-console.log("user====",user.access)
     // If user is a receptionist, filter based on access
     if (user.role !== "doctor" || user.role !== "doctor") {
       // If user.access is not available, return empty array
@@ -388,15 +385,22 @@ console.log("user====",user.access)
                 marginLeft: "8px",
               }}
             >
-              <Avatar
-                size={32}
-                src={profileImageSrc}
-                icon={!profileImageSrc && <FontAwesomeIcon icon={faUser} />}
-                style={{
-                  backgroundColor: "#e2e8f0",
-                  color: "#64748b",
-                }}
-              />
+              {user?.profilepic ? (
+                 <Avatar
+  src={user?.profilepic || undefined}
+  size={{ xs: 28, sm: 32, md: 36, lg: 40, xl: 44, xxl: 48 }}
+  style={{ flexShrink: 0, backgroundColor: "#e2e8f0" }}
+/>
+              ) : (
+                <div
+                  size={64}
+                style={{ flexShrink: 0, backgroundColor: "#1162cbff", borderRadius: "50%", height:'40px', width:  '40px', display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontWeight: "600", fontSize: "20px" }}
+                  className="doctor-avatar"
+                >
+                  {`${user.firstname?.[0] ?? ""}`}
+                </div>
+              )}
+             
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <div
                   style={{

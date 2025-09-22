@@ -133,35 +133,51 @@ const AccountsPage = () => {
       statuses: Array.from(group.statuses).join(", "),
     }));
   };
+ // Compute count by grouping on Service + paidAt rounded to the minute
+ const computeGroupedCount = (txns = []) => {
+   const groupMap = new Map();
+   txns.forEach((t) => {
+     const service = getServiceName(t.paymentFrom);
+     const minuteKey = t?.paidAt ? dayjs(t.paidAt).format("YYYY-MM-DD HH:mm") : "Unknown";
+     groupMap.set(`${service}__${minuteKey}`, true);
+   });
+   return groupMap.size;
+ };
 
   // Memoized function to map transactions
-  const mappedTransactions = groupTransactions(transactions).map((txn) => ({
-    id: txn.paymentId || txn._id,
-    patient: txn.patientName,
-    date: txn.paidAt ? dayjs(txn.paidAt).format("DD-MMM-YYYY") : "-",
-    service: txn.services || getServiceName(txn.paymentFrom),
-    amount: txn.groupedCount > 1 ? txn.groupedAmount : (txn.finalAmount !== undefined ? txn.finalAmount : txn.actualAmount || 0),
-    status:  txn.paymentStatus !== "refund_pending" ? txn.statuses || txn.paymentStatus || "-" : 'Refunded',
-    paymentMethod: txn.paymentMethods || (txn.paymentMethod
-      ? txn.paymentMethod.charAt(0).toUpperCase() + txn.paymentMethod.slice(1)
-      : "-"),
-    raw: txn,
-    count: txn.groupedCount || 1,
-    allTransactions: txn.allTransactions || [txn],
-  }));
+ const mappedTransactions = groupTransactions(transactions).map((txn) => {
+   const allTxns = txn.allTransactions || [txn];
+   const groupedCountForView = computeGroupedCount(allTxns);
+   return {
+     id: txn.paymentId || txn._id,
+     patient: txn.patientName,
+     date: txn.paidAt ? dayjs(txn.paidAt).format("DD-MMM-YYYY") : "-",
+     service: txn.services || getServiceName(txn.paymentFrom),
+     amount:
+       (txn.groupedCount > 1 ? txn.groupedAmount : (txn.finalAmount !== undefined ? txn.finalAmount : txn.actualAmount || 0)),
+     status: txn.paymentStatus !== "refund_pending" ? txn.statuses || txn.paymentStatus || "-" : "Refunded",
+     paymentMethod:
+       txn.paymentMethods ||
+       (txn.paymentMethod ? txn.paymentMethod.charAt(0).toUpperCase() + txn.paymentMethod.slice(1) : "-"),
+     raw: txn,
+     count: groupedCountForView || 1,
+     allTransactions: allTxns,
+   };
+ });
 
-  function getServiceName(paymentFrom) {
-    switch (paymentFrom) {
-      case "appointments":
-        return "Appointments";
-      case "lab":
-        return "Lab";
-      case "pharmacy":
-        return "Pharmacy";
-      default:
-        return paymentFrom || "-";
-    }
-  }
+ function getServiceName(paymentFrom) {
+  const v = (paymentFrom || "").toString().trim().toLowerCase();
+  if (v === "appointment" ) return "Appointments";
+  if (v === "lab") return "Lab";
+  if (v === "pharmacy") return "Pharmacy";
+  return paymentFrom || "-";
+}
+
+const isAppointmentService = (paymentFrom) => {
+  const v = (paymentFrom || "").toString().trim().toLowerCase();
+  return v === "appointment" || v === "appointments";
+};
+
 
   // Fetch revenue data
   useEffect(() => {
@@ -182,7 +198,7 @@ const AccountsPage = () => {
           })),
         }));
       } catch (error) {
-        console.error("Error fetching revenue data:", error);
+        toast.error("Error fetching revenue data:", error?.message);
       }
     };
 
@@ -211,13 +227,12 @@ const AccountsPage = () => {
 
     try {
       const response = await apiPost("/finance/getTransactionHistory", payload);
-      console.log(response)
       const data = response.data;
 
       setTransactions(data.data || []);
       setTotalItems(data.totalResults || 0);
     } catch (err) {
-      console.error("Error fetching transactions:", err);
+      toast.error("Error fetching transactions:", err?.message);
     } finally {
       setLoading(false);
     }
@@ -243,12 +258,10 @@ const AccountsPage = () => {
         )
       );
 
-      console.log(response)
       
       const details = response.map((res) => res.data.data);
       setTransactionDetails(details);
     } catch (error) {
-      console.error("Error fetching transaction details:", error);
       setTransactionDetails([]);
     } finally {
       setLoadingDetails(false);
@@ -407,128 +420,126 @@ const AccountsPage = () => {
     },
   ];
 
-  // Render transaction details based on service type
-  const renderTransactionDetails = () => {
-    console.log("1234")
-    if (!selectedTransaction || !transactionDetails.length) {
-      return <Text>No details available</Text>;
+
+  const toNum = (val) => {
+  const n = Number(val);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const getPlatformFee = (txn) => {
+  // Check common locations / keys; extend if you have other shapes
+  const candidates = [
+    txn?.platformFee,
+    txn?.platform_fee,
+    txn?.feeDetails?.platformFee,
+    txn?.feeDetails?.platform_fee,
+    txn?.charges?.platformFee,
+    txn?.charges?.platform_fee,
+  ];
+  for (const c of candidates) {
+    const n = toNum(c);
+    if (n !== 0) return n; // return first non-zero
+  }
+  // If explicitly zero in any place, still return 0 (so it shows ₹0 for appointments)
+  return candidates.some((c) => toNum(c) === 0) ? 0 : 0;
+};
+
+
+
+const renderTransactionDetails = () => {
+  if (!selectedTransaction) return <Text>No details available</Text>;
+
+  const allTxns = selectedTransaction.allTransactions?.length
+    ? selectedTransaction.allTransactions
+    : [selectedTransaction];
+
+  // Group by Service + paidAt rounded to the minute (ignore seconds)
+  const groupMap = new Map();
+  allTxns.forEach((txn) => {
+    const service = getServiceName(txn.paymentFrom);
+    const minuteKey = txn?.paidAt
+      ? dayjs(txn.paidAt).format("YYYY-MM-DD HH:mm")
+      : "Unknown";
+    const key = `${service}__${minuteKey}`;
+
+    const baseAmount = toNum(txn.finalAmount ?? txn.actualAmount ?? 0);
+    const pf = getPlatformFee(txn); // robust read
+
+    const prev = groupMap.get(key) || {
+      service,
+      minuteKey,
+      sortTime: txn?.paidAt
+        ? dayjs(txn.paidAt).startOf("minute").valueOf()
+        : Number.POSITIVE_INFINITY,
+      ids: [],
+      amount: 0,
+      platformFee: 0,
+    };
+
+    prev.ids.push(txn.paymentId || txn._id);
+    prev.amount += baseAmount;
+    if (isAppointmentService(txn.paymentFrom)) {
+      prev.platformFee += pf; // sum only for appointments
     }
 
-    const groupedTransactions = selectedTransaction.allTransactions || [selectedTransaction.raw];
+    groupMap.set(key, prev);
+  });
 
-    return (
-      <div>
-        <Descriptions bordered column={1} size="small">
-          <Descriptions.Item label="Patient Name">
-            {selectedTransaction.patientName || 
-             (selectedTransaction.userDetails 
-              ? `${selectedTransaction.userDetails.firstname || ''} ${selectedTransaction.userDetails.lastname || ''}`.trim()
-              : "-")}
-          </Descriptions.Item>
-          <Descriptions.Item label="Services">
-            {selectedTransaction.services || getServiceName(selectedTransaction.paymentFrom)}
-          </Descriptions.Item>
-          <Descriptions.Item label="Total Amount">
-            ₹{selectedTransaction.groupedAmount || selectedTransaction.finalAmount || selectedTransaction.actualAmount}
-          </Descriptions.Item>
-          <Descriptions.Item label="Number of Transactions">
-            {selectedTransaction.count || 1}
-          </Descriptions.Item>
-          <Descriptions.Item label="Statuses">
-           {(selectedTransaction?.paymentStatus === 'refund_pending' ? 'Refunded' :selectedTransaction.statuses || selectedTransaction.paymentStatus) }
+  const rows = Array.from(groupMap.values())
+    .sort((a, b) => {
+      if (a.service !== b.service) return a.service.localeCompare(b.service);
+      return a.sortTime - b.sortTime;
+    })
+    .map((g, idx) => ({
+      key: `${g.service}-${g.minuteKey}-${idx}`,
+      id: g.ids?.[0] || "-",
+      date:
+        g.minuteKey === "Unknown"
+          ? "-"
+          : dayjs(g.minuteKey, "YYYY-MM-DD HH:mm").format("DD-MMM-YYYY hh:mm A"),
+      service: g.service,
+      amount: g.amount,
+      platformFee: g.service === "Appointments" ? g.platformFee : null, // “–” for non-appointments
+    }));
 
-            
-            
-          </Descriptions.Item>
-          <Descriptions.Item label="Payment Methods">
-            {selectedTransaction.paymentMethods || selectedTransaction.paymentMethod}
-          </Descriptions.Item>
-        </Descriptions>
+  const columns = [
+    { title: "Transaction ID", dataIndex: "id", key: "id" },
+    { title: "Date", dataIndex: "date", key: "date" },
+    { title: "Service", dataIndex: "service", key: "service" },
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      key: "amount",
+      render: (v) => `₹${toNum(v)}`,
+    },
+    {
+      title: "Platform Fee",
+      dataIndex: "platformFee",
+      key: "platformFee",
+      render: (v, record) =>
+        record.service === "Appointments" ? `₹${toNum(v)}` : "–",
+    },
+  ];
 
-        <Divider orientation="left" style={{ marginTop: 20 }}>
-          Individual Transactions
-        </Divider>
+  return (
+    <Table
+      columns={columns}
+      dataSource={rows}
+      pagination={false}
+      size="small"
+      bordered
+      tableLayout="auto"
+    />
+  );
+};
 
-        {groupedTransactions.map((txn, index) => {
-          const txnDetails = transactionDetails[index] || {};
 
-          return (
-            <Descriptions
-              key={index}
-              bordered
-              column={1}
-              size="small"
-              style={{ marginBottom: 16 }}
-            >
-              <Descriptions.Item label="Transaction ID">
-                {txn.paymentId || txn._id}
-              </Descriptions.Item>
-              <Descriptions.Item label="Date">
-                {txn.paidAt ? dayjs(txn.paidAt).format("DD-MMM-YYYY") : "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Service">
-                {getServiceName(txn.paymentFrom)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Actual Amount">
-                ₹{txn.actualAmount || 0}
-              </Descriptions.Item>
-              <Descriptions.Item label="Discount">
-                {txn.discount || 0} {txn.discountType === "percentage" ? "%" : "₹"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Final Amount">
-                ₹{txn.finalAmount || 0}
-              </Descriptions.Item>
-              <Descriptions.Item label="Currency">
-                {txn.currency || "INR"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Paid At">
-                {txn?.paidAt
-                  ? dayjs(txn.paidAt).format("DD-MMM-YYYY hh:mm A")
-                  : "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Status">
-                {txn.paymentStatus === 'refund_pending' ? 'Refunded' :txn.paymentStatus}
-              </Descriptions.Item>
-              <Descriptions.Item label="Payment Method">
-                {txn.paymentMethod
-                  ? txn.paymentMethod.charAt(0).toUpperCase() + txn.paymentMethod.slice(1)
-                  : "-"}
-              </Descriptions.Item>
 
-              {/* Service-specific details */}
-              {txn.paymentFrom === "appointments" && (
-                <>
-                  <Descriptions.Item label="Appointment Type">
-                    {txnDetails.appointmentDetails?.appointmentType || "N/A"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Department">
-                    {txnDetails.appointmentDetails?.appointmentDepartment || "N/A"}
-                  </Descriptions.Item>
-                </>
-              )}
 
-              {txn.paymentFrom === "lab" && (
-                <Descriptions.Item label="Test Name">
-                  {txnDetails.labDetails?.testName || "N/A"}
-                </Descriptions.Item>
-              )}
 
-              {txn.paymentFrom === "pharmacy" && (
-                <>
-                  <Descriptions.Item label="Medicine Name">
-                    {txnDetails.pharmacyDetails?.medName || "N/A"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Quantity">
-                    {txnDetails.pharmacyDetails?.quantity || "N/A"}
-                  </Descriptions.Item>
-                </>
-              )}
-            </Descriptions>
-          );
-        })}
-      </div>
-    );
-  };
+
+
+
 
   return (
     <div className="accounts-container">

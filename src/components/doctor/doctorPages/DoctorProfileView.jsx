@@ -203,18 +203,7 @@ const DoctorProfileView = () => {
   const [loadingDegrees, setLoadingDegrees] = useState(false);
   const [loadingSpecs, setLoadingSpecs] = useState(false);
 
-  const fetchDegrees = async () => {
-    try {
-      setLoadingDegrees(true);
-      const response = await apiGet('/catalogue/degree/getAllDegrees');
-      const data = response?.data?.data || [];
-      setDegrees(data);
-    } catch (error) {
-      toast.error('Failed to fetch degrees.');
-    } finally {
-      setLoadingDegrees(false);
-    }
-  };
+ 
 
   const fetchDoctorData = async () => {
     setLoading(true);
@@ -281,7 +270,7 @@ const DoctorProfileView = () => {
             panImage: userData.kycDetails?.pan?.attachmentUrl || null,
           },
           certifications: certifications,
-          profilepic: null,
+          profilepic:  userData.profilepic,
         });
       }
     } catch (error) {
@@ -301,6 +290,18 @@ const DoctorProfileView = () => {
       message.error("Failed to load doctor data.");
     } finally {
       setLoading(false);
+    }
+  };
+   const fetchDegrees = async () => {
+    try {
+      setLoadingDegrees(true);
+      const response = await apiGet('/catalogue/degree/getAllDegrees');
+      const data = response?.data?.data || [];
+      setDegrees(data);
+    } catch (error) {
+      toast.error('Failed to fetch degrees.');
+    } finally {
+      setLoadingDegrees(false);
     }
   };
 
@@ -516,6 +517,7 @@ const DoctorProfileView = () => {
     return <Spin spinning={loading} tip="Loading doctor details..." />;
   }
 
+
   return (
     <div className="doctor-profile-container">
       <Spin spinning={loading}>
@@ -537,15 +539,26 @@ const DoctorProfileView = () => {
               className="profile-card"
             >
               <div className="avatar-container">
-                <Avatar
+                {doctorData?.profilepic ? (
+                   <Avatar
+                    src={doctorData?.profilepic || undefined}
+                    size={{ xs: 28, sm: 32, md: 36, lg: 40, xl: 44, xxl: 48 }}
+                    style={{ flexShrink: 0, backgroundColor: "#e2e8f0" }}
+                  />
+  
+                ) : (
+<div
                   size={64}
-                  src={getImageSrc(doctorData.profilepic)}
+                 style={{ flexShrink: 0, backgroundColor: "#1162cbff", borderRadius: "50%", height:'50px', width:  '50px', display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontWeight: "600", fontSize: "20px" }}
                   className="doctor-avatar"
                 >
                   {`${doctorData.firstname?.[0] ?? ""}${doctorData.lastname?.[0] ?? ""}`}
-                </Avatar>
+                </div>
+                )}
+              
+                
                 <Title level={4} className="doctor-name">
-                  Dr. {doctorData.firstname} {doctorData.lastname}
+                {doctorData.role === "doctor" && <span>Dr. </span>}  {doctorData?.firstname} {doctorData?.lastname}
                 </Title>
 
 

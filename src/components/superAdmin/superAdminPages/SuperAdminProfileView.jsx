@@ -56,15 +56,6 @@ const DoctorProfileView = () => {
 
   const { doctorId, userId ,statusFilter } = location.state || {};
 
-  // Function to generate a color for clinic icons (matching React Native's getLocationColor)
-  const getLocationColor = (name) => {
-    const colors = ['#FF6F61', '#6B5B95', '#88B04B', '#F7CAC9', '#92A8D1', '#955251', '#B565A7'];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    const index = Math.abs(hash % colors.length);
-    return colors[index];
-  };
-  // Helper function to convert 24-hour format to 12-hour format
   const convertTo12HourFormat = (time24) => {
     if (!time24 || time24 === "N/A") return "N/A";
 
@@ -155,51 +146,8 @@ const DoctorProfileView = () => {
           kycVerified: false,
         };
 
-      // Fetch clinic details using the same endpoint as ClinicManagement
-      const clinicResponse = await apiGet(
-        `/users/getClinicAddress?doctorId=${userId}`
-      );
-      let clinicData = [];
-      if (clinicResponse?.status === "success") {
-        const allClinics = clinicResponse.data.data || [];
-        // Filter active clinics and sort by createdAt (descending), as in ClinicManagement
-        const activeClinics = allClinics.filter(
-          (clinic) => clinic.status === "Active"
-        );
-        clinicData = activeClinics
-          .map((addr) => ({
-            _id: addr._id,
-            addressId: addr.addressId,
-            label: addr.clinicName || "Clinic",
-            address: `${addr.address || ""}, ${addr.city || ""}, ${addr.state || ""}, ${addr.country || ""} - ${addr.pincode || ""}`,
-            startTime: addr.startTime || "N/A",
-            endTime: addr.endTime || "N/A",
-            mobile: addr.mobile || "N/A",
-            latitude: addr.latitude || "",
-            longitude: addr.longitude || "",
-            headerImage: addr.headerImage || null,
-            digitalSignature: addr.digitalSignature || null,
-            pharmacyName: addr.pharmacyName || "N/A",
-            pharmacyRegNum: addr.pharmacyRegNum || addr.pharmacyRegistrationNo || "N/A",
-            pharmacyGST: addr.pharmacyGST || addr.pharmacyGst || "N/A",
-            pharmacyPAN: addr.pharmacyPAN || addr.pharmacyPan || "N/A",
-            pharmacyAddress: addr.pharmacyAddress || "N/A",
-            pharmacyHeaderImage: addr.pharmacyHeaderImage || null,
-            labName: addr.labName || "N/A",
-            labRegNum: addr.labRegNum || addr.labRegistrationNo || "N/A",
-            labGST: addr.labGST || addr.labGst || "N/A",
-            labPAN: addr.labPAN || addr.labPan || "N/A",
-            labAddress: addr.labAddress || "N/A",
-            labHeaderImage: addr.labHeaderImage || null,
-            status: addr.status || "pending",
-          }))
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      } else {
-        message.warning(clinicResponse?.message?.message || "Failed to fetch clinic details.");
-      }
 
-      setClinics(clinicData);
-
+      setClinics(doctor.addresses || []);
       setDoctorData({
         ...doctor,
         key: doctor._id || "",
@@ -313,7 +261,6 @@ const DoctorProfileView = () => {
         message.warning("Failed to update doctor status.");
       }
     } catch (error) {
-      toast.error("An error occurred while updating the status.");
       message.error("An error occurred while updating the status.");
     } finally {
       setActionLoading(null);
@@ -323,7 +270,6 @@ const DoctorProfileView = () => {
   if (loading) {
     return <Spin spinning={loading} />;
   }
-
   return (
     <div
       style={{
@@ -370,8 +316,20 @@ const DoctorProfileView = () => {
               bodyStyle={{ padding: "20px" }}
             >
               <div style={{ textAlign: "center", marginBottom: "24px" }}>
-                
-                  <div  style={{
+                {doctorData?.profilepic ? (
+                  <Avatar
+                    style={{
+                      borderRadius: "50%",
+                      width: "80px",
+                      height: "80px",
+                      
+                     
+                  }}
+                    src={doctorData?.profilepic || undefined}
+                  />
+                ) : (
+                  <div
+                    style={{
                     backgroundColor: "#6366f1",
                     fontSize: "24px",
                     fontWeight: "500",
@@ -387,6 +345,7 @@ const DoctorProfileView = () => {
                   {`${doctorData?.firstname?.[0] ?? ""}${doctorData?.lastname?.[0] ?? ""}`}
 
                   </div>
+                )}  
                 <Title
                   level={4}
                   style={{
@@ -799,7 +758,6 @@ const DoctorProfileView = () => {
                           width: "16px",
                           height: "16px",
                           borderRadius: "8px",
-                          backgroundColor: getLocationColor(clinic.label),
                           marginRight: "12px",
                           marginTop: "2px",
                         }}
@@ -814,7 +772,7 @@ const DoctorProfileView = () => {
                             marginBottom: "4px",
                           }}
                         >
-                          {clinic.label}
+                          {clinic.clinicName}
                         </Text>
                         <Text
                           style={{
@@ -823,7 +781,7 @@ const DoctorProfileView = () => {
                             display: "block",
                           }}
                         >
-                          {clinic.address}
+                         <strong>Address:</strong>  {clinic.address}
                         </Text>
                         <Text
                           style={{
@@ -835,16 +793,7 @@ const DoctorProfileView = () => {
                         >
                           <strong>Contact:</strong> {clinic.mobile}
                         </Text>
-                        <Text
-                          style={{
-                            fontSize: "12px",
-                            color: "#6b7280",
-                            display: "block",
-                            marginTop: "4px",
-                          }}
-                        >
-                          <strong>Timings:</strong> {convertTo12HourFormat(clinic.startTime)} - {convertTo12HourFormat(clinic.endTime)}
-                        </Text>
+                       
                         <Text
                           style={{
                             fontSize: "12px",
@@ -884,7 +833,7 @@ const DoctorProfileView = () => {
                       </div>
                     </div>
                     {/* Pharmacy Details */}
-                    {clinic.pharmacyName !== "N/A" && (
+                    {clinic.pharmacyName  && (
                       <div style={{ marginTop: "12px", paddingLeft: "28px" }}>
                         <Text
                           strong
@@ -914,7 +863,8 @@ const DoctorProfileView = () => {
                             marginTop: "4px",
                           }}
                         >
-                          <strong>Registration Number:</strong> {clinic.pharmacyRegNum}
+                          <strong>Registration Number:</strong> {clinic.pharmacyRegistrationNo
+}
                         </Text>
                         <Text
                           style={{
@@ -924,7 +874,7 @@ const DoctorProfileView = () => {
                             marginTop: "4px",
                           }}
                         >
-                          <strong>GST Number:</strong> {clinic.pharmacyGST}
+                          <strong>GST Number:</strong> {clinic.pharmacyGst}
                         </Text>
                         <Text
                           style={{
@@ -934,7 +884,8 @@ const DoctorProfileView = () => {
                             marginTop: "4px",
                           }}
                         >
-                          <strong>PAN:</strong> {clinic.pharmacyPAN}
+                          <strong>PAN:</strong> {clinic.pharmacyPan
+}
                         </Text>
                         <Text
                           style={{
@@ -946,13 +897,13 @@ const DoctorProfileView = () => {
                         >
                           <strong>Address:</strong> {clinic.pharmacyAddress}
                         </Text>
-                        {clinic.pharmacyHeaderImage && (
+                        {clinic.pharmacyHeader && (
                           <Button
                             type="link"
                             size="small"
                             icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
                             onClick={() =>
-                              showModal({ type: "pharmacyHeader", data: clinic.pharmacyHeaderImage })
+                              showModal({ type: "pharmacyHeader", data: clinic.pharmacyHeader })
                             }
                             style={{ padding: "4px 8px", marginTop: "8px" }}
                           >
@@ -962,7 +913,7 @@ const DoctorProfileView = () => {
                       </div>
                     )}
                     {/* Lab Details */}
-                    {clinic.labName !== "N/A" && (
+                    {clinic.labName && (
                       <div style={{ marginTop: "12px", paddingLeft: "28px" }}>
                         <Text
                           strong
@@ -992,7 +943,7 @@ const DoctorProfileView = () => {
                             marginTop: "4px",
                           }}
                         >
-                          <strong>Registration Number:</strong> {clinic.labRegNum}
+                          <strong>Registration Number:</strong> {clinic.labRegistrationNo}
                         </Text>
                         <Text
                           style={{
@@ -1002,7 +953,7 @@ const DoctorProfileView = () => {
                             marginTop: "4px",
                           }}
                         >
-                          <strong>GST Number:</strong> {clinic.labGST}
+                          <strong>GST Number:</strong> {clinic.labGst}
                         </Text>
                         <Text
                           style={{
@@ -1012,7 +963,7 @@ const DoctorProfileView = () => {
                             marginTop: "4px",
                           }}
                         >
-                          <strong>PAN:</strong> {clinic.labPAN}
+                          <strong>PAN:</strong> {clinic.labPan}
                         </Text>
                         <Text
                           style={{
@@ -1024,13 +975,13 @@ const DoctorProfileView = () => {
                         >
                           <strong>Address:</strong> {clinic.labAddress}
                         </Text>
-                        {clinic.labHeaderImage && (
+                        {clinic.labHeader && (
                           <Button
                             type="link"
                             size="small"
                             icon={<EyeOutlined style={{ color: "#3b82f6" }} />}
                             onClick={() =>
-                              showModal({ type: "labHeader", data: clinic.labHeaderImage })
+                              showModal({ type: "labHeader", data: clinic.labHeader })
                             }
                             style={{ padding: "4px 8px", marginTop: "8px" }}
                           >

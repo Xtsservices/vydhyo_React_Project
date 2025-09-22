@@ -549,7 +549,7 @@ const LayoutWrapper = () => {
               <Outlet />
             </Content>
             <Footer className="footer">
-              My App © {new Date().getFullYear()} Created with Ant Design
+              VYDHYO © {new Date().getFullYear()} connect. care. cure
             </Footer>
           </Layout>
         </Layout>

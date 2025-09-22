@@ -14,7 +14,6 @@ const LoginForm = ({
   onReset,
 }) => {
   const handleKeyDown = (e) => {
-    console.log("e.key", e.target.name);
     if (e.key === "Enter" && e.target.name === "phone") {
       onSendOTP();
     } else if(e.target.name === "verifyotp"){
@@ -31,7 +30,7 @@ const LoginForm = ({
           className="form-image"
           style={{
             width: 230,
-            height: 280,
+            height: 230,
             marginBottom: -90,
             marginTop: -120,
           }}
