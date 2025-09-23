@@ -299,7 +299,7 @@ const DoctorProfileView = () => {
       const data = response?.data?.data || [];
       setDegrees(data);
     } catch (error) {
-      toast.error('Failed to fetch degrees.');
+      toast.error(error?.response?.data?.message?.error || "Failed to fetch degrees");
     } finally {
       setLoadingDegrees(false);
     }

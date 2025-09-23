@@ -98,8 +98,7 @@ const DoctorOnboardingDashboard = () => {
       }
     } catch (error) {
       if (isMounted.current) {
-        console.error("Error fetching doctors count:", error);
-        message.error("Failed to fetch doctors count. Please try again.");
+        message.error(error?.message || "Failed to fetch doctors count. Please try again.");
       }
     }
   }, [navigate]);
@@ -201,19 +200,6 @@ const DoctorOnboardingDashboard = () => {
     }
   }, [searchText, debouncedFetchDoctors, fetchDoctors]);
 
-  // Utility functions
-  const getImageSrc = useCallback((profilepic) => {
-    if (profilepic?.data && profilepic?.mimeType) {
-      return `data:${profilepic.mimeType};base64,${profilepic.data}`;
-    }
-    return null;
-  }, []);
-
-  const showImageModal = useCallback((imageSrc) => {
-    setSelectedImage(imageSrc);
-    setImageModalVisible(true);
-  }, []);
-
   const handleViewProfile = (userId, doctorId) => {
     navigate("/SuperAdmin/profileView", {
       state: { userId, doctorId, statusFilter },
@@ -264,7 +250,7 @@ const DoctorOnboardingDashboard = () => {
         key: "doctor",
         width: 250,
         render: (_, record) => {
-          const imageSrc = getImageSrc(record.profilepic);
+          const imageSrc = record.profilepic;
           const fullName = `${record.firstname || "N/A"} ${
             record.lastname || ""
           }`.trim();
@@ -393,7 +379,6 @@ const DoctorOnboardingDashboard = () => {
     [
       pagination.current,
       pagination.pageSize,
-      getImageSrc,
       handleViewProfile,
       formatDate,
     ]

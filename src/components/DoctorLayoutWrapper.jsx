@@ -80,7 +80,6 @@ const DoctorLayoutWrapper = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userID");
         localStorage.removeItem("role");
-        localStorage.removeItem("appointments");
       } catch (error) {
         toast.error("Logout failed", error.response?.statusText || error.message);
       }
@@ -88,7 +87,6 @@ const DoctorLayoutWrapper = () => {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userID");
       localStorage.removeItem("role");
-      localStorage.removeItem("appointments");
       navigate("/login");
     }
   };
