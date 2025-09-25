@@ -402,7 +402,6 @@ const DoctorProfileView = () => {
     if (value instanceof File) return value;
     return null;
   }
-
   const handleSaveProfile = async (values) => {
     let response;
     try {
@@ -416,26 +415,25 @@ const DoctorProfileView = () => {
           break;
 
         case 'professional': {
-          const formDataObj = new FormData();
-          formDataObj.append('id', doctorData?.userId || '');
-          formDataObj.append('name', doctorData.specialization[0].name);
-          formDataObj.append('experience', values.experience || '');
-          formDataObj.append('degree', Array.isArray(values.degreeId)
-            ? values.degreeId.join(',')
-            : values.degreeId || '');
-          formDataObj.append('bio', values.about || '');
-          if (values.drgreeCertificate) {
-            formDataObj.append('drgreeCertificate', values.drgreeCertificate);
-          }
-          if (values.specializationCertificate) {
-            formDataObj.append('specializationCertificate', values.specializationCertificate);
-          }
-          await apiPost(
-            `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
-            formDataObj
-          );
-          break;
-        }
+  const formData = new FormData();
+
+  // basic fields
+  formData.append('id', doctorData?.userId || '');
+  formData.append('name', doctorData?.specialization?.[0]?.name || '');
+  formData.append('experience', values?.experience ?? '');
+  formData.append(
+    'degree',
+    Array.isArray(values?.degreeId) ? values.degreeId.join(',') : (values?.degreeId ?? '')
+  );
+  formData.append('bio', values?.about ?? '');
+   await apiPut(
+    `/users/updateSpecialization?userId=${doctorData?.userId || ''}`,
+    formData,
+  );
+
+  break;
+}
+
 
         case 'locations':
           await apiPut("/users/updateLocations", { addresses: values.workingLocations });
