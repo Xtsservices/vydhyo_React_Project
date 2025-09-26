@@ -176,6 +176,19 @@ const DoctorLayoutWrapper = () => {
         />
       ),
     },
+     {
+      key: "MedTemplate",
+      accessKey: "medtemplate",
+      label: (
+        <Link to="/doctor/doctorPages/MedTemplate">Medical Templates</Link>
+      ),
+      icon: (
+        <FontAwesomeIcon
+          icon={faFileInvoice} // Changed from faPills to faFileInvoice
+          style={{ color: "#ffffff", fontSize: "16px" }}
+        />
+      ),
+    },
     {
       key: "staff-management",
       accessKey: "staff-management",

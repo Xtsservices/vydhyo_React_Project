@@ -463,6 +463,7 @@ const EPrescription = () => {
           <DiagnosisMedication
             formData={formData.diagnosis}
             updateFormData={(data) => updateFormData("diagnosis", data)}
+            patientId={formData?.patientInfo?.patientId}
           />
         );
       case "advice":

@@ -30,6 +30,8 @@ import PendingTransactionsScreen from "./components/doctor/doctorPages/PendingTr
 import PreviousPrescriptions from "./components/doctor/doctorPages/PreviousPrescriptions"
 import AdvertisingDoctorsPage from "./components/landingPage/AdvertisingPage";
 import EPrescriptionList from "./components/doctor/doctorPages/EPrescriptionList";
+import MedTemplate from "./components/doctor/doctorPages/MedTemplate";
+
 
 //main landing Page
 import TermsAndConditions from "./components/landingPage/TermsAndConditions";
@@ -230,6 +232,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <EPrescriptionList />
+            </ProtectedRoute>
+          }
+        />
+
+         <Route
+          path="/doctor/doctorPages/MedTemplate"
+          element={
+            <ProtectedRoute>
+              <MedTemplate />
             </ProtectedRoute>
           }
         />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus, X, AlertTriangle } from "lucide-react";
-import { AutoComplete, InputNumber, Select, Button, Input } from "antd";
+import { AutoComplete, InputNumber, Select, Button, Input,Modal, List } from "antd";
 import { useSelector } from "react-redux";
 import { apiGet } from "../../api";
 import { toast } from "react-toastify";
@@ -8,7 +8,8 @@ import "../../stylings/EPrescription.css";
 
 const { Option } = Select;
 
-const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
+const DiagnosisMedication = ({ formData, updateFormData, validationError, patientId }) => {
+  console.log(formData, updateFormData,patientId, "formdata in diagnosis medication");
   const user = useSelector((state) => state.currentUserData);
   const doctorId = user?.role === "doctor" ? user?.userId : user?.createdBy;
 
@@ -21,6 +22,14 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [selectedFromDropdown, setSelectedFromDropdown] = useState({});
+const [loadingPrev, setLoadingPrev] = useState(false);
+
+const [prevList, setPrevList] = useState([]);
+ const [isPrevModalOpen, setIsPrevModalOpen] = useState(false);
+
+
+ const [templateItems, setTemplateItems] = useState([]);
+ const [templatesLoading, setTemplatesLoading] = useState(false);
 
   const [localData, setLocalData] = useState({
     diagnosisList: formData?.diagnosisList || "",
@@ -61,6 +70,21 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
       }
     }
   }, [formData]);
+
+ const fetchTemplates = async () => {
+   if (!doctorId) return;
+   try {
+     setTemplatesLoading(true);
+     const res = await apiGet(`/template/getTemplatesByDoctorId?doctorId=${doctorId}`);
+     const data = res?.data?.data || res?.data || [];
+     setTemplateItems(Array.isArray(data) ? data : []);
+   } catch (e) {
+     console.error(e);
+   } finally {
+     setTemplatesLoading(false);
+   }
+ };
+
 
   const fetchInventory = async () => {
     try {
@@ -116,6 +140,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     if (user && doctorId) {
       fetchInventory();
       fetchTests();
+       fetchTemplates();
     }
   }, [user, doctorId]);
 
@@ -159,6 +184,83 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
     setTestInputValue("");
     toast.success("Test added successfully");
   };
+
+  const fetchPreviousPrescription = async () => {
+    
+     try {
+      setLoadingPrev(true);
+     const res = await apiGet(
+       `pharmacy/getEPrescriptionByPatientIdAndDoctorId/${patientId}?doctorId=${doctorId}`
+     );
+     const list = res?.data?.data || [];
+     if (!Array.isArray(list) || list.length === 0) {
+       toast.info("No previous prescriptions found");
+       return;
+     }
+     setPrevList(list);
+     setIsPrevModalOpen(true);
+   } catch (e) {
+      console.error(e);
+      toast.error("Failed to fetch previous prescription");
+    } finally {
+      setLoadingPrev(false);
+    }
+  };
+
+
+ const applyPreviousPrescription = (prescription) => {
+   const meds = Array.isArray(prescription?.medications) ? prescription.medications : [];
+   if (meds.length === 0) {
+     toast.info("No medications found in this prescription");
+     return;
+   }
+
+   const timeNow = Date.now();
+   const mapped = meds.map((m, i) => ({
+     id: timeNow + i,
+     medName: m?.medName || "",
+     quantity: m?.quantity ?? null,
+     medicineType: m?.medicineType ?? null,
+     dosage: m?.dosage || "",
+     duration: m?.duration ?? null,
+     timings: Array.isArray(m?.timings) ? m.timings : [],
+     frequency: m?.frequency ?? null,
+     medInventoryId: m?.medInventoryId ?? null,
+     price: null,
+     notes: m?.notes || "",
+     isFromPrevious: true,
+   }));
+
+   const existing = localData.medications || [];
+   const merged = [
+     ...existing.filter(
+       (e) => !mapped.some((m) => m.medName === e.medName && m.dosage === e.dosage)
+     ),
+     ...mapped,
+   ];
+
+   const updatedData = { ...localData, medications: merged };
+   setLocalData(updatedData);
+   updateFormData(updatedData);
+
+   // lock medName/dosage edits for copied meds
+   setSelectedFromDropdown((prev) => {
+     const next = { ...prev };
+     mapped.forEach((m) => { next[m.id] = true; });
+     return next;
+   });
+
+   setTouched((prev) => {
+     const next = { ...prev };
+     mapped.forEach((m) => { next[m.id] = {}; });
+     return next;
+   });
+
+   setIsPrevModalOpen(false);
+   toast.success("Prescription applied");
+ };
+
+
 
   const removeTest = (testName) => {
     const updatedData = {
@@ -323,6 +425,75 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
       [newMedication.id]: false,
     }));
   };
+
+ const applyTemplate = (templateId) => {
+   const tpl = templateItems.find((t) => t?._id === templateId);
+   if (!tpl) return;
+
+   const timeNow = Date.now();
+   const meds = Array.isArray(tpl.medications) ? tpl.medications : [];
+
+   const mapped = meds.map((m, i) => {
+     const base = {
+       id: timeNow + i,
+       medName: m?.medName || "",
+       medicineType: m?.medicineType ?? null,
+       dosage: m?.dosage || "",
+       duration: m?.duration ?? null,
+       frequency: m?.frequency ?? null,
+       timings: Array.isArray(m?.timings) ? m.timings : [],
+       medInventoryId: m?.medInventoryId ?? null,
+       price: null,
+       notes: m?.notes || "",
+       isFromTemplate: true,     // <- flag for disabling name + dosage
+     };
+
+     // quantity: auto-calc for Tablet/Capsule/Injection; else keep provided
+     const typesAuto = ["Tablet", "Capsule", "Injection"];
+     const timesPerDay =
+       typeof base.frequency === "string"
+         ? base.frequency.split("-").filter((x) => x === "1").length
+         : 0;
+     if (typesAuto.includes(base.medicineType) && base.duration && timesPerDay) {
+       base.quantity = base.duration * timesPerDay;
+     } else {
+       base.quantity = m?.quantity ?? null;
+     }
+     return base;
+   });
+
+   // merge: avoid exact duplicates (name+dosage)
+   const existing = localData.medications || [];
+   const merged = [
+     ...existing.filter(
+       (e) => !mapped.some((m) => m.medName === e.medName && m.dosage === e.dosage)
+     ),
+     ...mapped,
+   ];
+
+   const updatedData = { ...localData, medications: merged };
+   setLocalData(updatedData);
+   updateFormData(updatedData);
+
+   // Reuse existing “selectedFromDropdown” to also lock dosage
+   setSelectedFromDropdown((prev) => {
+     const next = { ...prev };
+     mapped.forEach((m) => {
+       next[m.id] = true; // disables dosage via existing logic
+     });
+     return next;
+   });
+
+   // init touched/errors buckets
+   setTouched((prev) => {
+     const next = { ...prev };
+     mapped.forEach((m) => {
+       next[m.id] = {};
+     });
+     return next;
+   });
+ };
+
 
   const removeMedication = (id) => {
     const updatedData = {
@@ -676,33 +847,60 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
 
       <div className="medications-section">
         <div className="medications-header">
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <div
-              style={{
-                width: "20px",
-                height: "20px",
-                backgroundColor: "#8b5cf6",
-                borderRadius: "4px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: "8px",
-              }}
-            >
-              <span
-                style={{
-                  color: "white",
-                  fontSize: "12px",
-                  fontWeight: "bold",
-                }}
-              >
-                ℞
-              </span>
-            </div>
-            <h3 className="medications-title">PRESCRIBED MEDICATIONS</h3>
-          </div>
-        </div>
+  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div
+      style={{
+        width: "20px",
+        height: "20px",
+        backgroundColor: "#8b5cf6",
+        borderRadius: "4px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <span
+        style={{
+          color: "white",
+          fontSize: "12px",
+          fontWeight: "bold",
+        }}
+      >
+        ℞
+      </span>
+    </div>
+    <h3 className="medications-title" style={{ margin: 0 }}>
+      PRESCRIBED MEDICATIONS
+    </h3>
+  </div>
 
+  {/* Template dropdown on the right */}
+  <div style={{ minWidth: 280, display: "flex", alignItems: "center", gap: 8 }}>
+    <label
+      style={{
+        fontSize: 12,
+        fontWeight: 500,
+        color: "#6b7280",
+        whiteSpace: "nowrap",
+      }}
+    >
+      Apply Template
+    </label>
+    <Select
+      showSearch
+      placeholder="Select a template"
+      optionFilterProp="label"
+      style={{ width: "100%" }}
+      loading={templatesLoading}
+      onSelect={(val) => applyTemplate(val)}
+      allowClear
+      options={(templateItems || []).map((t) => ({
+        value: t._id,
+        label: t.name || "Untitled",
+      }))}
+    />
+  </div>
+</div>
         {validationError && (
           <div className="medication-validation-error">{validationError}</div>
         )}
@@ -737,6 +935,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     filterOption={(input, option) =>
                       option.label.toLowerCase().includes(input.toLowerCase())
                     }
+                disabled={!!(medication.isFromPrevious || medication.isFromTemplate)}
                   />
                   {errors[medication.id]?.medName && (
                     <div
@@ -855,7 +1054,7 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
                     }
                     placeholder="Enter dosage"
                     className="medication-field"
-                    disabled={selectedFromDropdown[medication.id]}
+                    disabled={selectedFromDropdown[medication.id] || !!medication.isFromTemplate}
                   />
                   {errors[medication.id]?.dosage && (
                     <div
@@ -1023,7 +1222,80 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
           ))}
         </div>
 
-        <div style={{ marginTop: "16px", textAlign: "right" }}>
+ <Modal
+   title="Previous Prescriptions"
+   open={isPrevModalOpen}
+   onCancel={() => setIsPrevModalOpen(false)}
+   footer={null}
+   width={720}
+   destroyOnClose
+ >
+   <List
+     itemLayout="vertical"
+     dataSource={prevList}
+     renderItem={(item, index) => {
+       const meds = Array.isArray(item?.medications) ? item.medications : [];
+       const createdAt = item?.createdAt ? new Date(item.createdAt) : null;
+       const subtitle = createdAt
+         ? `${createdAt.toLocaleDateString()} ${createdAt.toLocaleTimeString()}`
+         : `Prescription #${prevList.length - index}`;
+       return (
+         <List.Item
+           actions={[
+             <Button
+               key="use"
+               type="primary"
+               onClick={() => applyPreviousPrescription(item)}
+             >
+               Use this prescription
+             </Button>,
+           ]}
+         >
+           <List.Item.Meta
+             title={subtitle}
+             description={`${meds.length} medicine${meds.length === 1 ? "" : "s"}`}
+           />
+           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+             {meds.slice(0, 6).map((m, i) => (
+               <span
+                 key={i}
+                 style={{
+                   fontSize: 12,
+                   background: "#f3f4f6",
+                   borderRadius: 6,
+                   padding: "2px 8px",
+                 }}
+               >
+                 {m?.medName}{m?.dosage ? ` ${m.dosage}` : ""}
+               </span>
+             ))}
+             {meds.length > 6 && (
+               <span style={{ fontSize: 12, color: "#6b7280" }}>
+                 +{meds.length - 6} more
+               </span>
+             )}
+           </div>
+         </List.Item>
+       );
+     }}
+   />
+</Modal>
+
+
+         <div
+          style={{
+             marginTop: "16px",
+             display: "flex",
+             justifyContent: "flex-end",
+             gap: "8px",
+           }}
+         >
+           <Button
+             onClick={fetchPreviousPrescription}
+             loading={loadingPrev}
+           >
+            Copy Previous Prescription
+          </Button>
           <Button
             type="primary"
             onClick={addMedication}
@@ -1032,6 +1304,8 @@ const DiagnosisMedication = ({ formData, updateFormData, validationError }) => {
             Add Medicine
           </Button>
         </div>
+
+        
       </div>
     </div>
   );

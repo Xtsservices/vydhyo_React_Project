@@ -16,6 +16,7 @@ const PatientDetailsHistory = ({ formData, updateFormData }) => {
   
     const location = useLocation();
     const patientData = location.state?.patientData || {};
+    console.log("patientData from location state", patientData);
 
     const [localData, setLocalData] = useState({
         patientId: "",

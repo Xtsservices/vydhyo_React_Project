@@ -88,6 +88,7 @@ const DoctorProfileView = () => {
 
       // Fetch doctor details using /users/getUser
       const doctorResponse = await apiGet(`/users/getUser?userId=${userId}`);
+      console.log(doctorResponse, "doctor response");
       const userData = doctorResponse.data?.data;
 
       let doctor = null;
@@ -114,8 +115,8 @@ const DoctorProfileView = () => {
       const certifications = specializations.map((spec) => ({
         name: spec.name || "Specialization",
         registrationNo: spec.id || "N/A",
-        image: spec.specializationCertificateUrl || spec.specializationCertificate || null,
-        degreeCertificate: spec.degreeCertificateUrl || spec.drgreeCertificate || null,
+        image: spec?.specializationCertificateUrl  || null,
+        degreeCertificate: spec?.degreeCertificateUrl || null,
       }));
 
       // Normalize bank details
@@ -200,7 +201,7 @@ const DoctorProfileView = () => {
     setIsModalVisible(false);
     setSelectedDocument(null);
   };
-
+console.log(selectedDocument,"selectedDocument")
   const handleCancel = () => {
     setIsModalVisible(false);
     setSelectedDocument(null);
@@ -270,6 +271,8 @@ const DoctorProfileView = () => {
   if (loading) {
     return <Spin spinning={loading} />;
   }
+
+  console.log(doctorData, "doctorData in render");
   return (
     <div
       style={{
@@ -1464,10 +1467,10 @@ const DoctorProfileView = () => {
         >
           {selectedDocument && (
             <div style={{ textAlign: "center" }}>
-              {selectedDocument.data ? (
+              {selectedDocument?.data ? (
                 <img
-                  src={getImageSrc(selectedDocument.data)}
-                  alt={selectedDocument.type}
+                  src={getImageSrc(selectedDocument?.data)}
+                  alt={selectedDocument?.type}
                   style={{
                     width: "100%",
                     maxWidth: "300px",
